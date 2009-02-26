@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/apple-extensions.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/commons-cli.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/junit.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/log4j.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-win32.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-xosx.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
