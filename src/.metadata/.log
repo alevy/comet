@@ -1,0 +1,385 @@
+!SESSION 2009-02-25 13:17:25.946 -----------------------------------------------
+eclipse.buildId=M20070212-1330
+java.version=1.6.0_05
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_US
+Command-line arguments:  -os linux -ws gtk -arch x86
+
+!ENTRY org.eclipse.team.cvs.ui 4 0 2009-02-25 14:32:26.745
+!MESSAGE : Root homeframe/sdd/activedht/src/azureus2 must be an absolute pathname
+!STACK 1
+org.eclipse.team.internal.ccvs.core.connection.CVSServerException: The server reported an error while performing the "cvs update" command.
+	at org.eclipse.team.internal.ccvs.core.resources.RemoteFolderMemberFetcher.performErrorCheck(RemoteFolderMemberFetcher.java:148)
+	at org.eclipse.team.internal.ccvs.core.resources.RemoteFolderMemberFetcher.fetchMembers(RemoteFolderMemberFetcher.java:70)
+	at org.eclipse.team.internal.ccvs.core.resources.RemoteFolderMemberFetcher.fetchMembers(RemoteFolderMemberFetcher.java:55)
+	at org.eclipse.team.internal.ccvs.ui.operations.FetchMembersOperation.execute(FetchMembersOperation.java:107)
+	at org.eclipse.team.internal.ccvs.ui.operations.CVSOperation.run(CVSOperation.java:81)
+	at org.eclipse.team.internal.ccvs.ui.model.RemoteFolderElement.fetchDeferredChildren(RemoteFolderElement.java:72)
+	at org.eclipse.ui.progress.DeferredTreeContentManager$1.run(DeferredTreeContentManager.java:207)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:58)
+!SUBENTRY 1 org.eclipse.team.cvs.core 4 -10 2009-02-25 14:32:26.745
+!MESSAGE The server reported an error while performing the "cvs update" command.
+!SUBENTRY 2 org.eclipse.team.cvs.core 4 -14 2009-02-25 14:32:26.745
+!MESSAGE : Root homeframe/sdd/activedht/src/azureus2 must be an absolute pathname
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:23.121
+!MESSAGE CVS file /azureus2/build/libs/apple-extensions.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:23.392
+!MESSAGE CVS file /azureus2/build/libs/log4j.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:23.579
+!MESSAGE CVS file /azureus2/build/libs/swt-win32.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:24.348
+!MESSAGE CVS file /azureus2/build/libs/swt-xosx.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:54.676
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/core3/xml/schemas/classxmlserialisationinfo.xsd either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:54.691
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/core3/xml/schemas/torrent.xsd either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:59.859
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/StdAfx.cpp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:59.878
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/StdAfx.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:34:59.996
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.cpp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:00.031
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.dsp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:00.050
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.dsw either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:00.069
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:00.105
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/org_gudy_azureus2_platform_win32_access_impl_AEWin32AccessInterface.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:00.168
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/Release/aereg.dll either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.230
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/Azureus_big.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.327
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a16.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.343
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a32.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.373
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a64.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.412
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/add_to_share.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.452
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/az3_osx_tray.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.522
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/az3_osx_tray_white.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.574
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_add_rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.595
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_all_rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.613
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribe_green_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.634
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribe_orange_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.656
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribed_gray_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.677
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribed_green_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.723
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/comment.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.740
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/comment_blank.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.793
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_0.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.810
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_1.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.827
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_end.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.844
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/down.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.860
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/downloadBar.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:13.944
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/error.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.006
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/foldersmall.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.146
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/lock.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.208
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/popup.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.236
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_cancel.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.253
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_remove.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.270
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_retry.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.296
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.315
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer_has_error.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.336
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer_has_info.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.422
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.456
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/search.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.473
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/smallx-gray.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.491
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/smallx.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.525
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/spinning_indicator_big_white.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.630
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/transparent16x16.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.649
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/up.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.682
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/working.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.922
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/status/stopped.gif either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.983
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_boosted.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:14.997
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_boosting.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:15.017
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_idle.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:15.034
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_notloggedin.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:15.069
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/user_count.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 14:35:15.279
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/toolbar/switchui.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:28:21.218
+!MESSAGE CVS file /azureus2/build/libs/apple-extensions.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:28:21.389
+!MESSAGE CVS file /azureus2/build/libs/log4j.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:28:21.568
+!MESSAGE CVS file /azureus2/build/libs/swt-win32.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:28:22.356
+!MESSAGE CVS file /azureus2/build/libs/swt-xosx.jar either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:04.268
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/core3/xml/schemas/classxmlserialisationinfo.xsd either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:04.283
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/core3/xml/schemas/torrent.xsd either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:10.838
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/StdAfx.cpp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:10.875
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/StdAfx.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.021
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.cpp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.066
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.dsp either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.100
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.dsw either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.162
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/aereg.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.219
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/org_gudy_azureus2_platform_win32_access_impl_AEWin32AccessInterface.h either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:11.286
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/platform/win32/access/impl/Release/aereg.dll either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.133
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/Azureus_big.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.178
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a16.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.204
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a32.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.234
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/a64.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.271
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/add_to_share.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.335
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/az3_osx_tray.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.372
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/az3_osx_tray_white.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.452
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_add_rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.486
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_all_rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.523
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribe_green_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.543
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribe_orange_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.596
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribed_gray_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.634
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/btn_rss_subscribed_green_30x14.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.701
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/comment.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.729
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/comment_blank.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.841
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_0.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.882
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_1.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.916
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/dl_bar_end.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.953
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/down.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:32.990
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/downloadBar.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.144
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/error.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.297
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/foldersmall.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.534
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/lock.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.669
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/popup.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.706
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_cancel.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.738
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_remove.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.776
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_retry.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.812
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.848
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer_has_error.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:33.882
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/progress_viewer_has_info.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.038
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/rss.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.144
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/search.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.182
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/smallx-gray.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.210
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/smallx.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.300
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/spinning_indicator_big_white.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.452
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/transparent16x16.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.475
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/up.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:34.546
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/working.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.053
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/status/stopped.gif either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.182
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_boosted.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.217
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_boosting.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.256
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_idle.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.278
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/bbb_notloggedin.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.335
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/statusbar/user_count.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.team.cvs.core 2 0 2009-02-25 15:29:35.834
+!MESSAGE CVS file /azureus2/org/gudy/azureus2/ui/icons/toolbar/switchui.png either contains invalid line endings on the server (CR/LF instead of just LF) or is a binary file that is not marked as -kb.
+
+!ENTRY org.eclipse.ui.ide 4 4 2009-02-25 16:35:14.752
+!MESSAGE Problems saving workspace
+
+!ENTRY org.eclipse.ui.ide 2 1 2009-02-25 16:35:14.756
+!MESSAGE Problems occurred while trying to save the state of the workbench.
+!SUBENTRY 1 org.eclipse.core.resources 2 234 2009-02-25 16:35:14.756
+!MESSAGE The project description file (.project) for azureus2 was missing.  This file contains important information about the project.  A new project description file has been created, but some information about the project may have been lost.
