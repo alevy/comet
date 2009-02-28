@@ -37,6 +37,10 @@ DHTDBValue
 	setFlags(
 		byte	flags );
 	
+	public void
+	setValue(
+		byte[]	value );
+	
 	public DHTDBValue
 	getValueForRelay(
 		DHTTransportContact	new_originator );

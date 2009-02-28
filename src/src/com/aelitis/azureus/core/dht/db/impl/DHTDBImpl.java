@@ -287,7 +287,7 @@ DHTDBImpl
 			}
 			
 			DHTDBValueImpl res =	
-				new DHTDBValueImpl( 
+				newDHTDBValue( 
 						SystemTime.getCurrentTime(), 
 						value, 
 						getNextValueVersion(),
@@ -304,6 +304,26 @@ DHTDBImpl
 			
 			this_mon.exit();
 		}
+	}
+	
+	protected DHTDBValueImpl
+	newDHTDBValue(
+			long			_creation_time,
+			byte[]			_value,
+			int				_version,
+			DHTTransportContact	_originator,
+			DHTTransportContact	_sender,
+			boolean			_local,
+			int				_flags ) {
+		return new DHTDBValueImpl(_creation_time, _value, _version,
+				_originator, _sender, _local, _flags);
+	}
+	
+	protected DHTDBValueImpl
+	newDHTDBValue(DHTTransportContact	_sender,
+			      DHTTransportValue		_other,
+			      boolean				_local ) {
+		return new DHTDBValueImpl(_sender, _other, _local);
 	}
 	
 	/*
@@ -475,7 +495,8 @@ DHTDBImpl
 
 				if ( ok_to_store ){
 					
-					DHTDBValueImpl mapping_value	= new DHTDBValueImpl( sender, value, false );
+					DHTDBValueImpl mapping_value	=
+						newDHTDBValue( sender, value, false );
 			
 					mapping.add( mapping_value );
 				}
