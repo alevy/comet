@@ -47,7 +47,6 @@ public class ActiveDHTDB extends DHTDBImpl {
 			boolean was_modified = doGet(value);
 			if (was_modified) store(value);
 		}
-		URLClassLoader
 		return result;
 	}
 	
