@@ -4,48 +4,59 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.Set;
 
-public class ClassObjectOutputStream extends ObjectOutputStream {
-	public static final Set<Class> serialized_classes = new HashSet<Class>();
-	
-	static {
-		serialized_classes.add(ActiveCode.class);
+import edu.washington.cs.activedht.util.Constants;
+/**
+ * Serializes classes alongside with the object instance.
+ * NOTE: Only serializes classes for ActiveCode objects. In rest, it behaves
+ * as a regular ObjectOutputStream.
+ * @author roxana
+ */
+public class ClassObjectOutputStream extends ObjectOutputStream implements
+		Constants {
+	public ClassObjectOutputStream(OutputStream output) throws IOException,
+			SecurityException {
+		super(output);
 	}
 
-	public ClassObjectOutputStream()
-	throws IOException, SecurityException { super(); }
-
-	public ClassObjectOutputStream(OutputStream output)
-	throws IOException, SecurityException { super(output); }
-	
 	@Override
 	protected void annotateClass(Class cls) throws IOException {
 		super.annotateClass(cls);
-		if (! shouldSerializeClass(cls)) return;  // do nothing else.
-		
-		// Get the class' bytecode.
-		InputStream bytecode_is = classToByteCode(cls);
-		
-		// Write the bytecode and its size to the stream.
-		int bytecode_size = bytecode_is.available();
-		super.writeInt(bytecode_size);
-		byte[] bytecode = new byte[bytecode_size];
-		bytecode_is.read(bytecode);
-		
-		super.write(bytecode);
-	}
-	
-	private InputStream classToByteCode(Class cls) {
-		return ClassLoader.getSystemResourceAsStream(cls.getCanonicalName());
-	}
-	
-	private boolean shouldSerializeClass(Class cls) {
-		for (Class c: cls.getInterfaces()) {
-			if (serialized_classes.contains(c)) return true;
+		if (!shouldSerializeClass(cls)) {
+			writeInt(0);  // just declare that we have no enclosed class in.
+			return; // do nothing else.
 		}
-		if (serialized_classes.contains(cls.getSuperclass())) return true;
-		return false;
+		
+		// Must write the class' bytecode, as well.
+		
+		// Get the bytecode.
+		InputStream bytecode_is = classToByteCode(cls);
+
+		// Write the bytecode and its size to the stream.
+		byte[] bytecode = new byte[ActiveCode.MAX_ADMISSIBLE_CLASS_SIZE];
+		int bytecode_size = bytecode_is.read(bytecode);
+		writeInt(bytecode_size);
+		write(bytecode, 0, bytecode_size);
+	}
+
+	private InputStream classToByteCode(Class cls) {
+		return cls.getResourceAsStream("/" + cls.getName().replace(".", "/")
+				+ ".class");
+	}
+
+	protected boolean shouldSerializeClass(Class cls) {
+		try {
+			cls.asSubclass(ActiveCode.class);
+			return true;  // it's active code, so serialize.
+		} catch (ClassCastException e) {
+			return false;  // it's not active code, so don't.
+		}
+	}
+	
+	protected static boolean shouldReadClassDefinitionFromStream(
+			int bytecode_size) throws IOException {
+		if (bytecode_size == 0) return false;
+		if (bytecode_size < 0) throw new IOException("Invalid bytecode size");
+		return true;
 	}
 }

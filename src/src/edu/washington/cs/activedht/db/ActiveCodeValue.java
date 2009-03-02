@@ -4,6 +4,8 @@ import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.code.ActiveCode;
+
 public class ActiveCodeValue extends DHTDBValueImpl {
 	
 	protected ActiveCodeValue(DHTTransportContact _sender,
@@ -33,6 +35,6 @@ public class ActiveCodeValue extends DHTDBValueImpl {
 	
 	public ActiveCode getActiveValueObject() {
 		byte[] value = getValue();
-		
+		return null;
 	}
 }

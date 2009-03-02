@@ -43,7 +43,6 @@ public class InputStreamURLConnection extends URLConnection {
 	@Override
 	public InputStream getInputStream() throws IOException {
 		assert(isInitialized());
-		System.out.println("InputStreamURLConnection::GetInputStream");
 		return input;
 	}
 	

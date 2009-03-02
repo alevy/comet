@@ -1,8 +1,8 @@
 package edu.washington.cs.activedht.db;
 
 import java.io.ByteArrayInputStream;
-import java.net.URLClassLoader;
-import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -17,6 +17,8 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.ActiveCode;
+import edu.washington.cs.activedht.code.ActiveCodeWrapper;
+import edu.washington.cs.activedht.code.ActiveCodeWrapperFactory;
 
 public class ActiveDHTDB extends DHTDBImpl {
 	public ActiveDHTDB(DHTStorageAdapter _adapter,
@@ -25,7 +27,6 @@ public class ActiveDHTDB extends DHTDBImpl {
 			           DHTLogger _logger) {
 		super(_adapter, _original_republish_interval,
 			  _cache_republish_interval, _logger);
-		
 	}
 	
 	// Override all external requests:
@@ -40,45 +41,50 @@ public class ActiveDHTDB extends DHTDBImpl {
 		DHTDBValue[] values = result.getValues();
 		if (values == null || values.length == 0) return result;
 		
-		int i = -1;
 		for (DHTDBValue value: values) {
-			++i;
 			if (value == null) continue;
 			boolean was_modified = doGet(value);
-			if (was_modified) store(value);
+			if (was_modified) storeValueBack(value);  // store back.
 		}
+
 		return result;
 	}
 	
-	private void store(DHTDBValue value) {
-		// TODO(roxana): implement.
-	}
-	
-	protected DHTDBValueImpl
-	newDHTDBValue(long _creation_time,
-			      byte[] _value,
-			      int _version,
-			      DHTTransportContact _originator,
-			      DHTTransportContact _sender,
-			      boolean _local,
-			      int _flags ) {
+	/*@Override
+	protected DHTDBValueImpl newDHTDBValue(long _creation_time, byte[] _value,
+			int _version,
+			DHTTransportContact _originator, DHTTransportContact _sender,
+			boolean _local, int _flags ) {
 		return new ActiveCodeValue(_creation_time, _value, _version,
 				_originator, _sender, _local, _flags);
 	}
 	
-	protected DHTDBValueImpl
-	newDHTDBValue(DHTTransportContact _sender,
-			  DHTTransportValue _other,
-			  boolean _local) {
+	@Override
+	protected DHTDBValueImpl newDHTDBValue(
+			DHTTransportContact _sender, DHTTransportValue _other,
+			boolean _local) {
 		return new ActiveCodeValue(_sender, _other, _local);
-	}
+	}*/
 	
-	private boolean doGet(DHTDBValue value) {
+	
+	// DHT event handers:
+
+	private boolean doGet(DHTDBValue value, DHTOperationHandler h)
+	throws IOException {
 		// assert(value != null);
-		byte[] current_contents = value.getValue();
-		if (current_contents == null) return false;
+		ActiveCodeWrapper ac = ActiveCodeWrapperFactory.create(value);
+		if (ac == null) return false;  // passive value. nothing to do.
 		
-		byte[] new_contents = doGet(current_contents);
+		// Perform preactions.
+		
+		// Perform the event.
+		boolean modified = ac.onGet();
+		
+		// Perform postactions.
+		
+		if (isActiveObject(o)) {
+			byte[] new_contents = doGet(o);
+		}
 
 		boolean was_modified = false;
 		if (new_contents != null) {
@@ -90,13 +96,26 @@ public class ActiveDHTDB extends DHTDBImpl {
 		return was_modified;
 	}
 	
+	/**
+	 * Returns either the input byte[] or an ActiveCode subtype. 
+	 * @param current_contents
+	 * @return
+	 */
+	private Object deserializeValue(DHTDBValue value)
+	throws IOException {
+		byte[] contents = value.getValue();
+		if (current_contents == null) return false;
+		InputStream is = new ByteArrayInputStream(current_contents)
+	}
+	
 	private byte[] doGet(final byte[] current_contents) {
 		boolean was_modified = false;
 	
-		ActiveCode remote_code = 
+		// ActiveCode remote_code = 
 	
 		if (!was_modified) return null;
-		else return 
+		//else return
+		return null;
 	}
 
 	@Override
@@ -117,4 +136,18 @@ public class ActiveDHTDB extends DHTDBImpl {
 	}
 	
 	
+	private void storeValueBack(DHTDBValue value) {
+		// TODO(roxana): implement.
+	}
+}
+
+interface DHTOperationHandler {
+	public boolean doOp(ActiveCode code);
+}
+
+class DHTGetHandler implements DHTOperationHandler {
+	@Override
+	public boolean doOp(ActiveCode code) {
+		return code.onGet();
+	}
 }

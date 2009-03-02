@@ -1,5 +1,6 @@
 package edu.washington.cs.activedht.code;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -14,11 +15,19 @@ public class InputStreamSecureClassLoaderTest extends TestCase {
 	protected void tearDown() { }
 	
 	public void testLoadsClassFromBuffer() {
-		String classname = "myclassloader.InputStreamSecureClassLoader";
-		// Get the bytes of a class.
-		InputStream is = ClassLoader.getSystemResourceAsStream(
-			classname);
+		String classname = "data.TestDataActiveCode";
+
+		// Open the class file (should not be in the path).
+		InputStream bytecode_file_is = null;
+		try {
+			bytecode_file_is = new FileInputStream(
+				"build/testdata/data/TestDataActiveCode.class");
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("Couldn't open data file");
+		}
 		
+		// Create a secure class loader.
 		InputStreamSecureClassLoader class_loader = null;
 		try {
 			class_loader = InputStreamSecureClassLoader.newInstance(
@@ -28,20 +37,35 @@ public class InputStreamSecureClassLoaderTest extends TestCase {
 			fail("Failed to instantiate class loader.");
 		}
 		
-		// Initialize the class loader.
-		try { class_loader.init(is); }
+		// Initialize the class loader with the class file.
+		try { class_loader.init(bytecode_file_is); }
 		catch (IOException e1) {		
 			e1.printStackTrace();
 			fail("Failed to initialize class loader.");
 		}
 		
-		Class cls = null;
-		try { cls = class_loader.loadClass(classname); }
+		// Load the class from the class file.
+		Class<? extends ActiveCode> cls = null;
+		try { cls = class_loader.loadClass(classname)
+			.asSubclass(ActiveCode.class); }
 		catch (ClassNotFoundException e) {
 			e.printStackTrace();
 			fail("Failed to load the class.");
 		}
 		
-		assertEquals(InputStreamSecureClassLoader.class, cls);
+		// Should have loaded precisely the given class. 
+		assertNotNull(cls);
+		assertEquals(classname, cls.getName());
+		
+		// Instantiate an object and then do something with it.
+		ActiveCode o = null;
+		try { o = cls.newInstance(); }
+		catch (Exception e) {
+			e.printStackTrace();
+			fail("Could not instantiate object.");
+		}
+		
+		// Do something with the object.
+		assertEquals(-1, o.onTest());
 	}
 }

@@ -2,46 +2,45 @@ package edu.washington.cs.activedht.code;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 
 public class ClassObjectInputStream extends ObjectInputStream {
 	InputStreamSecureClassLoader class_loader;
 	
-	protected ClassObjectInputStream(InputStreamSecureClassLoader loader)
+	public ClassObjectInputStream(InputStream is,
+			                      InputStreamSecureClassLoader loader)
 	throws IOException, SecurityException {
-		super();
+		super(is);
 		this.class_loader = loader;
 	}
 	
 	@Override
 	protected Class resolveClass(ObjectStreamClass desc)
 	throws IOException, ClassNotFoundException {
-		try { return super.resolveClass(desc); }  // TODO(roxana): What's the
-		// effect of this? Security threat due to the use of a non-secure
-		// loader??                                    
+		Class cls = null;
+		try { cls = super.resolveClass(desc); }  
 		catch(ClassNotFoundException e) { }
 		
-		// Class wasn't found locally, so try and execute it.
-		
-		if (! shouldDeserializeClass(desc)) throw new ClassNotFoundException();
-
-		// Read the bytecode bytes.
+		// Read the class size.
 		int byte_code_size = this.readInt();
-		if (byte_code_size <= 0 || byte_code_size > this.available()) {
-			throw new IOException("Invalid input stream");
+		boolean should_read_class_from_stream =
+			ClassObjectOutputStream.shouldReadClassDefinitionFromStream(
+				byte_code_size);
+		if (! should_read_class_from_stream) {
+			if (cls == null) throw new ClassNotFoundException();
+			return cls;
 		}
+		
+		// Class definition is specified in the stream.
+
+		// Read the bytecodes.
 		byte[] bytecode = new byte[byte_code_size];
-		if (this.read(bytecode, 0, byte_code_size) < byte_code_size) {
-			throw new IOException("Invalid input stream");  // never happens?
-		}
+		readFully(bytecode, 0, byte_code_size);
 		
 		// Load the class securely.
 		return secureByteCodeToClass(bytecode, desc.getName());
-	}
-	
-	private boolean shouldDeserializeClass(ObjectStreamClass desc) {
-		return true;
 	}
 
 	private Class secureByteCodeToClass(byte[] bytecode, String classname)
@@ -52,8 +51,6 @@ public class ClassObjectInputStream extends ObjectInputStream {
 		class_loader.init(bytecode_is);
 		
 		// Load the class.
-		Class cls = class_loader.loadClass(classname);
-		
-		return cls;
+		return class_loader.loadClass(classname);
 	}
 }

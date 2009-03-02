@@ -3,6 +3,8 @@ package edu.washington.cs.activedht.dht;
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 
+import edu.washington.cs.activedht.code.ActiveCode;
+
 public interface ActiveDHT extends DHT {
 	public void
 	put(
