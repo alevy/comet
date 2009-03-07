@@ -6,15 +6,17 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 
 -->
 
-	
-<project default="jar" name="Azureus" basedir=".">
+<project default="jar" name="ActiveVuze" basedir=".">
 
    <property name="root.dir" value="." />  <!-- REMINDER: this needs to be "." for public source -->
-   <property name="libs.dir" value="lib" />
-   <property name="dist.dir" value="dist" />
-   <property name="build.dir" value="build/classes" />
    <property name="src.dir" value="src" />
    <property name="test.dir" value="test" />
+   <property name="testdata.dir" value="testdata" />
+   <property name="libs.dir" value="lib" />
+   <property name="build.dir" value="build/classes" />
+   <property name="build.testdata" value="build/testdata" />
+   <property name="dist.dir" value="dist" />
+   <property name="reports.dir" value="reports" />
    
    <property name="generic.excludes" value="**/*.jar **/*.txt **/*.jardesc **/.classpath **/.project **/aereg.lib **/aereg.dll" />
    <property name="dist.jar.excludes" value="${generic.excludes} **/*.java " />
@@ -29,6 +31,10 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 
       <mkdir dir="${root.dir}/${dist.dir}" />
       <mkdir dir="${root.dir}/${build.dir}" />
+      <mkdir dir="${root.dir}/${build.testdata}" />
+   	  <mkdir dir="${root.dir}/${reports.dir}" />
+   	  <mkdir dir="${root.dir}/${reports.dir}/raw" />
+   	  <mkdir dir="${root.dir}/${reports.dir}/html" />
    </target>
    
    <target name="compile" depends="init" >
@@ -52,10 +58,71 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
       <!-- <zip destfile="${dist.dir}/Azureus2_source.zip" basedir="." excludes="${dist.source.excludes}" /> -->
 
    </target>
+	
+	<target name="compile-tests" depends="compile" >
+	      <path id="libs.classpath">
+	         <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+	      </path>
+		  <path id="all.classpath">
+			<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+			<dirset dir="${root.dir}/${build.dir}" />
+		  	<dirset dir="${root.dir}/${build.testdata}" />
+		  </path>
+	   
+	      <javac srcdir="${root.dir}/${test.dir}" destdir="${root.dir}/${build.dir}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+	         <classpath refid="libs.classpath" />
+	      </javac>
+		
+		  <!-- Copy and compile the testdata. -->
+		  <copydir dest="${root.dir}/${build.testdata}" src="${root.dir}/${testdata.dir}" excludes="**/*.java" />
+		  <javac srcdir="${root.dir}/${testdata.dir}" destdir="${root.dir}/${build.testdata}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+			 <classpath refid="all.classpath" />
+		  </javac>
+   </target>
+   	
+   <!-- Generate test data here. -->
+   <target name="gentestdata">
+   	    <path id="all.classpath">
+   			<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+   			<dirset dir="${root.dir}/${build.dir}" />
+   		  	<dirset dir="${root.dir}/${build.testdata}" />
+   		</path>
+   		<java classname="data.ClassObjectOutputStreamTestGenerator" fork="true">
+   			<classpath refid="all.classpath" />
+   		</java>
+   </target>
 
+   <target name="run-tests" depends="compile-tests,gentestdata" description="run the test suite">
+	    <junit printsummary="withOutAndErr" haltonfailure="yes" showoutput="yes" >
+	      <classpath>
+	        <pathelement path="${root.dir}/${build.dir}"/>
+	        <fileset dir="${root.dir}/${libs.dir}">
+	          <include name="*.jar"/>
+	        </fileset>
+	      </classpath>
+
+	      <batchtest fork="yes" todir="${root.dir}/${reports.dir}/raw/">
+	        <formatter type="xml"/>
+	        <fileset dir="${root.dir}/${test.dir}">
+	          <include name="**/*Test.java"/>
+	        </fileset>
+	      </batchtest>
+	    </junit>
+   </target>
+
+   <target name ="test" depends="run-tests">
+	    <junitreport todir="${root.dir}/${reports.dir}">
+	      <fileset dir="${reports.dir}/raw/">
+	        <include name="TEST-*.xml"/>
+	      </fileset>
+	      <report format="frames" todir="${reports.dir}/html/"/>
+	    </junitreport>
+   </target>
+	
    <target name="clean" >
       <delete dir="${root.dir}/${build.dir}"/>
       <delete dir="${root.dir}/${dist.dir}"/>
+   	  <delete dir="${root.dir}/${reports.dir}"/>
    </target>
 
 </project>
