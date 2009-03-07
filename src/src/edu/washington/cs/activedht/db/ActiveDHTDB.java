@@ -16,9 +16,8 @@ import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.code.ActiveCode;
-import edu.washington.cs.activedht.code.ActiveCodeWrapper;
-import edu.washington.cs.activedht.code.ActiveCodeWrapperFactory;
+import edu.washington.cs.activedht.code.ActiveCodeRunner;
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 
 public class ActiveDHTDB extends DHTDBImpl {
 	public ActiveDHTDB(DHTStorageAdapter _adapter,
@@ -30,7 +29,7 @@ public class ActiveDHTDB extends DHTDBImpl {
 	}
 	
 	// Override all external requests:
-
+/*
 	@Override
 	public DHTDBLookupResult get(DHTTransportContact reader,
 			HashWrapper key, int max_values, byte flags,
@@ -49,7 +48,7 @@ public class ActiveDHTDB extends DHTDBImpl {
 
 		return result;
 	}
-	
+*/	
 	/*@Override
 	protected DHTDBValueImpl newDHTDBValue(long _creation_time, byte[] _value,
 			int _version,
@@ -68,7 +67,7 @@ public class ActiveDHTDB extends DHTDBImpl {
 	
 	
 	// DHT event handers:
-
+/*
 	private boolean doGet(DHTDBValue value, DHTOperationHandler h)
 	throws IOException {
 		// assert(value != null);
@@ -91,23 +90,23 @@ public class ActiveDHTDB extends DHTDBImpl {
 			value.setValue(new_contents);
 			was_modified = true;
 		}
-		
+	
 		// Not modified.
 		return was_modified;
 	}
-	
+*/	
 	/**
 	 * Returns either the input byte[] or an ActiveCode subtype. 
 	 * @param current_contents
 	 * @return
 	 */
-	private Object deserializeValue(DHTDBValue value)
+/*	private Object deserializeValue(DHTDBValue value)
 	throws IOException {
 		byte[] contents = value.getValue();
 		if (current_contents == null) return false;
 		InputStream is = new ByteArrayInputStream(current_contents)
 	}
-	
+*/	
 	private byte[] doGet(final byte[] current_contents) {
 		boolean was_modified = false;
 	
@@ -148,6 +147,7 @@ interface DHTOperationHandler {
 class DHTGetHandler implements DHTOperationHandler {
 	@Override
 	public boolean doOp(ActiveCode code) {
-		return code.onGet();
+		//return code.onGet();
+		return false;
 	}
 }

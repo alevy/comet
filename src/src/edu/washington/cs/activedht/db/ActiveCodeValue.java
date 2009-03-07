@@ -4,7 +4,7 @@ import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.code.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 
 public class ActiveCodeValue extends DHTDBValueImpl {
 	

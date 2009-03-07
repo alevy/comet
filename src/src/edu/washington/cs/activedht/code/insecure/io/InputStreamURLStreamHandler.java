@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,6 +7,7 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.HashMap;
 import java.util.Map;
+
 
 class InputStreamURLStreamHandler extends URLStreamHandler {
 	Map<String, InputStreamURLConnection> urls_to_connections;

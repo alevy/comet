@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,6 +105,7 @@ public class InputStreamURLConnection extends URLConnection {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String,List<String>> getHeaderFields() {
 	    return Collections.EMPTY_MAP;
@@ -179,6 +180,7 @@ public class InputStreamURLConnection extends URLConnection {
 	  	return null;  // nothing to do.
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Map<String,List<String>> getRequestProperties() {
 	    return Collections.EMPTY_MAP;  // nothing to do.

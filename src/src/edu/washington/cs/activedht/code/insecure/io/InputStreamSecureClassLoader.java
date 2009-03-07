@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.PermissionCollection;
 import java.security.Permissions;
+
 
 /**
  * Secure ClassLoader that reads the class from an InputStream.
@@ -63,7 +64,8 @@ public class InputStreamSecureClassLoader extends URLClassLoader {
      * Loads a class using the URLClassLoader code, but before that it
      * checks whether the caller has the right to access the loaded package.
      */
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public final synchronized Class loadClass(String name, boolean resolve)
 	throws ClassNotFoundException {
     	// First check if we have permission to access the package. This

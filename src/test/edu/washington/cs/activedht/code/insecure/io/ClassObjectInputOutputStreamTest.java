@@ -1,8 +1,15 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
+import edu.washington.cs.activedht.code.insecure.DHTEvent;
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.candefine.TestActiveCode;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
+import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 
 import junit.framework.TestCase;
 
@@ -14,7 +21,7 @@ public class ClassObjectInputOutputStreamTest extends TestCase {
 	protected void tearDown() { }
 	
 	public void testCorrectInOutMustSerializeClass() {
-		ActiveCode my_object = new TestActiveCode(10);
+		ActiveCode my_object = new TestActiveCode(DHTEvent.GET);
 
 		// Serialize the object.
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -59,6 +66,6 @@ public class ClassObjectInputOutputStreamTest extends TestCase {
 		}
 		
 		// Test that they are equal.
-		assertEquals(my_object, deserialized_object);		
+		assertEquals(my_object, deserialized_object);
 	}
 }

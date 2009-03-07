@@ -1,9 +1,12 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 
 import junit.framework.TestCase;
 
@@ -66,6 +69,6 @@ public class InputStreamSecureClassLoaderTest extends TestCase {
 		}
 		
 		// Do something with the object.
-		assertEquals(-1, o.onTest());
+		assertTrue(o.onTest(-1));
 	}
 }

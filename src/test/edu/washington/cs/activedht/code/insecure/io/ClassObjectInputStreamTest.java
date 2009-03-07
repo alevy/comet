@@ -1,10 +1,14 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
+import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 
 import junit.framework.TestCase;
 
@@ -49,7 +53,7 @@ public class ClassObjectInputStreamTest extends TestCase {
 			fail("Could not read object.");
 		}
 		
-		assertEquals(OBJECT_VALUE, deserialized_object.onTest());
+		assertTrue(deserialized_object.onTest(OBJECT_VALUE));
 	}
 	
 	public void testReadFailsForUnknownClassWhenRegularInputStreamUsed() {

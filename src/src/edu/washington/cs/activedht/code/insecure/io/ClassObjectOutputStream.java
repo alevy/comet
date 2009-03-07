@@ -1,10 +1,11 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.code.insecure.io;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.util.Constants;
 /**
  * Serializes classes alongside with the object instance.
@@ -33,7 +34,7 @@ public class ClassObjectOutputStream extends ObjectOutputStream implements
 		InputStream bytecode_is = classToByteCode(cls);
 
 		// Write the bytecode and its size to the stream.
-		byte[] bytecode = new byte[ActiveCode.MAX_ADMISSIBLE_CLASS_SIZE];
+		byte[] bytecode = new byte[MAX_ADMISSIBLE_CLASS_SIZE];
 		int bytecode_size = bytecode_is.read(bytecode);
 		writeInt(bytecode_size);
 		write(bytecode, 0, bytecode_size);
@@ -44,6 +45,7 @@ public class ClassObjectOutputStream extends ObjectOutputStream implements
 				+ ".class");
 	}
 
+	@SuppressWarnings("unchecked")
 	protected boolean shouldSerializeClass(Class cls) {
 		try {
 			cls.asSubclass(ActiveCode.class);
