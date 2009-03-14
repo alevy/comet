@@ -1,15 +1,11 @@
 package data;
 
-import edu.washington.cs.activedht.code.ActiveCode;
-import edu.washington.cs.activedht.code.insecure.nodefine.DHTActionList;
-import edu.washington.cs.activedht.code.insecure.nodefine.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.nodefine.DHTEvent;
-import edu.washington.cs.activedht.code.insecure.nodefine.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.nodefine.DHTPreaction;
-import edu.washington.cs.activedht.code.insecure.nodefine.GetDHTPreaction;
-import edu.washington.cs.activedht.code.insecure.nodefine.InvalidActionException;
-import edu.washington.cs.activedht.code.insecure.nodefine.LimitExceededException;
-import edu.washington.cs.activedht.code.insecure.nodefine.PutDHTPostaction;
+import edu.washington.cs.activedht.code.insecure.DHTEvent;
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 
 public class TestDataActiveCode implements ActiveCode {
 	private static final long serialVersionUID = 13579424689L;

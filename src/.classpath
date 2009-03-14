@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/log4j.jar"/>
 	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-win32.jar"/>
 	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-xosx.jar"/>
+	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/javassist.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

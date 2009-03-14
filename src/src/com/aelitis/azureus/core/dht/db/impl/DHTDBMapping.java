@@ -357,13 +357,14 @@ DHTDBMapping
 					
 					return( 
 						new DHTDBValueImpl[]{
-							db.newDHTDBValue(SystemTime.getCurrentTime(),
+							DHTDBValueFactory.create(
+									SystemTime.getCurrentTime(),
 									baos.toByteArray(),
 									0,
 									db.getLocalContact(),
 									db.getLocalContact(),
 									true,
-									DHT.FLAG_STATS )});
+									DHT.FLAG_STATS)});
 					
 				}catch( Throwable e ){
 					
@@ -428,7 +429,7 @@ DHTDBMapping
 			}
 		}
 		
-		informRead( by_who );
+		informRead( by_who );  // (Roxana)
 		
 		DHTDBValueImpl[]	v = new DHTDBValueImpl[res.size()];
 		

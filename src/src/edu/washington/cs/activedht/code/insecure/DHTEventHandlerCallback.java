@@ -30,18 +30,52 @@ import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader
 public abstract class DHTEventHandlerCallback {
 	private InputStreamSecureClassLoader class_loader;
 	
+	// Trusted methods:
+	
 	/**
 	 * Constructor.
 	 * 
-	 * The constructor is accessed from outside the sandbox, so we MUST NOT
-	 * do anything dangerous in it (e.g., instantiate any ActiveCode objects,
-	 * or access them).
-	 * 
+	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
+	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
+	 * access them).
+	 */
+	public DHTEventHandlerCallback() { }
+	
+	/**
+	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
+	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
+	 * access them).
 	 * @param class_loader
 	 */
-	public DHTEventHandlerCallback(InputStreamSecureClassLoader class_loader) {
+	public final void init(InputStreamSecureClassLoader class_loader) {
 		this.class_loader = class_loader;
 	}
+	
+	/**
+	 * Tells whether the value on top of which this DHTEventHandler will run
+	 * is a local or remote value. A local value is taken from the local
+	 * database, where it was inserted some time ago.
+	 * A remote value is received from a remote note and the event is 
+	 * (e.g., via a put). The initial put for a value is surely a remote value.
+	 * 
+	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
+	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
+	 * access them).
+	 * 
+	 * @return  true if the value is local; false if it's remote.
+	 */
+	public abstract boolean isValueLocal();
+	
+	/**
+	 * Returns the event to which this handler is associated.
+	 * 
+	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
+	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
+	 * access them).
+	 * 
+	 * @return  the event with which this handler is associated.
+	 */
+	public abstract DHTEvent getEvent();
 	
 	//
 	// DANGEROUS methods:
@@ -54,6 +88,8 @@ public abstract class DHTEventHandlerCallback {
 	 * Executes the event on the active object given by the active_value
 	 * parameter.
 	 * This method is DANGEROUS, so it *MUST* be run from within the sandbox.
+	 * 
+	 * This function assumes that it has been previously initialized.
 	 * 
 	 * @param active_value        the bytes representing the value
 	 * @param executed_preactions preactions with results.
@@ -165,9 +201,7 @@ public abstract class DHTEventHandlerCallback {
 	public static abstract class AbstractCb extends DHTEventHandlerCallback {
 		private String caller_ip;
 		
-		public AbstractCb(
-				InputStreamSecureClassLoader class_loader, String caller_ip) {
-			super(class_loader);
+		public AbstractCb(String caller_ip) {
 			this.caller_ip = caller_ip;
 		}
 		
@@ -178,9 +212,8 @@ public abstract class DHTEventHandlerCallback {
 		private byte[] new_value_bytes;
 
 		// Called from outside the sandbox.
-		public PutCb(InputStreamSecureClassLoader class_loader,
-				String caller_ip, byte[] new_value_bytes) {
-			super(class_loader, caller_ip);
+		public PutCb(String caller_ip, byte[] new_value_bytes) {
+			super(caller_ip);
 			this.new_value_bytes = new_value_bytes;
 		}
 
@@ -211,15 +244,21 @@ public abstract class DHTEventHandlerCallback {
 				           		  executed_preactions, postactions);
 			}
 		}
+
+		@Override
+		public boolean isValueLocal() { return false; }
+
+		@Override
+		public DHTEvent getEvent() { return DHTEvent.PUT; }
 	}
 
 	public static class InitialPutCb extends PutCb {
 		DHTActionMap<DHTPreaction> all_preactions;
 		
 		// Called from outside the sandbox.
-		public InitialPutCb(InputStreamSecureClassLoader class_loader,
-				String caller_ip, DHTActionMap<DHTPreaction> all_preactions) {
-			super(class_loader, caller_ip, null);
+		public InitialPutCb(String caller_ip,
+				DHTActionMap<DHTPreaction> all_preactions) {
+			super(caller_ip, null);
 			this.all_preactions = all_preactions;
 		}
 
@@ -235,10 +274,7 @@ public abstract class DHTEventHandlerCallback {
 
 	public static class GetCb extends AbstractCb {
 		// Called from outside the sandbox.
-		public GetCb(InputStreamSecureClassLoader class_loader,
-				String caller_ip) {
-			super(class_loader, caller_ip);
-		}
+		public GetCb(String caller_ip) { super(caller_ip); }
 		
 	    // Called from within the sandbox.
 		@Override
@@ -247,14 +283,17 @@ public abstract class DHTEventHandlerCallback {
 				DHTActionList<DHTPostaction> postactions) {
 			active_code.onGet(getCallerIP(), executed_preactions, postactions);		
 		}
+
+		@Override
+		public boolean isValueLocal() { return true; }
+
+		@Override
+		public DHTEvent getEvent() { return DHTEvent.GET; }
 	}
 
 	public static class DeleteCb extends AbstractCb {
 		// Called from outside the sandbox.
-		public DeleteCb(
-				InputStreamSecureClassLoader class_loader, String caller_ip) {
-			super(class_loader, caller_ip);
-		}
+		public DeleteCb(String caller_ip) { super(caller_ip); }
 		
 	    // Called from within the sandbox.
 		@Override
@@ -264,13 +303,17 @@ public abstract class DHTEventHandlerCallback {
 			active_code.onDelete(getCallerIP(), executed_preactions,
 					             postactions);		
 		}
+
+		@Override
+		public boolean isValueLocal() { return true; }
+		
+		@Override
+		public DHTEvent getEvent() { return DHTEvent.DELETE; }
 	}
 
 	public static class TimerCb extends DHTEventHandlerCallback {
 		// Called from outside the sandbox.
-		public TimerCb(InputStreamSecureClassLoader class_loader) {
-			super(class_loader);
-		}
+		public TimerCb() { }
 		
 	    // Called from within the sandbox.
 		@Override
@@ -279,5 +322,11 @@ public abstract class DHTEventHandlerCallback {
 				DHTActionList<DHTPostaction> postactions) {
 			active_code.onTimer(executed_preactions, postactions);
 		}
+
+		@Override
+		public boolean isValueLocal() { return true; }
+		
+		@Override
+		public DHTEvent getEvent() { return DHTEvent.TIMER; }
 	}
 }

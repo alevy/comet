@@ -209,21 +209,16 @@ DHTDBValueImpl
 	getValueForRelay(
 		DHTTransportContact	_sender )
 	{
-		return( newDHTDBValueImpl( _sender, this, local ));
-	}
-	
-	protected DHTDBValueImpl newDHTDBValueImpl(
-			DHTTransportContact	_sender,
-			DHTTransportValue	_other,
-			boolean				_local ) {
-		return new DHTDBValueImpl( _sender, _other, _local );
+		return( DHTDBValueFactory.create( _sender, this, local ) );
 	}
 	
 	public DHTDBValue
 	getValueForDeletion(
 		int		_version )
 	{
-		DHTDBValueImpl	res = newDHTDBValueImpl( originator, this, local );
+		DHTDBValueImpl	res = DHTDBValueFactory.create( originator,
+				this,
+				local );
 		
 		res.value = ZERO_LENGTH_BYTE_ARRAY;	// delete -> 0 length value
 		

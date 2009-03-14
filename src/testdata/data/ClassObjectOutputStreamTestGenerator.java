@@ -2,9 +2,10 @@ package data;
 
 import java.io.FileOutputStream;
 
-import edu.washington.cs.activedht.code.ActiveCode;
-import edu.washington.cs.activedht.code.ClassObjectInputStreamTest;
-import edu.washington.cs.activedht.code.ClassObjectOutputStream;
+import edu.washington.cs.activedht.code.insecure.DHTEvent;
+import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStreamTest;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 
 public class ClassObjectOutputStreamTestGenerator {
 	private static void serialize() throws Exception {

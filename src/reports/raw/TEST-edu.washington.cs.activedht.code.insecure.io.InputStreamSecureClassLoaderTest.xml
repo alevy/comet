@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="0" failures="0" name="edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoaderTest" tests="1" time="2.3">
+  <properties>
+    <property name="java.vendor" value="Sun Microsystems Inc."></property>
+    <property name="sun.java.launcher" value="SUN_STANDARD"></property>
+    <property name="sun.management.compiler" value="HotSpot Client Compiler"></property>
+    <property name="os.name" value="Linux"></property>
+    <property name="sun.boot.class.path" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/resources.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/rt.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/sunrsasign.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/jsse.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/jce.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/charsets.jar:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/classes"></property>
+    <property name="TODAY" value="March 10 2009"></property>
+    <property name="sun.desktop" value="gnome"></property>
+    <property name="java.vm.specification.vendor" value="Sun Microsystems Inc."></property>
+    <property name="ant.home" value="/usr/share/ant"></property>
+    <property name="java.runtime.version" value="1.6.0_05-b13"></property>
+    <property name="user.name" value="roxana"></property>
+    <property name="generic.excludes" value="**/*.jar **/*.txt **/*.jardesc **/.classpath **/.project **/aereg.lib **/aereg.dll"></property>
+    <property name="build.dir" value="build/classes"></property>
+    <property name="user.language" value="en"></property>
+    <property name="sun.boot.library.path" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/i386"></property>
+    <property name="reports.dir" value="reports"></property>
+    <property name="ant.file.ActiveVuze" value="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/build.xml"></property>
+    <property name="ant.project.name" value="ActiveVuze"></property>
+    <property name="DSTAMP" value="20090310"></property>
+    <property name="java.version" value="1.6.0_05"></property>
+    <property name="user.timezone" value=""></property>
+    <property name="jarname" value="ActiveVuze.jar"></property>
+    <property name="sun.arch.data.model" value="32"></property>
+    <property name="root.dir" value="."></property>
+    <property name="dist.jar.excludes" value="**/*.jar **/*.txt **/*.jardesc **/.classpath **/.project **/aereg.lib **/aereg.dll **/*.java "></property>
+    <property name="java.endorsed.dirs" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/endorsed"></property>
+    <property name="sun.cpu.isalist" value=""></property>
+    <property name="sun.jnu.encoding" value="UTF-8"></property>
+    <property name="file.encoding.pkg" value="sun.io"></property>
+    <property name="file.separator" value="/"></property>
+    <property name="java.specification.name" value="Java Platform API Specification"></property>
+    <property name="testdata.dir" value="testdata"></property>
+    <property name="java.class.version" value="50.0"></property>
+    <property name="user.country" value="US"></property>
+    <property name="java.home" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre"></property>
+    <property name="dist.dir" value="dist"></property>
+    <property name="java.vm.info" value="mixed mode, sharing"></property>
+    <property name="ant.file" value="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/build.xml"></property>
+    <property name="os.version" value="2.6.22.9-91.fc7"></property>
+    <property name="path.separator" value=":"></property>
+    <property name="java.vm.version" value="10.0-b19"></property>
+    <property name="ant.library.dir" value="/usr/share/ant/lib"></property>
+    <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"></property>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"></property>
+    <property name="user.home" value="/homes/sys/roxana"></property>
+    <property name="java.specification.vendor" value="Sun Microsystems Inc."></property>
+    <property name="test.dir" value="test"></property>
+    <property name="java.library.path" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/i386/client:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/i386:/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/../lib/i386:/usr/java/packages/lib/i386:/lib:/usr/lib"></property>
+    <property name="java.vendor.url" value="http://java.sun.com/"></property>
+    <property name="java.vm.vendor" value="Sun Microsystems Inc."></property>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"></property>
+    <property name="java.class.path" value="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/build/classes:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/apple-extensions.jar:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/commons-cli.jar:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/junit.jar:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/log4j.jar:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-win32.jar:/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-xosx.jar:/usr/share/java/junit-3.8.2.jar:/usr/share/java/ant-launcher-1.6.5.jar:/usr/share/java/ant-1.6.5.jar:/usr/share/java/ant/ant-junit-1.6.5.jar"></property>
+    <property name="ant.version" value="Apache Ant version 1.6.5 compiled on March 19 2007"></property>
+    <property name="build.testdata" value="build/testdata"></property>
+    <property name="TSTAMP" value="1922"></property>
+    <property name="libs.dir" value="lib"></property>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"></property>
+    <property name="java.vm.specification.version" value="1.0"></property>
+    <property name="sun.cpu.endian" value="little"></property>
+    <property name="sun.os.patch.level" value="unknown"></property>
+    <property name="java.io.tmpdir" value="/tmp"></property>
+    <property name="java.vendor.url.bug" value="http://java.sun.com/cgi-bin/bugreport.cgi"></property>
+    <property name="os.arch" value="i386"></property>
+    <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"></property>
+    <property name="java.ext.dirs" value="/homes/sys/roxana/apps/installed/java/jdk1.6.0_05/jre/lib/ext:/usr/java/packages/lib/ext"></property>
+    <property name="user.dir" value="/homes/sys/roxana/projects/homeframe/sdd/activedht/src"></property>
+    <property name="line.separator" value="
+"></property>
+    <property name="java.vm.name" value="Java HotSpot(TM) Client VM"></property>
+    <property name="basedir" value="/homes/sys/roxana/projects/homeframe/sdd/activedht/src"></property>
+    <property name="ant.java.version" value="1.5"></property>
+    <property name="file.encoding" value="UTF-8"></property>
+    <property name="java.specification.version" value="1.6"></property>
+    <property name="src.dir" value="src"></property>
+  </properties>
+  <testcase classname="edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoaderTest" name="testLoadsClassFromBuffer" time="2.247"></testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

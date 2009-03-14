@@ -31,7 +31,6 @@ import org.gudy.azureus2.core3.ipfilter.IpFilterManagerFactory;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SimpleTimer;
 import org.gudy.azureus2.core3.util.SystemTime;
@@ -287,7 +286,7 @@ DHTDBImpl
 			}
 			
 			DHTDBValueImpl res =	
-				newDHTDBValue( 
+				DHTDBValueFactory.create( 
 						SystemTime.getCurrentTime(), 
 						value, 
 						getNextValueVersion(),
@@ -304,26 +303,6 @@ DHTDBImpl
 			
 			this_mon.exit();
 		}
-	}
-	
-	protected DHTDBValueImpl
-	newDHTDBValue(
-			long			_creation_time,
-			byte[]			_value,
-			int				_version,
-			DHTTransportContact	_originator,
-			DHTTransportContact	_sender,
-			boolean			_local,
-			int				_flags ) {
-		return new DHTDBValueImpl(_creation_time, _value, _version,
-				_originator, _sender, _local, _flags);
-	}
-	
-	protected DHTDBValueImpl
-	newDHTDBValue(DHTTransportContact	_sender,
-			      DHTTransportValue		_other,
-			      boolean				_local ) {
-		return new DHTDBValueImpl(_sender, _other, _local);
 	}
 	
 	/*
@@ -496,7 +475,7 @@ DHTDBImpl
 				if ( ok_to_store ){
 					
 					DHTDBValueImpl mapping_value	=
-						newDHTDBValue( sender, value, false );
+						DHTDBValueFactory.create( sender, value, false );
 			
 					mapping.add( mapping_value );
 				}
@@ -563,7 +542,7 @@ DHTDBImpl
 	get(
 		HashWrapper				key )
 	{
-			// local remove
+			// local get
 		
 		try{
 			this_mon.enter();
@@ -583,6 +562,18 @@ DHTDBImpl
 		}
 	}
 	
+	// ROXANA:
+	/**
+	 * This function is not synchronized. It assumes that the monitor is taken.
+	 */
+	protected DHTDBValueImpl getValueFromOriginator(
+			DHTTransportContact originator,
+			HashWrapper	key) {
+		DHTDBMapping mapping = (DHTDBMapping)stored_values.get( key );
+		if (mapping != null) return mapping.get( originator );
+		else return null;
+	}
+		
 	public DHTDBValue
 	remove(
 		DHTTransportContact 	originator,
@@ -594,11 +585,11 @@ DHTDBImpl
 			this_mon.enter();
 		
 			DHTDBMapping mapping = (DHTDBMapping)stored_values.get( key );
-			
+
 			if ( mapping != null ){
 				
 				DHTDBValueImpl	res = mapping.remove( originator );
-				
+
 				if ( res != null ){
 					
 					total_local_keys--;
