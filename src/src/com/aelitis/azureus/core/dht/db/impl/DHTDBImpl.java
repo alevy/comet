@@ -110,6 +110,10 @@ DHTDBImpl
 
 	private AEMonitor	this_mon	= new AEMonitor( "DHTDB" );
 
+	/**
+	 * Refactored constructor to support testing. Semantic is identical.
+	 * @author roxana
+	 */
 	public
 	DHTDBImpl(
 		DHTStorageAdapter	_adapter,
@@ -117,114 +121,142 @@ DHTDBImpl
 		int					_cache_republish_interval,
 		DHTLogger			_logger )
 	{
-		adapter							= _adapter==null?null:new adapterFacade( _adapter );
-		original_republish_interval		= _original_republish_interval;
-		cache_republish_interval		= _cache_republish_interval;
-		logger							= _logger;
-				
-		SimpleTimer.addPeriodicEvent(
-			"DHTDB:precious",
-			PRECIOUS_CHECK_INTERVAL/4,
-			true, // absolute, we don't want effective time changes (computer suspend/resume) to shift these
-			new TimerEventPerformer()
-			{
-				public void
-				perform(
-					TimerEvent	event )
-				{
-					checkPreciousStuff();
-				}
-			});
-		
-		SimpleTimer.addPeriodicEvent(
-			"DHTDB:op",
-			original_republish_interval,
-			true, // absolute, we don't want effective time changes (computer suspend/resume) to shift these
-			new TimerEventPerformer()
-			{
-				public void
-				perform(
-					TimerEvent	event )
-				{
-					logger.log( "Republish of original mappings starts" );
-					
-					long	start 	= SystemTime.getCurrentTime();
-					
-					int	stats = republishOriginalMappings();
-					
-					long	end 	= SystemTime.getCurrentTime();
-
-					logger.log( "Republish of original mappings completed in " + (end-start) + ": " +
-								"values = " + stats );
-
-				}
-			});
-					
-				// random skew here so that cache refresh isn't very synchronised, as the optimisations
-				// regarding non-republising benefit from this 
+		this(_adapter, _original_republish_interval, _cache_republish_interval,
+			 _logger, true);
+	}
+	
+	/**
+	 * Constructor used in testing.
+	 * @param _adapter
+	 * @param _original_republish_interval
+	 * @param _cache_republish_interval
+	 * @param _logger
+	 * @param should_init
+	 */
+	protected
+	DHTDBImpl(
+			DHTStorageAdapter	_adapter,
+			int					_original_republish_interval,
+			int					_cache_republish_interval,
+			DHTLogger			_logger,
+			boolean				should_init)
+	{
+			adapter							= _adapter==null?null:new adapterFacade( _adapter );
+			original_republish_interval		= _original_republish_interval;
+			cache_republish_interval		= _cache_republish_interval;
+			logger							= _logger;
 			
+			if (should_init) init();
+	}
+	
+	/**
+	 * Added init() function to support testing.
+	 * @author roxana
+	 */
+	private void
+	init() {
 		SimpleTimer.addPeriodicEvent(
-				"DHTDB:cp",
-				cache_republish_interval + 10000 - (int)(Math.random()*20000),
-				true,	// absolute, we don't want effective time changes (computer suspend/resume) to shift these
+				"DHTDB:precious",
+				PRECIOUS_CHECK_INTERVAL/4,
+				true, // absolute, we don't want effective time changes (computer suspend/resume) to shift these
 				new TimerEventPerformer()
 				{
 					public void
 					perform(
 						TimerEvent	event )
 					{
-						logger.log( "Republish of cached mappings starts" );
+						checkPreciousStuff();
+					}
+				});
+			
+			SimpleTimer.addPeriodicEvent(
+				"DHTDB:op",
+				original_republish_interval,
+				true, // absolute, we don't want effective time changes (computer suspend/resume) to shift these
+				new TimerEventPerformer()
+				{
+					public void
+					perform(
+						TimerEvent	event )
+					{
+						logger.log( "Republish of original mappings starts" );
 						
 						long	start 	= SystemTime.getCurrentTime();
 						
-						int[]	stats = republishCachedMappings();		
+						int	stats = republishOriginalMappings();
 						
 						long	end 	= SystemTime.getCurrentTime();
 
-						logger.log( "Republish of cached mappings completed in " + (end-start) + ": " +
-									"values = " + stats[0] + ", keys = " + stats[1] + ", ops = " + stats[2]);
-						
-						if ( force_original_republish ){
-							
-							force_original_republish	= false;
-							
-							logger.log( "Force republish of original mappings due to router change starts" );
-							
-							start 	= SystemTime.getCurrentTime();
-							
-							int stats2 = republishOriginalMappings();
-							
-							end 	= SystemTime.getCurrentTime();
+						logger.log( "Republish of original mappings completed in " + (end-start) + ": " +
+									"values = " + stats );
 
-							logger.log( "Force republish of original mappings due to router change completed in " + (end-start) + ": " +
-										"values = " + stats2 );
-						}
-					}
-				});
-		
-	
-		
-		SimpleTimer.addPeriodicEvent(
-				"DHTDB:bloom",
-				IP_BLOOM_FILTER_REBUILD_PERIOD,
-				new TimerEventPerformer()
-				{
-					public void
-					perform(
-						TimerEvent	event )
-					{
-						try{
-							this_mon.enter();
-							
-							rebuildIPBloomFilter( false );
-							
-						}finally{
-							
-							this_mon.exit();
-						}
 					}
 				});
 						
+					// random skew here so that cache refresh isn't very synchronised, as the optimisations
+					// regarding non-republising benefit from this 
+				
+			SimpleTimer.addPeriodicEvent(
+					"DHTDB:cp",
+					cache_republish_interval + 10000 - (int)(Math.random()*20000),
+					true,	// absolute, we don't want effective time changes (computer suspend/resume) to shift these
+					new TimerEventPerformer()
+					{
+						public void
+						perform(
+							TimerEvent	event )
+						{
+							logger.log( "Republish of cached mappings starts" );
+							
+							long	start 	= SystemTime.getCurrentTime();
+							
+							int[]	stats = republishCachedMappings();		
+							
+							long	end 	= SystemTime.getCurrentTime();
+
+							logger.log( "Republish of cached mappings completed in " + (end-start) + ": " +
+										"values = " + stats[0] + ", keys = " + stats[1] + ", ops = " + stats[2]);
+							
+							if ( force_original_republish ){
+								
+								force_original_republish	= false;
+								
+								logger.log( "Force republish of original mappings due to router change starts" );
+								
+								start 	= SystemTime.getCurrentTime();
+								
+								int stats2 = republishOriginalMappings();
+								
+								end 	= SystemTime.getCurrentTime();
+
+								logger.log( "Force republish of original mappings due to router change completed in " + (end-start) + ": " +
+											"values = " + stats2 );
+							}
+						}
+					});
+			
+		
+			
+			SimpleTimer.addPeriodicEvent(
+					"DHTDB:bloom",
+					IP_BLOOM_FILTER_REBUILD_PERIOD,
+					new TimerEventPerformer()
+					{
+						public void
+						perform(
+							TimerEvent	event )
+						{
+							try{
+								this_mon.enter();
+								
+								rebuildIPBloomFilter( false );
+								
+							}finally{
+								
+								this_mon.exit();
+							}
+						}
+					});
 	}
 	
 	

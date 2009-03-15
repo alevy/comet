@@ -45,6 +45,7 @@ public class ClassObjectInputStream extends ObjectInputStream {
 		return secureByteCodeToClass(bytecode, desc.getName());
 	}
 
+	@SuppressWarnings("unchecked")
 	private Class secureByteCodeToClass(byte[] bytecode, String classname)
 	throws IOException, ClassNotFoundException {
 		ByteArrayInputStream bytecode_is = new ByteArrayInputStream(bytecode);

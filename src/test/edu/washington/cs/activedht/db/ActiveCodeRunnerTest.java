@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.code;
+package edu.washington.cs.activedht.db;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import edu.washington.cs.activedht.code.insecure.ActiveCodeSandbox;
 import edu.washington.cs.activedht.code.insecure.DHTEvent;
+import edu.washington.cs.activedht.code.insecure.DHTEventHandlerCallbackTest;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.TestActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
@@ -28,52 +29,15 @@ public class ActiveCodeRunnerTest extends TestCase {
 	
 	@Override
 	protected void setUp() {
-		try {
-			runner = new ActiveCodeRunner(
-					new ActiveCodeSandbox<byte[]>(10000), "host.com", 1024);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-			fail("Could not create wrapper.");
-		}
+		runner = new ActiveCodeRunner(null,
+				new ActiveCodeRunner.ActiveCodeRunnerParams());
 		ActiveCode object = new TestActiveCode(DHTEvent.GET);
-		value_bytes = serializeActiveObject(object);
+		value_bytes =
+				DHTEventHandlerCallbackTest.serializeActiveObject(object);
 	}
 	
 	@Override
 	protected void tearDown() { }
-
-	// Helpers:
-	
-	public static byte[] serializeActiveObject(ActiveCode active_code) {
-		byte[] serialized_object = null;
-		try {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ClassObjectOutputStream oos = new ClassObjectOutputStream(baos);
-			oos.writeObject(active_code);
-			serialized_object = baos.toByteArray();
-			oos.close();
-			baos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("Could not serialize ActiveCode object.");
-		}
-		return serialized_object;
-	}
-	
-	public static ActiveCode instantiateActiveObject(byte[] value_bytes) {
-		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
-		ActiveCode deserialized_object = null;
-		try {
-			ClassObjectInputStream cois = new ClassObjectInputStream(bais,
-				InputStreamSecureClassLoader.newInstance("host.com", 1024));
-			deserialized_object = (ActiveCode)cois.readObject();
-			cois.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail("Could not de-serialize ActiveCode object.");
-		}
-		return deserialized_object;
-	}
 
 	// Test cases:
 
@@ -85,7 +49,7 @@ public class ActiveCodeRunnerTest extends TestCase {
 			new DHTActionMap<DHTPreaction>(
 					Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT);
 		byte[] current_value_bytes =
-			runner.onInitialPut(all_preactions, value_bytes, "caller.com");
+			runner.onStore(all_preactions, value_bytes, "caller.com");
 
 		// Check the preactions, the object, and the postactions.
 		assertNotNull(all_preactions.getActionsForEvent(DHTEvent.GET));

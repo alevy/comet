@@ -13,7 +13,6 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
-import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.CountingInputStream;
 
 /**
@@ -65,16 +64,15 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	protected void unpack(boolean is_local_value)
+	protected void unpack(DHTActionMap<DHTPreaction> imposed_preaction_map)
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
  	       IOException {
 		if (isUnpacked()) return;  // already unpacked.
 
-		if (! is_local_value) {
+		if (imposed_preaction_map != null) {
 			// Value was gotten from remotely, so its current contents
 			// should only contain 
-			preactions_map = new DHTActionMap<DHTPreaction>(
-					Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT);
+			preactions_map = imposed_preaction_map;
 			return;
 		}
 		
@@ -148,7 +146,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 		boolean was_packed_at_beginning = true;
 		if (isPacked()) {
 			was_packed_at_beginning = false;
-			try { this.unpack(true); }
+			try { this.unpack(null); }
 			catch (Exception e) { return super.getValue(); }
 		}
 
@@ -171,21 +169,6 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 					"Value is packed; expected unpacked.");
 		}
 		return preactions_map;
-	}
-	
-	/**
-	 * Preserves the packaging state.
-	 */
-	protected boolean isActiveValue(boolean is_local_value)
-	throws InvalidActiveObjectException, IOException {
-		// Try to unpack; if we get an exception, we know it's not active.
-		if (isPacked()) {
-			try { this.unpack(is_local_value); }
-			catch (NotAnActiveObjectException e) { return false; }
-			pack();  // package it back.
-		}  // else, we know for sure that it's an active value (only those
-		   // can be unpacked successfully).
-		return true;
 	}
 	
 	private boolean isUnpacked() { return preactions_map != null; }

@@ -1,13 +1,17 @@
 package edu.washington.cs.activedht.code.insecure;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
-import edu.washington.cs.activedht.code.ActiveCodeRunnerTest;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 import junit.framework.TestCase;
 
@@ -15,9 +19,9 @@ class TestDHTHandlerClosure extends DHTEventHandlerCallback {
 	private boolean was_executed = false;
 
 	public TestDHTHandlerClosure() throws MalformedURLException {
-		super(InputStreamSecureClassLoader.newInstance("host.com", 1024));
+		this.init(InputStreamSecureClassLoader.newInstance("host.com", 1024));
 	}
-
+	
 	@Override
 	protected void executeEventOnActiveObject(ActiveCode active_code,
 			DHTActionList<DHTPreaction> executed_preactions,
@@ -28,6 +32,14 @@ class TestDHTHandlerClosure extends DHTEventHandlerCallback {
 	}
 	
 	public boolean was_executed() { return was_executed; }
+
+	@Override
+	public DHTEvent getEvent() { return DHTEvent.GET; }
+
+	@Override
+	public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		return null;
+	}
 }
 
 @SuppressWarnings("serial")
@@ -42,21 +54,31 @@ class TestActiveCode implements ActiveCode {
 
 	public void onGet(String caller_ip,
 			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) { onAnyEvent(); }
+			DHTActionList<DHTPostaction> postactions) {
+		onAnyEvent();
+	}
 
 	public void onInitialPut(String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map) { onAnyEvent(); }
+			DHTActionMap<DHTPreaction> preactions_map) {
+		onAnyEvent();
+	}
 
 	public void onPut(String caller_ip, byte[] plain_new_value,
 			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) { onAnyEvent(); }
+			DHTActionList<DHTPostaction> postactions) {
+		onAnyEvent(); 
+	}
 
 	public void onPut(String caller_ip, ActiveCode new_active_value,
 			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) { onAnyEvent(); }
+			DHTActionList<DHTPostaction> postactions) {
+		onAnyEvent();
+	}
 	
 	public void onTimer(DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) { onAnyEvent(); }
+			DHTActionList<DHTPostaction> postactions) {
+		onAnyEvent();
+	}
 	
 	public boolean onTest(int value) { return this.value == value; }
 	
@@ -71,8 +93,7 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 	@Override
 	protected void setUp() {
 		ActiveCode active_object = new TestActiveCode();
-		active_object_bytes =
-				ActiveCodeRunnerTest.serializeActiveObject(active_object);
+		active_object_bytes = serializeActiveObject(active_object);
 		
 		try { handler = new TestDHTHandlerClosure(); }
 		catch (MalformedURLException e) {
@@ -83,6 +104,41 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 	
 	@Override
 	protected void tearDown() { }
+	
+    // Helpers:
+	
+	public static byte[] serializeActiveObject(ActiveCode active_code) {
+		byte[] serialized_object = null;
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ClassObjectOutputStream oos = new ClassObjectOutputStream(baos);
+			oos.writeObject(active_code);
+			serialized_object = baos.toByteArray();
+			oos.close();
+			baos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("Could not serialize ActiveCode object.");
+		}
+		return serialized_object;
+	}
+	
+	public static ActiveCode instantiateActiveObject(byte[] value_bytes) {
+		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
+		ActiveCode deserialized_object = null;
+		try {
+			ClassObjectInputStream cois = new ClassObjectInputStream(bais,
+				InputStreamSecureClassLoader.newInstance("host.com", 1024));
+			deserialized_object = (ActiveCode)cois.readObject();
+			cois.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Could not de-serialize ActiveCode object.");
+		}
+		return deserialized_object;
+	}
+	
+	// The tests:
 	
 	public void testHandler() {
 		byte[] current_object_bytes = null;
@@ -97,8 +153,7 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 		
 		assertNotNull(current_object_bytes);
 		TestActiveCode current_active_object =
-			(TestActiveCode)ActiveCodeRunnerTest.instantiateActiveObject(
-					current_object_bytes);
+			(TestActiveCode)instantiateActiveObject(current_object_bytes);
 		assertNotNull(current_active_object);
 		assertTrue(current_active_object.onTest(1));
 	}

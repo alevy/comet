@@ -20,6 +20,7 @@ public class ClassObjectOutputStream extends ObjectOutputStream implements
 		super(output);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void annotateClass(Class cls) throws IOException {
 		super.annotateClass(cls);
@@ -40,6 +41,7 @@ public class ClassObjectOutputStream extends ObjectOutputStream implements
 		write(bytecode, 0, bytecode_size);
 	}
 
+	@SuppressWarnings("unchecked")
 	private InputStream classToByteCode(Class cls) {
 		return cls.getResourceAsStream("/" + cls.getName().replace(".", "/")
 				+ ".class");

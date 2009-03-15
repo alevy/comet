@@ -143,6 +143,7 @@ public class InputStreamURLConnection extends URLConnection {
 	    return content;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Object getContent(Class[] classes) throws IOException {
 		assert(isInitialized());

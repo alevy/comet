@@ -52,19 +52,20 @@ public abstract class DHTEventHandlerCallback {
 	}
 	
 	/**
-	 * Tells whether the value on top of which this DHTEventHandler will run
-	 * is a local or remote value. A local value is taken from the local
-	 * database, where it was inserted some time ago.
-	 * A remote value is received from a remote note and the event is 
-	 * (e.g., via a put). The initial put for a value is surely a remote value.
+	 * Returns the imposed preactions map, or null if none is imposed.
+	 * Some event handlers (e.g., InitialPutCb) impose a preactions map, as
+	 * the value that they will be unpacking is a remote value. The preactions
+	 * map of such remote values must not be trusted, as we can't guarantee
+	 * at this time that the serialization is currect. If we controlled more
+	 * of the serialization process, then we could eliminate this somewhat
+	 * confusing function and its uses.
 	 * 
 	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
 	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
 	 * access them).
-	 * 
-	 * @return  true if the value is local; false if it's remote.
+	 *
 	 */
-	public abstract boolean isValueLocal();
+	public abstract DHTActionMap<DHTPreaction> getImposedPreactionsMap();
 	
 	/**
 	 * Returns the event to which this handler is associated.
@@ -246,19 +247,26 @@ public abstract class DHTEventHandlerCallback {
 		}
 
 		@Override
-		public boolean isValueLocal() { return false; }
+		public DHTEvent getEvent() { return DHTEvent.PUT; }
 
 		@Override
-		public DHTEvent getEvent() { return DHTEvent.PUT; }
+		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+			return null;
+		}
 	}
 
 	public static class InitialPutCb extends PutCb {
 		DHTActionMap<DHTPreaction> all_preactions;
 		
 		// Called from outside the sandbox.
-		public InitialPutCb(String caller_ip,
-				DHTActionMap<DHTPreaction> all_preactions) {
+		public InitialPutCb(String caller_ip, int max_action_list_size) {
 			super(caller_ip, null);
+			all_preactions = new DHTActionMap<DHTPreaction>(
+					max_action_list_size);
+		}
+		
+		// Called from outside the sandbox.
+		public final void init(DHTActionMap<DHTPreaction> all_preactions) {
 			this.all_preactions = all_preactions;
 		}
 
@@ -269,6 +277,11 @@ public abstract class DHTEventHandlerCallback {
 				DHTActionList<DHTPreaction> executed_preactions,
 				DHTActionList<DHTPostaction> postactions) {
 			active_code.onInitialPut(getCallerIP(), all_preactions);
+		}
+		
+		@Override
+		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+			return all_preactions;
 		}
 	}
 
@@ -285,10 +298,12 @@ public abstract class DHTEventHandlerCallback {
 		}
 
 		@Override
-		public boolean isValueLocal() { return true; }
+		public DHTEvent getEvent() { return DHTEvent.GET; }
 
 		@Override
-		public DHTEvent getEvent() { return DHTEvent.GET; }
+		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+			return null;
+		}
 	}
 
 	public static class DeleteCb extends AbstractCb {
@@ -303,12 +318,14 @@ public abstract class DHTEventHandlerCallback {
 			active_code.onDelete(getCallerIP(), executed_preactions,
 					             postactions);		
 		}
-
-		@Override
-		public boolean isValueLocal() { return true; }
 		
 		@Override
 		public DHTEvent getEvent() { return DHTEvent.DELETE; }
+
+		@Override
+		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+			return null;
+		}
 	}
 
 	public static class TimerCb extends DHTEventHandlerCallback {
@@ -322,11 +339,13 @@ public abstract class DHTEventHandlerCallback {
 				DHTActionList<DHTPostaction> postactions) {
 			active_code.onTimer(executed_preactions, postactions);
 		}
-
-		@Override
-		public boolean isValueLocal() { return true; }
 		
 		@Override
 		public DHTEvent getEvent() { return DHTEvent.TIMER; }
+
+		@Override
+		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+			return null;
+		}
 	}
 }
