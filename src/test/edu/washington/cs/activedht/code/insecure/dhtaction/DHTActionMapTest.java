@@ -47,7 +47,7 @@ public class DHTActionMapTest extends TestCase {
 	public void testAddToListFailsWhenTryingToAddBadPreactionType() {
 		try {
 			preactions.addPreactionToEvent(DHTEvent.GET,
-					                       new MyBogusDHTPreaction());
+					                       new MyBogusDHTPreaction(0));
 			fail("Allowed addition of action of invalid type.");
 		} catch (Exception e) { }  // Exception expected.
 		assertEquals(null, preactions.getActionsForEvent(DHTEvent.GET));

@@ -58,18 +58,19 @@ class TestActiveCode implements ActiveCode {
 		onAnyEvent();
 	}
 
-	public void onInitialPut(String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map) {
+	public void onValueAdded(String caller_ip,
+			DHTActionMap<DHTPreaction> preactions_map,
+			DHTActionList<DHTPostaction> postactions) {
 		onAnyEvent();
 	}
 
-	public void onPut(String caller_ip, byte[] plain_new_value,
+	public void onValueChanged(String caller_ip, byte[] plain_new_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions) {
 		onAnyEvent(); 
 	}
 
-	public void onPut(String caller_ip, ActiveCode new_active_value,
+	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions) {
 		onAnyEvent();
@@ -82,8 +83,7 @@ class TestActiveCode implements ActiveCode {
 	
 	public boolean onTest(int value) { return this.value == value; }
 	
-	private void onAnyEvent() { ++value; }
-	
+	private void onAnyEvent() { ++value; }	
 }
 
 public class DHTEventHandlerCallbackTest extends TestCase {
@@ -123,12 +123,13 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 		return serialized_object;
 	}
 	
-	public static ActiveCode instantiateActiveObject(byte[] value_bytes) {
+	public static ActiveCode instantiateActiveObject(byte[] value_bytes,
+			String host, int port) {
 		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
 		ActiveCode deserialized_object = null;
 		try {
 			ClassObjectInputStream cois = new ClassObjectInputStream(bais,
-				InputStreamSecureClassLoader.newInstance("host.com", 1024));
+				InputStreamSecureClassLoader.newInstance(host, port));
 			deserialized_object = (ActiveCode)cois.readObject();
 			cois.close();
 		} catch (Exception e) {
@@ -153,7 +154,8 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 		
 		assertNotNull(current_object_bytes);
 		TestActiveCode current_active_object =
-			(TestActiveCode)instantiateActiveObject(current_object_bytes);
+			(TestActiveCode)instantiateActiveObject(current_object_bytes,
+					"host.com", 1024);
 		assertNotNull(current_active_object);
 		assertTrue(current_active_object.onTest(1));
 	}

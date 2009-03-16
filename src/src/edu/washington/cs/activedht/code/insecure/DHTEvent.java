@@ -11,5 +11,5 @@ public enum DHTEvent implements Serializable {
     /** !DELETE */
     DELETE,
     /** !TIMER */
-    TIMER    
+    TIMER  
 }

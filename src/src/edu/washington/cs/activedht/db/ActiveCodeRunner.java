@@ -1,6 +1,7 @@
 package edu.washington.cs.activedht.db;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +10,6 @@ import java.util.Set;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -22,6 +22,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
+import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl.IllegalPackingStateException;
 import edu.washington.cs.activedht.db.ActiveDHTStorageAdapter.StoreListener;
 import edu.washington.cs.activedht.db.ActiveDHTStorageAdapter.StoreOutcome;
@@ -29,7 +30,8 @@ import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.Pair;
 
 public class ActiveCodeRunner {
-	private final ActiveCodeRunnerParams params;  // TODO(roxana): Change this with config.
+	// TODO(roxana): Change this with config.
+	private final ActiveCodeRunnerParams params;
 	
 	/** Pointer back to the DB. */
 	private ActiveDHTDB db;
@@ -65,20 +67,18 @@ public class ActiveCodeRunner {
 			}
 		}
 		
+		DHTDBValue[] remaining_values = null;
 		// Remove those that have requested to be excluded.
 		if (! excluded_values.isEmpty()) {
 			int num_remaining_values = values.length - excluded_values.size();
-			final DHTDBValue[] remaining_values = 
-					new DHTDBValue[num_remaining_values];
+			remaining_values = new DHTDBValue[num_remaining_values];
 			int i = 0;
 			for (DHTDBValue v: values) {
 				if (! excluded_values.contains(v)) remaining_values[i++] = v;
 			}
-			
-			values = remaining_values;
 		}
 		
-		return values;
+		return remaining_values;
 	}
 	
 	
@@ -118,12 +118,12 @@ public class ActiveCodeRunner {
 			// announce it first.
 			if (overwritten_value != null) {
 				try {
-					doOnEvent(new DHTEventHandlerCallback.PutCb(
+					doOnEvent(new DHTEventHandlerCallback.ValueChangedCb(
 									sender.getAddress().getHostName(),
 									added_value.getValue()),
 							  sender,
 							  key,
-							  (DHTDBValueImpl)overwritten_value);
+							  (DHTDBValue)overwritten_value);
 				} catch (NotAnActiveObjectException e) {    // nothing to do.
 				} catch (InvalidActiveObjectException e) {  // nothing to do.
 				} catch (AbortDHTActionException e) {  // value wants back in.
@@ -135,12 +135,12 @@ public class ActiveCodeRunner {
 			// If there was no overwritten value or it didn't mind being
 			// overwritten, then initialize the new value.
 			try {
-				doOnEvent(new DHTEventHandlerCallback.InitialPutCb(
+				doOnEvent(new DHTEventHandlerCallback.ValueAddedCb(
 								sender.getAddress().getHostName(),
 								Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT),
 						  sender,
 						  key,
-						  (DHTDBValueImpl)added_value);
+						  (DHTDBValue)added_value);
 			} catch (NotAnActiveObjectException e) {    // nothing to do.
 			} catch (InvalidActiveObjectException e) {  // nothing to do.
 			} catch (AbortDHTActionException e) {  // value wants back in.
@@ -156,6 +156,10 @@ public class ActiveCodeRunner {
 		return new Pair<List<DHTTransportValue>, List<DHTTransportValue>>(
 				values_to_add_back,
 				values_to_remove);
+	} 
+	
+	protected void onTimer() { 
+		// TODO(roxana): Implement.
 	}
 	
 	// General-event handler:
@@ -166,10 +170,21 @@ public class ActiveCodeRunner {
                              DHTDBValue db_value)
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
 		   AbortDHTActionException {
+		// Preliminary checks.
 		if (db_value == null || 
 				(! (db_value instanceof ActiveDHTDBValueImpl)) ||
 				db_value.getValue() == null) {
 			throw new NotAnActiveObjectException("Null or wrong-type value.");
+		}
+		
+		// Initialize the event callback:
+		try {
+			event_callback.init(InputStreamSecureClassLoader.newInstance(
+					caller.getAddress().getHostName(),
+					caller.getAddress().getPort()));
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			return;
 		}
 
 		ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)db_value;

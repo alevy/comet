@@ -17,26 +17,35 @@ public class TestDataActiveCode implements ActiveCode {
 	
 	public TestDataActiveCode(int value) { this.value = value; }
 	
-	public void onDelete(String caller_ip,
+	public void onDelete(
+			String caller_ip,
 			DHTActionList<DHTPreaction> preactions,
 			DHTActionList<DHTPostaction> postactions) { }
 
-	public void onGet(String caller_ip,
+	public void onGet(
+			String caller_ip,
 			DHTActionList<DHTPreaction> preactions,
 			DHTActionList<DHTPostaction> postactions) { }
 
-	public void onInitialPut(String caller_ip,
-			DHTActionMap<DHTPreaction> all_preactions) { }
+	public void onValueAdded(
+			String caller_ip,
+			DHTActionMap<DHTPreaction> all_preactions,
+			DHTActionList<DHTPostaction> postactions) { }
 
-	public void onPut(String caller_ip, byte[] new_value,
+	public void onValueChanged(
+			String caller_ip,
+			byte[] new_value,
 			DHTActionList<DHTPreaction> preactions,
 			DHTActionList<DHTPostaction> postactions) { }
 	
-	public void onPut(String caller_ip, ActiveCode new_active_value,
+	public void onValueChanged(
+			String caller_ip,
+			ActiveCode new_active_value,
 			DHTActionList<DHTPreaction> preactions,
 			DHTActionList<DHTPostaction> postactions) { }
 
-	public void onTimer(DHTActionList<DHTPreaction> preactions,
+	public void onTimer(
+			DHTActionList<DHTPreaction> preactions,
 			DHTActionList<DHTPostaction> postactions) { }
 	
 	public boolean onTest(int input) { return this.value == input; }

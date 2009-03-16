@@ -21,7 +21,7 @@ public class ClassObjectInputOutputStreamTest extends TestCase {
 	protected void tearDown() { }
 	
 	public void testCorrectInOutMustSerializeClass() {
-		ActiveCode my_object = new TestActiveCode(DHTEvent.GET);
+		ActiveCode my_object = new TestActiveCode(DHTEvent.GET, 0);
 
 		// Serialize the object.
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();

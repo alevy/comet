@@ -41,6 +41,7 @@ public abstract class DHTEventHandlerCallback {
 	 */
 	public DHTEventHandlerCallback() { }
 	
+	
 	/**
 	 * NOTE: This function is accessed from outside the sandbox, so it MUST NOT
 	 * do anything dangerous (e.g., instantiate any ActiveCode objects, or
@@ -141,6 +142,8 @@ public abstract class DHTEventHandlerCallback {
 			ActiveCode active_code,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
+	
+	private final boolean isInitialized() { return class_loader != null; }
 		
 	/**
 	 * Instantiates the active object from its bytes.
@@ -157,6 +160,8 @@ public abstract class DHTEventHandlerCallback {
 	protected final ActiveCode instantiateActiveObject(
 			byte[] value_bytes)
 	throws NotAnActiveObjectException, ClassNotFoundException, IOException {
+		assert(isInitialized());
+
 		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
 		ClassObjectInputStream cois = new ClassObjectInputStream(bais,
 				class_loader);
@@ -209,11 +214,11 @@ public abstract class DHTEventHandlerCallback {
 		public String getCallerIP() { return caller_ip; }
 	}
 
-	public static class PutCb extends AbstractCb {
+	public static class ValueChangedCb extends AbstractCb {
 		private byte[] new_value_bytes;
 
 		// Called from outside the sandbox.
-		public PutCb(String caller_ip, byte[] new_value_bytes) {
+		public ValueChangedCb(String caller_ip, byte[] new_value_bytes) {
 			super(caller_ip);
 			this.new_value_bytes = new_value_bytes;
 		}
@@ -230,19 +235,22 @@ public abstract class DHTEventHandlerCallback {
 					new_active_code = this.instantiateActiveObject(
 							new_value_bytes);
 				} catch (Exception e) {
-					// Some exception has occurred while decapsulating the
-					// new value object.
-					// Just treat the new value as non-active code.
+					// Some exception has occurred during decapsulation; ignore
+					// it and treat the value as a non-active value.
 				}
 			}
 			
 			// Execute onPut() on the given active object. 
 			if (new_active_code != null) {
-				active_code.onPut(getCallerIP(), new_active_code,
-						          executed_preactions, postactions);
+				active_code.onValueChanged(getCallerIP(),
+						                   new_active_code,
+						                   executed_preactions,
+						                   postactions);
 			} else {
-				active_code.onPut(getCallerIP(), new_value_bytes,
-				           		  executed_preactions, postactions);
+				active_code.onValueChanged(getCallerIP(),
+						                   new_value_bytes,
+				           		           executed_preactions,
+				           		           postactions);
 			}
 		}
 
@@ -255,19 +263,14 @@ public abstract class DHTEventHandlerCallback {
 		}
 	}
 
-	public static class InitialPutCb extends PutCb {
+	public static class ValueAddedCb extends AbstractCb {
 		DHTActionMap<DHTPreaction> all_preactions;
 		
 		// Called from outside the sandbox.
-		public InitialPutCb(String caller_ip, int max_action_list_size) {
-			super(caller_ip, null);
+		public ValueAddedCb(String caller_ip, int max_action_list_size) {
+			super(caller_ip);
 			all_preactions = new DHTActionMap<DHTPreaction>(
 					max_action_list_size);
-		}
-		
-		// Called from outside the sandbox.
-		public final void init(DHTActionMap<DHTPreaction> all_preactions) {
-			this.all_preactions = all_preactions;
 		}
 
 	    // Called from within the sandbox.
@@ -276,13 +279,18 @@ public abstract class DHTEventHandlerCallback {
 				ActiveCode active_code,
 				DHTActionList<DHTPreaction> executed_preactions,
 				DHTActionList<DHTPostaction> postactions) {
-			active_code.onInitialPut(getCallerIP(), all_preactions);
+			active_code.onValueAdded(getCallerIP(),
+					                 all_preactions, 
+					                 postactions);
 		}
 		
 		@Override
 		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
 			return all_preactions;
 		}
+
+		@Override
+		public DHTEvent getEvent() { return DHTEvent.PUT; }
 	}
 
 	public static class GetCb extends AbstractCb {

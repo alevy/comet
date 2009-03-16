@@ -19,30 +19,33 @@ public class TestActiveCode implements ActiveCode {
 	private TestPostaction postaction;
 	
 	/** De-serialization constructor. */
-	public TestActiveCode(DHTEvent event_with_preaction) {
+	public TestActiveCode(DHTEvent event_with_preaction, int x) {
 		this.event_with_preaction = event_with_preaction;
-		preaction  = new TestPreaction();
-		postaction = new TestPostaction();
+		preaction  = new TestPreaction(x);
+		postaction = new TestPostaction(x);
 	}
 
 	// ActiveCode interface:
 
-	public void onInitialPut(String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map) {
-		System.out.println("OnInitialPut()");
+	public void onValueAdded(String caller_ip,
+			DHTActionMap<DHTPreaction> preactions_map,
+			DHTActionList<DHTPostaction> postactions) {
+		onAnyEvent(null, postactions);
 		try {
 			preactions_map.addPreactionToEvent(event_with_preaction,
 				preaction);
-		} catch (Exception e) { e.printStackTrace(); }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
-	public void onPut(String caller_ip, byte[] plain_new_value,
+	public void onValueChanged(String caller_ip, byte[] plain_new_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
-	public void onPut(String caller_ip, ActiveCode new_active_value,
+	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions) {
 		onAnyEvent(executed_preactions, postactions);
@@ -69,9 +72,10 @@ public class TestActiveCode implements ActiveCode {
 	
 	// Helper functions:
 	
-	private void onAnyEvent(DHTActionList<DHTPreaction> executed_preactions,
-			                DHTActionList<DHTPostaction> postactions) {
-		if (executed_preactions.size() > 0 &&
+	protected void onAnyEvent(DHTActionList<DHTPreaction> executed_preactions,
+			                  DHTActionList<DHTPostaction> postactions) {
+		if (executed_preactions == null ||
+			executed_preactions.size() == 0 ||
 			executed_preactions.getAction(0).actionWasExecuted()) {
 			++value;
 			try { postactions.addAction(postaction); }

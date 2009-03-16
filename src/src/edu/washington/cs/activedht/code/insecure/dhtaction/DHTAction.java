@@ -4,8 +4,6 @@ import java.io.Serializable;
 
 import edu.washington.cs.activedht.code.insecure.exceptions.InvalidActionException;
 
-
-
 /**
  * All subclasses of the DHTAction must be entered for runtime checks
  * on their 
@@ -41,4 +39,7 @@ public abstract class DHTAction implements Serializable {
 				action.getClass().getPackage().getName() + ")");
 		}
 	}
+	
+	public abstract boolean equals(Object o);
+	public abstract int hashCode();
 }

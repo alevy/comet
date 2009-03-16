@@ -76,7 +76,7 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 		
 		// If not all values have decided to remain, create a result with
 		// only those that have not denied access.
-		if (all_values != values_allowing_access) {  // Pointer comparison.
+		if (values_allowing_access != null) {
 			final byte div_type = result.getDiversificationType();
 			result = new DHTDBLookupResult() {
 				public DHTDBValue[] getValues() {
@@ -183,6 +183,7 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> p =
 			active_code_handler.onStore(sender, key, store_listener);
 		
+		// Add back the ones that want in and remote the ones that want out.
 		if (p != null) {
 			List<DHTTransportValue> values_to_add_back = p.getFirst();
 			// Add the values that want to go back.
@@ -209,8 +210,6 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	
 	private ActiveDHTStorageAdapter getActiveAdapter() {
 		return (ActiveDHTStorageAdapter)this.getAdapter();
-	}
-	
-	
+	}	
 }
 

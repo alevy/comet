@@ -43,4 +43,28 @@ public final class DHTActionMap<T extends DHTAction> implements Serializable {
 	}
 	
 	public final void resetAll() { event_to_actions_map.clear(); }
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public final boolean equals(Object other) {
+		if (other == this) return true;
+		if (other == null) return false;
+		if (! other.getClass().getName().equals(this.getClass().getName())) {
+			return false;
+		}
+		DHTActionMap o = (DHTActionMap)other;
+		if (this.event_to_actions_map == o.event_to_actions_map) return true;
+		if (this.event_to_actions_map == null) return false;
+		return this.event_to_actions_map.equals(o.event_to_actions_map);		
+	}
+	
+	@Override
+	public final int hashCode() {
+		return ((event_to_actions_map == null)
+			    ? 0 : event_to_actions_map.hashCode());
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static final DHTActionMap ZERO_SIZE_ACTION_MAP
+			= new DHTActionMap(0);
 }

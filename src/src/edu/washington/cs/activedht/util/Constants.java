@@ -18,7 +18,8 @@ public interface Constants {
 	public static final int KEEP_ALIVE_TIME = 100;
 	public static final int BLOCKING_QUEUE_CAPACITY = NUM_MAX_VALUES;
 	public static final long ACTIVE_CODE_EXECUTION_TIMEOUT = 50;  // ms
-	public static final long ACTIVE_CODE_CHECK_EXECUTION_INTERVAL_NANOS = 1000; 
+	public static final long ACTIVE_CODE_CHECK_EXECUTION_INTERVAL_NANOS =
+		10000; 
 	
 	// ActiveCodeWrapper:
 	public static final int MAX_NUM_DHT_ACTIONS_PER_EVENT = 2;

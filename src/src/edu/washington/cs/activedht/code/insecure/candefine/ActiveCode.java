@@ -17,26 +17,34 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
  * @author roxana
  */
 public interface ActiveCode extends Serializable {
-	public void onInitialPut(final String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map);
+	public void onValueAdded(
+			final String caller_ip,
+			DHTActionMap<DHTPreaction> preactions_map,
+			DHTActionList<DHTPostaction> postactions);
 	
-	public void onPut(final String caller_ip, byte[] plain_new_value,
+	public void onValueChanged(
+			final String caller_ip, byte[] plain_new_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
 	
-	public void onPut(final String caller_ip, ActiveCode new_active_value,
+	public void onValueChanged(
+			final String caller_ip,
+			ActiveCode new_active_value,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
 	
-	public void onGet(final String caller_ip,
+	public void onGet(
+			final String caller_ip,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
 	
-	public void onDelete(final String caller_ip,
+	public void onDelete(
+			final String caller_ip,
 			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
 	
-	public void onTimer(DHTActionList<DHTPreaction> executed_preactions,
+	public void onTimer(
+			DHTActionList<DHTPreaction> executed_preactions,
 			DHTActionList<DHTPostaction> postactions);
 	
 	/**

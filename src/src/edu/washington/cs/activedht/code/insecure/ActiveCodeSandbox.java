@@ -95,7 +95,9 @@ public class ActiveCodeSandbox<V> implements Constants {
 			break;
 		}
 
-		if (!f.isDone()) f.cancel(true);
+		// Cancel the task.
+		f.cancel(true);
+
 		return result;
 	}
 	

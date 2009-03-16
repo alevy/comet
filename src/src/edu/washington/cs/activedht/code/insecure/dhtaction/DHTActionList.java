@@ -1,14 +1,13 @@
 package edu.washington.cs.activedht.code.insecure.dhtaction;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.washington.cs.activedht.code.insecure.exceptions.InvalidActionException;
 import edu.washington.cs.activedht.code.insecure.exceptions.LimitExceededException;
 
-
-
-public final class DHTActionList<T extends DHTAction> {
+public final class DHTActionList<T extends DHTAction> implements Serializable {
 	private static final long serialVersionUID = 6598853463473219627L;
 	
 	private int count_limit;
@@ -38,4 +37,23 @@ public final class DHTActionList<T extends DHTAction> {
 	public final int getLimit() { return count_limit; }
 	
 	public final int size() { return list.size(); }
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public final boolean equals(Object other) {
+		if (this == other) return true;
+		if (other == null) return false;
+		if (! other.getClass().getName().equals(this.getClass().getName())) {
+			return false;
+		}
+		DHTActionList o = (DHTActionList)other;
+		if (this.list == o.list) return true;
+		if (this.list == null) return false;
+		return this.list.equals(o.list);
+	}
+	
+	@Override
+	public final int hashCode() { 
+		return ((list == null) ? 0 : list.hashCode());
+	}
 }

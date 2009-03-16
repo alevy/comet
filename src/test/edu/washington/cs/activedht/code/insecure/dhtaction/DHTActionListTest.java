@@ -44,7 +44,7 @@ public class DHTActionListTest extends TestCase {
 	
 	public void testAddToListFailsWhenTryingToAddBadPreactionType() {
 		try {
-			preactions.addAction(new MyBogusDHTPreaction());
+			preactions.addAction(new MyBogusDHTPreaction(0));
 			fail("Allowed addition of action of invalid type.");
 		} catch (Exception e) { }  // Exception expected.
 		assertEquals(0, preactions.size());

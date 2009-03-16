@@ -58,6 +58,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	/**
 	 * Unpacks the preactions map member from the blob of bytes in the value
 	 * and leaves only the ActiveCode object bytes in the value.
+	 * 
 	 * @param  is_local_value
 	 * @throws NotAnActiveObjectException
 	 * @throws InvalidActiveObjectException
@@ -70,8 +71,6 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 		if (isUnpacked()) return;  // already unpacked.
 
 		if (imposed_preaction_map != null) {
-			// Value was gotten from remotely, so its current contents
-			// should only contain 
 			preactions_map = imposed_preaction_map;
 			return;
 		}
@@ -115,14 +114,18 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * @throws IOException
 	 */
 	protected void pack() throws IOException {
-		if (isPacked()) return;  // already packed.
+		if (isPacked()) return;  // already packed; nothing to do.
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
-		oos.writeObject(preactions_map);
-		if (super.getValue() != null) oos.write(super.getValue());
 		
-		super.setValue(baos.toByteArray());  // call super, otherwise loop.
+		// Write the preactions map (use oos to write the object).
+		oos.writeObject(preactions_map);
+		
+		// Write the value (use baos, as oos adds extra stuff).
+		if (super.getValue() != null) { baos.write(super.getValue()); }
+		
+		super.setValue(baos.toByteArray());
 		
 		baos.close();
 		oos.close();
