@@ -10,8 +10,9 @@ import edu.washington.cs.activedht.code.insecure.DHTEventHandlerCallbackTest;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.TestActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl.IllegalPackingStateException;
+import edu.washington.cs.activedht.code.insecure.dhtaction.TestPostaction;
+import edu.washington.cs.activedht.code.insecure.dhtaction.TestPreaction;
+import edu.washington.cs.activedht.db.coderunner.IllegalPackingStateException;
 
 import junit.framework.TestCase;
 
@@ -25,7 +26,8 @@ public class ActiveDHTDBValueImplTest extends TestCase {
 	
 	@Override
 	protected void setUp() {
-		active_object = new TestActiveCode(DHTEvent.GET, 0);
+		active_object = new TestActiveCode(DHTEvent.GET,
+				new TestPreaction(0), new TestPostaction(0));
 		active_object_bytes = DHTEventHandlerCallbackTest
 				.serializeActiveObject(active_object);
 
@@ -45,8 +47,7 @@ public class ActiveDHTDBValueImplTest extends TestCase {
 	protected void tearDown() { }
 	
 	public void testInitialUnpackAndPack() {
-		DHTActionMap<DHTPreaction> preactions =
-			new DHTActionMap<DHTPreaction>(2);
+		DHTActionMap preactions = new DHTActionMap(2);
 		try { value.unpack(preactions); }
 		catch (Exception e) {
 			e.printStackTrace();
@@ -84,8 +85,7 @@ public class ActiveDHTDBValueImplTest extends TestCase {
 	
 	public void testUnpackAfterPack() {
 		// Pack and unpack it once.
-		DHTActionMap<DHTPreaction> preactions =
-				new DHTActionMap<DHTPreaction>(2);
+		DHTActionMap preactions = new DHTActionMap(2);
 		try {
 			value.unpack(preactions);
 			value.pack(); 

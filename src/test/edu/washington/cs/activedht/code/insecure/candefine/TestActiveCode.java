@@ -2,12 +2,9 @@ package edu.washington.cs.activedht.code.insecure.candefine;
 
 import edu.washington.cs.activedht.code.insecure.DHTEvent;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.TestPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.TestPreaction;
 
 public class TestActiveCode implements ActiveCode {
 	private static final long serialVersionUID = 13579424689L;
@@ -15,21 +12,22 @@ public class TestActiveCode implements ActiveCode {
 	private int value = 0;
 	private DHTEvent event_with_preaction;
 	
-	private TestPreaction preaction;
-	private TestPostaction postaction;
+	private DHTAction preaction;
+	private DHTAction postaction;
 	
-	/** De-serialization constructor. */
-	public TestActiveCode(DHTEvent event_with_preaction, int x) {
+	public TestActiveCode(DHTEvent event_with_preaction,
+			              DHTAction preaction,
+			              DHTAction postaction) {
 		this.event_with_preaction = event_with_preaction;
-		preaction  = new TestPreaction(x);
-		postaction = new TestPostaction(x);
+		this.preaction = preaction;
+		this.postaction = postaction;
 	}
 
 	// ActiveCode interface:
 
 	public void onValueAdded(String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionMap preactions_map,
+			DHTActionList postactions) {
 		onAnyEvent(null, postactions);
 		try {
 			preactions_map.addPreactionToEvent(event_with_preaction,
@@ -40,31 +38,31 @@ public class TestActiveCode implements ActiveCode {
 	}
 	
 	public void onValueChanged(String caller_ip, byte[] plain_new_value,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
 	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
 	public void onGet(String caller_ip,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
 	public void onDelete(String caller_ip,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 
-	public void onTimer(DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+	public void onTimer(DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
@@ -72,8 +70,8 @@ public class TestActiveCode implements ActiveCode {
 	
 	// Helper functions:
 	
-	protected void onAnyEvent(DHTActionList<DHTPreaction> executed_preactions,
-			                  DHTActionList<DHTPostaction> postactions) {
+	protected void onAnyEvent(DHTActionList executed_preactions,
+			                  DHTActionList postactions) {
 		if (executed_preactions == null ||
 			executed_preactions.size() == 0 ||
 			executed_preactions.getAction(0).actionWasExecuted()) {
@@ -85,9 +83,9 @@ public class TestActiveCode implements ActiveCode {
 	
 	// Accessors:
 	
-	public TestPreaction getPreaction() { return preaction; }
+	public DHTAction getPreaction() { return preaction; }
 	
-	public TestPostaction getPostaction() { return postaction; }
+	public DHTAction getPostaction() { return postaction; }
 	
 	// Object functions:
 	

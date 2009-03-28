@@ -11,8 +11,9 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
+import edu.washington.cs.activedht.db.coderunner.IllegalPackingStateException;
+import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 import edu.washington.cs.activedht.util.CountingInputStream;
 
 /**
@@ -38,15 +39,15 @@ import edu.washington.cs.activedht.util.CountingInputStream;
  *
  */
 public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
-	private DHTActionMap<DHTPreaction> preactions_map;
+	private DHTActionMap preactions_map;
 	
-	protected ActiveDHTDBValueImpl(DHTTransportContact _sender,
+	public ActiveDHTDBValueImpl(DHTTransportContact _sender,
 			DHTTransportValue _other, boolean _local) {
 		super(_sender, _other, _local);
 		setIsPacked();
 	}
 	
-	protected ActiveDHTDBValueImpl(long _creation_time, byte[] _value,
+	public ActiveDHTDBValueImpl(long _creation_time, byte[] _value,
 			int _version,
 			DHTTransportContact _originator, DHTTransportContact _sender,
 			boolean _local, int _flags) {
@@ -65,7 +66,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	protected void unpack(DHTActionMap<DHTPreaction> imposed_preaction_map)
+	public void unpack(DHTActionMap imposed_preaction_map)
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
  	       IOException {
 		if (isUnpacked()) return;  // already unpacked.
@@ -85,7 +86,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 		
 		// Initialize the preactions map, which must be saved in the value.
 		try {
-			preactions_map = (DHTActionMap<DHTPreaction>)ois.readObject();
+			preactions_map = (DHTActionMap)ois.readObject();
 		} catch (ClassNotFoundException e) {
 			throw new InvalidActiveObjectException("Invalid preactions");
 		}
@@ -113,7 +114,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * 
 	 * @throws IOException
 	 */
-	protected void pack() throws IOException {
+	public void pack() throws IOException {
 		if (isPacked()) return;  // already packed; nothing to do.
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -165,8 +166,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	
 	// Accessors:
 
-	protected DHTActionMap<DHTPreaction> getPreactions()
-	throws IllegalPackingStateException {
+	public DHTActionMap getPreactions() throws IllegalPackingStateException {
 		if (isPacked()) {
 			throw new IllegalPackingStateException(
 					"Value is packed; expected unpacked.");
@@ -178,10 +178,5 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	
 	private boolean isPacked() { return ! isUnpacked(); }
 	
-	private void setIsPacked() { this.preactions_map = null; }
-	
-	@SuppressWarnings("serial")
-	protected static class IllegalPackingStateException extends Exception {
-		public IllegalPackingStateException(String msg) { super(msg); }
-	} 
+	private void setIsPacked() { this.preactions_map = null; } 
 }

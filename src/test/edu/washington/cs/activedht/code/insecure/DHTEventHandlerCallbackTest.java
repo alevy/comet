@@ -8,8 +8,6 @@ import java.net.MalformedURLException;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
@@ -24,8 +22,8 @@ class TestDHTHandlerClosure extends DHTEventHandlerCallback {
 	
 	@Override
 	protected void executeEventOnActiveObject(ActiveCode active_code,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		if (!(active_code instanceof TestActiveCode)) return;
 		this.was_executed = true;
 		active_code.onGet("", executed_preactions, postactions);
@@ -37,7 +35,7 @@ class TestDHTHandlerClosure extends DHTEventHandlerCallback {
 	public DHTEvent getEvent() { return DHTEvent.GET; }
 
 	@Override
-	public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+	public DHTActionMap getImposedPreactionsMap() {
 		return null;
 	}
 }
@@ -47,37 +45,37 @@ class TestActiveCode implements ActiveCode {
 	private int value;
 
 	public void onDelete(String caller_ip,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
 	public void onGet(String caller_ip,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
 	public void onValueAdded(String caller_ip,
-			DHTActionMap<DHTPreaction> preactions_map,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionMap preactions_map,
+			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
 	public void onValueChanged(String caller_ip, byte[] plain_new_value,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent(); 
 	}
 
 	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent();
 	}
 	
-	public void onTimer(DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+	public void onTimer(DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		onAnyEvent();
 	}
 	
@@ -146,7 +144,7 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 		try {
 			current_object_bytes = handler.executeEventOnActiveObject(
 					active_object_bytes, null,
-					new DHTActionList<DHTPostaction>(2));
+					new DHTActionList(2));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Failed to execute handler.");

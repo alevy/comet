@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.code.insecure;
+package edu.washington.cs.activedht.code.insecure.sandbox;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -10,98 +10,94 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
+import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.util.Constants;
 
-/**
- * The sandbox for running active code securely.
- * 
- * Two dimensions of sandboxing:
- * 1. Security:
- *    - The sandboxed code can only access a tiny set of resources.
- *    
- *    Mostly using the Java sandbox for this.
- *
- * 2. Resouce isolation:
- *    - The sandbox is limited in terms of memory consumption and runtime.
- *
- * @author roxana
- */
-public class ActiveCodeSandbox<V> implements Constants {
+public class ActiveCodeSandboxImpl<RETURN_TYPE>
+implements ActiveCodeSandbox<RETURN_TYPE>,
+           Constants {
 	public static final String INSECURE_CODE_THREAD_GROUP = "insecure";
 	
 	private ThreadPoolExecutor handler_pool;
 	private long active_code_execution_timeout;
 	
-    // Helper classes:
-	
-	/**
-	 * Class for handling rejections of tasks due to overflown work queue.
-	 * @author roxana
-	 */
-	class MyRejectedExecutionHandler implements RejectedExecutionHandler {
-		@Override
-		public void rejectedExecution(Runnable r, 
-				                      ThreadPoolExecutor executor) {
-			// TODO(roxana): drop task silently for now.
-		}
-	}
+	private boolean is_initialized = false;
 
-	public ActiveCodeSandbox(long active_code_execution_timeout) {
+	@SuppressWarnings("unchecked")
+	public ActiveCodeSandboxImpl(long active_code_execution_timeout) {
 		handler_pool = new ThreadPoolExecutor(
 			CORE_POOL_SIZE, MAX_POOL_SIZE,
 			KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
 			new ArrayBlockingQueue<Runnable>(BLOCKING_QUEUE_CAPACITY),
 			new InsecureThreadFactory(),
-			new ActiveCodeSandbox.MyRejectedExecutionHandler());
-		
-		this.active_code_execution_timeout = active_code_execution_timeout;
-		
-		setupSandbox();
+			new ActiveCodeSandboxImpl.MyRejectedExecutionHandler());
+		this.active_code_execution_timeout =
+			active_code_execution_timeout;
 	}
 	
-	private void setupSandbox() {
+	// ActiveCodeSandbox interface:
+	
+	@Override
+	public void init() throws InitializationException {
 		// TODO(roxana): Set up all the required things here.
 		
 		handler_pool.prestartCoreThread();
+		
+		// This should be the last statement.
+		is_initialized = true;
 	}
+	
+	@Override
+	public boolean isInitialized() { return is_initialized; }
+	
+	@Override
+	public void stop() { handler_pool.purge(); }
 
-	/**
-	 * Executes a task within the sandbox, waits for it to finish, and returns
-	 * the result.
-	 * @param task
-	 * @return
-	 */
-	public V executeWithinSandbox(Callable<V> task) {
+	@Override
+	public RETURN_TYPE executeWithinSandbox(Callable<RETURN_TYPE> task)
+	throws ActiveCodeExecutionInterruptedException {
+		assert(isInitialized());
+		
 		long start_ts = System.currentTimeMillis();
 
-		V result = null;
-		Future<V> f = handler_pool.submit(task);
+		boolean finished_successfully = false;
+		String interruption_reason = "Execution timed out";
+		
+		RETURN_TYPE result = null;
+		Future<RETURN_TYPE> f = handler_pool.submit(task);
 		while ((System.currentTimeMillis() - start_ts) <
-			   active_code_execution_timeout) {
+				active_code_execution_timeout) {
 			try {
 				result = f.get(ACTIVE_CODE_CHECK_EXECUTION_INTERVAL_NANOS,
-						       TimeUnit.NANOSECONDS);
+					       	   TimeUnit.NANOSECONDS);
+				finished_successfully = true;
+				break;  // got the result.
 			} catch (InterruptedException e) {
 				continue;
 			} catch (ExecutionException e) {  // computation threw an exception
 				e.printStackTrace();
 				return null;
 			} catch (TimeoutException e) {  // task needed to be canceled
-				if (! usageWithinLimits(task)) break;
+				if (! usageWithinLimits(task)) {
+					interruption_reason = "Usage limits exceeded";
+					break;
+				}
 				else continue;
 			}
-			
-			// Got the result.
-			break;
 		}
 
 		// Cancel the task.
-		f.cancel(true);
+		if (! finished_successfully) {
+			f.cancel(true);
+			throw new ActiveCodeExecutionInterruptedException(
+					interruption_reason);
+		}
 
 		return result;
 	}
 	
-	private boolean usageWithinLimits(Callable<V> task) {
+	private boolean usageWithinLimits(Callable<RETURN_TYPE> task) {
 		// TODO(roxana): Implement.
 		return true;
 	}
@@ -109,6 +105,19 @@ public class ActiveCodeSandbox<V> implements Constants {
 	// Util functions:
 	
 	public int getNumPendingTasks() { return handler_pool.getActiveCount(); }
+	
+	/**
+	 * Class for handling rejections of tasks due to overflown work queue.
+	 * @author roxana
+	 */
+	private class MyRejectedExecutionHandler
+	implements RejectedExecutionHandler {
+		@Override
+		public void rejectedExecution(Runnable r, 
+				                      ThreadPoolExecutor executor) {
+			// TODO(roxana): drop task silently for now.
+		}
+	}
 }
 
 // Helper classes:
@@ -123,7 +132,7 @@ class InsecureThreadGroupSingleton extends ThreadGroup {
 	private final static Object lock = new Object();
 	
 	private InsecureThreadGroupSingleton() {
-		super(ActiveCodeSandbox.INSECURE_CODE_THREAD_GROUP);
+		super(ActiveCodeSandboxImpl.INSECURE_CODE_THREAD_GROUP);
 	}
 	
 	public static InsecureThreadGroupSingleton getInstance() {

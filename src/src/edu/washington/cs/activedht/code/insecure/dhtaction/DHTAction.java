@@ -40,6 +40,8 @@ public abstract class DHTAction implements Serializable {
 		}
 	}
 	
+	// Must override the following Object methods: 
+	
 	public abstract boolean equals(Object o);
 	public abstract int hashCode();
 }

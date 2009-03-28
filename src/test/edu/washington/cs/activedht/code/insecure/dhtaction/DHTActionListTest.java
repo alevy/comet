@@ -2,17 +2,13 @@ package edu.washington.cs.activedht.code.insecure.dhtaction;
 
 import edu.washington.cs.activedht.code.insecure.candefine.MyBogusDHTPreaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTPreaction;
 import junit.framework.TestCase;
 
 public class DHTActionListTest extends TestCase {
-	private DHTActionList<DHTPreaction> preactions;
+	private DHTActionList preactions;
 
 	@Override
-	protected void setUp() {
-		preactions = new DHTActionList<DHTPreaction>(2);
-	}
+	protected void setUp() { preactions = new DHTActionList(2); }
 	
 	@Override
 	protected void tearDown() { }
@@ -20,14 +16,14 @@ public class DHTActionListTest extends TestCase {
 	public void testAddToListStopsAddingAtLimit() {
 		assertEquals(0, preactions.size());
 
-		try { preactions.addAction(new GetDHTPreaction()); }
+		try { preactions.addAction(new TestPreaction(0)); }
 		catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception before limit.");
 		}
 		assertEquals(1, preactions.size());
 
-		try { preactions.addAction(new GetDHTPreaction()); }
+		try { preactions.addAction(new TestPreaction(0)); }
 		catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception before limit.");
@@ -36,7 +32,7 @@ public class DHTActionListTest extends TestCase {
 		
 		// Try to add over the limit now.
 		try {
-			preactions.addAction(new GetDHTPreaction());
+			preactions.addAction(new TestPreaction(0));
 			fail("Allowed addition of action over limit.");
 		} catch (Exception e) { }  // Exception expected.
 		assertEquals(2, preactions.size());
@@ -50,3 +46,4 @@ public class DHTActionListTest extends TestCase {
 		assertEquals(0, preactions.size());
 	}
 }
+

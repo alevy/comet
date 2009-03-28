@@ -1,9 +1,9 @@
 package edu.washington.cs.activedht.code.insecure.candefine;
 
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 
 @SuppressWarnings("serial")
-public class MyBogusDHTPreaction extends DHTPreaction {
+public class MyBogusDHTPreaction extends DHTAction {
 	private int x;
 	
 	public MyBogusDHTPreaction(int x) { this.x = x; }

@@ -92,7 +92,8 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
    		</java>
    </target>
 
-   <target name="run-tests" depends="compile-tests,gentestdata" description="run the test suite">
+   <target name="run-tests" depends="compile-tests,gentestdata"
+           description="run the test suite">
 	    <junit printsummary="withOutAndErr" haltonfailure="yes" showoutput="yes" >
 	      <classpath>
 	        <pathelement path="${root.dir}/${build.dir}"/>

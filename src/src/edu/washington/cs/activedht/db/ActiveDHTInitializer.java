@@ -9,7 +9,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
  * @author roxana
  *
  */
-public class Initializer {
+public class ActiveDHTInitializer {
 	
 	public static void prepareRuntimeForActiveCode() {
 		// Initialize Vuze to run active code:

@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.db;
+package edu.washington.cs.activedht.db.dhtactionexecutor;
 
 /**
  * Exception raised by a DHTAction if it wants to cancel all the subsequent

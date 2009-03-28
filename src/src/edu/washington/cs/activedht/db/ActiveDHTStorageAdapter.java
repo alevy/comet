@@ -2,7 +2,6 @@ package edu.washington.cs.activedht.db;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,31 +15,8 @@ import com.aelitis.azureus.core.dht.DHTStorageKeyStats;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.util.Pair;
 
-public class ActiveDHTStorageAdapter implements DHTStorageAdapter {
-	@SuppressWarnings("serial")
-	protected static class StoreListener extends ArrayList<StoreOutcome> {	
-		public void addOutcome(DHTTransportValue added_value,
-				               DHTTransportValue overwritten_value) {
-			add(new StoreOutcome(added_value, overwritten_value));
-		}
-	}
-	
-	protected static class StoreOutcome {
-		private Pair<DHTTransportValue, DHTTransportValue> p;
-		public StoreOutcome(DHTTransportValue added_value,
-				            DHTTransportValue overwritten_value) {
-			p = new Pair<DHTTransportValue, DHTTransportValue>(added_value,
-					overwritten_value);
-		}
-		
-		public DHTTransportValue getAddedValue() { return p.getFirst(); }
-		public DHTTransportValue getOverwrittenValue() {
-			return p.getSecond();
-		}
-	}
-	
+public class ActiveDHTStorageAdapter implements DHTStorageAdapter {	
 	private DHTStorageAdapter adapter;
 	
 	private Map<HashWrapper, StoreListener> store_handlers_map;

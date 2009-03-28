@@ -2,9 +2,7 @@ package edu.washington.cs.activedht.code.insecure.dhtaction;
 
 import java.util.Vector;
 
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
-
-public class TestPreaction extends DHTPreaction {
+public class TestPreaction extends DHTAction {
 	private static final long serialVersionUID = 5959951266185638033L;
 	
 	private static Vector<Integer> executed_test_preactions = 
@@ -17,6 +15,7 @@ public class TestPreaction extends DHTPreaction {
 	
 	@Override
 	public void markAsExecuted() {
+		System.out.println("Preaction: Mark as executed");
 		executed_test_preactions.add(x);
 		super.markAsExecuted();
 	}

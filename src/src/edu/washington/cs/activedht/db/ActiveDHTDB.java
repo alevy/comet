@@ -6,22 +6,32 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
+import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
+import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
+import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactoryImpl;
 import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.Pair;
 
-public class ActiveDHTDB extends DHTDBImpl implements Constants {	
+public class ActiveDHTDB extends DHTDBImpl implements Constants {
+	// Initialize the system for ActiveDHTs.
+	// TODO(roxana): This is pretty hacky now. Should have an init() function
+	// that gets called, even if that means that we need to modify Vuze.
 	static {
-		Initializer.prepareRuntimeForActiveCode();
+		ActiveDHTInitializer.prepareRuntimeForActiveCode();
 	}
 	
 	/** Pointer to the handler of active code. */
 	private final ActiveCodeRunner active_code_handler;
+
+	private DHTControl control;
 
 	public ActiveDHTDB(DHTStorageAdapter _adapter,
 	                   int _original_republish_interval, 
@@ -45,8 +55,15 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	          _logger,
 	          should_init);
 		
+		ActiveCodeRunner.ActiveCodeRunnerParam param =
+			new ActiveCodeRunner.ActiveCodeRunnerParam();
+
 		active_code_handler = new ActiveCodeRunner(this,
-				new ActiveCodeRunner.ActiveCodeRunnerParams());
+				new ActiveCodeSandboxImpl<byte[]>(
+						param.active_code_execution_timeout),
+				new DHTActionExecutorImpl(getControl(),
+						new ExecutableDHTActionFactoryImpl()),
+				param);
 	}
 	
 	// Override DHTDB methods:
@@ -63,7 +80,9 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	 */
 	@Override
 	public DHTDBLookupResult get(final DHTTransportContact reader,
-			final HashWrapper key, int max_values, byte flags,
+			final HashWrapper key,
+			int max_values,
+			byte flags,
 			boolean external_request) {
 		DHTDBLookupResult result = super.get(reader, key, max_values, flags,
 				                             external_request);
@@ -142,8 +161,8 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	 * taken. If an overwritten value wants back into the DB, then we add
 	 * it back immediately. This means that we had previously replaced it
 	 * for nothing. This approach works OK when values don't have a merging
-	 * semantic, but has poor performance and awkward semantic for applications
-	 * where values incorporate updates into themselves.
+	 * semantic, but has poor performance and awkward semantic for
+	 * applications where values incorporate updates into themselves.
 	 * 
 	 * <br>
 	 * TODO(roxana): 
@@ -170,8 +189,7 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	                  DHTTransportValue[] values) {
 		// Register a store listener for the key; blocks until no one is
 		// registered.
-		ActiveDHTStorageAdapter.StoreListener store_listener =
-			new ActiveDHTStorageAdapter.StoreListener();
+		StoreListener store_listener = new StoreListener();
 		getActiveAdapter().registerStoreListener(key, store_listener);
 		
 		// Perform the store of all the values; StoreOutcome's will accumulate
@@ -205,8 +223,16 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 			}
 		}
 	
-		return ret;  // TODO(roxana): not clear what I should return now...
+		return ret;  // TODO(roxana): not clear what I should return...
 	}
+	
+	@Override
+	public void setControl(DHTControl _control) {
+		super.setControl(_control);
+		this.control = _control;
+	}
+	
+	public DHTControl getControl() { return this.control; }
 	
 	private ActiveDHTStorageAdapter getActiveAdapter() {
 		return (ActiveDHTStorageAdapter)this.getAdapter();

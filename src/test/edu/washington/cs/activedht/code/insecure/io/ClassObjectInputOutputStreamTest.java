@@ -7,6 +7,8 @@ import java.io.IOException;
 import edu.washington.cs.activedht.code.insecure.DHTEvent;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.TestActiveCode;
+import edu.washington.cs.activedht.code.insecure.dhtaction.TestPostaction;
+import edu.washington.cs.activedht.code.insecure.dhtaction.TestPreaction;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
@@ -21,7 +23,8 @@ public class ClassObjectInputOutputStreamTest extends TestCase {
 	protected void tearDown() { }
 	
 	public void testCorrectInOutMustSerializeClass() {
-		ActiveCode my_object = new TestActiveCode(DHTEvent.GET, 0);
+		ActiveCode my_object = new TestActiveCode(DHTEvent.GET,
+				new TestPreaction(0), new TestPostaction(0));
 
 		// Serialize the object.
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();

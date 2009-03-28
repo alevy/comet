@@ -7,8 +7,6 @@ import java.io.IOException;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectInputStream;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
@@ -66,7 +64,7 @@ public abstract class DHTEventHandlerCallback {
 	 * access them).
 	 *
 	 */
-	public abstract DHTActionMap<DHTPreaction> getImposedPreactionsMap();
+	public abstract DHTActionMap getImposedPreactionsMap();
 	
 	/**
 	 * Returns the event to which this handler is associated.
@@ -101,8 +99,8 @@ public abstract class DHTEventHandlerCallback {
 	 */
 	public final byte[] executeEventOnActiveObject(
 			byte[] value_bytes,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions)
+			DHTActionList executed_preactions,
+			DHTActionList postactions)
 	throws ClassNotFoundException, IOException {
 		// Instantiate the ActiveObject from the InputStream, if any.
 		ActiveCode active_code = null;
@@ -140,8 +138,8 @@ public abstract class DHTEventHandlerCallback {
 	 */	
 	protected abstract void executeEventOnActiveObject(
 			ActiveCode active_code,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions);
+			DHTActionList executed_preactions,
+			DHTActionList postactions);
 	
 	private final boolean isInitialized() { return class_loader != null; }
 		
@@ -164,7 +162,7 @@ public abstract class DHTEventHandlerCallback {
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
 		ClassObjectInputStream cois = new ClassObjectInputStream(bais,
-				class_loader);
+				                                                 class_loader);
 		
 		ActiveCode deserialized_object = null;
 		try { deserialized_object = (ActiveCode)cois.readObject(); }
@@ -195,7 +193,6 @@ public abstract class DHTEventHandlerCallback {
 		return serialized_object;
 	}
 	
-	
 	//
     // Helper DHTEventHandlerCallback classes:
 	//
@@ -207,9 +204,7 @@ public abstract class DHTEventHandlerCallback {
 	public static abstract class AbstractCb extends DHTEventHandlerCallback {
 		private String caller_ip;
 		
-		public AbstractCb(String caller_ip) {
-			this.caller_ip = caller_ip;
-		}
+		public AbstractCb(String caller_ip) { this.caller_ip = caller_ip; }
 		
 		public String getCallerIP() { return caller_ip; }
 	}
@@ -227,16 +222,16 @@ public abstract class DHTEventHandlerCallback {
 		@Override
 		public void executeEventOnActiveObject(
 				ActiveCode active_code,
-				DHTActionList<DHTPreaction> executed_preactions,
-				DHTActionList<DHTPostaction> postactions) {
+				DHTActionList executed_preactions,
+				DHTActionList postactions) {
 			ActiveCode new_active_code = null;
 			if (new_value_bytes != null) {
 				try {
 					new_active_code = this.instantiateActiveObject(
 							new_value_bytes);
 				} catch (Exception e) {
-					// Some exception has occurred during decapsulation; ignore
-					// it and treat the value as a non-active value.
+					// Some exception has occurred during decapsulation.
+					// Ognore it and treat the value as a non-active value.
 				}
 			}
 			
@@ -258,34 +253,33 @@ public abstract class DHTEventHandlerCallback {
 		public DHTEvent getEvent() { return DHTEvent.PUT; }
 
 		@Override
-		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		public DHTActionMap getImposedPreactionsMap() {
 			return null;
 		}
 	}
 
 	public static class ValueAddedCb extends AbstractCb {
-		DHTActionMap<DHTPreaction> all_preactions;
+		DHTActionMap all_preactions;
 		
 		// Called from outside the sandbox.
 		public ValueAddedCb(String caller_ip, int max_action_list_size) {
 			super(caller_ip);
-			all_preactions = new DHTActionMap<DHTPreaction>(
-					max_action_list_size);
+			all_preactions = new DHTActionMap(max_action_list_size);
 		}
 
 	    // Called from within the sandbox.
 		@Override
 		public void executeEventOnActiveObject(
 				ActiveCode active_code,
-				DHTActionList<DHTPreaction> executed_preactions,
-				DHTActionList<DHTPostaction> postactions) {
+				DHTActionList executed_preactions,
+				DHTActionList postactions) {
 			active_code.onValueAdded(getCallerIP(),
 					                 all_preactions, 
 					                 postactions);
 		}
 		
 		@Override
-		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		public DHTActionMap getImposedPreactionsMap() {
 			return all_preactions;
 		}
 
@@ -300,8 +294,8 @@ public abstract class DHTEventHandlerCallback {
 	    // Called from within the sandbox.
 		@Override
 		protected void executeEventOnActiveObject(ActiveCode active_code,
-				DHTActionList<DHTPreaction> executed_preactions,
-				DHTActionList<DHTPostaction> postactions) {
+				DHTActionList executed_preactions,
+				DHTActionList postactions) {
 			active_code.onGet(getCallerIP(), executed_preactions, postactions);		
 		}
 
@@ -309,7 +303,7 @@ public abstract class DHTEventHandlerCallback {
 		public DHTEvent getEvent() { return DHTEvent.GET; }
 
 		@Override
-		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		public DHTActionMap getImposedPreactionsMap() {
 			return null;
 		}
 	}
@@ -321,8 +315,8 @@ public abstract class DHTEventHandlerCallback {
 	    // Called from within the sandbox.
 		@Override
 		protected void executeEventOnActiveObject(ActiveCode active_code,
-				DHTActionList<DHTPreaction> executed_preactions,
-				DHTActionList<DHTPostaction> postactions) {
+				DHTActionList executed_preactions,
+				DHTActionList postactions) {
 			active_code.onDelete(getCallerIP(), executed_preactions,
 					             postactions);		
 		}
@@ -331,7 +325,7 @@ public abstract class DHTEventHandlerCallback {
 		public DHTEvent getEvent() { return DHTEvent.DELETE; }
 
 		@Override
-		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		public DHTActionMap getImposedPreactionsMap() {
 			return null;
 		}
 	}
@@ -343,8 +337,8 @@ public abstract class DHTEventHandlerCallback {
 	    // Called from within the sandbox.
 		@Override
 		protected void executeEventOnActiveObject(ActiveCode active_code,
-				DHTActionList<DHTPreaction> executed_preactions,
-				DHTActionList<DHTPostaction> postactions) {
+				DHTActionList executed_preactions,
+				DHTActionList postactions) {
 			active_code.onTimer(executed_preactions, postactions);
 		}
 		
@@ -352,7 +346,7 @@ public abstract class DHTEventHandlerCallback {
 		public DHTEvent getEvent() { return DHTEvent.TIMER; }
 
 		@Override
-		public DHTActionMap<DHTPreaction> getImposedPreactionsMap() {
+		public DHTActionMap getImposedPreactionsMap() {
 			return null;
 		}
 	}

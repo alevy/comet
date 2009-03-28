@@ -3,16 +3,14 @@ package edu.washington.cs.activedht.code.insecure.dhtaction;
 import edu.washington.cs.activedht.code.insecure.DHTEvent;
 import edu.washington.cs.activedht.code.insecure.candefine.MyBogusDHTPreaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTPreaction;
 import junit.framework.TestCase;
 
 public class DHTActionMapTest extends TestCase {
-	private DHTActionMap<DHTPreaction> preactions;
+	private DHTActionMap preactions;
 	
 	@Override
 	protected void setUp() {
-		preactions = new DHTActionMap<DHTPreaction>(2);
+		preactions = new DHTActionMap(2);
 	}
 	
 	@Override
@@ -21,7 +19,7 @@ public class DHTActionMapTest extends TestCase {
 	public void testAddToListStopsAddingAtLimit() {
 		try {
 			preactions.addPreactionToEvent(DHTEvent.GET,
-					                       new GetDHTPreaction());
+					                       new TestPreaction(0));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception before limit.");
@@ -30,7 +28,7 @@ public class DHTActionMapTest extends TestCase {
 
 		try {
 			preactions.addPreactionToEvent(DHTEvent.GET,
-					                       new GetDHTPreaction());
+					                       new TestPreaction(0));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception before limit.");
@@ -39,7 +37,7 @@ public class DHTActionMapTest extends TestCase {
 		
 		try {
 			preactions.addPreactionToEvent(DHTEvent.GET,
-					                       new GetDHTPreaction());
+					                       new TestPreaction(0));
 			fail("Exception at limit.");
 		} catch (Exception e) { }  // Exception expected.
 	}

@@ -23,5 +23,5 @@ public interface Constants {
 	
 	// ActiveCodeWrapper:
 	public static final int MAX_NUM_DHT_ACTIONS_PER_EVENT = 2;
-	public static final int MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT = 100000;  // ms
+	public static final int MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT = 20000;  // ms
 }

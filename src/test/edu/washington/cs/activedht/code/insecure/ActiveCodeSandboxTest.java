@@ -2,6 +2,10 @@ package edu.washington.cs.activedht.code.insecure;
 
 import java.util.concurrent.Callable;
 
+import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
+import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
+import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
+
 import junit.framework.TestCase;
 
 class TestClosure implements Callable<Integer> {
@@ -19,11 +23,17 @@ class TestClosure implements Callable<Integer> {
 }
 
 public class ActiveCodeSandboxTest extends TestCase {
-	private ActiveCodeSandbox<Integer> sandbox;
+	private ActiveCodeSandboxImpl<Integer> sandbox;
 	
 	@Override
 	public void setUp() {
-		sandbox = new ActiveCodeSandbox<Integer>(1000);
+		sandbox = new ActiveCodeSandboxImpl<Integer>(1000);
+		try {
+			sandbox.init();
+		} catch (InitializationException e) {
+			e.printStackTrace();
+			fail("Failed to init sandbox.");
+		}
 	}
 	
 	@Override
@@ -32,16 +42,24 @@ public class ActiveCodeSandboxTest extends TestCase {
 	}
 	
 	public void testSandboxWithNiceComputation() {
-		Integer result = sandbox.executeWithinSandbox(new TestClosure(10));
+		Integer result = null;
+		try {
+			result = sandbox.executeWithinSandbox(new TestClosure(10));
+		} catch (ActiveCodeExecutionInterruptedException e) {
+			e.printStackTrace();
+			fail("Execution timed out when it shouldn't have.");
+		}
 		assertNotNull(result);
 		assertEquals(1, result.intValue());
 		assertEquals(0, sandbox.getNumPendingTasks());
 	}
 	
 	public void testSandboxTimesOutForTooLongComputation() {
-		Integer result = sandbox.executeWithinSandbox(new TestClosure(10000));
-		// Must have timed out.
-		assertNull(result);
-        // assertEquals(0, sandbox.getNumPendingTasks());
+		Integer result = null;
+		try {
+			result = sandbox.executeWithinSandbox(new TestClosure(10000));
+			fail("Execution succeeded when it shouldn't have.");
+		} catch (ActiveCodeExecutionInterruptedException e) { }  // expected.
+        // assertEquals(0, sandbox.getNumPendingTasks());  // TODO(roxana)
 	}
 }

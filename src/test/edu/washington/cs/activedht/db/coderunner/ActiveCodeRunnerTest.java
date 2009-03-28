@@ -1,9 +1,11 @@
-package edu.washington.cs.activedht.db;
+package edu.washington.cs.activedht.db.coderunner;
 
 import java.util.List;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
+import com.aelitis.azureus.core.dht.DHTOperationListener;
+import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -12,11 +14,23 @@ import edu.washington.cs.activedht.code.insecure.DHTEvent;
 import edu.washington.cs.activedht.code.insecure.DHTEventHandlerCallbackTest;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.TestActiveCode;
+import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.TestPostaction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.TestPreaction;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl.IllegalPackingStateException;
+import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
+import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
+import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
+import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
+import edu.washington.cs.activedht.db.ActiveDHTInitializer;
+import edu.washington.cs.activedht.db.StoreListener;
+import edu.washington.cs.activedht.db.TestDHTClasses;
+import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
+import edu.washington.cs.activedht.db.coderunner.IllegalPackingStateException;
+import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
 import edu.washington.cs.activedht.util.Pair;
 import junit.framework.TestCase;
 
@@ -31,22 +45,35 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	
 	@Override
 	protected void setUp() {
-		Initializer.prepareRuntimeForActiveCode();
+		ActiveDHTInitializer.prepareRuntimeForActiveCode();
 		
-		runner = new ActiveCodeRunner(null,
-				new ActiveCodeRunner.ActiveCodeRunnerParams());
+		ActiveCodeRunner.ActiveCodeRunnerParam params =
+			new ActiveCodeRunner.ActiveCodeRunnerParam();
+		ActiveCodeSandbox<byte[]> sandbox =
+			new ActiveCodeSandboxImpl<byte[]>(
+					params.active_code_execution_timeout);
+			
+		try { sandbox.init(); }
+		catch (InitializationException e) {
+			e.printStackTrace();
+			fail("Failed to initialize sandbox.");
+		}
 		
-		active_object = new TestActiveCode(DHTEvent.GET, 1);
-		active_object_bytes =
+		runner = new ActiveCodeRunner(null, sandbox,
+				                      new TestDHTActionExecutorImpl(),
+				                      params);
+		
+		active_object = new TestActiveCode(DHTEvent.GET,
+				                           new TestPreaction(1),
+				                           new TestPostaction(1));
+		active_object_bytes = 
 			DHTEventHandlerCallbackTest.serializeActiveObject(active_object);
 		
 		sender = new TestDHTTransportContact(1);
 	}
 	
 	@Override
-	protected void tearDown() {
-		clearCounters();
-	}
+	protected void tearDown() { clearCounters(); }
 	
 	private void clearCounters() {
 		TestPreaction.resetAllExecutions();
@@ -58,7 +85,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	 * @param value
 	 */
 	private void checkPreactionsForUnpackedValue(ActiveDHTDBValueImpl value) {
-		DHTActionMap<DHTPreaction> all_preactions = null;
+		DHTActionMap all_preactions = null;
 		try { all_preactions = value.getPreactions(); }
 		catch (IllegalPackingStateException e1) {  // should never happen.
 			e1.printStackTrace();
@@ -95,15 +122,13 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);
 		
-		ActiveDHTStorageAdapter.StoreListener store_listener =
-			new ActiveDHTStorageAdapter.StoreListener();
+		StoreListener store_listener =
+			new StoreListener();
 		
-		store_listener.add(new ActiveDHTStorageAdapter.StoreOutcome(
-				added_value, null));  // no overwritten value
+		store_listener.addOutcome(added_value, null);  // no overwriting
 		
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> result =
-			runner.onStore(sender,
-					       new HashWrapper("k1".getBytes()),
+			runner.onStore(sender, new HashWrapper("k1".getBytes()),
 					       store_listener);
 		
 		// Check the result; no requests should exist.
@@ -131,8 +156,9 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		// Check the active value state.
 		checkActiveObjectStateForUnpackedValue(added_value, 1);
 		
-		try { added_value.pack(); }
-		catch (Exception e) {
+		try {
+			added_value.pack();
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Couldn't pack the value");
 		}
@@ -144,19 +170,17 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
 		// Store the overwritten value.
-		ActiveDHTStorageAdapter.StoreListener store_listener =
-			new ActiveDHTStorageAdapter.StoreListener();
-		store_listener.add(new ActiveDHTStorageAdapter.StoreOutcome(
-				old_value, null));  // no overwritten value
+		StoreListener store_listener = new StoreListener();
+		store_listener.addOutcome(old_value, null);  // no overwriting.
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> result =
-			runner.onStore(sender,
-					       new HashWrapper("k1".getBytes()),
+			runner.onStore(sender, new HashWrapper("k1".getBytes()),
 					       store_listener);
 		
 		clearCounters();
 		
 		// Create another value.
-		ActiveCode new_object = new TestActiveCode(DHTEvent.GET, 2);
+		ActiveCode new_object = new TestActiveCode(DHTEvent.GET,
+				new TestPreaction(2), new TestPostaction(2));
 		byte[] new_object_bytes = DHTEventHandlerCallbackTest
 				.serializeActiveObject(new_object);
 		ActiveDHTDBValueImpl new_value = new ActiveDHTDBValueImpl(
@@ -165,9 +189,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				false);
 		
 		// Add the new value, overwriting the old one.
-		store_listener = new ActiveDHTStorageAdapter.StoreListener();
-		store_listener.add(new ActiveDHTStorageAdapter.StoreOutcome(
-				new_value, old_value));  // no overwritten value
+		store_listener = new StoreListener();
+		store_listener.addOutcome(new_value, old_value);  // overwriting.
 		
 		result = runner.onStore(sender, new HashWrapper("k1".getBytes()),
 					            store_listener);
@@ -229,10 +252,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
 		// Store the overwritten value.
-		ActiveDHTStorageAdapter.StoreListener store_listener =
-			new ActiveDHTStorageAdapter.StoreListener();
-		store_listener.add(new ActiveDHTStorageAdapter.StoreOutcome(
-				value, null));  // no overwritten value
+		StoreListener store_listener = new StoreListener();
+		store_listener.addOutcome(value, null);  // no overwritten value.
 		runner.onStore(sender, new HashWrapper("k1".getBytes()),
 				       store_listener);
 		
@@ -283,10 +304,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
 		// Store the overwritten value.
-		ActiveDHTStorageAdapter.StoreListener store_listener =
-			new ActiveDHTStorageAdapter.StoreListener();
-		store_listener.add(new ActiveDHTStorageAdapter.StoreOutcome(
-				value, null));  // no overwritten value
+		StoreListener store_listener = new StoreListener();
+		store_listener.addOutcome(value, null);  // no overwritten value
 		runner.onStore(sender, new HashWrapper("k1".getBytes()),
 				       store_listener);
 		
@@ -327,4 +346,41 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 			fail("Couldn't pack the new value");
 		}
 	}
+}
+
+class TestDHTActionExecutorImpl extends DHTActionExecutorImpl {
+	public TestDHTActionExecutorImpl() {
+		super(null, new TestExecutableDHTActionFactory());
+	}
+}
+
+class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ExecutableDHTAction createAction(DHTAction action,
+			                                DHTControl control,
+			                                long running_timeout) {
+		if (action instanceof TestPreaction) {
+			return new TestExecutableAction<TestPreaction>(
+					(TestPreaction)action);
+		} else if (action instanceof TestPostaction) {
+			return new TestExecutableAction<TestPostaction>(
+					(TestPostaction)action);
+		}
+		return null;
+	}
+}
+
+class TestExecutableAction<T extends DHTAction>
+extends ExecutableDHTAction<T> {
+	public TestExecutableAction(T action) { super(action, null); }
+
+	@Override
+	protected void executeUsingListener(ActiveDHTOperationListener listener) {
+		listener.complete(false);
+	}
+
+	@Override
+	protected DHTOperationListener getListener() { return null; }
 }

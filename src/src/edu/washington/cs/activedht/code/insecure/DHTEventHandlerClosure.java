@@ -3,8 +3,6 @@ package edu.washington.cs.activedht.code.insecure;
 import java.util.concurrent.Callable;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 
 
 /**
@@ -17,13 +15,13 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
 public class DHTEventHandlerClosure implements Callable<byte[]> {
 	DHTEventHandlerCallback callback;
 	byte[] value_bytes;
-	DHTActionList<DHTPreaction> executed_preactions;
-	DHTActionList<DHTPostaction> postactions;
+	DHTActionList executed_preactions;
+	DHTActionList postactions;
 	
 	public DHTEventHandlerClosure(DHTEventHandlerCallback callback,
 			byte[] value_bytes,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		this.callback = callback;
 		this.value_bytes = value_bytes;
 		this.executed_preactions = executed_preactions;

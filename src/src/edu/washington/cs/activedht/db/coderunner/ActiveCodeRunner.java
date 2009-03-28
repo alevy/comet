@@ -1,4 +1,4 @@
-package edu.washington.cs.activedht.db;
+package edu.washington.cs.activedht.db.coderunner;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -13,42 +13,60 @@ import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.code.insecure.ActiveCodeSandbox;
 import edu.washington.cs.activedht.code.insecure.DHTEventHandlerCallback;
 import edu.washington.cs.activedht.code.insecure.DHTEventHandlerClosure;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPostaction;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTPreaction;
+import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl.IllegalPackingStateException;
-import edu.washington.cs.activedht.db.ActiveDHTStorageAdapter.StoreListener;
-import edu.washington.cs.activedht.db.ActiveDHTStorageAdapter.StoreOutcome;
+import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
+import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
+import edu.washington.cs.activedht.db.StoreListener;
+import edu.washington.cs.activedht.db.StoreOutcome;
+import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
+import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutor;
 import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.Pair;
 
+/**
+ * TODO(roxana): Isolate in interface.
+ * TODO(roxana): Make singleton.
+ * @author roxana
+ *
+ */
 public class ActiveCodeRunner {
-	// TODO(roxana): Change this with config.
-	private final ActiveCodeRunnerParams params;
+	// TODO(roxana): Change this with config!
+	private final ActiveCodeRunnerParam params;
 	
-	/** Pointer back to the DB. */
-	private ActiveDHTDB db;
+	/** Pointer to the control engine of the DB. */
+	private DHTActionExecutor dht_action_executor;
 	
 	/** Pointer to the sandbox where all active code will run. */
 	private final ActiveCodeSandbox<byte[]> active_code_sandbox;
 	
-	protected ActiveCodeRunner(ActiveDHTDB db, ActiveCodeRunnerParams params) {
-		active_code_sandbox = new ActiveCodeSandbox<byte[]>(
-				params.active_code_execution_timeout);
-		this.db = db;
-		this.params = params;
+	/**
+	 * @param db
+	 * @param active_code_sandbox
+	 * @param params
+	 */
+	public ActiveCodeRunner(ActiveDHTDB db,
+			ActiveCodeSandbox<byte[]> active_code_sandbox,
+			DHTActionExecutor dht_action_executor,
+			@Deprecated ActiveCodeRunnerParam params) {
+		assert(active_code_sandbox.isInitialized());
+		
+		this.active_code_sandbox = active_code_sandbox;
+		this.dht_action_executor = dht_action_executor;
+		
+		this.params = params;  // TODO(roxana): Replace w/ config.
 	}
 	
-	protected DHTDBValue[] onGet(final DHTTransportContact reader,
-			                     final HashWrapper key,
-			                     DHTDBValue[] values) {
+	public DHTDBValue[] onGet(final DHTTransportContact reader,
+			                  final HashWrapper key,
+			                  DHTDBValue[] values) {
 		if (values == null || values.length == 0) return values;  // nothing.
 		Set<DHTDBValue> excluded_values = new HashSet<DHTDBValue>();
 		for (DHTDBValue value: values) {
@@ -81,10 +99,9 @@ public class ActiveCodeRunner {
 		return remaining_values;
 	}
 	
-	
-	protected DHTDBValue onRemove(final DHTTransportContact sender,
-                                  final HashWrapper key,
-                                  DHTDBValue removed_value) {
+	public DHTDBValue onRemove(final DHTTransportContact sender,
+                               final HashWrapper key,
+                               DHTDBValue removed_value) {
 		try {
 			doOnEvent(new DHTEventHandlerCallback.DeleteCb(
 					sender.getAddress().getHostName()),
@@ -100,7 +117,7 @@ public class ActiveCodeRunner {
 		return null;
 	}
 	
-	protected Pair<List<DHTTransportValue>, List<DHTTransportValue>>
+	public Pair<List<DHTTransportValue>, List<DHTTransportValue>>
 	onStore(final DHTTransportContact sender,
 			final HashWrapper key,
 			StoreListener store_listener) {
@@ -158,7 +175,7 @@ public class ActiveCodeRunner {
 				values_to_remove);
 	} 
 	
-	protected void onTimer() { 
+	public void onTimer() { 
 		// TODO(roxana): Implement.
 	}
 	
@@ -171,9 +188,9 @@ public class ActiveCodeRunner {
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
 		   AbortDHTActionException {
 		// Preliminary checks.
-		if (db_value == null || 
-				(! (db_value instanceof ActiveDHTDBValueImpl)) ||
-				db_value.getValue() == null) {
+		if (db_value == null ||
+			(! (db_value instanceof ActiveDHTDBValueImpl)) ||
+			db_value.getValue() == null) {
 			throw new NotAnActiveObjectException("Null or wrong-type value.");
 		}
 		
@@ -190,30 +207,37 @@ public class ActiveCodeRunner {
 		ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)db_value;
 
 		// Unpack the value.
-		try { value.unpack(event_callback.getImposedPreactionsMap()); }
-		catch (IOException e) {
+		try {
+			value.unpack(event_callback.getImposedPreactionsMap());
+		} catch (IOException e) {
 			e.printStackTrace();
 			return;
 		}
 
 		// Run the preactions.
-		DHTActionMap<DHTPreaction> all_preactions = null;
+		DHTActionMap all_preactions = null;
 		try { all_preactions = value.getPreactions(); }
-		catch (IllegalPackingStateException e) {
+		catch(IllegalPackingStateException e) {
 			e.printStackTrace();
 			assert(false);  // this is a true bug.
 		}
-		DHTActionList<DHTPreaction> event_preactions = null;
+		DHTActionList event_preactions = null;
 		if (all_preactions != null) {
 			event_preactions = all_preactions.getActionsForEvent(
 					event_callback.getEvent());
-			if (event_preactions != null) executeActions(event_preactions);
+			if (event_preactions != null) {
+				try {
+					dht_action_executor.executeActions(event_preactions,
+							params.max_time_run_dht_actions_per_event);
+				} catch (ActiveCodeExecutionInterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 		
 		// Run the object's code in the sandbox.
-		DHTActionList<DHTPostaction> event_postactions =
-			new DHTActionList<DHTPostaction>(
-					params.max_num_dht_actions_per_event);
+		DHTActionList event_postactions = new DHTActionList(
+				params.max_num_dht_actions_per_event);
 		byte[] current_value_bytes = executeActiveCodeSecurely(event_callback,
 				value.getValue(),
 				event_preactions,
@@ -228,53 +252,19 @@ public class ActiveCodeRunner {
 		catch (IOException e) { e.printStackTrace(); }
 
 		// Finally, run the postactions.
-		if (event_postactions != null) executeActions(event_postactions);
-	}
-
-	/**
-	 * TODO(roxana): Maybe add a time limit on action list execution.
-	 * @param actions
-	 */
-	@SuppressWarnings("unchecked")
-	private void executeActions(DHTActionList actions)
-	throws AbortDHTActionException {
-		long start = System.currentTimeMillis();
-		for (int i = 0;
-		     ((i < actions.size()) && (System.currentTimeMillis() - start <
-	          params.max_time_run_dht_actions_per_event));
-		     ++i) {
-			DHTAction action = actions.getAction(i);
-			if (action == null) continue;
-			executeAction(action);
+		if (event_postactions != null) {
+			try {
+				dht_action_executor.executeActions(event_postactions,
+						params.max_time_run_dht_actions_per_event);
+			} catch (ActiveCodeExecutionInterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
-	private void executeAction(DHTAction action)
-	throws AbortDHTActionException {
-		if (action == null) return;
-		if (action instanceof DHTPreaction) {
-			executePreaction((DHTPreaction)action);
-		} else {
-			executePostaction((DHTPostaction)action);
-		}
-		action.markAsExecuted();
-	}
-
-	private void executePreaction(DHTPreaction action)
-	throws AbortDHTActionException {
-		// assert(action != null);
-		// TODO(roxana): Execute it based on its type.
-	}
-
-	private void executePostaction(DHTPostaction action)
-	throws AbortDHTActionException {
-		// assert(action != null);
-		// TODO(roxana): Execute it based on its type.
-	}
-
-	private void resetPreactions(DHTActionList<DHTPreaction> actions) {
+	private void resetPreactions(DHTActionList actions) {
 		for (int i = 0; i < actions.size(); ++i) {
-			DHTPreaction action = actions.getAction(i);
+			DHTAction action = actions.getAction(i);
 			if (action != null) action.resetExecution();
 		}
 	}
@@ -282,11 +272,14 @@ public class ActiveCodeRunner {
 	private byte[] executeActiveCodeSecurely(
 			DHTEventHandlerCallback event_callback, 
 			byte[] value_bytes,
-			DHTActionList<DHTPreaction> executed_preactions,
-			DHTActionList<DHTPostaction> postactions) {
+			DHTActionList executed_preactions,
+			DHTActionList postactions) {
 		// Wrap the callback into a closure.
 		DHTEventHandlerClosure closure = new DHTEventHandlerClosure(
-				event_callback, value_bytes, executed_preactions, postactions);
+				event_callback,
+				value_bytes,
+				executed_preactions,
+				postactions);
 		
 		// Execute the closure within the sandbox.
 		byte[] active_code = null;
@@ -297,12 +290,13 @@ public class ActiveCodeRunner {
 		return active_code;
 	}
 	
-	protected static class ActiveCodeRunnerParams {
+	// TODO(roxana): Change this with config.
+	public static class ActiveCodeRunnerParam {
 		public long active_code_execution_timeout =
 			Constants.ACTIVE_CODE_CHECK_EXECUTION_INTERVAL_NANOS;
 		public int max_num_dht_actions_per_event =
 			Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT;
 		public long max_time_run_dht_actions_per_event =
 			Constants.MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT;
-	} 
+	}
 }
