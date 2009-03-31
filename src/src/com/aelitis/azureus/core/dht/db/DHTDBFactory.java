@@ -19,6 +19,10 @@
  * 8 Allee Lenotre, La Grille Royale, 78600 Le Mesnil le Roi, France.
  *
  */
+/**
+ * @author parg
+ * @author roxana
+ */
 
 package com.aelitis.azureus.core.dht.db;
 
@@ -26,14 +30,28 @@ import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 
-/**
- * @author parg
- *
- */
-
-public class 
-DHTDBFactory 
-{
+public class DHTDBFactory {
+	private static FactoryInterface factory = new DefaultFactoryAdapter();
+	private static boolean was_initialized = false;
+	private static Object lock = new Object();
+	
+	/**
+	 * Sets up this factory to use the given factory object as the underlying
+	 * factory for producing DHTDBValueImpl's.
+	 * @param _factory
+	 */
+	public static void
+	init(
+		FactoryInterface _factory )
+	{
+		synchronized(lock) {
+			if (! was_initialized) {
+				factory = _factory;
+				was_initialized = true;
+			}  // else, nothing to do (don't initialize repeatedly).
+		}
+	}
+	
 	public static DHTDB
 	create(
 		DHTStorageAdapter	adapter,
@@ -41,10 +59,39 @@ DHTDBFactory
 		int					cache_republish_interval,
 		DHTLogger			logger )
 	{
-		return( new DHTDBImpl( 
+		return factory.create(
+				adapter,
+				original_republish_interval,
+				cache_republish_interval,
+				logger );
+	}
+	
+	public static interface FactoryInterface {
+		public DHTDB
+		create(
+			DHTStorageAdapter	adapter,
+			int					original_republish_interval,
+			int					cache_republish_interval,
+			DHTLogger			logger );
+	}
+	
+	// Default factory class:
+	
+	private static class DefaultFactoryAdapter implements FactoryInterface {
+		@Override
+		public DHTDB
+		create(
+			DHTStorageAdapter	adapter,
+			int					original_republish_interval,
+			int					cache_republish_interval,
+			DHTLogger			logger )
+		{
+			return ( new DHTDBImpl( 
 					adapter,
 					original_republish_interval, 
 					cache_republish_interval, 
 					logger ));
+		}
 	}
 }
+
