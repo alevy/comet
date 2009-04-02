@@ -1,0 +1,219 @@
+                                ACTIVE DHT NETWORKS
+
+                                 I. REQUIREMENTS
+
+I.A. Security Requirements:
+
+1. Security of individual DHT nodes.
+   Active code running within each node should be sandboxed. Non-active-code
+   computations should be isolated from remote active objects.
+
+   The sandbox will:
+   a) Isolate from active objects the system resources (memory, CPU, network,
+      disk, timers, etc.) available to:
+      (i)   all programs other than Vuze running on the user's machine, and
+      (ii)  the rest of the Vuze system. I.e., the user's Vuze downloads,
+            updates, etc. should not be disturbed by the active objects.
+   
+   b) Protect the user's privacy by precluding the active objects from
+      accessing:
+      (i)   the file system;
+      (ii)  any raw devices;
+      (iii) memory outside the sandbox.
+ 
+2. Security of the DHT network.
+   ActiveDHTs should not make the DHT network (e.g., Vuze) more susceptible to
+   attacks than it was before.
+
+   Examples:
+   a) ActiveDHTs should not increase an attacker's ability to launch a DDoS
+      attack like this: push a bunch of values, all of which generate a wave
+      of actions that is small enough for each node, but that amplifies
+      continuously. (butterfly effect)
+   
+   b) ActiveDHTs should not increase an attacker's chance of frustrating
+      the correctness of a DHT operation.
+      For example, if the correctness of a "get" action on an object depends
+      on the correctness of a large number of preactions, each of which are
+      executed remotely, then an attacker can insert himself into the DHT
+      in a bunch of places, hopefully capture some of the object's
+      dependencies, and then frustrate all "gets" on that object by lying.
+      In other words, even if the node hosting the actual object is honest,
+      its interaction with other dishonest nodes in order to respond to a
+      request may turn it dishonest.
+
+   c) ActiveDHTs should not become platforms for launching attacks against
+      the DHT.
+      For example, if should not be possible to affect the availability of a
+      certain (key, value) pair in the DHT by inserting other pairs, each of
+      which execute a lookup for the attacked pair from time to time.
+      The effect of such an attack is to DDoS the nodes that replicate the
+      attacked pair.
+
+3. Security of the overall Internet.
+   ActiveDHTs should not become platforms for launching large-scale Internet
+   attacks (i.e., they should not become bots).
+   
+   Example:
+   It shouldn't be possible to launch a DDoS attack against whitehouse.gov by
+   pushing hundreds of thousands of objects into the DHT, each of which pings
+   it from time to time.
+
+II.B. Extensibility Requirements:
+
+ActiveDHTs should provide extensibility to currently inflexible DHTs.
+The properties that can be expressed using an ActiveDHT should be valuable
+for a range of applications.
+
+The ability to formulate properties in ActiveDHTs depends on several aspects:
+
+1. Language expressibility.
+   The language we develop for ActiveDHTs should support the formulation of
+   many different properties. Some concrete examples of what we currently
+   intend to support are in Section III.
+
+2. Processing capabilities.
+   The runtime sandbox should support the processing of many properties.
+   For example, values should be given enough space, time, and other resources 
+   to run their stuff.
+   We'll likely have a tradeoff between security and extensibility.
+
+3. Clean semantics.
+   ActiveDHTs should not provide weaker semantics than normal DHTs.
+   Normal DHTs are already best-effort, weak-semantic systems. In this context,
+   what types of semantics can we provide from ActiveDHTs?
+
+   We expect the semantics for our ActiveDHTs to be extremely weak. For
+   example, the fact that I push an object that wants to do these things
+   doesn't mean that the object will get executed entirely, as it is
+   subject to node-local runtime restrictions. What does that mean?
+   
+   Important questions here:
+   a) Can applications handle weak semantics? Are these weak semantics useful
+      for them, or is it the same as if they didn't exist?
+   b) What types of properties can we formulate using an ActiveDHT?
+   c) What types of properties will we not be able to formulate using
+      ActiveDHTs?
+      One example of a non-goal property for us will likely be: strongly
+      consistent replication mechanism (e.g., value replicas run Paxos).
+      Such a property would involve too much communication.
+      Another example of non-goal is the support of atomic actions, locks,
+      etc.
+   The above questions are expected to be the most important complaints of
+   reviewers.
+
+II.C. Backward Compatibility Requirements:
+
+Active values inside an ActiveDHT should co-exist with non-active values.
+This way, existing and undemanding applications would be able to continue
+unchanged. This backward compatibility goal enables us to hope for adoption
+by, say, Vuze.
+
+1. Default semantics should be backward compatible.
+   For example, by default, replication should function as normal, although
+   certain applications may decide to override the normal replication
+   mechanism for their own values.
+
+2. The protocol should be backward compatible with the DHT protocol (Vuze
+   for us).
+
+                         III. Example Applications
+
+1. Forensic trails:
+   a) where has this object been stored thus far?
+   b) who has read this object thus far?
+   
+Useful for: Vanish, possibly Adeona.
+
+Basic implementation: done.
+
+Challenges:
+   a) Reliable, secure responses in the presence of malicious nodes that
+      collude to prevent any of them from appearing in the forensic trail.
+      Possible solution: use encryption; this solution may well be too
+      heavyweight for what we want to support.
+
+   b) Inconsistent replicas: each replica may have a different view of the
+      list of nodes that stored/read the value.
+      Solution: User needs to get the union of all replicas and then unify them
+      himself.
+
+2. One-time values: values that delete themselves after being read once.
+Single node won't give out an item more than once.
+
+Useful for: Vanish one-time emails.
+
+Basic implementation: done.
+
+Challenges:
+   a) How to ensure destruction of *all* the replicas?
+      Solution: Value does not delete itself immediately, but rather stays
+      around for a while, refuses to report itself to get responses, and
+      from time to time attempts to delete the other replicas.
+
+3. Sensitive values: only allow read/update based on a passwd (like in
+OpenDHT). The values simply refuse requests for reads/updates/etc. unless
+the password is supplied.
+This could be used to implement read/only access policies or read/write
+policies.
+
+Useful for: Vanish, any OpenDHT application that uses this feature.
+
+Basic implementation: not yet.
+
+Challenges:
+  a) How does the user specify his passwd w/o changing the protocol, e.g., for
+     GETs? One of our practical goals needs to be backward compatibility w/
+     Vuze.
+  b) Is a passwd secure in the context of unencrypted traffic in today's
+     Vuze? Possible solution: encrypt passwd w/ shared secret.
+
+4. Flexible-timeout values: A value contains a timeout and it will delete
+itself at the approximate timeout. No coordination with the other replicas
+is needed.
+
+Useful for: Vanish, Adeona and many others, I'm sure.
+
+Basic implementation: done.
+
+Challenges:
+  a) How to prevent DoS'ing of the DHT w/ long-lived values? As far as I can
+     tell, the short timeouts can be one defense against long-lived values
+     that populate the DHT and prevent it from storing other new keys.
+  b) How does churn affect the lifetime of the DHT for longer timeouts?
+  c) What is a reasonable maximum timeout for a value? One week as in OpenDHT?
+
+5. Time-changing values: A value changes itself based on time, load, or
+other factors.
+
+Example applications:
+  a) Elastic load-balancing. The value returns different sets of servers
+     based on load, to optimize the number of servers in use.
+  b) Any time-concealing crypto you can do w/ this? (ask Yoshi)
+
+Basic implementation: not yet.
+
+6. Object-managed replication: Instead of having a Vuze-wide replication
+mechanism, interval, and factor, have each object decide when to replicate
+itself, to how many replicas, and even how to replicate.
+
+Useful for: Vanish, to limit the number of replicas in the system.
+
+Basic implementation: not yet.
+
+Challenges:
+  a) How to determine reliably how many replicas exist?
+  b) What's the policy of replication for various applications? Vanish: only
+     replicate when you see less than XX (10) replicas alive.
+  c) Not a challenge, but worth mentioning: should have a default replication
+     policy for applications that don't have any preference.
+
+
+                          IV EVALUATION
+
+Need a framework for analyzing and measuring the sematic of an ActiveDHT
+property. Since strong properties cannot be expressed in ActiveDHTs, this
+framework should provide the probability distribution of achieving a given
+property.
+
+
