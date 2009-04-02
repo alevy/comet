@@ -3,6 +3,7 @@ package edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
+import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 
 /**
  * Add here whenever you add a new DHTAction type.
@@ -16,5 +17,6 @@ public interface ExecutableDHTActionFactory {
 	@SuppressWarnings("unchecked")
 	public ExecutableDHTAction createAction(DHTAction action,
                                             DHTControl control,
-                                            long running_timeout);
+                                            long running_timeout)
+	throws AbortDHTActionException, NoSuchDHTActionException;
 }

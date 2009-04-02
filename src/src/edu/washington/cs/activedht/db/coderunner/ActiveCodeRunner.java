@@ -149,6 +149,7 @@ public class ActiveCodeRunner {
 			// overwritten, then initialize the new value.
 			try {
 				doOnEvent(new DHTEventHandlerCallback.ValueAddedCb(
+								this.dht_action_executor.getThisHostAddr(),
 								sender.getAddress().getHostName(),
 								Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT),
 						  sender,
@@ -222,7 +223,8 @@ public class ActiveCodeRunner {
 				if (event_preactions != null) {
 					try {
 						dht_action_executor.executeActions(event_preactions,
-								params.max_time_run_dht_actions_per_event);
+								params.max_time_run_dht_actions_per_event,
+								true);
 					} catch (ActiveCodeExecutionInterruptedException e) {
 						// Nothing to do??
 					}
@@ -252,7 +254,8 @@ public class ActiveCodeRunner {
 		if (event_postactions != null) {
 			try {
 				dht_action_executor.executeActions(event_postactions,
-						params.max_time_run_dht_actions_per_event);
+						params.max_time_run_dht_actions_per_event,
+						false);
 			} catch (ActiveCodeExecutionInterruptedException e) {
 				e.printStackTrace();
 			}

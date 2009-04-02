@@ -10,12 +10,16 @@ public interface DHTActionExecutor extends Initializable {
 	 * 
 	 * @param actions
 	 * @param execution_timeout
+	 * @param wait_for_the_results
 	 * @throws ActiveCodeExecutionInterruptedException if the running is
 	 * interrupted due to timeout.
 	 * @throws AbortDHTActionException if one of the preactions requested
 	 * abort.
 	 */
 	@SuppressWarnings("unchecked")
-	public void executeActions(DHTActionList actions, long execution_timeout)
+	public void executeActions(DHTActionList actions, long execution_timeout,
+			                   boolean wait_for_the_results)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException;
+	
+	public String getThisHostAddr();
 }

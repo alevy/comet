@@ -46,7 +46,7 @@ public class DHTActionExecutorImplTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try { executor.executeActions(preactions, 10); }
+		try { executor.executeActions(preactions, 10, true); }
 		catch (Exception e) { e.printStackTrace(); }
 		
 		assertTrue(action.actionWasExecuted());
@@ -65,7 +65,7 @@ public class DHTActionExecutorImplTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try { executor.executeActions(preactions, 10); }
+		try { executor.executeActions(preactions, 10, true); }
 		catch (Exception e) { e.printStackTrace(); }
 		
 		assertTrue(action1.actionWasExecuted());
@@ -87,8 +87,10 @@ public class DHTActionExecutorImplTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try { executor.executeActions(preactions, 10); }
-		catch (Exception e) { e.printStackTrace(); }
+		try {
+			executor.executeActions(preactions, 10, true);
+			fail("Executed both preactions w/o running out of time");
+		} catch (Exception e) { }  // expected
 		
 		assertTrue(action1.actionWasExecuted());
 		assertFalse(action2.actionWasExecuted());
@@ -132,7 +134,6 @@ class TestDHTControl implements DHTControl {
 	}
 	
 	private void exec(DHTOperationListener listener) {
-		System.out.println("Sleeping for " + operation_duration);
 		try { Thread.sleep(operation_duration); }
 		catch (InterruptedException e) {}
 		

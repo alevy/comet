@@ -271,10 +271,12 @@ public abstract class DHTEventHandlerCallback {
 	}
 
 	public static class ValueAddedCb extends AbstractCb {
+		private String this_node_ip;
 		DHTActionMap all_preactions;
 		
 		// Called from outside the sandbox.
-		public ValueAddedCb(String caller_ip, int max_action_list_size) {
+		public ValueAddedCb(String this_node_ip, String caller_ip,
+				            int max_action_list_size) {
 			super(caller_ip);
 			all_preactions = new DHTActionMap(max_action_list_size);
 		}
@@ -285,7 +287,8 @@ public abstract class DHTEventHandlerCallback {
 				ActiveCode active_code,
 				DHTActionList executed_preactions,
 				DHTActionList postactions) {
-			active_code.onValueAdded(getCallerIP(),
+			active_code.onValueAdded(this_node_ip,
+					                 getCallerIP(),
 					                 all_preactions, 
 					                 postactions);
 		}

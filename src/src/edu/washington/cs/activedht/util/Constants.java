@@ -28,8 +28,9 @@ public interface Constants {
 		10000;
 	
 	// ActiveCodeWrapper:
-	public static final int MAX_NUM_DHT_ACTIONS_PER_EVENT = 2;
+	public static final int  MAX_NUM_DHT_ACTIONS_PER_EVENT = 2;
 	public static final long MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT = 20 * SECONDS;
+	public static final int  NUM_SIMULTANEOUS_DHT_ACTIONS_PER_OBJECT = 2;
 	
 	// ActiveDHTDB:
 	public static final long ACTIVE_CODE_PERIODIC_TIMER_INTERVAL =

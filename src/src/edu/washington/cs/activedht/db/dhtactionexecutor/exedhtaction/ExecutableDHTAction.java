@@ -14,7 +14,7 @@ public abstract class ExecutableDHTAction<T extends DHTAction> {
 		this.control = control;
 	}
 	
-	public final void execute(ActiveDHTOperationListener listener) {
+	public final void startExecuting(ActiveDHTOperationListener listener) {
 		DHTOperationListener specific_listener = getListener();
 		
 		listener.setActionSpecificListener(specific_listener);
@@ -22,7 +22,8 @@ public abstract class ExecutableDHTAction<T extends DHTAction> {
 		executeUsingListener(listener);
 	}
 	
-	protected abstract void executeUsingListener(ActiveDHTOperationListener listener);
+	protected abstract void executeUsingListener(
+			ActiveDHTOperationListener listener);
 	
 	protected abstract DHTOperationListener getListener();
 	

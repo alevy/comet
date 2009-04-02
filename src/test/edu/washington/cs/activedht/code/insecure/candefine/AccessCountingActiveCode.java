@@ -45,7 +45,8 @@ public class AccessCountingActiveCode implements ActiveCode {
 	}
 
 	@Override
-	public void onValueAdded(String caller_ip, DHTActionMap preactions_map,
+	public void onValueAdded(String this_node_ip, String caller_ip,
+			                 DHTActionMap preactions_map,
 			                 DHTActionList postactions) {
 		try { 
 			preactions_map.addPreactionToEvent(DHTEvent.GET,

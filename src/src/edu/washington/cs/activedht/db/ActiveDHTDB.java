@@ -291,6 +291,8 @@ public class ActiveDHTDB extends DHTDBImpl implements Constants {
 	
 	// Timer handler:
 	
-	protected void fireMaintenanceTimerForActiveCode() { }
+	protected void fireMaintenanceTimerForActiveCode() {
+		
+	}
 }
 

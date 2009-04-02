@@ -1,6 +1,8 @@
 package edu.washington.cs.activedht.db.dhtactionexecutor;
 
 import java.util.Iterator;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 import com.aelitis.azureus.core.dht.db.DHTDB;
@@ -14,15 +16,10 @@ import edu.washington.cs.activedht.code.insecure.exceptions.InitializationExcept
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
-/**
- * TODO(roxana): There might be a vulnerability here. We're executing actions
- * one after the other within different threads. Hence, we're occupying a lot
- * of threads, potentially.
- * 
- * @author roxana
- *
- */
-public class DHTActionExecutorImpl implements DHTActionExecutor {
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.NoSuchDHTActionException;
+import edu.washington.cs.activedht.util.Constants;
+
+public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	private boolean is_initialized = false;
 	public DHTDB db_pointer;
 	private ExecutableDHTActionFactory exe_action_factory;
@@ -35,96 +32,142 @@ public class DHTActionExecutorImpl implements DHTActionExecutor {
 	
 	// DHTActionExecutor interface:
 	
-	@SuppressWarnings("unchecked")
-	@Override
-	public void executeActions(final DHTActionList actions,
-			                   final long running_timeout)
-	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
-		executeActions(actions.iterator(),
-				       System.currentTimeMillis() + running_timeout);
+	public String getThisHostAddr() {
+		try {
+			return db_pointer.getControl().getTransport()
+				.getLocalContact().getAddress().toString();
+		} catch (NullPointerException e) {
+			return null;
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void executeActions(final Iterator<DHTAction> actions,
-			                    final long deadline) {
-		long time_left_to_run_actions = deadline - System.currentTimeMillis();
-		if (time_left_to_run_actions <= 0) return;  // we're past the timeout.		
-		if (! actions.hasNext()) return;  // nothing else left to do.
+	@Override
+	public void executeActions(DHTActionList actions, long max_running_time,
+			                   boolean should_wait_for_results)
+	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
+		long deadline = System.currentTimeMillis() + max_running_time;
 		
-		// Execute the next action.
+		// Execute actions in bulk, while the time permits.
 		
-		final DHTAction action = actions.next();
+		Iterator<DHTAction> actions_it = actions.iterator();
+		Semaphore action_bulk_slots_semaphore =
+			new Semaphore(NUM_SIMULTANEOUS_DHT_ACTIONS_PER_OBJECT);
+		long time_left_to_run_actions = max_running_time;
+		int num_actions_issued = 0;
+		while (actions_it.hasNext() && time_left_to_run_actions > 0) {
+			// Wait until I have one slot free in the actions semaphore.
+			time_left_to_run_actions = grabSlots(action_bulk_slots_semaphore,
+					                             1,
+					                             deadline);
+			// Run the next DHT action:
+			try {
+				startExecutingDHTAction(actions_it.next(),
+						                action_bulk_slots_semaphore,
+						                time_left_to_run_actions);
+				++num_actions_issued;
+			} catch (NoSuchDHTActionException e) { }
+			
+			time_left_to_run_actions = deadline - System.currentTimeMillis();
+		}
+		
+		if (time_left_to_run_actions < 0) {
+			throw new ActiveCodeExecutionInterruptedException(
+				"Interrupted DHT Actions.");
+		}
+
+        // Wait for the results.
+		time_left_to_run_actions = grabSlots(action_bulk_slots_semaphore,
+				Math.min(num_actions_issued,
+						 NUM_SIMULTANEOUS_DHT_ACTIONS_PER_OBJECT),
+                deadline);
+	}
+	
+	// Helper functions:
+	
+	private long grabSlots(Semaphore sem, int num_slots, long deadline)
+	throws ActiveCodeExecutionInterruptedException {
+		boolean grabbed_slots = false;
+		long time_left = deadline - System.currentTimeMillis();
+		while (!grabbed_slots && time_left > 0) {
+			try {
+				grabbed_slots = sem.tryAcquire(num_slots, time_left,
+						                       TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) { }
+			time_left = deadline - System.currentTimeMillis();
+		}
+		if (! grabbed_slots) {
+			throw new ActiveCodeExecutionInterruptedException(
+					"Interrupted DHT Actions.");
+		}
+		return time_left;
+	}
+	
+	private void startExecutingDHTAction(final DHTAction action,
+			                             final Semaphore sem,
+			                             final long timeout)
+	throws AbortDHTActionException, NoSuchDHTActionException {
+		if (action == null) return;
 		
 		// Wrap the action into an executable action.
-		final ExecutableDHTAction executable_action = 
-			exe_action_factory.createAction(action, db_pointer.getControl(), 
-					                        time_left_to_run_actions);
-		if (executable_action == null) {
-			// Unmatched executable version of the action.
-			// Go on to the next action.
-			executeActions(actions, deadline);
-			return;
-		}
+		ExecutableDHTAction executable_action = 
+			exe_action_factory.createAction(action,
+					db_pointer.getControl(), 
+					timeout);
+		if (executable_action == null) return;  // unmatched executable action
 
 		// Create a DHT listener for this action.
 		ActiveDHTOperationListener listener =
 			new ActiveDHTOperationListener() {
-				private DHTOperationListener listener;
-			
-				// ActiveDHTOperationListener interface:
-			
+				private DHTOperationListener delegate;
+				
 				@Override
 				public void setActionSpecificListener(
-						DHTOperationListener listener) {
-					this.listener = listener;
+						DHTOperationListener delegate) {
+					this.delegate = delegate;
 				}
 
-				// DHTOperationListener interface:
-			
 				@Override
 				public void complete(boolean timeout) {
-					if (listener != null) this.listener.complete(timeout);
-				
-					if (! timeout) action.markAsExecuted();
-				
-					// Continue running the next actions in list recursively.
-					executeActions(actions, deadline);
+					if (delegate != null) delegate.complete(timeout);
+					if (!timeout) action.markAsExecuted();
+					sem.release();
 				}
 
 				@Override
-				public void diversified(String desc) {
-					if (listener != null) listener.diversified(desc);
+				public void diversified(String desc) { 
+					if (delegate != null) delegate.diversified(desc);
 				}
 
 				@Override
 				public void found(DHTTransportContact contact) {
-					if (listener != null) listener.found(contact);
+					if (delegate != null) delegate.found(contact);
 				}
 
 				@Override
 				public void read(DHTTransportContact contact,
-								 DHTTransportValue value) {
-					if (listener != null) listener.read(contact, value);
+						         DHTTransportValue value) {
+					if (delegate != null) delegate.read(contact, value);
 				}
-
+				
 				@Override
 				public void searching(DHTTransportContact contact, int level,
-					                  int active_searches) {
-					if (listener != null) {
-						listener.searching(contact, level, active_searches);
+			 			              int active_searches) {
+					if (delegate != null) {
+						delegate.searching(contact, level, active_searches);
 					}
 				}
 
 				@Override
 				public void wrote(DHTTransportContact contact,
-				   	              DHTTransportValue value) {
-					if (listener != null) listener.wrote(contact, value);
+						          DHTTransportValue value) {
+					if (delegate != null) delegate.wrote(contact, value);
 				}
 			};
 		
-		// Execute the current action.
-		executable_action.execute(listener);
-	}
+		// Trigger the execution of the current action.
+		executable_action.startExecuting(listener);
+	} 
 
 	// Initializable interface:
 	

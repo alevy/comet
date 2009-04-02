@@ -15,7 +15,6 @@ public class TestPreaction extends DHTAction {
 	
 	@Override
 	public void markAsExecuted() {
-		System.out.println("Preaction: Mark as executed");
 		executed_test_preactions.add(x);
 		super.markAsExecuted();
 	}

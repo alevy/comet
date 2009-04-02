@@ -16,12 +16,14 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
  */
 public interface ActiveCode extends Serializable {
 	public void onValueAdded(
+			final String this_node_ip,
 			final String caller_ip,
 			DHTActionMap preactions_map,
 			DHTActionList postactions);
 	
 	public void onValueChanged(
-			final String caller_ip, byte[] plain_new_value,
+			final String caller_ip,
+			byte[] plain_new_value,
 			DHTActionList executed_preactions,
 			DHTActionList postactions);
 	
