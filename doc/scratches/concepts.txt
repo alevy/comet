@@ -204,12 +204,12 @@ Basic implementation: not yet.
 Challenges:
   a) How to determine reliably how many replicas exist?
   b) What's the policy of replication for various applications? Vanish: only
-     replicate when you see less than XX (10) replicas alive.
+     replicate when you see less than X (10) replicas alive.
   c) Not a challenge, but worth mentioning: should have a default replication
-     policy for applications that don't have any preference.
+     policy for applications that don't have any specific preference.
 
-
-                          IV EVALUATION
+                            
+			    V. Evaluation
 
 Need a framework for analyzing and measuring the sematic of an ActiveDHT
 property. Since strong properties cannot be expressed in ActiveDHTs, this
