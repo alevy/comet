@@ -18,6 +18,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
+import edu.washington.cs.activedht.db.TestDHTClasses;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutor;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactoryImpl;
@@ -29,7 +30,9 @@ public class DHTActionExecutorImplTest extends TestCase {
 	
 	public DHTActionExecutorImplTest() {
 		control = new TestDHTControl();
-		this.executor = new DHTActionExecutorImpl(control,
+		DHTDB db = new TestDHTClasses.TestDB();
+		db.setControl(control);
+		this.executor = new DHTActionExecutorImpl(db,
 				new ExecutableDHTActionFactoryImpl());
 	}
 	

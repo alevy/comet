@@ -43,7 +43,8 @@ import com.aelitis.net.udp.uc.PRUDPPacketRequestDecoder;
 public class 
 DHTUDPPacketHelper 
 {	
-	public static final int		PACKET_MAX_BYTES		= 1400;
+	// ROXANA: Made configurable.
+	public static int		PACKET_MAX_BYTES		= 1400;
 	
 		// these actions have to co-exist with the tracker ones when the connection
 		// is shared, hence 1024

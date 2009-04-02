@@ -4,9 +4,9 @@
 		<item value="" key="ResourceWorkingSetFilter.STORE_WORKING_SET"/>
 		<item value="1" key="ResourceViewer.STORE_SORT_TYPE"/>
 	</section>
-	<section name="org.eclipse.ui.views.problem">
-	</section>
 	<section name="org.eclipse.ui.views.task">
+	</section>
+	<section name="org.eclipse.ui.views.problem">
 	</section>
 	<section name="NewWizardAction">
 		<item value="org.eclipse.team.cvs.ui.newProjectCheckout" key="NewWizardSelectionPage.STORE_SELECTED_ID"/>

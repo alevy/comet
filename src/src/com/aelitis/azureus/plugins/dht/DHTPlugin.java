@@ -42,6 +42,7 @@ import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.dht.DHT;
+import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.control.DHTControlActivity;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncher;
@@ -89,7 +90,7 @@ DHTPlugin
 	public static final byte		DT_FREQUENCY		= DHT.DT_FREQUENCY;
 	public static final byte		DT_SIZE				= DHT.DT_SIZE;
 	
-	public static final int			MAX_VALUE_SIZE		= DHT.MAX_VALUE_SIZE;
+	public static final int			MAX_VALUE_SIZE		= DHTConstants.MAX_VALUE_SIZE;
 
 	private static final String	PLUGIN_VERSION			= "1.0";
 	private static final String	PLUGIN_NAME				= "Distributed DB";

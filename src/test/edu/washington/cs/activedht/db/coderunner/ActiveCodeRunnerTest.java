@@ -59,8 +59,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 			fail("Failed to initialize sandbox.");
 		}
 		
-		runner = new ActiveCodeRunner(null, sandbox,
-				                      new TestDHTActionExecutorImpl(),
+		runner = new ActiveCodeRunner(sandbox, new TestDHTActionExecutorImpl(),
 				                      params);
 		
 		active_object = new TestActiveCode(DHTEvent.GET,
@@ -105,7 +104,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	 * @param num_execution_times
 	 */
 	private void checkActiveObjectStateForUnpackedValue(
-			ActiveDHTDBValueImpl value, int num_execution_times) {
+			ActiveDHTDBValueImpl value,
+			int num_execution_times) {
 		TestActiveCode current_object =
 			(TestActiveCode)DHTEventHandlerCallbackTest
 			.instantiateActiveObject(value.getValue(),
@@ -122,10 +122,9 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);
 		
-		StoreListener store_listener =
-			new StoreListener();
+		StoreListener store_listener = new StoreListener();
 		
-		store_listener.addOutcome(added_value, null);  // no overwriting
+		store_listener.addOutcome(null, added_value);  // no overwriting
 		
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> result =
 			runner.onStore(sender, new HashWrapper("k1".getBytes()),
@@ -171,7 +170,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				false);		
 		// Store the overwritten value.
 		StoreListener store_listener = new StoreListener();
-		store_listener.addOutcome(old_value, null);  // no overwriting.
+		store_listener.addOutcome(null, old_value);  // no overwriting.
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> result =
 			runner.onStore(sender, new HashWrapper("k1".getBytes()),
 					       store_listener);
@@ -190,7 +189,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		
 		// Add the new value, overwriting the old one.
 		store_listener = new StoreListener();
-		store_listener.addOutcome(new_value, old_value);  // overwriting.
+		store_listener.addOutcome(old_value, new_value);  // overwriting.
 		
 		result = runner.onStore(sender, new HashWrapper("k1".getBytes()),
 					            store_listener);
@@ -253,7 +252,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				false);		
 		// Store the overwritten value.
 		StoreListener store_listener = new StoreListener();
-		store_listener.addOutcome(value, null);  // no overwritten value.
+		store_listener.addOutcome(null, value);  // no overwritten value.
 		runner.onStore(sender, new HashWrapper("k1".getBytes()),
 				       store_listener);
 		
@@ -305,7 +304,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				false);		
 		// Store the overwritten value.
 		StoreListener store_listener = new StoreListener();
-		store_listener.addOutcome(value, null);  // no overwritten value
+		store_listener.addOutcome(null, value);  // no overwritten value
 		runner.onStore(sender, new HashWrapper("k1".getBytes()),
 				       store_listener);
 		
@@ -350,10 +349,10 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 
 class TestDHTActionExecutorImpl extends DHTActionExecutorImpl {
 	public TestDHTActionExecutorImpl() {
-		super(null, new TestExecutableDHTActionFactory());
+		super(new TestDHTClasses.TestDB(),
+			  new TestExecutableDHTActionFactory());
 	}
 }
-
 class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 
 	@SuppressWarnings("unchecked")

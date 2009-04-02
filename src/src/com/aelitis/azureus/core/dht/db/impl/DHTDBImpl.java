@@ -96,7 +96,7 @@ DHTDBImpl
 	private DHTTransportContact		local_contact;
 	private DHTLogger				logger;
 	
-	private static final long	MAX_TOTAL_SIZE	= 4*1024*1024;
+	public static long	MAX_TOTAL_SIZE	= 4*1024*1024;
 	
 	private int		total_size;
 	private int		total_values;
@@ -108,7 +108,8 @@ DHTDBImpl
 	
 	private IpFilter	ip_filter	= IpFilterManagerFactory.getSingleton().getIPFilter();
 
-	private AEMonitor	this_mon	= new AEMonitor( "DHTDB" );
+	// ROXANA: Made protected, s.t. I can handle it from ActiveDHTDB.
+	protected AEMonitor	this_mon	= new AEMonitor( "DHTDB" );
 
 	/**
 	 * Refactored constructor to support testing. Semantic is identical.
@@ -153,7 +154,7 @@ DHTDBImpl
 	 * Added init() function to support testing.
 	 * @author roxana
 	 */
-	private void
+	protected void
 	init() {
 		SimpleTimer.addPeriodicEvent(
 				"DHTDB:precious",
@@ -259,7 +260,7 @@ DHTDBImpl
 					});
 	}
 	
-	
+	@Override
 	public void
 	setControl(
 		DHTControl		_control )
@@ -290,6 +291,16 @@ DHTDBImpl
 			
 			this_mon.exit();
 		}
+	}
+	
+	/**
+	 * @return
+	 * @author roxana
+	 */
+	@Override
+	public DHTControl
+	getControl() {
+		return control;
 	}
 	
 	public DHTDBValue

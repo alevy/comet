@@ -3,6 +3,9 @@ package edu.washington.cs.activedht.code.insecure;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.OptionalDataException;
+import java.io.StreamCorruptedException;
 
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
@@ -157,7 +160,7 @@ public abstract class DHTEventHandlerCallback {
 	 */
 	protected final ActiveCode instantiateActiveObject(
 			byte[] value_bytes)
-	throws NotAnActiveObjectException, ClassNotFoundException, IOException {
+	throws NotAnActiveObjectException, IOException {
 		assert(isInitialized());
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(value_bytes);
@@ -165,9 +168,18 @@ public abstract class DHTEventHandlerCallback {
 				                                                 class_loader);
 		
 		ActiveCode deserialized_object = null;
-		try { deserialized_object = (ActiveCode)cois.readObject(); }
-		catch(ClassCastException e) {
+		try {
+			deserialized_object = (ActiveCode)cois.readObject();
+		} catch(StreamCorruptedException e) {
 			throw new NotAnActiveObjectException("Value is not active.");
+		} catch(ClassCastException e) {
+			throw new NotAnActiveObjectException("Invalid object type.");
+		} catch(ClassNotFoundException e) {
+			throw new NotAnActiveObjectException("Class not found.");
+		} catch(OptionalDataException e) {
+			throw new NotAnActiveObjectException("Invalid object type.");
+		} catch(InvalidClassException e) {
+			throw new NotAnActiveObjectException("Invalid object type.");
 		}
 		
 		cois.close();
@@ -231,7 +243,7 @@ public abstract class DHTEventHandlerCallback {
 							new_value_bytes);
 				} catch (Exception e) {
 					// Some exception has occurred during decapsulation.
-					// Ognore it and treat the value as a non-active value.
+					// Ignore it and treat the value as a non-active value.
 				}
 			}
 			

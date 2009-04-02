@@ -383,3 +383,84 @@ org.eclipse.team.internal.ccvs.core.connection.CVSServerException: The server re
 !MESSAGE Problems occurred while trying to save the state of the workbench.
 !SUBENTRY 1 org.eclipse.core.resources 2 234 2009-02-25 16:35:14.756
 !MESSAGE The project description file (.project) for azureus2 was missing.  This file contains important information about the project.  A new project description file has been created, but some information about the project may have been lost.
+!SESSION 2009-03-23 13:06:12.888 -----------------------------------------------
+eclipse.buildId=M20070212-1330
+java.version=1.6.0_05
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_US
+Command-line arguments:  -os linux -ws gtk -arch x86
+
+!ENTRY org.eclipse.jdt.core 4 4 2009-03-23 13:07:02.693
+!MESSAGE Exception while retrieving /azureus2/.classpath, will revert to default classpath
+!STACK 1
+org.eclipse.core.runtime.CoreException: File not found: /homes/sys/roxana/projects/homeframe/sdd/activedht/src/azureus2/.classpath.
+	at org.eclipse.core.internal.filesystem.Policy.error(Policy.java:60)
+	at org.eclipse.core.internal.filesystem.local.LocalFile.openInputStream(LocalFile.java:327)
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:609)
+	at org.eclipse.core.internal.resources.File.getContents(File.java:290)
+	at org.eclipse.jdt.internal.core.util.Util.getResourceContentsAsByteArray(Util.java:1005)
+	at org.eclipse.jdt.internal.core.JavaProject.getSharedProperty(JavaProject.java:2237)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2679)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2673)
+	at org.eclipse.jdt.internal.core.JavaProject.getRawClasspath(JavaProject.java:1971)
+	at org.eclipse.jdt.internal.core.JavaProject.getResolvedClasspath(JavaProject.java:2074)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.add(JavaSearchScope.java:107)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.initialize(JavaWorkspaceScope.java:84)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:61)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:57)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.<init>(JavaWorkspaceScope.java:29)
+	at org.eclipse.jdt.internal.core.JavaModelManager.getWorkspaceScope(JavaModelManager.java:1729)
+	at org.eclipse.jdt.internal.core.search.BasicSearchEngine.createWorkspaceScope(BasicSearchEngine.java:155)
+	at org.eclipse.jdt.core.search.SearchEngine.createWorkspaceScope(SearchEngine.java:397)
+	at org.eclipse.jdt.core.JavaCore.initializeAfterLoad(JavaCore.java:2856)
+	at org.eclipse.jdt.internal.ui.InitializeAfterLoadJob$RealJob.run(InitializeAfterLoadJob.java:35)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:58)
+org.eclipse.core.runtime.CoreException[271]: java.io.FileNotFoundException: /homes/sys/roxana/projects/homeframe/sdd/activedht/src/azureus2/.classpath (No such file or directory)
+	at java.io.FileInputStream.open(Native Method)
+	at java.io.FileInputStream.<init>(FileInputStream.java:106)
+	at org.eclipse.core.internal.filesystem.local.LocalFile.openInputStream(LocalFile.java:318)
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:609)
+	at org.eclipse.core.internal.resources.File.getContents(File.java:290)
+	at org.eclipse.jdt.internal.core.util.Util.getResourceContentsAsByteArray(Util.java:1005)
+	at org.eclipse.jdt.internal.core.JavaProject.getSharedProperty(JavaProject.java:2237)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2679)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2673)
+	at org.eclipse.jdt.internal.core.JavaProject.getRawClasspath(JavaProject.java:1971)
+	at org.eclipse.jdt.internal.core.JavaProject.getResolvedClasspath(JavaProject.java:2074)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.add(JavaSearchScope.java:107)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.initialize(JavaWorkspaceScope.java:84)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:61)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:57)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.<init>(JavaWorkspaceScope.java:29)
+	at org.eclipse.jdt.internal.core.JavaModelManager.getWorkspaceScope(JavaModelManager.java:1729)
+	at org.eclipse.jdt.internal.core.search.BasicSearchEngine.createWorkspaceScope(BasicSearchEngine.java:155)
+	at org.eclipse.jdt.core.search.SearchEngine.createWorkspaceScope(SearchEngine.java:397)
+	at org.eclipse.jdt.core.JavaCore.initializeAfterLoad(JavaCore.java:2856)
+	at org.eclipse.jdt.internal.ui.InitializeAfterLoadJob$RealJob.run(InitializeAfterLoadJob.java:35)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:58)
+!SUBENTRY 1 org.eclipse.core.filesystem 4 271 2009-03-23 13:07:02.695
+!MESSAGE File not found: /homes/sys/roxana/projects/homeframe/sdd/activedht/src/azureus2/.classpath.
+!STACK 0
+java.io.FileNotFoundException: /homes/sys/roxana/projects/homeframe/sdd/activedht/src/azureus2/.classpath (No such file or directory)
+	at java.io.FileInputStream.open(Native Method)
+	at java.io.FileInputStream.<init>(FileInputStream.java:106)
+	at org.eclipse.core.internal.filesystem.local.LocalFile.openInputStream(LocalFile.java:318)
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:609)
+	at org.eclipse.core.internal.resources.File.getContents(File.java:290)
+	at org.eclipse.jdt.internal.core.util.Util.getResourceContentsAsByteArray(Util.java:1005)
+	at org.eclipse.jdt.internal.core.JavaProject.getSharedProperty(JavaProject.java:2237)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2679)
+	at org.eclipse.jdt.internal.core.JavaProject.readClasspathFile(JavaProject.java:2673)
+	at org.eclipse.jdt.internal.core.JavaProject.getRawClasspath(JavaProject.java:1971)
+	at org.eclipse.jdt.internal.core.JavaProject.getResolvedClasspath(JavaProject.java:2074)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.add(JavaSearchScope.java:107)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.initialize(JavaWorkspaceScope.java:84)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:61)
+	at org.eclipse.jdt.internal.core.search.JavaSearchScope.<init>(JavaSearchScope.java:57)
+	at org.eclipse.jdt.internal.core.search.JavaWorkspaceScope.<init>(JavaWorkspaceScope.java:29)
+	at org.eclipse.jdt.internal.core.JavaModelManager.getWorkspaceScope(JavaModelManager.java:1729)
+	at org.eclipse.jdt.internal.core.search.BasicSearchEngine.createWorkspaceScope(BasicSearchEngine.java:155)
+	at org.eclipse.jdt.core.search.SearchEngine.createWorkspaceScope(SearchEngine.java:397)
+	at org.eclipse.jdt.core.JavaCore.initializeAfterLoad(JavaCore.java:2856)
+	at org.eclipse.jdt.internal.ui.InitializeAfterLoadJob$RealJob.run(InitializeAfterLoadJob.java:35)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:58)

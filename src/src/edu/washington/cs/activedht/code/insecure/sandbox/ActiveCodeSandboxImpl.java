@@ -12,6 +12,8 @@ import java.util.concurrent.TimeoutException;
 
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
+import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
+import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 import edu.washington.cs.activedht.util.Constants;
 
 public class ActiveCodeSandboxImpl<RETURN_TYPE>
@@ -76,7 +78,7 @@ implements ActiveCodeSandbox<RETURN_TYPE>,
 			} catch (InterruptedException e) {
 				continue;
 			} catch (ExecutionException e) {  // computation threw an exception
-				e.printStackTrace();
+				// e.printStackTrace();
 				return null;
 			} catch (TimeoutException e) {  // task needed to be canceled
 				if (! usageWithinLimits(task)) {

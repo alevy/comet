@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.util.Arrays;
 
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
+import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -70,7 +71,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
  	       IOException {
 		if (isUnpacked()) return;  // already unpacked.
-
+		
 		if (imposed_preaction_map != null) {
 			preactions_map = imposed_preaction_map;
 			return;
@@ -88,6 +89,8 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 		try {
 			preactions_map = (DHTActionMap)ois.readObject();
 		} catch (ClassNotFoundException e) {
+			throw new InvalidActiveObjectException("Invalid preactions");
+		} catch (ClassCastException e) {
 			throw new InvalidActiveObjectException("Invalid preactions");
 		}
 		
@@ -116,7 +119,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 */
 	public void pack() throws IOException {
 		if (isPacked()) return;  // already packed; nothing to do.
-
+		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
 		
@@ -145,7 +148,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * during packaging/unpackaging.
 	 * @return
 	 */
-	protected byte[] getValueForSendingItRemotely() {
+	public byte[] getValueForRemote() {
 		// Unpack, and then return that value. Then, re-pack, if it was packed.
 		boolean was_packed_at_beginning = true;
 		if (isPacked()) {
@@ -160,7 +163,6 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 			try { this.pack(); }
 			catch (IOException e) { }
 		}
-		
 		return unpacked_value;
 	}
 	
@@ -174,9 +176,23 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 		return preactions_map;
 	}
 	
+	public void prepareForRemote() {
+		try { this.unpack(null); }
+		catch (Exception e) { }
+	}
+	
 	private boolean isUnpacked() { return preactions_map != null; }
 	
 	private boolean isPacked() { return ! isUnpacked(); }
 	
-	private void setIsPacked() { this.preactions_map = null; } 
+	private void setIsPacked() { this.preactions_map = null; }
+	
+	@Override
+	public String getString() {
+		return DHTLog.getString( getValue() );
+	}
+	
+	public String toString() {
+		return getString();
+	}
 }

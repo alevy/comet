@@ -2137,7 +2137,7 @@ DHTPluginStorageManager
 			manager.serialiseStats( this, dos );
 		}
 		
-		protected HashWrapper
+		public HashWrapper
 		getKey()
 		{
 			return( key );

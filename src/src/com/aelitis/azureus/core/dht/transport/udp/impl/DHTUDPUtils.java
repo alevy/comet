@@ -33,8 +33,7 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.core3.util.SystemTime;
 
-
-import com.aelitis.azureus.core.dht.DHT;
+import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;
@@ -449,7 +448,7 @@ DHTUDPUtils
 		
 		// System.out.println( "    Adjusted creation time by " + skew );
 		
-		final byte[]	value_bytes = deserialiseByteArray( is, DHT.MAX_VALUE_SIZE );
+		final byte[]	value_bytes = deserialiseByteArray( is, DHTConstants.MAX_VALUE_SIZE );
 		
 		final DHTTransportContact	originator		= deserialiseContact( packet.getTransport(), is );
 		
@@ -536,7 +535,7 @@ DHTUDPUtils
 				
 		os.writeLong( value.getCreationTime() + skew );	// 12
 		
-		serialiseByteArray( os, value.getValue(), DHT.MAX_VALUE_SIZE );	// 12+2+X
+		serialiseByteArray( os, value.getValue(), DHTConstants.MAX_VALUE_SIZE );	// 12+2+X
 		
 		serialiseContact( os, value.getOriginator());	// 12 + 2+X + contact
 		

@@ -1,9 +1,15 @@
 package edu.washington.cs.activedht.util;
 
 public interface Constants {
-	public static final int KB = 1024;
-	public static final int MB = 1024 * KB;
-	public static final int GB = 1024 * MB;
+	public static final int KB 			= 1024;
+	public static final int MB 			= 1024 * KB;
+	public static final int GB 			= 1024 * MB;
+	
+	public static final long MS 		= 1L;
+	public static final long SECONDS 	= 1000L * MS;
+	public static final long MINUTES 	= 60L * SECONDS;
+	public static final long HOURS 		= 60L * MINUTES;
+	public static final long DAYS 		= 24L * HOURS;
 	
 	public static final int FILE_READ_BLOCK_SIZE = KB;
 	
@@ -17,11 +23,15 @@ public interface Constants {
 	public static final int MAX_POOL_SIZE   = 10;
 	public static final int KEEP_ALIVE_TIME = 100;
 	public static final int BLOCKING_QUEUE_CAPACITY = NUM_MAX_VALUES;
-	public static final long ACTIVE_CODE_EXECUTION_TIMEOUT = 50;  // ms
+	public static final long ACTIVE_CODE_EXECUTION_TIMEOUT = 50 * MS;
 	public static final long ACTIVE_CODE_CHECK_EXECUTION_INTERVAL_NANOS =
-		10000; 
+		10000;
 	
 	// ActiveCodeWrapper:
 	public static final int MAX_NUM_DHT_ACTIONS_PER_EVENT = 2;
-	public static final int MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT = 20000;  // ms
+	public static final long MAX_TIME_RUN_DHT_ACTIONS_PER_EVENT = 20 * SECONDS;
+	
+	// ActiveDHTDB:
+	public static final long ACTIVE_CODE_PERIODIC_TIMER_INTERVAL =
+		20 * MINUTES;
 }

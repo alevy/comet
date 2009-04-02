@@ -82,7 +82,8 @@ DHTTransportUDPImpl
 	public static boolean TEST_EXTERNAL_IP	= false;
 	
 	public static final int	TRANSFER_QUEUE_MAX			= 64;
-	public static final long MAX_TRANSFER_QUEUE_BYTES	= 8*1024*1024;	 
+	// ROXANA: Made configurable:
+	public static long MAX_TRANSFER_QUEUE_BYTES	= 8*1024*1024;	 
 		
 	public static final long	WRITE_XFER_RESEND_DELAY		= 12500;
 	public static final long	READ_XFER_REREQUEST_DELAY	= 5000;

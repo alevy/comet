@@ -22,7 +22,6 @@ import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionI
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
-import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
 import edu.washington.cs.activedht.db.StoreListener;
 import edu.washington.cs.activedht.db.StoreOutcome;
@@ -48,14 +47,12 @@ public class ActiveCodeRunner {
 	private final ActiveCodeSandbox<byte[]> active_code_sandbox;
 	
 	/**
-	 * @param db
 	 * @param active_code_sandbox
 	 * @param params
 	 */
-	public ActiveCodeRunner(ActiveDHTDB db,
-			ActiveCodeSandbox<byte[]> active_code_sandbox,
-			DHTActionExecutor dht_action_executor,
-			@Deprecated ActiveCodeRunnerParam params) {
+	public ActiveCodeRunner(ActiveCodeSandbox<byte[]> active_code_sandbox,
+			                DHTActionExecutor dht_action_executor,
+			                @Deprecated ActiveCodeRunnerParam params) {
 		assert(active_code_sandbox.isInitialized());
 		
 		this.active_code_sandbox = active_code_sandbox;
@@ -73,7 +70,7 @@ public class ActiveCodeRunner {
 			if (value == null) continue;
 			try {
 				doOnEvent(new DHTEventHandlerCallback.GetCb(
-								reader.getAddress().getHostName()),
+								reader.getAddress().toString()),
 						  reader,
 						  key,
 						  value);
@@ -104,10 +101,10 @@ public class ActiveCodeRunner {
                                DHTDBValue removed_value) {
 		try {
 			doOnEvent(new DHTEventHandlerCallback.DeleteCb(
-					sender.getAddress().getHostName()),
-					sender,
-					key,
-					removed_value);
+							sender.getAddress().toString()),
+					  sender,
+					  key,
+					  removed_value);
 		} catch (NotAnActiveObjectException e) {    // nothing to do.
 		} catch (InvalidActiveObjectException e) {  // nothing to do.
 		} catch (AbortDHTActionException e) {  // value wants back in the DB.
@@ -125,18 +122,17 @@ public class ActiveCodeRunner {
 			new ArrayList<DHTTransportValue>();
 		List<DHTTransportValue> values_to_remove =
 			new ArrayList<DHTTransportValue>();
-		
+
 		for (StoreOutcome store_outcome: store_listener) {
 			DHTTransportValue added_value = store_outcome.getAddedValue();
 			DHTTransportValue overwritten_value =
 				store_outcome.getOverwrittenValue();
-			
 			// Overwritten value takes precedence over added value, so
 			// announce it first.
 			if (overwritten_value != null) {
 				try {
 					doOnEvent(new DHTEventHandlerCallback.ValueChangedCb(
-									sender.getAddress().getHostName(),
+									sender.getAddress().toString(),
 									added_value.getValue()),
 							  sender,
 							  key,
@@ -207,49 +203,50 @@ public class ActiveCodeRunner {
 		ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)db_value;
 
 		// Unpack the value.
-		try {
-			value.unpack(event_callback.getImposedPreactionsMap());
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
+		try { value.unpack(event_callback.getImposedPreactionsMap()); }
+		catch (IOException e) { return; }  // nothing to do.
 
-		// Run the preactions.
-		DHTActionMap all_preactions = null;
-		try { all_preactions = value.getPreactions(); }
-		catch(IllegalPackingStateException e) {
-			e.printStackTrace();
-			assert(false);  // this is a true bug.
-		}
-		DHTActionList event_preactions = null;
-		if (all_preactions != null) {
-			event_preactions = all_preactions.getActionsForEvent(
-					event_callback.getEvent());
-			if (event_preactions != null) {
-				try {
-					dht_action_executor.executeActions(event_preactions,
-							params.max_time_run_dht_actions_per_event);
-				} catch (ActiveCodeExecutionInterruptedException e) {
-					e.printStackTrace();
+		DHTActionList event_postactions = null;
+		try {
+			// Run the preactions.
+			DHTActionMap all_preactions = null;
+			try { all_preactions = value.getPreactions(); }
+			catch(IllegalPackingStateException e) {
+				e.printStackTrace();
+				assert(false);  // this is a true bug.
+			}
+			DHTActionList event_preactions = null;
+			if (all_preactions != null) {
+				event_preactions = all_preactions.getActionsForEvent(
+						event_callback.getEvent());
+				if (event_preactions != null) {
+					try {
+						dht_action_executor.executeActions(event_preactions,
+								params.max_time_run_dht_actions_per_event);
+					} catch (ActiveCodeExecutionInterruptedException e) {
+						// Nothing to do??
+					}
 				}
 			}
+		
+			// Run the object's code in the sandbox.
+			event_postactions = new DHTActionList(
+					params.max_num_dht_actions_per_event);
+			byte[] current_value_bytes = executeActiveCodeSecurely(
+					event_callback,
+					value.getValue(),
+					event_preactions,
+					event_postactions);
+			value.setValue(current_value_bytes);
+		
+			// Clear the preactions for the next execution.
+			if (event_preactions != null) resetPreactions(event_preactions);
+		} catch(AbortDHTActionException e) {
+			throw e;
+		} finally {
+			try { value.pack(); }
+			catch (IOException e) { return; }
 		}
-		
-		// Run the object's code in the sandbox.
-		DHTActionList event_postactions = new DHTActionList(
-				params.max_num_dht_actions_per_event);
-		byte[] current_value_bytes = executeActiveCodeSecurely(event_callback,
-				value.getValue(),
-				event_preactions,
-				event_postactions);
-		value.setValue(current_value_bytes);
-		
-		// Clear the preactions for the next execution.
-		if (event_preactions != null) resetPreactions(event_preactions);
-		
-		// Pack the object back. TODO(roxana): Do we need this really?
-		try { value.pack(); }
-		catch (IOException e) { e.printStackTrace(); }
 
 		// Finally, run the postactions.
 		if (event_postactions != null) {

@@ -14,9 +14,9 @@ public class StoreListener implements Iterable<StoreOutcome> {
 		outcomes = new ArrayList<StoreOutcome>();
 	}
 	
-	public void addOutcome(DHTTransportValue added_value,
-			               DHTTransportValue overwritten_value) {
-		outcomes.add(new StoreOutcome(added_value, overwritten_value));
+	public void addOutcome(DHTTransportValue overwritten_value,
+			               DHTTransportValue added_value) {
+		outcomes.add(new StoreOutcome(overwritten_value, added_value));
 	}
 	
 	@Override

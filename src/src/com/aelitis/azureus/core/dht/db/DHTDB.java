@@ -43,6 +43,9 @@ DHTDB
 	setControl(
 		DHTControl		control );
 	
+	public DHTControl
+	getControl();
+	
 		/**
 		 * Local store
 		 * @param key

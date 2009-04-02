@@ -13,7 +13,7 @@ public class GetIPExecutableAction extends ExecutableDHTAction<GetIPAction> {
 	@Override
 	protected void executeUsingListener(ActiveDHTOperationListener listener) {
 		getAction().setIP(getControl().getTransport().getLocalContact()
-				.getExternalAddress().getAddress().getHostAddress());
+				.getExternalAddress().toString());
 		listener.complete(false);
 	}
 

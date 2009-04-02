@@ -3,7 +3,7 @@ package edu.washington.cs.activedht.db.dhtactionexecutor;
 import java.util.Iterator;
 
 import com.aelitis.azureus.core.dht.DHTOperationListener;
-import com.aelitis.azureus.core.dht.control.DHTControl;
+import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -16,19 +16,20 @@ import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableD
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
 /**
  * TODO(roxana): There might be a vulnerability here. We're executing actions
- * one after the other within different threads. Hence, we're occupying
+ * one after the other within different threads. Hence, we're occupying a lot
+ * of threads, potentially.
  * 
  * @author roxana
  *
  */
 public class DHTActionExecutorImpl implements DHTActionExecutor {
 	private boolean is_initialized = false;
-	private DHTControl control;
+	public DHTDB db_pointer;
 	private ExecutableDHTActionFactory exe_action_factory;
 	
-	public DHTActionExecutorImpl(DHTControl control,
+	public DHTActionExecutorImpl(DHTDB db_pointer,
 			ExecutableDHTActionFactory exe_action_factory) {
-		this.control = control;
+		this.db_pointer = db_pointer;
 		this.exe_action_factory = exe_action_factory;
 	}
 	
@@ -56,7 +57,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor {
 		
 		// Wrap the action into an executable action.
 		final ExecutableDHTAction executable_action = 
-			exe_action_factory.createAction(action, control, 
+			exe_action_factory.createAction(action, db_pointer.getControl(), 
 					                        time_left_to_run_actions);
 		if (executable_action == null) {
 			// Unmatched executable version of the action.

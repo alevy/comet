@@ -80,7 +80,7 @@ public class ActiveDHTDBValueImplTest extends TestCase {
 		} catch (IllegalPackingStateException e) { }  // expected
 		
 		assertNotNull(value.getValue());
-		assertFalse(Arrays.equals(active_object_bytes, value.getValue()));
+		assertFalse(Arrays.equals(active_object_bytes, value.getValue()));  //??
 	}
 	
 	public void testUnpackAfterPack() {
@@ -95,6 +95,43 @@ public class ActiveDHTDBValueImplTest extends TestCase {
 		}
 		
 		// Unpack it the second time.
+		try { value.unpack(null); }
+		catch (Exception e) {
+			e.printStackTrace();
+			fail("Failed to unpack.");
+		}
+
+		try { assertEquals(preactions, value.getPreactions()); }
+		catch (IllegalPackingStateException e1) {
+			e1.printStackTrace();
+			fail("Failed to getPreactions() from value.");
+		}
+
+		// The active object should be identical.
+		assertTrue(Arrays.equals(this.active_object_bytes, value.getValue()));
+		TestActiveCode code = (TestActiveCode)DHTEventHandlerCallbackTest
+			.instantiateActiveObject(value.getValue(),
+				node.getAddress().getHostName(),
+				node.getAddress().getPort());
+		
+		assertNotNull(code);
+		assert(code.onTest(0));
+	}
+	
+	public void testPackUnpackPackUnpack() {
+		// Pack and unpack it once.
+		DHTActionMap preactions = new DHTActionMap(2);
+		try {
+			value.unpack(preactions);
+			value.pack();
+			value.unpack(null);
+			value.pack();
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Failed to pack/unpack.");
+		}
+		
+		// Unpack it the third time.
 		try { value.unpack(null); }
 		catch (Exception e) {
 			e.printStackTrace();

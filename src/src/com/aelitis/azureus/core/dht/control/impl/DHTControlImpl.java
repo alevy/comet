@@ -825,7 +825,6 @@ DHTControlImpl
 		final int							put_level,
 		final DHTOperationListenerDemuxer	listener )
 	{
-
 			// get the initial starting point for the put - may have previously been diversified
 		
 		byte[][]	encoded_keys	= 
@@ -1055,7 +1054,7 @@ DHTControlImpl
 							// each store is going to report its complete event
 						
 						listener.incrementCompletes();
-											
+						
 						contact.sendStore( 
 							new DHTTransportReplyHandlerAdapter()
 							{
@@ -1118,7 +1117,6 @@ DHTControlImpl
 										if ( DHTLog.isOn()){
 											DHTLog.log( "Store failed " + DHTLog.getString( _contact ) + " -> failed: " + _error.getMessage());
 										}
-																				
 										router.contactDead( _contact.getID(), false );
 										
 									}finally{

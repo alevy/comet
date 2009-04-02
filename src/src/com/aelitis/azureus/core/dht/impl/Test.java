@@ -80,7 +80,7 @@ Test
 	
 
 	static int		K			= 20;
-	static int		B			= 5;
+ 	static int		B			= 5;
 	static int		ID_BYTES	= 20;
 	
 	int		fail_percentage	= 00;
@@ -350,7 +350,7 @@ Test
 							String	key = rhs.substring(0,pos);
 							String	val = rhs.substring(pos+1);
 							
-							dht.put( key.getBytes(), "", val.getBytes(), (byte)(Math.random()*255), new DHTOperationAdapter() );
+							dht.put( key.getBytes(), "", getBytes(val), (byte)(Math.random()*255), new DHTOperationAdapter() );
 						}
 					}else if ( command == 'x' ){
 						
@@ -383,7 +383,7 @@ Test
 							
 						}else{
 							
-							DataOutputStream	daos = new DataOutputStream( new FileOutputStream( "C:\\temp\\dht.state"));
+							DataOutputStream	daos = new DataOutputStream( new FileOutputStream( getTmpDirectory() + "state"));
 							
 							dht.exportState( daos, 0 );
 							
@@ -404,7 +404,8 @@ Test
 										DHTTransportContact	contact,
 										DHTTransportValue	value )
 									{
-										System.out.println( "-> " + getString( value ));
+										System.out.println( "-> " + getString( value ) +
+												" (from: " + contact.getString() + ")");
 									}
 																	
 									public void
@@ -872,6 +873,13 @@ Test
 		}
 	}
 	
+	protected byte[] 
+	getBytes(
+			String 	val)
+	{
+		return val.getBytes();
+	}
+	
 	protected String
 	getString(
 		DHTTransportValue		value )
@@ -879,6 +887,10 @@ Test
 		return( new String( value.getValue()) + 
 				"; flags=" + Integer.parseInt(String.valueOf( value.getFlags()), 16 ) +
 				", orig=" + value.getOriginator().getAddress());
+	}
+	
+	protected String getTmpDirectory() {
+		return "C:\\temp\\dht\\";
 	}
 	
 	protected void
@@ -988,7 +1000,7 @@ Test
 		*/
 		
 		DHTStorageAdapter	storage_adapter =
-			createStorageAdapter(network, logger, new File( "C:\\temp\\dht\\" + i));
+			createStorageAdapter(network, logger, new File( getTmpDirectory() + i));
 
 		DHT	dht = DHTFactory.create( transport, dht_props, storage_adapter, this, logger );
 		
