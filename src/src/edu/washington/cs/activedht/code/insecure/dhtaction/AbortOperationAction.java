@@ -12,5 +12,4 @@ public final class AbortOperationAction extends DHTAction {
 
 	@Override
 	public int hashCode() { return (int)serialVersionUID; }
-
 }

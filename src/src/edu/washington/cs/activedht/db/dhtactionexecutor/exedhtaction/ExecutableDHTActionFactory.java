@@ -1,8 +1,9 @@
 package edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction;
 
-import com.aelitis.azureus.core.dht.control.DHTControl;
+import org.gudy.azureus2.core3.util.HashWrapper;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 
 /**
@@ -16,7 +17,8 @@ import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 public interface ExecutableDHTActionFactory {
 	@SuppressWarnings("unchecked")
 	public ExecutableDHTAction createAction(DHTAction action,
-                                            DHTControl control,
+			                                HashWrapper key,
+                                            ActiveDHTDB control,
                                             long running_timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException;
 }

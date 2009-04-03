@@ -42,10 +42,11 @@ public class ActiveDHTInitializer implements Constants {
 					            int original_republish_interval,
 					            int cache_republish_interval,
 					            DHTLogger logger) {
-				return new ActiveDHTDB(new ActiveDHTStorageAdapter(adapter),
-						               original_republish_interval,
-						               cache_republish_interval,
-						               logger);
+				return new ActiveDHTDBImpl(
+						new ActiveDHTStorageAdapter(adapter),
+						original_republish_interval,
+						cache_republish_interval,
+						logger);
 			}
 		});
 		

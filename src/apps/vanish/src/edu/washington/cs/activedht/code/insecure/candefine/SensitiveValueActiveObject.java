@@ -3,7 +3,13 @@ package edu.washington.cs.activedht.code.insecure.candefine;
 import edu.washington.cs.activedht.code.insecure.dhtaction.AbortOperationAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
-
+/**
+ * TODO(roxana): Can't implement right now, as I don't have side-channels
+ * for the user to communicate passwds. 
+ * 
+ * @author roxana
+ *
+ */
 public class SensitiveValueActiveObject implements ActiveCode {
 	private static final long serialVersionUID = 1L;
 
@@ -30,14 +36,10 @@ public class SensitiveValueActiveObject implements ActiveCode {
 
 	public void onGet(String caller_ip, DHTActionList executed_preactions,
 			          DHTActionList postactions) {
-		// TODO Auto-generated method stub
 		
 	}
 
-	public boolean onTest(int value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+	public boolean onTest(int value) { return false; }
 
 	public void onTimer(DHTActionList executed_preactions,
 			            DHTActionList postactions) { }

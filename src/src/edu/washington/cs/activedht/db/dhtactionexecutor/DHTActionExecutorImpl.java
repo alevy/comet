@@ -4,8 +4,9 @@ import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import org.gudy.azureus2.core3.util.HashWrapper;
+
 import com.aelitis.azureus.core.dht.DHTOperationListener;
-import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -13,6 +14,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
@@ -21,10 +23,10 @@ import edu.washington.cs.activedht.util.Constants;
 
 public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	private boolean is_initialized = false;
-	public DHTDB db_pointer;
+	public ActiveDHTDB db_pointer;
 	private ExecutableDHTActionFactory exe_action_factory;
 	
-	public DHTActionExecutorImpl(DHTDB db_pointer,
+	public DHTActionExecutorImpl(ActiveDHTDB db_pointer,
 			ExecutableDHTActionFactory exe_action_factory) {
 		this.db_pointer = db_pointer;
 		this.exe_action_factory = exe_action_factory;
@@ -43,7 +45,8 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public void executeActions(DHTActionList actions, long max_running_time,
+	public void executeActions(DHTActionList actions, HashWrapper key,
+			                   long max_running_time,
 			                   boolean should_wait_for_results)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
 		long deadline = System.currentTimeMillis() + max_running_time;
@@ -62,7 +65,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 					                             deadline);
 			// Run the next DHT action:
 			try {
-				startExecutingDHTAction(actions_it.next(),
+				startExecutingDHTAction(actions_it.next(), key,
 						                action_bulk_slots_semaphore,
 						                time_left_to_run_actions);
 				++num_actions_issued;
@@ -104,6 +107,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	}
 	
 	private void startExecutingDHTAction(final DHTAction action,
+			                             final HashWrapper key, 
 			                             final Semaphore sem,
 			                             final long timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException {
@@ -111,9 +115,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 		
 		// Wrap the action into an executable action.
 		ExecutableDHTAction executable_action = 
-			exe_action_factory.createAction(action,
-					db_pointer.getControl(), 
-					timeout);
+			exe_action_factory.createAction(action, key, db_pointer, timeout);
 		if (executable_action == null) return;  // unmatched executable action
 
 		// Create a DHT listener for this action.

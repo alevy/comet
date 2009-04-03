@@ -9,22 +9,17 @@ public final class PutDHTAction extends DHTAction {
 	private static final long serialVersionUID = -1324892916593067072L;
 	
 	// Inputs:
-	private byte[] key;
 	private byte[] value;
 	
 	// Outputs:
 	private Set<String> replicas;
 	
-	public PutDHTAction(byte[] key, byte[] value) {
-		this.key = key;
+	public PutDHTAction(byte[] value) {
 		this.value = value;
-		
 		replicas = new HashSet<String>();
 	}
 	
 	// Input accessors:
-	
-	public byte[] getKey() { return key; }
 	
 	public byte[] getValue() { return value; }
 	
@@ -41,11 +36,11 @@ public final class PutDHTAction extends DHTAction {
 		if (this == o) return true;
 		if (o == null) return false;
 		if (! (o instanceof PutDHTAction)) return false;
-		return key == null || Arrays.equals(key, ((PutDHTAction)o).key);
+		return value == null || Arrays.equals(value, ((PutDHTAction)o).value);
 	}
 
 	@Override
-	public int hashCode() { 
-		return key == null ? 0 : Arrays.hashCode(key);
+	public int hashCode() {  
+		return value == null ? 0 : Arrays.hashCode(value);
 	}
 }

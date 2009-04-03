@@ -223,6 +223,7 @@ public class ActiveCodeRunner {
 				if (event_preactions != null) {
 					try {
 						dht_action_executor.executeActions(event_preactions,
+								key,
 								params.max_time_run_dht_actions_per_event,
 								true);
 					} catch (ActiveCodeExecutionInterruptedException e) {
@@ -253,7 +254,7 @@ public class ActiveCodeRunner {
 		// Finally, run the postactions.
 		if (event_postactions != null) {
 			try {
-				dht_action_executor.executeActions(event_postactions,
+				dht_action_executor.executeActions(event_postactions, key,
 						params.max_time_run_dht_actions_per_event,
 						false);
 			} catch (ActiveCodeExecutionInterruptedException e) {

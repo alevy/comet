@@ -3,14 +3,21 @@ package edu.washington.cs.activedht.db.dhtactionrunner;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 
+import org.gudy.azureus2.core3.util.HashWrapper;
+
 import com.aelitis.azureus.core.dht.DHTOperationListener;
+import com.aelitis.azureus.core.dht.DHTStorageBlock;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.control.DHTControlActivity;
 import com.aelitis.azureus.core.dht.control.DHTControlListener;
 import com.aelitis.azureus.core.dht.control.DHTControlStats;
 import com.aelitis.azureus.core.dht.db.DHTDB;
+import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
+import com.aelitis.azureus.core.dht.db.DHTDBStats;
+import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.router.DHTRouter;
 import com.aelitis.azureus.core.dht.transport.DHTTransport;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -18,7 +25,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
-import edu.washington.cs.activedht.db.TestDHTClasses;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutor;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactoryImpl;
@@ -30,7 +37,7 @@ public class DHTActionExecutorImplTest extends TestCase {
 	
 	public DHTActionExecutorImplTest() {
 		control = new TestDHTControl();
-		DHTDB db = new TestDHTClasses.TestDB();
+		ActiveDHTDB db = new TestActiveDHTDB();
 		db.setControl(control);
 		this.executor = new DHTActionExecutorImpl(db,
 				new ExecutableDHTActionFactoryImpl());
@@ -39,15 +46,22 @@ public class DHTActionExecutorImplTest extends TestCase {
 	public void testExecuteOnePreaction() {
 		DHTActionList preactions =
 			new DHTActionList(3);
-		GetDHTAction action = new GetDHTAction("key".getBytes(), 0);
+		GetDHTAction action = new GetDHTAction(0);
 		try {
 			preactions.addAction(action);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		
-		try { executor.executeActions(preactions, 10, true); }
-		catch (Exception e) { e.printStackTrace(); }
+		try { 
+			executor.executeActions(preactions, 
+				                    new HashWrapper("key".getBytes()),
+				                    50,
+				                    true);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Failed to execute.");
+		}
 		
 		assertTrue(action.actionWasExecuted());
 		assertEquals(1, control.num_gets);
@@ -56,8 +70,8 @@ public class DHTActionExecutorImplTest extends TestCase {
 	public void testExecuteTwoPreactions() {
 		DHTActionList preactions =
 			new DHTActionList(3);
-		GetDHTAction action1 = new GetDHTAction("key".getBytes(), 0);
-		GetDHTAction action2 = new GetDHTAction("key".getBytes(), 0);
+		GetDHTAction action1 = new GetDHTAction(0);
+		GetDHTAction action2 = new GetDHTAction(0);
 		try {
 			preactions.addAction(action1);
 			preactions.addAction(action2);
@@ -65,8 +79,15 @@ public class DHTActionExecutorImplTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try { executor.executeActions(preactions, 10, true); }
-		catch (Exception e) { e.printStackTrace(); }
+		try { 
+			executor.executeActions(preactions, 
+				                    new HashWrapper("key".getBytes()),
+				                    50,
+				                    true);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail("Failed to execute.");
+		}
 		
 		assertTrue(action1.actionWasExecuted());
 		assertTrue(action2.actionWasExecuted());
@@ -74,12 +95,12 @@ public class DHTActionExecutorImplTest extends TestCase {
 	}
 	
 	public void testTryTwoPreactionsTimeRunsOutBeforeSecond() {
-		control.setOperationDuration(20);
+		control.setOperationDuration(100);
 		
 		DHTActionList preactions =
 			new DHTActionList(3);
-		GetDHTAction action1 = new GetDHTAction("key".getBytes(), 0);
-		GetDHTAction action2 = new GetDHTAction("key".getBytes(), 0);
+		GetDHTAction action1 = new GetDHTAction(0);
+		GetDHTAction action2 = new GetDHTAction(0);
 		try {
 			preactions.addAction(action1);
 			preactions.addAction(action2);
@@ -87,8 +108,11 @@ public class DHTActionExecutorImplTest extends TestCase {
 			e1.printStackTrace();
 		}
 		
-		try {
-			executor.executeActions(preactions, 10, true);
+		try { 
+			executor.executeActions(preactions, 
+				                    new HashWrapper("key".getBytes()),
+				                    50,
+				                    true);
 			fail("Executed both preactions w/o running out of time");
 		} catch (Exception e) { }  // expected
 		
@@ -278,5 +302,84 @@ class TestDHTControl implements DHTControl {
 		
 		return false;
 	}
+}
+
+class TestDB implements DHTDB {
+	private DHTControl control;
 	
+	public DHTDBValue get(HashWrapper key) { return null; }
+
+	public DHTDBLookupResult get(DHTTransportContact reader,
+			                     HashWrapper key,
+			                     int max_values,
+			                     byte flags,
+			                     boolean external_request) {
+		return null;
+	}
+
+	public DHTControl getControl() { return control; }
+
+	public DHTStorageBlock[] getDirectKeyBlocks() { return null; }
+
+	public DHTStorageBlock getKeyBlockDetails(byte[] key) { return null; }
+
+	public Iterator getKeys() { return null; }
+
+	public DHTDBStats getStats() { return null; }
+
+	public boolean isEmpty() { return false; }
+
+	public boolean isKeyBlocked(byte[] key) { return false; }
+
+	public DHTStorageBlock keyBlockRequest(
+			DHTTransportContact direct_sender,
+			byte[] request,
+			byte[] signature) {
+		return null;
+	}
+
+	public void print(boolean full) { }
+
+	public DHTDBValue remove(DHTTransportContact sender, HashWrapper key) {
+		return null;
+	}
+
+	public void setControl(DHTControl control) { this.control = control; }
+
+	public DHTDBValue store(HashWrapper key, byte[] value, byte flags) {
+		return null;
+	}
+
+	public byte store(DHTTransportContact sender, HashWrapper key,
+			          DHTTransportValue[] values) {
+		return 0;
+	}
+	
+}
+
+class TestActiveDHTDB extends TestDB implements ActiveDHTDB {
+
+	public DHTDBValue superGet(HashWrapper key) { return null; }
+
+	public DHTDBLookupResult superGet(DHTTransportContact reader,
+			                          HashWrapper key,
+			                          int max_values,
+			                          byte flags,
+			                          boolean external_request) {
+		return null;
+	}
+
+	public DHTDBValue superRemove(DHTTransportContact sender,
+			                      HashWrapper key) {
+		return null;
+	}
+
+	public DHTDBValue superStore(HashWrapper key, byte[] value, byte flags) {
+		return null;
+	}
+
+	public byte superStore(DHTTransportContact sender, HashWrapper key,
+			               DHTTransportValue[] values) {
+		return 0;
+	}
 }

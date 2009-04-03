@@ -1,13 +1,13 @@
 package edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction;
 
 import com.aelitis.azureus.core.dht.DHTOperationListener;
-import com.aelitis.azureus.core.dht.control.DHTControl;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetIPAction;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
 
 public class GetIPExecutableAction extends ExecutableDHTAction<GetIPAction> {
-	public GetIPExecutableAction(GetIPAction action, DHTControl control) {
-		super(action, control);
+	public GetIPExecutableAction(GetIPAction action, ActiveDHTDB db) {
+		super(action, db, null);
 	}
 	
 	@Override

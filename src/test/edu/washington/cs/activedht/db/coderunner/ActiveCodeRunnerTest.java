@@ -5,7 +5,6 @@ import java.util.List;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.DHTOperationListener;
-import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -21,6 +20,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.TestPreaction;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
+import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.StoreListener;
@@ -349,8 +349,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 
 class TestDHTActionExecutorImpl extends DHTActionExecutorImpl {
 	public TestDHTActionExecutorImpl() {
-		super(new TestDHTClasses.TestDB(),
-			  new TestExecutableDHTActionFactory());
+		super(null, new TestExecutableDHTActionFactory());
 	}
 }
 class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
@@ -358,8 +357,9 @@ class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	public ExecutableDHTAction createAction(DHTAction action,
-			                                DHTControl control,
-			                                long running_timeout) {
+                                            HashWrapper key,
+                                            ActiveDHTDB db,
+                                            long running_timeout) {
 		if (action instanceof TestPreaction) {
 			return new TestExecutableAction<TestPreaction>(
 					(TestPreaction)action);
@@ -373,7 +373,7 @@ class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 
 class TestExecutableAction<T extends DHTAction>
 extends ExecutableDHTAction<T> {
-	public TestExecutableAction(T action) { super(action, null); }
+	public TestExecutableAction(T action) { super(action, null, null); }
 
 	@Override
 	protected void executeUsingListener(ActiveDHTOperationListener listener) {

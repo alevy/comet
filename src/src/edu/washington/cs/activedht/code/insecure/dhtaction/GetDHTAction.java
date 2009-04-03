@@ -1,6 +1,5 @@
 package edu.washington.cs.activedht.code.insecure.dhtaction;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,20 +8,15 @@ public final class GetDHTAction extends DHTAction {
 
 	// Inputs:
 	private int num_responses_to_wait_for_subject_to_timeout;
-	private byte[] key;
 	
 	// Outputs:
 	private Set<String> replicas;
 	
-	public GetDHTAction(byte[] key,
-			               int num_responses_to_wait_for_subject_to_timeout) {
-		this.key = key;
+	public GetDHTAction(int num_responses_to_wait_for_subject_to_timeout) {
 		replicas = new HashSet<String>();
 	}
 	
 	// Input accessors:
-	
-	public byte[] getKey() { return key; }
 	
 	public int getNumResponsesToWaitForSubjectToTimeout() {
 		return num_responses_to_wait_for_subject_to_timeout;
@@ -40,12 +34,9 @@ public final class GetDHTAction extends DHTAction {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null) return false;
-		if (! (o instanceof GetDHTAction)) return false;
-		return key == null || Arrays.equals(key, ((GetDHTAction)o).key);
+		return (o instanceof GetDHTAction);
 	}
 
 	@Override
-	public int hashCode() { 
-		return key == null ? 0 : Arrays.hashCode(key);
-	}
+	public int hashCode() { return (int)serialVersionUID; }
 }
