@@ -12,8 +12,6 @@ import java.util.concurrent.TimeoutException;
 
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
-import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
-import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 import edu.washington.cs.activedht.util.Constants;
 
 public class ActiveCodeSandboxImpl<RETURN_TYPE>

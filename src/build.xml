@@ -12,6 +12,8 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
    <property name="src.dir" value="src" />
    <property name="test.dir" value="test" />
    <property name="testdata.dir" value="testdata" />
+   <property name="apps.dir" value="apps/vanish/src" />
+	
    <property name="libs.dir" value="lib" />
    <property name="build.dir" value="build/classes" />
    <property name="build.testdata" value="build/testdata" />
@@ -59,24 +61,39 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 
    </target>
 	
-	<target name="compile-tests" depends="compile" >
-	      <path id="libs.classpath">
+   <!-- Apps: -->
+   <target name="compile-apps" depends="compile" >
+   	    <path id="apps.classpath">
+   	    	<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+   	    	<dirset dir="${root.dir}/${build.dir}" />
+   	    </path>
+        <javac srcdir="${root.dir}/${apps.dir}"
+        	   destdir="${root.dir}/${build.dir}"
+        	   nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no"
+          	   debug="true" debuglevel="lines,vars,source" >
+   	        <classpath refid="apps.classpath" />
+        </javac>
+   </target>
+    
+   <!-- Tests: -->
+   <target name="compile-tests" depends="compile,compile-apps" >
+       <path id="libs.classpath">
 	         <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
-	      </path>
-		  <path id="all.classpath">
+	   </path>
+   	   <path id="all.classpath">
 			<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
 			<dirset dir="${root.dir}/${build.dir}" />
 		  	<dirset dir="${root.dir}/${build.testdata}" />
-		  </path>
+   	   </path>
 	   
-	      <javac srcdir="${root.dir}/${test.dir}" destdir="${root.dir}/${build.dir}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
-	         <classpath refid="libs.classpath" />
-	      </javac>
+       <javac srcdir="${root.dir}/${test.dir}" destdir="${root.dir}/${build.dir}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+	        <classpath refid="libs.classpath" />
+       </javac>
 		
-		  <!-- Copy and compile the testdata. -->
-		  <copydir dest="${root.dir}/${build.testdata}" src="${root.dir}/${testdata.dir}" excludes="**/*.java" />
-		  <javac srcdir="${root.dir}/${testdata.dir}" destdir="${root.dir}/${build.testdata}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
-			 <classpath refid="all.classpath" />
+       <!-- Copy and compile the testdata. -->
+	   <copydir dest="${root.dir}/${build.testdata}" src="${root.dir}/${testdata.dir}" excludes="**/*.java" />
+           <javac srcdir="${root.dir}/${testdata.dir}" destdir="${root.dir}/${build.testdata}" nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+               <classpath refid="all.classpath" />
 		  </javac>
    </target>
    	

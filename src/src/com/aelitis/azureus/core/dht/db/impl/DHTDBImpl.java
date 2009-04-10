@@ -150,6 +150,11 @@ DHTDBImpl
 			if (should_init) init();
 	}
 	
+	protected long
+	getCacheRepublishInterval() { 
+		return cache_republish_interval;
+	}
+	
 	/**
 	 * Added init() function to support testing.
 	 * @author roxana
@@ -825,12 +830,14 @@ DHTDBImpl
 		}
 	}
 	
-	protected int
-	republishOriginalMappings()
-	{
-		int	values_published	= 0;
-
-		Map	republish = new HashMap();
+	protected interface KeyValueMappingFilter {
+		public boolean matches(final HashWrapper key,
+				               final DHTDBMapping mapping);
+		public boolean matches(DHTDBValueImpl value);
+	} 
+	
+	protected Map getFilteredKeyValuePairs(KeyValueMappingFilter filter) {
+		Map	filtered_values = new HashMap();
 		
 		try{
 			this_mon.enter();
@@ -844,6 +851,7 @@ DHTDBImpl
 				HashWrapper		key		= (HashWrapper)entry.getKey();
 				
 				DHTDBMapping	mapping	= (DHTDBMapping)entry.getValue();
+				if (! filter.matches(key, mapping)) continue;
 				
 				Iterator	it2 = mapping.getValues();
 				
@@ -853,19 +861,15 @@ DHTDBImpl
 					
 					DHTDBValueImpl	value = (DHTDBValueImpl)it2.next();
 				
-					if ( value != null && value.isLocal()){
+					if (filter.matches(value)) {
 						
-						// we're republising the data, reset the creation time
-						
-						value.setCreationTime();
-
 						values.add( value );
 					}
 				}
 				
 				if ( values.size() > 0 ){
 					
-					republish.put( key, values );
+					filtered_values.put( key, values );
 					
 				}
 			}
@@ -873,6 +877,29 @@ DHTDBImpl
 			
 			this_mon.exit();
 		}
+		
+		return filtered_values;
+	}
+	
+	private static final KeyValueMappingFilter
+	REPUBLISH_ORIGINAL_MAPPINGS_FILTER = new KeyValueMappingFilter() {
+		public boolean matches(HashWrapper key, DHTDBMapping mapping) {
+			return true;
+		}
+		public boolean matches(DHTDBValueImpl value) {
+			boolean matches = (value != null && value.isLocal());
+			if (matches) value.setCreationTime();  // will republish; reset.
+			return matches;
+		}
+	};
+	
+	protected int
+	republishOriginalMappings()
+	{
+		int	values_published	= 0;
+
+		Map republish = getFilteredKeyValuePairs(
+				REPUBLISH_ORIGINAL_MAPPINGS_FILTER);
 		
 		Iterator	it = republish.entrySet().iterator();
 		

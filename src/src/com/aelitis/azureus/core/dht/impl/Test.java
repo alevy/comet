@@ -68,7 +68,7 @@ Test
 	
 	static{
 		
-		DHTTransportUDPImpl.TEST_EXTERNAL_IP	= true;
+		DHTTransportUDPImpl.TEST_EXTERNAL_IP	= false;
 	}
 	
 	int num_dhts			= 3;
@@ -185,10 +185,14 @@ Test
 	
 	
 	Map	port_map = new HashMap();
+
+	protected Test() { this(3); }
 	
 	protected
-	Test()
+	Test(int _num_dhts)
 	{
+		this.num_dhts = _num_dhts;
+		
 		try{
 			DHTLog.setLogging( true );
 			

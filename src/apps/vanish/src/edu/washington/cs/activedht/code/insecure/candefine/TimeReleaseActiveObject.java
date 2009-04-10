@@ -1,8 +1,8 @@
 package edu.washington.cs.activedht.code.insecure.candefine;
 
+import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
 import edu.washington.cs.activedht.code.insecure.dhtaction.AbortOperationAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 
 /**
  * Challenges:
@@ -11,19 +11,18 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
  *
  * @author roxana
  */
-public class TimeReleaseActiveObject implements ActiveCode {
+public class TimeReleaseActiveObject extends ActiveObjectAdapter {
 	private static final long serialVersionUID = -1481297571876799807L;
-	
+
 	private long release_date;
 
-	public TimeReleaseActiveObject(long release_date) {
+	public TimeReleaseActiveObject(byte[] value, long release_date) {
+		super(value);
 		this.release_date = release_date;
 	}
 	
-	@Override
-	public void onDelete(String caller_ip, DHTActionList executed_preactions,
-			             DHTActionList postactions) { }
-
+	// ActiveCode interface:
+	
 	@Override
 	public void onGet(String caller_ip, DHTActionList executed_preactions,
 			          DHTActionList postactions) {
@@ -33,26 +32,4 @@ public class TimeReleaseActiveObject implements ActiveCode {
 			catch (Exception e) { }
 		}
 	}
-
-	@Override
-	public void onTimer(DHTActionList executed_preactions,
-			            DHTActionList postactions) { }
-
-	@Override
-	public void onValueAdded(String this_node_ip, String caller_ip,
-			                 DHTActionMap preactions_map,
-			                 DHTActionList postactions) { }
-
-	@Override
-	public void onValueChanged(String caller_ip, byte[] plain_new_value,
-			                   DHTActionList executed_preactions,
-			                   DHTActionList postactions) { }
-
-	@Override
-	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
-			                   DHTActionList executed_preactions,
-			                   DHTActionList postactions) { }
-	
-	@Override
-	public boolean onTest(int value) { return false; }
 }

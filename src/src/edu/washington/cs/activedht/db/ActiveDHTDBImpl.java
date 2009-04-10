@@ -1,6 +1,7 @@
 package edu.washington.cs.activedht.db;
 
 import java.util.List;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SimpleTimer;
@@ -11,6 +12,8 @@ import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBMapping;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -92,11 +95,11 @@ implements ActiveDHTDB, Constants {
 		
 		// Initialize the ActiveDHTDB-specific part.
 		SimpleTimer.addPeriodicEvent("DHTDB:ac",
-				ACTIVE_CODE_PERIODIC_TIMER_INTERVAL,
+				getCacheRepublishInterval(),
 				new TimerEventPerformer() {
 					@Override
 					public void perform(TimerEvent event) {
-						fireMaintenanceTimerForActiveCode();		
+						fireMaintenanceTimerForActiveCode();
 					}
 				});
 	}
@@ -292,8 +295,21 @@ implements ActiveDHTDB, Constants {
 	
 	// Timer handler:
 	
-	protected void fireMaintenanceTimerForActiveCode() {
-		
+	private static final KeyValueMappingFilter TIMER_FILTER =
+		new KeyValueMappingFilter() {
+			public boolean matches(HashWrapper key, DHTDBMapping mapping) {
+				return true;
+			}
+
+			public boolean matches(DHTDBValueImpl value) { return true; }
+		};
+	
+	@SuppressWarnings("unchecked")
+	private void fireMaintenanceTimerForActiveCode() {
+		Map<HashWrapper, List<DHTDBValueImpl>> to_activate =
+			(Map<HashWrapper, List<DHTDBValueImpl>>)
+				super.getFilteredKeyValuePairs(TIMER_FILTER);
+		active_code_handler.onTimer(to_activate);
 	}
 
 	// ActiveDHTDB interface:

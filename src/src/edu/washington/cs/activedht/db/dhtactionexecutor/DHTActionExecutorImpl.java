@@ -34,10 +34,11 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	
 	// DHTActionExecutor interface:
 	
+	@Override
 	public String getThisHostAddr() {
 		try {
 			return db_pointer.getControl().getTransport()
-				.getLocalContact().getAddress().toString();
+				.getLocalContact().getExternalAddress().toString();
 		} catch (NullPointerException e) {
 			return null;
 		}
@@ -47,7 +48,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	@Override
 	public void executeActions(DHTActionList actions, HashWrapper key,
 			                   long max_running_time,
-			                   boolean should_wait_for_results)
+			                   boolean wait_for_responses)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
 		long deadline = System.currentTimeMillis() + max_running_time;
 		

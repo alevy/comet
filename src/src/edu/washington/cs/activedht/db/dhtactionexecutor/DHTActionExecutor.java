@@ -21,7 +21,7 @@ public interface DHTActionExecutor extends Initializable {
 	@SuppressWarnings("unchecked")
 	public void executeActions(DHTActionList actions, HashWrapper key,
 			                   long execution_timeout,
-			                   boolean wait_for_the_results)
+			                   boolean wait_for_responses)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException;
 	
 	public String getThisHostAddr();

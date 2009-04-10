@@ -1,15 +1,18 @@
 package edu.washington.cs.activedht.db.coderunner;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -70,7 +73,7 @@ public class ActiveCodeRunner {
 			if (value == null) continue;
 			try {
 				doOnEvent(new DHTEventHandlerCallback.GetCb(
-								reader.getAddress().toString()),
+								getExternalAddress(reader)),
 						  reader,
 						  key,
 						  value);
@@ -96,12 +99,16 @@ public class ActiveCodeRunner {
 		return remaining_values;
 	}
 	
+	private static String getExternalAddress(DHTTransportContact sender) {
+		return sender.getExternalAddress().toString();
+	}
+	
 	public DHTDBValue onRemove(final DHTTransportContact sender,
                                final HashWrapper key,
                                DHTDBValue removed_value) {
 		try {
 			doOnEvent(new DHTEventHandlerCallback.DeleteCb(
-							sender.getAddress().toString()),
+							getExternalAddress(sender)),
 					  sender,
 					  key,
 					  removed_value);
@@ -127,12 +134,12 @@ public class ActiveCodeRunner {
 			DHTTransportValue added_value = store_outcome.getAddedValue();
 			DHTTransportValue overwritten_value =
 				store_outcome.getOverwrittenValue();
-			// Overwritten value takes precedence over added value, so
-			// announce it first.
+			// Overwritten value takes precedence over added value, so announce
+			// it first.
 			if (overwritten_value != null) {
 				try {
 					doOnEvent(new DHTEventHandlerCallback.ValueChangedCb(
-									sender.getAddress().toString(),
+									getExternalAddress(sender),
 									added_value.getValue()),
 							  sender,
 							  key,
@@ -150,7 +157,7 @@ public class ActiveCodeRunner {
 			try {
 				doOnEvent(new DHTEventHandlerCallback.ValueAddedCb(
 								this.dht_action_executor.getThisHostAddr(),
-								sender.getAddress().getHostName(),
+								getExternalAddress(sender),
 								Constants.MAX_NUM_DHT_ACTIONS_PER_EVENT),
 						  sender,
 						  key,
@@ -172,8 +179,22 @@ public class ActiveCodeRunner {
 				values_to_remove);
 	} 
 	
-	public void onTimer() { 
-		// TODO(roxana): Implement.
+	public void onTimer(
+			Map<HashWrapper, List<DHTDBValueImpl>> key_to_value_map) { 
+		for (Map.Entry<HashWrapper, List<DHTDBValueImpl>> e:
+			 key_to_value_map.entrySet()) {
+			HashWrapper key = e.getKey();
+			for (DHTDBValueImpl v: e.getValue()) {
+				if (! (v instanceof ActiveDHTDBValueImpl)) continue;  // ignore
+				ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)v;
+				try {
+					doOnEvent(new DHTEventHandlerCallback.TimerCb(), null, key,
+							  value);
+				} catch (NotAnActiveObjectException e1) {  // nothing to do.
+				} catch (InvalidActiveObjectException e1) {  // nothing to do.
+				} catch (AbortDHTActionException e1) { }  // nothing to do.
+			}
+		}
 	}
 	
 	// General-event handler:
@@ -191,17 +212,19 @@ public class ActiveCodeRunner {
 			throw new NotAnActiveObjectException("Null or wrong-type value.");
 		}
 		
+		ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)db_value;
+		
 		// Initialize the event callback:
 		try {
+			InetSocketAddress originator =
+				db_value.getOriginator().getExternalAddress();
 			event_callback.init(InputStreamSecureClassLoader.newInstance(
-					caller.getAddress().getHostName(),
-					caller.getAddress().getPort()));
+					originator.getHostName(),
+					originator.getPort()));
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 			return;
 		}
-
-		ActiveDHTDBValueImpl value = (ActiveDHTDBValueImpl)db_value;
 
 		// Unpack the value.
 		try { value.unpack(event_callback.getImposedPreactionsMap()); }
@@ -243,9 +266,8 @@ public class ActiveCodeRunner {
 			value.setValue(current_value_bytes);
 		
 			// Clear the preactions for the next execution.
+			// Must be done before value.pack!.
 			if (event_preactions != null) resetPreactions(event_preactions);
-		} catch(AbortDHTActionException e) {
-			throw e;
 		} finally {
 			try { value.pack(); }
 			catch (IOException e) { return; }

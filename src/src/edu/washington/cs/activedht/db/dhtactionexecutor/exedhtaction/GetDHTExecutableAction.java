@@ -24,12 +24,12 @@ extends ExecutableDHTAction<GetDHTAction> {
 	@Override
 	protected void executeUsingListener(ActiveDHTOperationListener listener) {
 		GetDHTAction action = getAction();
-		getControl().get(getKeyBytes(), "ActiveDHT action", (byte)0,
-				         action.getNumResponsesToWaitForSubjectToTimeout(),
-				         this.timeout,
-				         false,  // exhaustive -- TODO(roxana).
-				         false,
-				         listener);
+		getControl().getEncodedKey(getKeyBytes(), "ActiveDHT action", (byte)0,
+				action.getNumResponsesToWaitForSubjectToTimeout(),
+				this.timeout,
+				true,  // exhaustive?? -- TODO(roxana).
+				false,
+				listener);
 	}
 
 	@Override
@@ -39,7 +39,7 @@ extends ExecutableDHTAction<GetDHTAction> {
 			public void read(DHTTransportContact contact,
 					         DHTTransportValue value) {
 				getAction().addResponse(contact.getExternalAddress()
-						.getAddress().getHostAddress());
+						.getAddress().toString());
 			}
 		};
 	}

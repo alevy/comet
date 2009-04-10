@@ -67,7 +67,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	public void unpack(DHTActionMap imposed_preaction_map)
+	public synchronized void unpack(DHTActionMap imposed_preaction_map)
 	throws NotAnActiveObjectException, InvalidActiveObjectException,
  	       IOException {
 		if (isUnpacked()) return;  // already unpacked.
@@ -117,7 +117,7 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	 * 
 	 * @throws IOException
 	 */
-	public void pack() throws IOException {
+	public synchronized void pack() throws IOException {
 		if (isPacked()) return;  // already packed; nothing to do.
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();

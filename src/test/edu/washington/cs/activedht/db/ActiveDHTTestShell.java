@@ -5,17 +5,52 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.impl.Test;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.code.insecure.candefine.AccessCountingActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
+import edu.washington.cs.activedht.code.insecure.candefine.ForensicTrailActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.SensitiveValueActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.TimeReleaseActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.TimeoutActiveObject;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
+import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 
+/**
+ * Example:
+ *   p x=OneTimeActiveObject(xxx)
+ * 
+ * @author roxana
+ *
+ */
 public class ActiveDHTTestShell extends Test {
+	private static final String ACTIVE_CODE_PACKAGE_NAME =
+		"edu.washington.cs.activedht.code.insecure.candefine.";
+	private static final String CLASS_NAME_RE = "([A-z0-9\\.]+)";
+	
+	private static final String CONSTRUCTOR_PARAM_RE = "([^\\s,\\)]+)";
+	
+	private static final String ALL_CONSTRUCTOR_PARAMS_RE =
+		"(" + CONSTRUCTOR_PARAM_RE + "\\s*,\\s*)*" +  // non-last params
+		CONSTRUCTOR_PARAM_RE;  // last param.
+	
+	private static final String ACTIVE_VALUE_RE =
+		"^\\s*" + CLASS_NAME_RE + "\\s*\\(\\s*" + ALL_CONSTRUCTOR_PARAMS_RE +
+		"\\)\\s*$";
+	
+	private static final Pattern ACTIVE_VALUE_PATTERN =
+		Pattern.compile(ACTIVE_VALUE_RE);
+	
+	protected ActiveDHTTestShell(int num_dhts) { super(num_dhts); }
+	
+	// Test function overrides:
+	
 	@Override
 	protected DHTStorageAdapter createStorageAdapter(int network,
 			                                         DHTLogger logger,
@@ -28,18 +63,30 @@ public class ActiveDHTTestShell extends Test {
 	@Override
 	protected String getTmpDirectory() { return "/tmp/dht/"; }
 	
+	/**
+	 * Active value format:
+	 *     CLASS_NAME(arg1, arg2, arg3, ...)
+	 * where:
+	 *     CLASS_NAME is the class' name.
+	 *     arg1, arg2, ... are arguments of the constructor.
+	 */
 	@Override
 	protected byte[] getBytes(String value) {
-		if (! value.startsWith("active")) {
-			return super.getBytes(value);
-		}
-			
-		// Value should be active.
+		Matcher matcher = ACTIVE_VALUE_PATTERN.matcher(value);
+		if (! matcher.find()) return super.getBytes(value);  // not active
 		
-		value = value.substring("active".length());
-
 		// Create a test active value.
-		ActiveCode ac = new AccessCountingActiveCode(value);
+		ActiveCode ac = null;
+		try {
+			ac = instantiateActiveCode(matcher);
+		} catch (InvalidActiveObjectException e1) {
+			e1.printStackTrace();
+			ActiveDHTTestShell.printShellUsage();
+			return null;
+		}
+		if (ac == null) return super.getBytes(value);  // not an active value.
+		
+		// Value should be active.
 		
 		// Serialize it.
 		byte[] value_bytes = null;
@@ -55,6 +102,61 @@ public class ActiveDHTTestShell extends Test {
 
 		return value_bytes;
 	}
+	
+	private static void printShellUsage() {
+		System.out.println("USAGE: Syntax for active values: " +
+				           "CLASS_NAME(arg1, arg2, ...)" );
+	}
+	
+	// TODO(roxana): Pretty hacky now.
+	private ActiveCode instantiateActiveCode(Matcher matcher)
+	throws InvalidActiveObjectException {
+		// assert(matcher.matches());
+		if (matcher.groupCount() < 4) {
+			throw new InvalidActiveObjectException("Can't instantiate " +
+					"active object: invalid number of params");
+		}
+
+		String active_code_class = ACTIVE_CODE_PACKAGE_NAME + matcher.group(1);
+		if (active_code_class.equals(
+				ForensicTrailActiveObject.class.getName())) {
+			return new ForensicTrailActiveObject(matcher.group(4).getBytes());
+			
+		} else if (active_code_class.equals(
+				OneTimeActiveObject.class.getName())) {
+			return new OneTimeActiveObject(matcher.group(4).getBytes());
+			
+		} else if (active_code_class.equals(
+				SensitiveValueActiveObject.class.getName())) {
+			return null;  // TODO
+			
+		} else if (active_code_class.equals(
+				TimeoutActiveObject.class.getName())) {
+			long self_destruction_date = System.currentTimeMillis();
+			try {
+				self_destruction_date += Long.parseLong(matcher.group(4));
+			} catch (NumberFormatException e) {
+				throw new InvalidActiveObjectException("Can't instantiate " +
+						"active object: invalid timeout");
+			}
+			return new TimeoutActiveObject(matcher.group(3).getBytes(),
+					                       self_destruction_date);
+			
+		} else if (active_code_class.equals(
+				TimeReleaseActiveObject.class.getName())) {
+			long release_date = System.currentTimeMillis();
+			try {
+				release_date += Long.parseLong(matcher.group(4));
+			} catch (NumberFormatException e) {
+				throw new InvalidActiveObjectException("Can't instantiate " +
+						"active object: invalid timeout");
+			}
+			return new TimeReleaseActiveObject(matcher.group(3).getBytes(),
+					                           release_date);
+		}
+		
+		return null;
+	} 
 	
 	@Override
 	protected String getString(DHTTransportValue value) {		
@@ -78,15 +180,31 @@ public class ActiveDHTTestShell extends Test {
 			}
 		}
 		
-		return new String(active_object);  // regular value.
+		return super.getString(value);  // not an active value.
 	}
 	
-	public static void main(String args[]) {
-		// First, initialize the active engine of the DHT.
+	private static void printProgramUsageAndExit() {
+		System.err.println("USAGE: java " +
+				ActiveDHTTestShell.class.getName() + " <num dhts>");
+		System.exit(1);
+	}
+	
+	private static void doMain(int num_dhts) {
+        // First, initialize the active engine of the DHT.
 		ActiveDHTInitializer.prepareRuntimeForActiveCode();
 		
 		// Create a test shell using Azureus' one.
-		new ActiveDHTTestShell();
+		new ActiveDHTTestShell(num_dhts);
+	}
+	
+	public static void main(String args[]) {
+		if (args.length != 1) printProgramUsageAndExit();
+
+		int num_dhts = 0;
+		try { num_dhts = Integer.parseInt(args[0]); }
+		catch(NumberFormatException e) { printProgramUsageAndExit(); }
+
+		doMain(num_dhts);
 	}
 }
 

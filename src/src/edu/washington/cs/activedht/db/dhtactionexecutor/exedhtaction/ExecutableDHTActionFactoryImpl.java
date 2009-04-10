@@ -2,6 +2,8 @@ package edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
+import com.aelitis.azureus.core.dht.impl.DHTLog;
+
 import edu.washington.cs.activedht.code.insecure.dhtaction.AbortOperationAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
@@ -20,9 +22,11 @@ implements ExecutableDHTActionFactory {
 			                                ActiveDHTDB db,
 			                                long running_timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException {
+		
 		if (action instanceof GetIPAction) {
 			return new GetIPExecutableAction((GetIPAction)action, db);
 		} else if (action instanceof GetDHTAction) {
+			System.out.println("KEY: " + DHTLog.getFullString(key.getBytes()));
 			return new GetDHTExecutableAction((GetDHTAction)action, db, key,
 					                          running_timeout);
 		} else if (action instanceof PutDHTAction) {

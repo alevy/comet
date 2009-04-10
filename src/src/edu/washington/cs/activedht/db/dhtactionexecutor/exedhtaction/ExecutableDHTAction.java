@@ -13,10 +13,13 @@ public abstract class ExecutableDHTAction<T extends DHTAction> {
 	private ActiveDHTDB db;
 	private HashWrapper key;
 	
+	private byte[] key_bytes;
+	
 	public ExecutableDHTAction(T action, ActiveDHTDB db, HashWrapper key) {
 		this.action = action;
 		this.db     = db;
 		this.key    = key;
+		key_bytes   = key.getBytes();
 	}
 	
 	public final void startExecuting(ActiveDHTOperationListener listener) {
@@ -44,5 +47,5 @@ public abstract class ExecutableDHTAction<T extends DHTAction> {
 	
 	protected HashWrapper getKey() { return key; }
 	
-	protected byte[] getKeyBytes() { return key.getBytes(); }
+	protected byte[] getKeyBytes() { return key_bytes; }
 }

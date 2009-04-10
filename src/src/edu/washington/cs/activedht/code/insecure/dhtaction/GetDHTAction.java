@@ -7,19 +7,22 @@ public final class GetDHTAction extends DHTAction {
 	private static final long serialVersionUID = 6320233174050803439L;
 
 	// Inputs:
-	private int num_responses_to_wait_for_subject_to_timeout;
+	private int num_resp_to_wait;
 	
 	// Outputs:
 	private Set<String> replicas;
 	
 	public GetDHTAction(int num_responses_to_wait_for_subject_to_timeout) {
 		replicas = new HashSet<String>();
+		
+		this.num_resp_to_wait =
+			num_responses_to_wait_for_subject_to_timeout;
 	}
 	
 	// Input accessors:
 	
 	public int getNumResponsesToWaitForSubjectToTimeout() {
-		return num_responses_to_wait_for_subject_to_timeout;
+		return num_resp_to_wait;
 	}
 	
 	// Output accessors:

@@ -278,6 +278,7 @@ public abstract class DHTEventHandlerCallback {
 		public ValueAddedCb(String this_node_ip, String caller_ip,
 				            int max_action_list_size) {
 			super(caller_ip);
+			this.this_node_ip = this_node_ip;
 			all_preactions = new DHTActionMap(max_action_list_size);
 		}
 

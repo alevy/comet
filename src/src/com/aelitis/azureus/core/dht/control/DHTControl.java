@@ -72,7 +72,18 @@ DHTControl
 		
 	public void
 	get(
-		byte[]					key,
+		byte[]					unencoded_key,
+		String					description,
+		byte					flags,
+		int						max_values,
+		long					timeout,
+		boolean					exhaustive,
+		boolean					high_priority,
+		DHTOperationListener	listener );
+	
+	public void
+	getEncodedKey(
+		byte[]					encoded_key,
 		String					description,
 		byte					flags,
 		int						max_values,

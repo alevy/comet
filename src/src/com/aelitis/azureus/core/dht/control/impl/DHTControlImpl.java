@@ -1259,7 +1259,27 @@ DHTControlImpl
 		final DHTOperationListener	get_listener )
 	{
 		final byte[]	encoded_key = encodeKey( unencoded_key );
-
+		getEncodedKey( encoded_key,
+					   description,
+					   flags,
+					   max_values,
+					   timeout,
+				       exhaustive,
+				       high_priority,
+				       get_listener );
+	}
+	
+	public void
+	getEncodedKey(
+		byte[]						encoded_key,
+		String						description,
+		byte						flags,
+		int							max_values,
+		long						timeout,
+		boolean						exhaustive,
+		boolean						high_priority,
+		final DHTOperationListener	get_listener )
+	{
 		if ( DHTLog.isOn()){
 			DHTLog.log( "get for " + DHTLog.getString( encoded_key ));
 		}
@@ -1909,6 +1929,7 @@ DHTControlImpl
 				
 				// individual lookup steps
 				private void lookupSteps() {
+					
 					try
 					{
 						boolean terminate = false;
@@ -1970,6 +1991,7 @@ DHTControlImpl
 										terminate = true;
 										break;
 									}
+
 									idle_searches++;
 									continue;
 								}
@@ -1988,11 +2010,11 @@ DHTControlImpl
 										if ( DHTLog.isOn()){
 											DHTLog.log("lookup: terminates - we've searched the closest " + search_accuracy + " contacts");
 										}
-										
 										terminate = true;
 										break;
 									}
 								}
+								
 								// we optimise the first few entries based on their Vivaldi distance. Only a few
 								// however as we don't want to start too far away from the target.
 								if (contacts_queried.size() < concurrency)
@@ -2021,6 +2043,7 @@ DHTControlImpl
 											closest = vp_closest;
 									}
 								}
+
 								contacts_to_query.remove(closest);
 								contacts_queried.put(new HashWrapper(closest.getID()), closest);
 								// never search ourselves!
@@ -2032,7 +2055,6 @@ DHTControlImpl
 								final int search_level = ((Integer) level_map.get(closest)).intValue();
 								active_searches++;
 								handler.searching(closest, search_level, active_searches);
-
 
 								DHTTransportReplyHandlerAdapter replyHandler = new DHTTransportReplyHandlerAdapter() {
 									private boolean	value_reply_received	= false;
@@ -2221,7 +2243,6 @@ DHTControlImpl
 											key_blocked = true;
 									}
 								};
-
 
 								router.recordLookup(lookup_id);
 								if (value_search)
