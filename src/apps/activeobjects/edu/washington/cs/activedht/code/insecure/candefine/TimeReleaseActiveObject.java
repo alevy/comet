@@ -26,10 +26,16 @@ public class TimeReleaseActiveObject extends ActiveObjectAdapter {
 	@Override
 	public void onGet(String caller_ip, DHTActionList executed_preactions,
 			          DHTActionList postactions) {
-		if (System.currentTimeMillis() < release_date) {
+		if (! timeToRelease()) {
 			// Refuse to release before then.
 			try { postactions.addAction(new AbortOperationAction()); }
 			catch (Exception e) { }
 		}
+	}
+	
+	// Helper functions:
+	
+	private boolean timeToRelease() {
+		return System.currentTimeMillis() >= release_date;
 	}
 }

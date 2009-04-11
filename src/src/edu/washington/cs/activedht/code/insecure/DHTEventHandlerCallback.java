@@ -113,7 +113,7 @@ public abstract class DHTEventHandlerCallback {
 			// It's a plain value, so nothing to do.
 			// TODO(roxana): For performance, avoid calling this for
 			// non-active values.
-			return null;
+			return value_bytes;
 		}
 		if (active_code == null) return null;  // nothing to do
 		
@@ -154,7 +154,7 @@ public abstract class DHTEventHandlerCallback {
 	 *                       ActiveCode object.
 	 * @throws NotAnActiveObjectException  if the value is not active, but
 	 *                                     rather it's just a set of bytes.
-	 * @throws ClassNotFoundException      if the class cannot be loaded from
+	 * @throws IOException      if the class cannot be loaded from
 	 *                                     the byte buffer or from the allowed
 	 *                                     classpath.
 	 */

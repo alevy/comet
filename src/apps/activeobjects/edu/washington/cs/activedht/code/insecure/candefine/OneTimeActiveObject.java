@@ -3,7 +3,6 @@ package edu.washington.cs.activedht.code.insecure.candefine;
 import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
 import edu.washington.cs.activedht.code.insecure.dhtaction.AbortOperationAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
-import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.LocalDeleteDHTAction;
 
@@ -28,16 +27,8 @@ public class OneTimeActiveObject extends ActiveObjectAdapter {
 	// ActiveCode interface:
 	
 	@Override
-	public void onValueAdded(String this_node_ip, String caller_ip,
-            DHTActionMap preactions_map,
-            DHTActionList postactions) {
-		System.out.println("ACTIVE OBJECT: PUT!");
-	}
-	
-	@Override
 	public void onGet(String caller_ip, DHTActionList executed_preactions,
 			          DHTActionList postactions) {
-		System.out.println("ACTIVE OBJECT: GET!");
 		if (! selfDestructionInitiated()) {
 			initiateSelfDestruction();
 			if (timeToSelfDestruct()) selfDestruct(postactions);
@@ -51,7 +42,6 @@ public class OneTimeActiveObject extends ActiveObjectAdapter {
 	public void onTimer(DHTActionList executed_preactions,
 			            DHTActionList postactions) {
 		if (selfDestructionInitiated()) {
-			System.out.println("ON TIMER: DESTRUCTION INIT");
 			// With one of the last breaths, send out the self-destruct
 			// announcement to the other replicas.
 			try { postactions.addAction(new GetDHTAction(20)); }

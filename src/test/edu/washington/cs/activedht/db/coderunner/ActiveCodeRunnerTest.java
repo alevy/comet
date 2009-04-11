@@ -26,7 +26,6 @@ import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.StoreListener;
 import edu.washington.cs.activedht.db.TestDHTClasses;
 import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
-import edu.washington.cs.activedht.db.coderunner.IllegalPackingStateException;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
@@ -84,12 +83,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	 * @param value
 	 */
 	private void checkPreactionsForUnpackedValue(ActiveDHTDBValueImpl value) {
-		DHTActionMap all_preactions = null;
-		try { all_preactions = value.getPreactions(); }
-		catch (IllegalPackingStateException e1) {  // should never happen.
-			e1.printStackTrace();
-			fail("Couldn't get preactions");
-		}
+		DHTActionMap all_preactions = value.getPreactions(null);
+
 		assertNotNull(all_preactions);
 		assertNotNull(all_preactions.getActionsForEvent(DHTEvent.GET));
 		assertEquals(1,
@@ -137,12 +132,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		assertEquals(0, result.getFirst().size());
 		assertEquals(0, result.getSecond().size());
 		
-		try { added_value.unpack(null); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't unpack the value");
-		}
-		
 		// Check preactions.
 		checkPreactionsForUnpackedValue(added_value);
 		assertEquals(0, TestPreaction.getAllExecutions().size());
@@ -154,13 +143,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 
 		// Check the active value state.
 		checkActiveObjectStateForUnpackedValue(added_value, 1);
-		
-		try {
-			added_value.pack();
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't pack the value");
-		}
 	}
 	
 	public void testOnOverwritingStoreNoCancellation() {
@@ -201,17 +183,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		assertEquals(0, result.getFirst().size());
 		assertEquals(0, result.getSecond().size());
 		
-		try { old_value.unpack(null); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't unpack old value.");
-		}
-		try { new_value.unpack(null); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't unpack new value.");
-		}
-		
 		// Check preactions for the added and overwritten values.
 		checkPreactionsForUnpackedValue(old_value);
 		checkPreactionsForUnpackedValue(new_value);		
@@ -231,18 +202,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		checkActiveObjectStateForUnpackedValue(new_value, 1);
 		checkActiveObjectStateForUnpackedValue(old_value, 2);  // once from
 				// the initial store.
-		
-		try { new_value.pack(); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't pack the new value");
-		}
-
-		try { old_value.pack(); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't pack the old value");
-		}
 	}
 	
 	public void testOnGetNoCancellation() {
@@ -269,12 +228,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		// Check the result; no requests should exist.
 		assertNull(values_allowing_access);
 		
-		try { value.unpack(null); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't unpack old value.");
-		}
-		
 		// Check preactions.
 		checkPreactionsForUnpackedValue(value);
 		
@@ -289,12 +242,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		
 		// Check the states of the active objects.
 		checkActiveObjectStateForUnpackedValue(value, 2);
-		
-		try { value.pack(); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't pack the new value");
-		}
 	}
 	
 	public void testOnRemoveNoCancellation() {
@@ -319,12 +266,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		// Check the result; no requests should exist.
 		assertNull(value_to_be_placed_back);
 		
-		try { value.unpack(null); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't unpack old value.");
-		}
-		
 		// Check preactions.
 		checkPreactionsForUnpackedValue(value);
 		
@@ -338,12 +279,6 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		
 		// Check the states of the active objects.
 		checkActiveObjectStateForUnpackedValue(value, 2);
-		
-		try { value.pack(); }
-		catch (Exception e) {
-			e.printStackTrace();
-			fail("Couldn't pack the new value");
-		}
 	}
 }
 

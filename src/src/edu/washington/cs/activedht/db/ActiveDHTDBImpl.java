@@ -35,14 +35,7 @@ import edu.washington.cs.activedht.util.Pair;
  *
  */
 public class ActiveDHTDBImpl extends DHTDBImpl
-implements ActiveDHTDB, Constants {
-	// Initialize the system for ActiveDHTs.
-	// TODO(roxana): This is pretty hacky now. Should have an init() function
-	// that gets called, even if that means that we need to modify Vuze.
-	static {
-		ActiveDHTInitializer.prepareRuntimeForActiveCode();
-	}
-	
+implements ActiveDHTDB, Constants {	
 	private boolean should_init_underlying_db;
 	
 	/** Pointer to the active storage handler. */
@@ -245,11 +238,7 @@ implements ActiveDHTDB, Constants {
 		DHTDBValue stored_value = super.store(key, value, flags);
 		
 		doPostStore(getLocalContact(), key, store_listener);
-		
-		if (stored_value instanceof ActiveDHTDBValueImpl) {
-			((ActiveDHTDBValueImpl)stored_value).prepareForRemote();
-		}
-		
+
 		return stored_value;
 	}
 	

@@ -2,17 +2,15 @@ package edu.washington.cs.activedht.db;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.aelitis.azureus.core.dht.DHTLogger;
-import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.impl.Test;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.ForensicTrailActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
@@ -23,8 +21,16 @@ import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 
 /**
- * Example:
- *   p x=OneTimeActiveObject(xxx)
+ * Examples:
+ *   p x=OneTimeActiveObject(xval)
+ *   p y=ForensicTrailActiveObject(yval)
+ *   p z=TimeoutActiveObject(zval, 10)
+ *   p t=TimeReleaseActiveObject(tval, 10)
+ *   
+ *   p u=MinimalReplicationObject(uval)
+ *   p v=SensitiveValueActiveObject(vval)
+ *   
+ *   # For TimeoutActiveObject and TimeReleaseActiveObject timeouts are in sec.
  * 
  * @author roxana
  *
@@ -50,15 +56,6 @@ public class ActiveDHTTestShell extends Test {
 	protected ActiveDHTTestShell(int num_dhts) { super(num_dhts); }
 	
 	// Test function overrides:
-	
-	@Override
-	protected DHTStorageAdapter createStorageAdapter(int network,
-			                                         DHTLogger logger,
-		                                             File file) {
-		return new ActiveDHTStorageAdapter(super.createStorageAdapter(network,
-				                                                      logger,
-				                                                      file));
-	}
 	
 	@Override
 	protected String getTmpDirectory() { return "/tmp/dht/"; }
@@ -132,21 +129,21 @@ public class ActiveDHTTestShell extends Test {
 			
 		} else if (active_code_class.equals(
 				TimeoutActiveObject.class.getName())) {
-			long self_destruction_date = System.currentTimeMillis();
+			long timeout_date = System.currentTimeMillis();
 			try {
-				self_destruction_date += Long.parseLong(matcher.group(4));
+				timeout_date += Long.parseLong(matcher.group(4)) * 1000L;
 			} catch (NumberFormatException e) {
 				throw new InvalidActiveObjectException("Can't instantiate " +
 						"active object: invalid timeout");
 			}
 			return new TimeoutActiveObject(matcher.group(3).getBytes(),
-					                       self_destruction_date);
+					                       timeout_date);
 			
 		} else if (active_code_class.equals(
 				TimeReleaseActiveObject.class.getName())) {
 			long release_date = System.currentTimeMillis();
 			try {
-				release_date += Long.parseLong(matcher.group(4));
+				release_date += Long.parseLong(matcher.group(4)) * 1000L;
 			} catch (NumberFormatException e) {
 				throw new InvalidActiveObjectException("Can't instantiate " +
 						"active object: invalid timeout");
@@ -156,22 +153,35 @@ public class ActiveDHTTestShell extends Test {
 		}
 		
 		return null;
-	} 
+	}
+	
+	private String getString(ActiveCode ac) {
+		if (ac == null) return null;
+		String ret = "";
+		if (ac instanceof ActiveObjectAdapter) {
+			ret += new String(((ActiveObjectAdapter)ac).getValue());
+		}
+		if (ac instanceof ForensicTrailActiveObject) {
+			ForensicTrailActiveObject o = (ForensicTrailActiveObject)ac;
+			ret += " (replicated by: " + o.getReplicaIPs() +
+			       "; read by: " + o.getAccessorIPs() + ")";
+		}
+		
+		return ret;
+	}
 	
 	@Override
 	protected String getString(DHTTransportValue value) {		
 		ActiveDHTDBValueImpl active_val =
 			new ActiveDHTDBValueImpl(null, value, false);
-		try { active_val.unpack(null); }
-		catch (Exception e) { return super.getString(value); }  // regular val.
-		
+				
 		byte[] active_object = active_val.getValue();
 		ObjectInputStream ois = null;
 		try {
 			ois = new ObjectInputStream(
 					new ByteArrayInputStream(active_object));
 			ActiveCode ac = (ActiveCode)ois.readObject();
-			if (ac != null) return ac.toString();
+			if (ac != null) return getString(ac);
 		} catch (Exception e) {
 		} finally {
 			if (ois != null) {

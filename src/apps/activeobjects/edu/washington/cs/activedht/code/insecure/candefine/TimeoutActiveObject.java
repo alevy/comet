@@ -43,7 +43,7 @@ public class TimeoutActiveObject extends ActiveObjectAdapter {
 	// Helper functions:
 	
 	private boolean timeToSelfDestruct() {
-		return self_destruction_time > System.currentTimeMillis();
+		return System.currentTimeMillis() >= self_destruction_time;
 	}
 	
 	private void selfDestruct(DHTActionList postactions) {

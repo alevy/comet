@@ -1,0 +1,12 @@
+                              ACTIVE DHT
+         
+                             KNOWN ISSUES
+
+- Security manager in place.
+- Accounting/updating of memory utilization during runtime of active values.
+- Accounting of updates on object size.
+
+- Huge issue: Gets return the entire piece of code + instance. This means that
+  all clients should be re-constructing the active objects inside a sandbox.
+  What's the trust model here??????? Maybe we should have the code separated
+  from the value after all.

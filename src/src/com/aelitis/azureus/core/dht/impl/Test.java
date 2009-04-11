@@ -375,7 +375,7 @@ Test
 								store_index.remove( rhs );
 							}
 							
-							System.out.println( "-> " + (res==null?"null":new String(res)));
+							System.out.println( "=====> " + (res==null?"null":new String(res)));
 						}
 					}else if ( command == 'e' ){
 						
@@ -408,7 +408,7 @@ Test
 										DHTTransportContact	contact,
 										DHTTransportValue	value )
 									{
-										System.out.println( "-> " + getString( value ) +
+										System.out.println( "=====> " + getString( value ) +
 												" (from: " + contact.getString() + ")");
 									}
 																	

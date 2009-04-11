@@ -1,6 +1,5 @@
 package edu.washington.cs.activedht.db.coderunner;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -226,52 +225,41 @@ public class ActiveCodeRunner {
 			return;
 		}
 
-		// Unpack the value.
-		try { value.unpack(event_callback.getImposedPreactionsMap()); }
-		catch (IOException e) { return; }  // nothing to do.
-
 		DHTActionList event_postactions = null;
-		try {
-			// Run the preactions.
-			DHTActionMap all_preactions = null;
-			try { all_preactions = value.getPreactions(); }
-			catch(IllegalPackingStateException e) {
-				e.printStackTrace();
-				assert(false);  // this is a true bug.
-			}
-			DHTActionList event_preactions = null;
-			if (all_preactions != null) {
-				event_preactions = all_preactions.getActionsForEvent(
-						event_callback.getEvent());
-				if (event_preactions != null) {
-					try {
-						dht_action_executor.executeActions(event_preactions,
-								key,
-								params.max_time_run_dht_actions_per_event,
-								true);
-					} catch (ActiveCodeExecutionInterruptedException e) {
-						// Nothing to do??
-					}
+		DHTActionMap all_preactions = value.getPreactions(
+				event_callback.getImposedPreactionsMap());
+		DHTActionList event_preactions = null;
+		if (all_preactions != null) {
+			event_preactions = all_preactions.getActionsForEvent(
+					event_callback.getEvent());
+			if (event_preactions != null) {
+				try {
+					dht_action_executor.executeActions(event_preactions,
+							key,
+							params.max_time_run_dht_actions_per_event,
+							true);
+				} catch (ActiveCodeExecutionInterruptedException e) {
+					// Nothing to do??
 				}
 			}
-		
-			// Run the object's code in the sandbox.
-			event_postactions = new DHTActionList(
-					params.max_num_dht_actions_per_event);
-			byte[] current_value_bytes = executeActiveCodeSecurely(
-					event_callback,
-					value.getValue(),
-					event_preactions,
-					event_postactions);
-			value.setValue(current_value_bytes);
-		
-			// Clear the preactions for the next execution.
-			// Must be done before value.pack!.
-			if (event_preactions != null) resetPreactions(event_preactions);
-		} finally {
-			try { value.pack(); }
-			catch (IOException e) { return; }
 		}
+
+		// Run the object's code in the sandbox.
+		event_postactions = new DHTActionList(
+				params.max_num_dht_actions_per_event);
+		byte[] old_value = value.getValue();
+		byte[] current_value_bytes = executeActiveCodeSecurely(
+				event_callback,
+				value.getValue(),
+				event_preactions,
+				event_postactions);
+		if (current_value_bytes != null && current_value_bytes != old_value) {
+			value.setValue(current_value_bytes);
+		}
+	
+		// Clear the preactions for the next execution.
+		// Must be done before value.pack!.
+		if (event_preactions != null) resetPreactions(event_preactions);
 
 		// Finally, run the postactions.
 		if (event_postactions != null) {
@@ -305,7 +293,7 @@ public class ActiveCodeRunner {
 				postactions);
 		
 		// Execute the closure within the sandbox.
-		byte[] active_code = null;
+		byte[] active_code = value_bytes;
 		try {
 			active_code = active_code_sandbox.executeWithinSandbox(closure);
 		} catch (Exception e) { e.printStackTrace(); }  // error, but so what..
