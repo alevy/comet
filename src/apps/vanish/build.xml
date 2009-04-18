@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+
+<!--
+  NOTE: For Vuze, you may need to set the ANT_OPTS="-Xmx512m" env. prop.
+-->
+
+<project default="jar" name="Vanish" basedir="." >
+	
+    <!-- Properties: -->
+	
+    <property name="root.dir" value="." />  <!-- Needs to be "." for public -->
+    <property name="src.dir" value="src" />
+    <property name="test.dir" value="test" />
+    <property name="libs.dir" value="lib" />
+
+    <property name="build.dir" value="build" />
+    <property name="webapps.dir" value="webapps/java" />
+    <property name="vanish.build" value="classes" />
+    <property name="reports.dir" value="reports" />
+
+    <property name="dist.dir" value="dist" />
+   
+    <property name="generic.excludes"
+              value="**/*.jar **/*.txt **/*.jardesc 
+    	             **/.classpath **/.project" />
+    <property name="dist.jar.excludes"
+    	      value="${generic.excludes} **/*.java " />
+    <property name="dist.source.excludes"
+              value="${generic.excludes} **/*.class" />
+    <property name="jarname" value="ActiveVanish.jar" />
+   
+    <!-- Create folder structure: -->
+	
+    <target name="init" >
+      <tstamp/>
+      <mkdir dir="${root.dir}/${dist.dir}" />
+      <mkdir dir="${root.dir}/${build.dir}" />
+      <mkdir dir="${root.dir}/${build.dir}/${vanish.build}" />
+   	  <mkdir dir="${root.dir}/${reports.dir}" />
+   	  <mkdir dir="${root.dir}/${reports.dir}/raw" />
+   	  <mkdir dir="${root.dir}/${reports.dir}/html" />
+    </target>
+   
+    <!-- Compile sources: -->
+	
+    <!-- Vanish sources -->
+    <target name="compile" depends="init" >
+      <path id="libs.classpath" >
+         <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+      </path>
+   
+      <javac srcdir="${root.dir}/${src.dir}"
+    	     destdir="${root.dir}/${build.dir}/${vanish.build}"
+      	     nowarn="yes" source="1.6" target="1.6"
+      	     includeAntRuntime="no" debug="true"
+      	     debuglevel="lines,vars,source" >
+         <classpath refid="libs.classpath" />
+      </javac>
+    </target>
+
+    <!-- Application sources (place .class in the same directory as src): -->
+    <target name="compile-webapps" depends="compile" >
+          <path id="all.classpath">
+            <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+                  <dirset dir="${root.dir}/${build.dir}/${vanish.build}" />
+          </path>
+          <javac srcdir="${root.dir}/${webapps.dir}"
+                 destdir="${root.dir}/${build.dir}/${vanish.build}"
+                 nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no"
+                 debug="true" debuglevel="lines,vars,source" >
+            <classpath refid="all.classpath" />
+          </javac>
+    </target>
+
+    <!-- Test sources -->
+    <target name="compile-tests" depends="compile" >
+  	  <mkdir dir="${root.dir}/${build.dir}/${test.dir}" />
+  	  <path id="all.classpath">
+		<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
+		<dirset dir="${root.dir}/${build.dir}/${vanish.build}" />
+	  </path>   
+	  <javac srcdir="${root.dir}/${test.dir}"
+	         destdir="${root.dir}/${build.dir}/${test.dir}"
+		 nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no"
+		 debug="true" debuglevel="lines,vars,source" >
+	  <classpath refid="all.classpath" />
+	  </javac>
+    </target>
+	
+    <!-- Create jars: -->
+	
+    <!-- ActiveVanish jar -->
+    <target name="jar" depends="compile,compile-webapps"
+    	    description="Build ${jarname}" >
+      <echo message="Building ${jarname}..." />
+      <jar destfile="${root.dir}/${dist.dir}/${jarname}"
+           basedir="${root.dir}/${build.dir}/${vanish.build}"
+      	   excludes="${dist.jar.excludes}" >
+         <manifest>
+           <attribute name="Main-Class"
+	              value="edu.washington.cs.vanish.service.VanishServer" />
+           <attribute name="Class-Path"
+	              value="ActiveVuze.jar Vanish.jar" />
+         </manifest>
+      </jar>
+
+    </target>
+	
+    <!-- Tests: -->
+	
+    <target name="run-tests" depends="compile-tests"
+            description="Run the test suite" >
+	  <junit printsummary="withOutAndErr" haltonfailure="yes"
+	         showoutput="yes" >
+	    <classpath>
+	      <pathelement path="${root.dir}/${build.dir}/${vanish.build}" />
+	      <pathelement path="${root.dir}/${build.dir}/${test.dir}" />
+	      <fileset dir="${root.dir}/${libs.dir}" >
+	        <include name="*.jar" />
+	      </fileset>
+	    </classpath>
+
+	    <batchtest fork="yes" todir="${root.dir}/${reports.dir}/raw/" >
+	      <formatter type="xml" />
+	      <fileset dir="${root.dir}/${test.dir}" >
+	        <include name="**/*Test.java" />
+	      </fileset>
+	    </batchtest>
+	  </junit>
+    </target>
+
+    <target name ="test" depends="run-tests" >
+	  <junitreport todir="${root.dir}/${reports.dir}" >
+	    <fileset dir="${reports.dir}/raw/" >
+	      <include name="TEST-*.xml" />
+	    </fileset>
+	    <report format="frames" todir="${reports.dir}/html/" />
+	  </junitreport>
+    </target>
+	
+    <!-- Clean: -->
+	
+    <target name="clean" >
+      <delete dir="${root.dir}/${build.dir}" />
+	  <delete dir="${root.dir}/${dist.dir}" />
+	  <delete dir="${root.dir}/${reports.dir}" />
+    </target>
+    
+    <target name="all" depends="jar,compile-tests" />
+</project>
+
