@@ -115,6 +115,7 @@ implements ActiveDHTDB, Constants {
 			                     int max_values,
 			                     byte flags,
 			                     boolean external_request) {
+		//System.out.println("!!! ACTIVE GET !!!");
 		DHTDBLookupResult result = super.get(reader, key, max_values, flags,
 				                             external_request);
 		if (result == null || ! external_request) return result;  // nothing.
@@ -218,6 +219,7 @@ implements ActiveDHTDB, Constants {
 	@Override
 	public byte store(DHTTransportContact sender, HashWrapper key,
 	                  DHTTransportValue[] values) {
+		//System.out.println("!!! ACTIVE STORE !!!");
 		StoreListener store_listener = doPreStore(key);
 		if (store_listener == null) return -1;  // nothing to do -- what ret?
 		
