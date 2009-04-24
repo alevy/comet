@@ -14,6 +14,7 @@ import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.ForensicTrailActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.SelfRegulatingReplicationObject;
 import edu.washington.cs.activedht.code.insecure.candefine.SensitiveValueActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.TimeReleaseActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.TimeoutActiveObject;
@@ -21,13 +22,17 @@ import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 
 /**
+ * USAGE:
+ *   java -cp build/classes:dist/ActiveVuze.jar:lib/commons-cli.jar:lib/log4j.jar \
+          edu.washington.cs.activedht.db.ActiveDHTTestShell 3
+ * 
  * Examples:
  *   p x=OneTimeActiveObject(xval)
  *   p y=ForensicTrailActiveObject(yval)
  *   p z=TimeoutActiveObject(zval, 10)
  *   p t=TimeReleaseActiveObject(tval, 10)
  *   
- *   p u=MinimalReplicationObject(uval)
+ *   p u=SelfRegulatingReplicationObject(uval, 3, 1, 2)
  *   p v=SensitiveValueActiveObject(vval)
  *   
  *   # For TimeoutActiveObject and TimeReleaseActiveObject timeouts are in sec.
@@ -150,6 +155,24 @@ public class ActiveDHTTestShell extends Test {
 			}
 			return new TimeReleaseActiveObject(matcher.group(3).getBytes(),
 					                           release_date);
+		} else if (active_code_class.equals(
+				SelfRegulatingReplicationObject.class.getName())) {
+			//if (matcher.groupCount() < 6) return null;
+			int replication_threshold = 0;
+			int replication_factor    = 3;
+			long replication_interval  = 2;
+			try {
+				replication_threshold = Integer.parseInt(matcher.group(4));
+				//replication_factor    = Integer.parseInt(matcher.group(5));
+				//replication_interval  = Long.parseLong(matcher.group(6)) * 1000L;
+			} catch (NumberFormatException e) {
+				throw new InvalidActiveObjectException("Can't instantiate " +
+						"active object: invalid timeout");
+			}
+			return new SelfRegulatingReplicationObject(matcher.group(3).getBytes(),
+					                                   replication_threshold,
+					                                   replication_factor,
+					                                   replication_interval);
 		}
 		
 		return null;

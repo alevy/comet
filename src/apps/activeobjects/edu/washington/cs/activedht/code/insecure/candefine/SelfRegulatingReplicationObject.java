@@ -8,12 +8,6 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.PutDHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.ReplicateValueDHTAction;
 
-/**
- * TODO(roxana): Can't finish right now. Need configurable replication factor.
- *  
- * @author roxana
- */
-
 public class SelfRegulatingReplicationObject extends ActiveObjectAdapter {
 	private static final long serialVersionUID = 7658526247629146684L;
 	
