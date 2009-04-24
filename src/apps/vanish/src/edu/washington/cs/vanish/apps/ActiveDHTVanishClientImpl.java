@@ -25,9 +25,9 @@ public class ActiveDHTVanishClientImpl extends VanishClientRunner {
 	@Override
 	protected int decodeArgument(String arg, String args[], int i)
 	throws InvalidArgumentException {
-		if (arg.equals("onetime")) {
+		if (arg.equals("--onetime")) {
 			params.setDestryAfterFirstRead(true);
-		} else if (arg.equals("release")) {
+		} else if (arg.equals("--release")) {
 			if (i < args.length) {
 				try {
 					params.setReleaseDate(System.currentTimeMillis() +
