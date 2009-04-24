@@ -6,6 +6,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.code.insecure.dhtaction.GetDHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.PutDHTAction;
+import edu.washington.cs.activedht.code.insecure.dhtaction.ReplicateValueDHTAction;
 
 /**
  * TODO(roxana): Can't finish right now. Need configurable replication factor.
@@ -13,7 +14,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.PutDHTAction;
  * @author roxana
  */
 
-public class MinimalReplicationObject extends ActiveObjectAdapter {
+public class SelfRegulatingReplicationObject extends ActiveObjectAdapter {
 	private static final long serialVersionUID = 7658526247629146684L;
 	
 	private int replication_threshold;
@@ -22,7 +23,7 @@ public class MinimalReplicationObject extends ActiveObjectAdapter {
 	
 	private long next_replication_date;
 	
-	public MinimalReplicationObject(byte[] value, int replication_threshold,
+	public SelfRegulatingReplicationObject(byte[] value, int replication_threshold,
 			                        int replication_factor,
 			                        long replication_interval) {
 		super(value);
@@ -50,7 +51,7 @@ public class MinimalReplicationObject extends ActiveObjectAdapter {
 			            DHTActionList postactions) {
 		if (shouldReplicate(executed_preactions)) {
 			// Replicate this value now.
-			try { postactions.addAction(new PutDHTAction(null)); }  // TODO
+			try { postactions.addAction(new ReplicateValueDHTAction()); }
 			catch (Exception e) { }
 			
 			markAsReplicated();  // no way of knowing if we actually will

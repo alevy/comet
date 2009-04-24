@@ -67,7 +67,9 @@ DHTControlImpl
 	
 	private static final int INTEGRATION_TIME_MAX			= 15*1000;
 	
-		
+	// ROXANA: Hacky.
+	public static boolean SHOULD_TRANSFER_VALUES_ON_JOIN = true;
+	
 	private DHTControlAdapter		adapter;
 	private DHTTransport			transport;
 	private DHTTransportContact		local_contact;
@@ -150,7 +152,6 @@ DHTControlImpl
 	
 	private long			last_node_add_check;
 	private byte[]			node_add_check_uninteresting_limit;
-	
 	
 	public
 	DHTControlImpl(
@@ -2601,6 +2602,8 @@ DHTControlImpl
 
 			return;
 		}
+		
+		if (! SHOULD_TRANSFER_VALUES_ON_JOIN) return;  // nothing left to do.
 			
 			// ok, we're close enough to worry about transferring values				
 		
@@ -2632,33 +2635,33 @@ DHTControlImpl
 			
 			DHTDBValue[]	values = result.getValues();
 			
-			if ( values.length == 0 ){
+			if ( values.length == 0){
 				
 				continue;
 			}			
 		
-				// we don't consider any cached further away than the initial location, for transfer
-				// however, we *do* include ones we originate as, if we're the closest, we have to
+                // we don't consider any cached further away than the initial location, for transfer
+  				// however, we *do* include ones we originate as, if we're the closest, we have to
 				// take responsibility for xfer (as others won't)
-							
-			List		sorted_contacts	= getClosestKContactsList( encoded_key, false ); 
-				
-					// if we're closest to the key, or the new node is closest and
-					// we're second closest, then we take responsibility for storing
-					// the value
-				
+						
 			boolean	store_it	= false;
-				
+			
+			List		sorted_contacts	= getClosestKContactsList( encoded_key, false ); 
+			
+				// if we're closest to the key, or the new node is closest and
+				// we're second closest, then we take responsibility for storing
+				// the value
+			
 			if ( sorted_contacts.size() > 0 ){
-					
+				
 				DHTTransportContact	first = (DHTTransportContact)sorted_contacts.get(0);
-					
+				
 				if ( router.isID( first.getID())){
-						
+					
 					store_it = true;
-						
+					
 				}else if ( Arrays.equals( first.getID(), new_contact.getID()) && sorted_contacts.size() > 1 ){
-						
+					
 					store_it = router.isID(((DHTTransportContact)sorted_contacts.get(1)).getID());				
 				}
 			}

@@ -21,25 +21,25 @@ public final class GetDHTAction extends DHTAction {
 	
 	// Input accessors:
 	
-	public int getNumResponsesToWaitForSubjectToTimeout() {
+	public final int getNumResponsesToWaitForSubjectToTimeout() {
 		return num_resp_to_wait;
 	}
 	
 	// Output accessors:
 	
-	public synchronized void addResponse(String contact_ip) {
+	public final synchronized void addResponse(String contact_ip) {
 		this.replicas.add(contact_ip);
 	}
 	
-	public Set<String> getResponses() { return replicas; }
+	public final Set<String> getResponses() { return replicas; }
 	
 	@Override
-	public boolean equals(Object o) {
+	public final boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null) return false;
 		return (o instanceof GetDHTAction);
 	}
 
 	@Override
-	public int hashCode() { return (int)serialVersionUID; }
+	public final int hashCode() { return (int)serialVersionUID; }
 }

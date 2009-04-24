@@ -54,8 +54,9 @@ public class DHTActionExecutorImplTest extends TestCase {
 		}
 		
 		try { 
-			executor.executeActions(preactions, 
+			executor.executeActions(preactions,
 				                    new HashWrapper("key".getBytes()),
+				                    null,
 				                    50,
 				                    true);
 		} catch (Exception e) {
@@ -82,6 +83,7 @@ public class DHTActionExecutorImplTest extends TestCase {
 		try { 
 			executor.executeActions(preactions, 
 				                    new HashWrapper("key".getBytes()),
+				                    null,
 				                    50,
 				                    true);
 		} catch (Exception e) {
@@ -111,6 +113,7 @@ public class DHTActionExecutorImplTest extends TestCase {
 		try { 
 			executor.executeActions(preactions, 
 				                    new HashWrapper("key".getBytes()),
+				                    null,
 				                    50,
 				                    true);
 			fail("Executed both preactions w/o running out of time");
@@ -389,5 +392,8 @@ class TestActiveDHTDB extends TestDB implements ActiveDHTDB {
 	public byte superStore(DHTTransportContact sender, HashWrapper key,
 			               DHTTransportValue[] values) {
 		return 0;
+	}
+
+	public void registerForRepublishing(HashWrapper key, DHTDBValue value) {
 	}
 }

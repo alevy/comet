@@ -236,6 +236,7 @@ public class ActiveCodeRunner {
 				try {
 					dht_action_executor.executeActions(event_preactions,
 							key,
+							value,
 							params.max_time_run_dht_actions_per_event,
 							true);
 				} catch (ActiveCodeExecutionInterruptedException e) {
@@ -258,13 +259,12 @@ public class ActiveCodeRunner {
 		}
 	
 		// Clear the preactions for the next execution.
-		// Must be done before value.pack!.
 		if (event_preactions != null) resetPreactions(event_preactions);
 
 		// Finally, run the postactions.
 		if (event_postactions != null) {
 			try {
-				dht_action_executor.executeActions(event_postactions, key,
+				dht_action_executor.executeActions(event_postactions, key, value,
 						params.max_time_run_dht_actions_per_event,
 						false);
 			} catch (ActiveCodeExecutionInterruptedException e) {

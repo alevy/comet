@@ -1,15 +1,16 @@
 package edu.washington.cs.activedht.code.insecure.dhtaction;
 
-public final class LocalDeleteDHTAction extends DHTAction {
-	private static final long serialVersionUID = 2300651554836770846L;
-	
-	public LocalDeleteDHTAction() { }
-		
+public class ReplicateValueDHTAction extends DHTAction {
+	private static final long serialVersionUID = -7836369571370233716L;
+
+	public ReplicateValueDHTAction() { }
+
 	@Override
 	public final boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null) return false;
-		return (o instanceof LocalDeleteDHTAction);
+		if (! (o instanceof ReplicateValueDHTAction)) return false;
+		return true;
 	}
 
 	@Override

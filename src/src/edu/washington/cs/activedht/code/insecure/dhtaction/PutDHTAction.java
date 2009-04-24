@@ -21,18 +21,18 @@ public final class PutDHTAction extends DHTAction {
 	
 	// Input accessors:
 	
-	public byte[] getValue() { return value; }
+	public final byte[] getValue() { return value; }
 	
 	// Output accessors:
 	
-	public synchronized void addResponse(String contact_ip) {
+	public final synchronized void addResponse(String contact_ip) {
 		this.replicas.add(contact_ip);
 	}
 	
-	public Set<String> getResponses() { return replicas; }
+	public final Set<String> getResponses() { return replicas; }
 	
 	@Override
-	public boolean equals(Object o) {
+	public final boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null) return false;
 		if (! (o instanceof PutDHTAction)) return false;
@@ -40,7 +40,7 @@ public final class PutDHTAction extends DHTAction {
 	}
 
 	@Override
-	public int hashCode() {  
+	public final int hashCode() {  
 		return value == null ? 0 : Arrays.hashCode(value);
 	}
 }

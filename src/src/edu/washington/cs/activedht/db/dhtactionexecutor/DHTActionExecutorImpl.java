@@ -15,6 +15,7 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
+import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
@@ -46,7 +47,9 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public void executeActions(DHTActionList actions, HashWrapper key,
+	public void executeActions(DHTActionList actions,
+			                   HashWrapper key,
+			                   ActiveDHTDBValueImpl value,
 			                   long max_running_time,
 			                   boolean wait_for_responses)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
@@ -66,7 +69,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 					                             deadline);
 			// Run the next DHT action:
 			try {
-				startExecutingDHTAction(actions_it.next(), key,
+				startExecutingDHTAction(actions_it.next(), key, value,
 						                action_bulk_slots_semaphore,
 						                time_left_to_run_actions);
 				++num_actions_issued;
@@ -108,7 +111,8 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	}
 	
 	private void startExecutingDHTAction(final DHTAction action,
-			                             final HashWrapper key, 
+			                             final HashWrapper key,
+			                             final ActiveDHTDBValueImpl value,
 			                             final Semaphore sem,
 			                             final long timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException {
@@ -116,7 +120,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 		
 		// Wrap the action into an executable action.
 		ExecutableDHTAction executable_action = 
-			exe_action_factory.createAction(action, key, db_pointer, timeout);
+			exe_action_factory.createAction(action, key, value, db_pointer, timeout);
 		if (executable_action == null) return;  // unmatched executable action
 
 		// Create a DHT listener for this action.

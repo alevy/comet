@@ -927,12 +927,7 @@ DHTDBImpl
 	
 	protected int[]
 	republishCachedMappings()
-	{		
-			// first refresh any leaves that have not performed at least one lookup in the
-			// last period
-		
-		router.refreshIdleLeaves( cache_republish_interval );
-		
+	{				
 		final Map	republish = new HashMap();
 		
 		long	now = System.currentTimeMillis();
@@ -1004,11 +999,35 @@ DHTDBImpl
 			this_mon.exit();
 		}
 		
+		HashSet anti_spoof_done = new HashSet();
+		
+        int[] republish_outcomes = republishCachedMappings(republish, anti_spoof_done);
+		
+        republishDirectKeyBlocks(anti_spoof_done);
+		
+		return republish_outcomes;
+	}
+	
+	protected int[]
+    republishCachedMappings(
+			final Map republish)
+	{
+		return republishCachedMappings(republish, new HashSet());
+	} 
+	
+	private int[]
+    republishCachedMappings(
+			final Map republish,
+			final HashSet anti_spoof_done)
+	{
+        // first refresh any leaves that have not performed at least one lookup in the
+		// last period
+	
+		router.refreshIdleLeaves( cache_republish_interval );
+		
 		final int[]	values_published	= {0};
 		final int[]	keys_published		= {0};
 		final int[]	republish_ops		= {0};
-		
-		final HashSet	anti_spoof_done	= new HashSet();
 		
 		if ( republish.size() > 0 ){
 			
@@ -1164,7 +1183,7 @@ DHTDBImpl
 									sem.release();
 								}
 							} 
-							
+
 							public void
 							failed(
 								DHTTransportContact 	_contact,
@@ -1206,6 +1225,10 @@ DHTDBImpl
 			}
 		}
 		
+		return( new int[]{ values_published[0], keys_published[0], republish_ops[0] });
+	}
+	
+	protected void republishDirectKeyBlocks(final HashSet anti_spoof_done) {
 		DHTStorageBlock[]	direct_key_blocks = getDirectKeyBlocks();
 
 		if ( direct_key_blocks.length > 0 ){
@@ -1214,7 +1237,7 @@ DHTDBImpl
 			
 				final DHTStorageBlock	key_block = direct_key_blocks[i];
 				
-				List	contacts = control.getClosestKContactsList( key_block.getKey(), false );
+				List	contacts = control.getClosestKContactsList( key_block.getKey(), false );  // getReplicaListForKey(key_block.getKey());
 
 				boolean	forward_it = false;
 				
@@ -1240,7 +1263,7 @@ DHTDBImpl
 						
 						continue;
 					}
-					
+
 					if ( router.isID( contact.getID())){
 						
 						continue;	// ignore ourselves
@@ -1313,8 +1336,6 @@ DHTDBImpl
 				}
 			}
 		}
-		
-		return( new int[]{ values_published[0], keys_published[0], republish_ops[0] });
 	}
 		
 	protected void

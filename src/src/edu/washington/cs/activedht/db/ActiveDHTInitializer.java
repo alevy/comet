@@ -3,6 +3,7 @@ package edu.washington.cs.activedht.db;
 import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
+import com.aelitis.azureus.core.dht.control.impl.DHTControlImpl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBFactory;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
@@ -79,5 +80,6 @@ public class ActiveDHTInitializer implements Constants {
 		DHTUDPPacketHelper.PACKET_MAX_BYTES = 15 * KB;  // slightly larger than DHT.MAX_VALUE_SIZE
 		DHTTransportUDPImpl.MAX_TRANSFER_QUEUE_BYTES = 80 * MB;
 		DHTDBImpl.MAX_TOTAL_SIZE = 40 * MB;
+		DHTControlImpl.SHOULD_TRANSFER_VALUES_ON_JOIN = false;
 	}
 }

@@ -13,15 +13,15 @@ public final class GetIPAction extends DHTAction {
 	
 	// Accessors:
 	
-	public void setIP(String ip) { this.ip = ip; }
+	public final void setIP(String ip) { this.ip = ip; }
 	
-	public String getIP() { return ip; }
+	public final String getIP() { return ip; }
 	
 	// Object functions:
 	
 	@Override
-	public boolean equals(Object o) { return (this == o); }
+	public final boolean equals(Object o) { return (this == o); }
 
 	@Override
-	public int hashCode() { return 0; }
+	public final int hashCode() { return 0; }
 }

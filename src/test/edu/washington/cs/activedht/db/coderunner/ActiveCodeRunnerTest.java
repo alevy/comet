@@ -293,6 +293,7 @@ class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 	@Override
 	public ExecutableDHTAction createAction(DHTAction action,
                                             HashWrapper key,
+                                            ActiveDHTDBValueImpl value,
                                             ActiveDHTDB db,
                                             long running_timeout) {
 		if (action instanceof TestPreaction) {

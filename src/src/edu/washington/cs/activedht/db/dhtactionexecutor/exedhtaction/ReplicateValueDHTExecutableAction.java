@@ -4,36 +4,27 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.PutDHTAction;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
 
-/**
- * TODO(roxana): Does not time out yet.
- * @author roxana
- *
- */
-public class PutDHTExecutableAction
+public class ReplicateValueDHTExecutableAction
 extends ExecutableDHTAction<PutDHTAction> {
-	private long timeout;
+	private DHTDBValueImpl value;
 	
-	public PutDHTExecutableAction(PutDHTAction action, ActiveDHTDB db,
-			                      HashWrapper key,
-			                      long timeout) {
+	public ReplicateValueDHTExecutableAction(PutDHTAction action, ActiveDHTDB db,
+			                                 HashWrapper key,
+			                                 DHTDBValueImpl value) {
 		super(action, db, key);
-		this.timeout = timeout;
+		this.value = value;
 	}
 
 	@Override
 	protected void executeUsingListener(ActiveDHTOperationListener listener) {
-		PutDHTAction action = getAction();
-				
-		getControl().put(getKeyBytes(), "ActiveDHT action", action.getValue(),
-				         (byte)0,
-					     false,
-					     null);
+		getDB().registerForRepublishing(getKey(), value);
 	}
 
 	@Override

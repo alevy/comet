@@ -1,5 +1,7 @@
 package edu.washington.cs.activedht.db;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +45,9 @@ implements ActiveDHTDB, Constants {
 	
 	/** Pointer to the handler of active code. */
 	private final ActiveCodeRunner active_code_handler;
+	
+	private Object values_to_republish_lock;
+	private Map<HashWrapper, List<DHTDBValue>> values_to_republish;
 
 	public ActiveDHTDBImpl(ActiveDHTStorageAdapter _adapter,
 	                       int _original_republish_interval, 
@@ -77,6 +82,9 @@ implements ActiveDHTDB, Constants {
 				new DHTActionExecutorImpl(this,
 						new ExecutableDHTActionFactoryImpl()),
 				param);
+		
+		values_to_republish_lock = new Object();
+		values_to_republish = new HashMap<HashWrapper, List<DHTDBValue>>();
 	}
 	
 	// Override DHTDBImpl methods:
@@ -301,6 +309,23 @@ implements ActiveDHTDB, Constants {
 			(Map<HashWrapper, List<DHTDBValueImpl>>)
 				super.getFilteredKeyValuePairs(TIMER_FILTER);
 		active_code_handler.onTimer(to_activate);
+		
+        // Finally, do any republishings that might have gathered up.
+		// Note that the republishings might be coming from other events, as well,
+		// but we'll execute them all now, upon the timer.
+		doRepublish();
+	}
+	
+	private void doRepublish() {
+		Map<HashWrapper, List<DHTDBValue>> republish_map = null; 
+		synchronized(values_to_republish_lock) {
+			republish_map = values_to_republish;
+			values_to_republish = new HashMap<HashWrapper, List<DHTDBValue>>();
+		}
+		
+		if (republish_map != null && !republish_map.isEmpty()) {
+			this.republishCachedMappings(republish_map);
+		}
 	}
 
 	// ActiveDHTDB interface:
@@ -332,6 +357,18 @@ implements ActiveDHTDB, Constants {
 	public byte superStore(DHTTransportContact sender, HashWrapper key,
 			               DHTTransportValue[] values) {
 		return super.store(sender, key, values);
+	}
+
+	@Override
+	public void registerForRepublishing(HashWrapper key, DHTDBValue value) {
+		synchronized(values_to_republish_lock) {
+			List<DHTDBValue> values_for_key = values_to_republish.get(key);
+			if (values_for_key == null) {
+				values_for_key = new ArrayList<DHTDBValue>();
+				values_to_republish.put(key, values_for_key);
+			}
+			if (! values_for_key.contains(value)) values_for_key.add(value);
+		}  // end synchronized
 	}
 }
 

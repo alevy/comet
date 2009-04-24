@@ -9,11 +9,12 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 public interface ActiveDHTDB extends DHTDB {
+	public void registerForRepublishing(HashWrapper key, DHTDBValue value);
 	
 	public DHTDBValue superStore(HashWrapper key, byte[] value, byte flags);
 
 	public byte superStore(DHTTransportContact sender, HashWrapper key,
-			               DHTTransportValue[] values );
+			               DHTTransportValue[] values);
 
 	public DHTDBValue superGet(HashWrapper key);
 	

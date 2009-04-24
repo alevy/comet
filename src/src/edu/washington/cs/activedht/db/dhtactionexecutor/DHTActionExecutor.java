@@ -5,6 +5,7 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import edu.washington.cs.activedht.code.insecure.Initializable;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
+import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
 
 public interface DHTActionExecutor extends Initializable {
 	/**
@@ -19,7 +20,9 @@ public interface DHTActionExecutor extends Initializable {
 	 * abort.
 	 */
 	@SuppressWarnings("unchecked")
-	public void executeActions(DHTActionList actions, HashWrapper key,
+	public void executeActions(DHTActionList actions,
+			                   HashWrapper key,
+			                   ActiveDHTDBValueImpl value,
 			                   long execution_timeout,
 			                   boolean wait_for_responses)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException;

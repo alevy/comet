@@ -10,3 +10,10 @@
   all clients should be re-constructing the active objects inside a sandbox.
   What's the trust model here??????? Maybe we should have the code separated
   from the value after all.
+
+- To be completely backward compatible w/ Vuze, enable all mechanisms (e.g.,
+  cache replication, original replication, and join-time replication) for non-active
+  values. Inserting some basic filtering inside each of these mechanisms should be
+  enough.
+  
+
