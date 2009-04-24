@@ -3,12 +3,14 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="apps/vanish/src"/>
 	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="src" path="apps/activeobjects"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/apple-extensions.jar"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/commons-cli.jar"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/junit.jar"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/log4j.jar"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-win32.jar"/>
-	<classpathentry kind="lib" path="/homes/sys/roxana/projects/homeframe/sdd/activedht/src/lib/swt-xosx.jar"/>
+	<classpathentry kind="lib" path="lib/apple-extensions.jar"/>
+	<classpathentry kind="lib" path="lib/commons-cli.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/log4j.jar"/>
+	<classpathentry kind="lib" path="lib/swt-win32.jar"/>
+	<classpathentry kind="lib" path="lib/swt-xosx.jar"/>
+	<classpathentry kind="lib" path="apps/vanish/lib/Vanish.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
