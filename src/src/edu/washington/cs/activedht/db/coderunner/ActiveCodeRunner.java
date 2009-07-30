@@ -240,7 +240,7 @@ public class ActiveCodeRunner {
 							params.max_time_run_dht_actions_per_event,
 							true);
 				} catch (ActiveCodeExecutionInterruptedException e) {
-					// Nothing to do??
+					throw new AbortDHTActionException(e.getMessage());
 				}
 			}
 		}

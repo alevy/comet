@@ -12,6 +12,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
+import edu.washington.cs.activedht.code.insecure.dhtaction.ReturnAction;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
@@ -62,14 +63,21 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 			new Semaphore(NUM_SIMULTANEOUS_DHT_ACTIONS_PER_OBJECT);
 		long time_left_to_run_actions = max_running_time;
 		int num_actions_issued = 0;
+		byte[] result_value = null;
 		while (actions_it.hasNext() && time_left_to_run_actions > 0) {
+			DHTAction action = actions_it.next();
+			
+			if (ReturnAction.class.isInstance(action)) {
+				ReturnAction returnAction = ReturnAction.class.cast(action);
+				result_value = returnAction.getValue();
+			}
 			// Wait until I have one slot free in the actions semaphore.
 			time_left_to_run_actions = grabSlots(action_bulk_slots_semaphore,
 					                             1,
 					                             deadline);
 			// Run the next DHT action:
 			try {
-				startExecutingDHTAction(actions_it.next(), key, value,
+				startExecutingDHTAction(action, key, value,
 						                action_bulk_slots_semaphore,
 						                time_left_to_run_actions);
 				++num_actions_issued;
@@ -88,6 +96,10 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 				Math.min(num_actions_issued,
 						 NUM_SIMULTANEOUS_DHT_ACTIONS_PER_OBJECT),
                 deadline);
+	
+		if (result_value != null) {
+			value.setValue(result_value);
+		}
 	}
 	
 	// Helper functions:
