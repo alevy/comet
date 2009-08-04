@@ -13,6 +13,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
 import edu.washington.cs.activedht.code.insecure.candefine.ActiveCode;
 import edu.washington.cs.activedht.code.insecure.candefine.ForensicTrailActiveObject;
+import edu.washington.cs.activedht.code.insecure.candefine.LocationAwareTrackerActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
 import edu.washington.cs.activedht.code.insecure.candefine.SelfRegulatingReplicationObject;
 import edu.washington.cs.activedht.code.insecure.candefine.SensitiveValueActiveObject;
@@ -114,7 +115,7 @@ public class ActiveDHTTestShell extends Test {
 	private ActiveCode instantiateActiveCode(Matcher matcher)
 	throws InvalidActiveObjectException {
 		// assert(matcher.matches());
-		if (matcher.groupCount() < 4) {
+		if (matcher.groupCount() < 3) {
 			throw new InvalidActiveObjectException("Can't instantiate " +
 					"active object: invalid number of params");
 		}
@@ -127,6 +128,10 @@ public class ActiveDHTTestShell extends Test {
 		} else if (active_code_class.equals(
 				OneTimeActiveObject.class.getName())) {
 			return new OneTimeActiveObject(matcher.group(4).getBytes());
+			
+		} else if (active_code_class.equals(
+				LocationAwareTrackerActiveObject.class.getName())) {
+			return new LocationAwareTrackerActiveObject();
 			
 		} else if (active_code_class.equals(
 				SensitiveValueActiveObject.class.getName())) {
