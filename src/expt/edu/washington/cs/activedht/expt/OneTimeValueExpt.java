@@ -128,7 +128,7 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 
 	public static void main(String[] args) throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode();
-		new OneTimeValueExpt(10, new PrintStream(new File("/Users/levya/test.txt")), 5000);
+		new OneTimeValueExpt(10, new PrintStream(new File("/tmp/test.txt")), 5000);
 	}
 
 	Map port_map = new HashMap();
