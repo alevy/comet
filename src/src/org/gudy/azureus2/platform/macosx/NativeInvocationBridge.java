@@ -22,9 +22,9 @@ package org.gudy.azureus2.platform.macosx;
  *
  */
 
-import org.gudy.azureus2.core3.util.Debug;
-
 import java.io.File;
+
+import org.gudy.azureus2.core3.util.Debug;
 
 /**
  * <p>Performs PlatformManager and platform-specific tasks using bridges like Cocoa-Java -> ObjC</p>

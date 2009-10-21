@@ -30,7 +30,8 @@ package org.gudy.azureus2.pluginsimpl.local.update;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
@@ -40,7 +41,14 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.update.UpdatableComponent;
+import org.gudy.azureus2.plugins.update.Update;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
+import org.gudy.azureus2.plugins.update.UpdateException;
+import org.gudy.azureus2.plugins.update.UpdateInstaller;
+import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.plugins.update.UpdateManagerListener;
+import org.gudy.azureus2.plugins.update.UpdateManagerVerificationListener;
 
 import com.aelitis.azureus.core.AzureusCore;
 

@@ -44,48 +44,41 @@ class TestDHTHandlerClosure extends DHTEventHandlerCallback {
 class TestActiveCode implements ActiveCode {
 	private int value;
 
-	@Override
 	public void onDelete(String caller_ip,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
-	@Override
 	public void onGet(String caller_ip,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
-	@Override
 	public void onValueAdded(String this_node_ip, String caller_ip,
 			DHTActionMap preactions_map,
 			DHTActionList postactions) {
 		onAnyEvent();
 	}
 
-	@Override
 	public void onValueChanged(String caller_ip, byte[] plain_new_value,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(); 
 	}
 
-	@Override
 	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent();
 	}
 	
-	@Override
 	public void onTimer(DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent();
 	}
 	
-	@Override
 	public boolean onTest(int value) { return this.value == value; }
 	
 	private void onAnyEvent() { ++value; }	
@@ -95,7 +88,6 @@ public class DHTEventHandlerCallbackTest extends TestCase {
 	TestDHTHandlerClosure handler;
 	byte[] active_object_bytes;
 	
-	@Override
 	protected void setUp() {
 		ActiveCode active_object = new TestActiveCode();
 		active_object_bytes = serializeActiveObject(active_object);

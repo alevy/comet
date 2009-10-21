@@ -22,9 +22,10 @@
 
 package org.gudy.azureus2.ui.webplugin;
 
-import org.gudy.azureus2.plugins.*;
-import org.gudy.azureus2.pluginsimpl.remote.*;
-import org.gudy.azureus2.pluginsimpl.remote.rpexceptions.*;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
+import org.gudy.azureus2.pluginsimpl.remote.RPRequestAccessController;
+import org.gudy.azureus2.pluginsimpl.remote.rpexceptions.RPMethodAccessDeniedException;
 
 /**
  * @author parg

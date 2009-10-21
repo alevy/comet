@@ -24,7 +24,8 @@ package com.aelitis.azureus.core.networkmanager.impl.http;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.util.Debug;
 

@@ -1,31 +1,18 @@
 package edu.washington.cs.activedht.expt;
 
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.dht.*;
-import com.aelitis.azureus.core.dht.control.DHTControlContact;
-import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
-import com.aelitis.azureus.core.dht.nat.impl.DHTNATPuncherImpl;
-import com.aelitis.azureus.core.dht.transport.*;
-import com.aelitis.azureus.core.dht.transport.loopback.DHTTransportLoopbackImpl;
-import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
-import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
-import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
-
-import edu.washington.cs.activedht.code.insecure.ActiveObjectAdapter;
-import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
-import edu.washington.cs.activedht.db.ActiveDHTInitializer;
-
-import java.io.*;
-import java.math.BigInteger;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
-import java.security.KeyFactory;
-import java.security.Signature;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.RSAPrivateKeySpec;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.core3.util.Timer;
 import org.gudy.azureus2.core3.util.TimerEvent;
 import org.gudy.azureus2.core3.util.TimerEventPerformer;
@@ -33,12 +20,36 @@ import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
 
+import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.dht.DHT;
+import com.aelitis.azureus.core.dht.DHTFactory;
+import com.aelitis.azureus.core.dht.DHTLogger;
+import com.aelitis.azureus.core.dht.DHTOperationAdapter;
+import com.aelitis.azureus.core.dht.DHTStorageAdapter;
+import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
+import com.aelitis.azureus.core.dht.transport.DHTTransport;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportException;
+import com.aelitis.azureus.core.dht.transport.DHTTransportFactory;
+import com.aelitis.azureus.core.dht.transport.DHTTransportStats;
+import com.aelitis.azureus.core.dht.transport.DHTTransportTransferHandler;
+import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+import com.aelitis.azureus.core.dht.transport.loopback.DHTTransportLoopbackImpl;
+import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
+import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
+import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
+
+import edu.washington.cs.activedht.code.insecure.candefine.OneTimeActiveObject;
+import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
+import edu.washington.cs.activedht.db.ActiveDHTInitializer;
+
 /**
  * @author levya
  * 
  */
 
 public class OneTimeValueExpt implements DHTNATPuncherAdapter {
+	private static final String OUTPUT_FILE = "/tmp/test.txt";
 	static boolean AELITIS_TEST = false;
 	static InetSocketAddress AELITIS_ADDRESS = new InetSocketAddress(
 			"213.186.46.164", 6881);
@@ -128,13 +139,13 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 
 	public static void main(String[] args) throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode();
-		new OneTimeValueExpt(10, new PrintStream(new File("/tmp/test.txt")), 5000);
+		new OneTimeValueExpt(10, new PrintStream(new File(OUTPUT_FILE)), 5000);
 	}
 
 	Map port_map = new HashMap();
 
 	protected OneTimeValueExpt() throws Exception {
-		this(3, new PrintStream(new File("/Users/levya/test.txt")), 5000);
+		this(3, System.out, 5000);
 	}
 
 	protected OneTimeValueExpt(int _num_dhts, final PrintStream out, long gap) {
@@ -216,25 +227,6 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 			 * System.out.println( "get:" + dhts[77].get( "fred".getBytes()));
 			 */
 
-			Map store_index = new HashMap();
-
-			for (int i = 0; i < num_stores; i++) {
-
-				int dht_index = (int) (Math.random() * num_dhts);
-
-				DHT dht = dhts[dht_index];
-
-				dht.put(("" + i).getBytes(), "", new byte[4], (byte) 0,
-						new DHTOperationAdapter());
-
-				store_index.put("" + i, dht);
-
-				if (i != 0 && i % 100 == 0) {
-
-					System.out.println("Stored " + i + " values");
-				}
-			}
-
 			Timer timer = new Timer("");
 
 			timer.addPeriodicEvent(10000, new TimerEventPerformer() {
@@ -269,16 +261,11 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 			waitFor(10000);
 			
 			for (int i = 0; i < 100; ++i) {
-
+				final int _i = i;
 				int dht_index = (int) (Math.random() * num_dhts);
 
 				DHT dht = dhts[dht_index];
 				byte[] key = ("hello" + i).getBytes();
-				dht
-						.put(key, "",
-								getOneTimeValueBytes("world"), (byte) (Math
-										.random() * 255),
-								new DHTOperationAdapter());
 
 				dht.get(key, "", (byte) 0, 32, 0, false, false,
 						new DHTOperationAdapter() {
@@ -290,7 +277,7 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 							}
 
 							public void complete(boolean timeout) {
-								out.println(found);
+								out.println("Before-" + _i + ":" + found);
 							}
 						});
 				
@@ -306,7 +293,7 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 							}
 
 							public void complete(boolean timeout) {
-								out.println(found);
+								out.println("After-" + _i + ": " + found);
 							}
 						});
 			}
@@ -324,8 +311,18 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 	}
 
 	private byte[] getOneTimeValueBytes(String string) {
-		return new String(((ActiveObjectAdapter) new OneTimeActiveObject(string
-				.getBytes())).getValue()).getBytes();
+		byte[] value_bytes = null;
+		try {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ClassObjectOutputStream oos = new ClassObjectOutputStream(baos);
+			oos.writeObject(new OneTimeActiveObject(string.getBytes()));
+			value_bytes = baos.toByteArray();
+			oos.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return value_bytes;
 	}
 
 	protected byte[] getBytes(String val) {

@@ -17,7 +17,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-//import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 

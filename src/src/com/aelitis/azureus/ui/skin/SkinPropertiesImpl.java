@@ -19,7 +19,10 @@
  */
 package com.aelitis.azureus.ui.skin;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

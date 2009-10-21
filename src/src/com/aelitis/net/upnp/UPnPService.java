@@ -29,7 +29,7 @@ package com.aelitis.net.upnp;
 
 import java.net.URL;
 
-import com.aelitis.net.upnp.services.*;
+import com.aelitis.net.upnp.services.UPnPSpecificService;
 
 public interface 
 UPnPService 

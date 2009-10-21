@@ -27,26 +27,42 @@ package org.gudy.azureus2.pluginsimpl.update.sf.impl2;
  *
  */
 
-import java.util.*;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.io.InputStream;
-
-import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerCapabilities;
-import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
-import org.gudy.azureus2.pluginsimpl.update.sf.*;
-import org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.html.*;
+import org.gudy.azureus2.core3.html.HTMLPage;
+import org.gudy.azureus2.core3.html.HTMLPageFactory;
+import org.gudy.azureus2.core3.html.HTMLTable;
+import org.gudy.azureus2.core3.html.HTMLTableCell;
+import org.gudy.azureus2.core3.html.HTMLTableRow;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.platform.PlatformManager;
+import org.gudy.azureus2.platform.PlatformManagerCapabilities;
+import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader.ResourceDownloaderFactoryImpl;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetails;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsException;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoader;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoaderListener;
 
 import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
 

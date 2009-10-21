@@ -22,8 +22,9 @@
 
 package com.aelitis.azureus.core.networkmanager;
 
-import java.net.*;
-import java.nio.channels.*;
+import java.net.InetAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 
 

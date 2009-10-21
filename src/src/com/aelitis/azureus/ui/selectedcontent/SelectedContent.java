@@ -24,7 +24,6 @@ import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.util.Base32;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
-
 import com.aelitis.azureus.core.AzureusCoreFactory;
 
 /**

@@ -23,19 +23,22 @@ package com.aelitis.azureus.core.clientmessageservice.impl;
 
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.core3.util.Debug;
 
-import com.aelitis.azureus.core.clientmessageservice.*;
-import com.aelitis.azureus.core.networkmanager.*;
+import com.aelitis.azureus.core.clientmessageservice.ClientMessageService;
+import com.aelitis.azureus.core.networkmanager.ConnectionEndpoint;
+import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
+import com.aelitis.azureus.core.networkmanager.Transport;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportImpl;
 import com.aelitis.azureus.core.peermanager.messaging.MessageException;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.*;
+import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageFactory;
 
 
 /**

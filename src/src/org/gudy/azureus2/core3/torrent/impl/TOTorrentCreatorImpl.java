@@ -27,7 +27,10 @@ package org.gudy.azureus2.core3.torrent.impl;
  *
  */
 
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentCreator;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentProgressListener;
 
 public class
 TOTorrentCreatorImpl

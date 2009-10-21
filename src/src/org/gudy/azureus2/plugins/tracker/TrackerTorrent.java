@@ -26,7 +26,7 @@ package org.gudy.azureus2.plugins.tracker;
  *
  */
 
-import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.plugins.torrent.Torrent;
 
 public interface 
 TrackerTorrent

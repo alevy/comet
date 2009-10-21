@@ -25,17 +25,17 @@ package org.gudy.azureus2.ui.swt.updater2;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AEVerifier;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.plugins.update.UpdateChecker;
 
 import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
-
-import org.gudy.azureus2.plugins.update.UpdateChecker;
 
 
 /**

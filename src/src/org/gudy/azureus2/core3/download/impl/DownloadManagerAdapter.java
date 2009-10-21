@@ -22,7 +22,8 @@
 package org.gudy.azureus2.core3.download.impl;
 
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerListener;
 
 /** Adapter for DownloadManagerListener 
  */

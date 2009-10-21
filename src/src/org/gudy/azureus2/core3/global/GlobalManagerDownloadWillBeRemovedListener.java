@@ -26,7 +26,7 @@ package org.gudy.azureus2.core3.global;
  *
  */
 
-import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.download.DownloadManager;
 
 public interface 
 GlobalManagerDownloadWillBeRemovedListener 

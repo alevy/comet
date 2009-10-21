@@ -26,14 +26,27 @@ package com.aelitis.azureus.core.diskmanager.file.impl;
  *
  */
 
-import java.util.*;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 
+import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.util.AEDiagnostics;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.IndentWriter;
 
-import com.aelitis.azureus.core.diskmanager.file.*;
+import com.aelitis.azureus.core.diskmanager.file.FMFile;
+import com.aelitis.azureus.core.diskmanager.file.FMFileManager;
+import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
+import com.aelitis.azureus.core.diskmanager.file.FMFileOwner;
 import com.aelitis.azureus.core.util.CaseSensitiveFileMap;
 
 public class 

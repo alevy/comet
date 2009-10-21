@@ -1,8 +1,8 @@
 package org.bouncycastle.asn1;
 
-import org.bouncycastle.util.Strings;
-
 import java.io.IOException;
+
+import org.bouncycastle.util.Strings;
 
 /**
  * DER UTF8String object.

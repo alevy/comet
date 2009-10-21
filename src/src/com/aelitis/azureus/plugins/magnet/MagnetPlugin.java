@@ -24,13 +24,14 @@ package com.aelitis.azureus.plugins.magnet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.net.InetSocketAddress;
+
 import org.eclipse.swt.graphics.Image;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
@@ -41,7 +42,9 @@ import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DelayedEvent;
 import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginListener;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabaseContact;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabaseEvent;
@@ -62,7 +65,10 @@ import org.gudy.azureus2.plugins.ui.tables.TableRow;
 import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
 
 import com.aelitis.azureus.core.util.CopyOnWriteList;
-import com.aelitis.net.magneturi.*;
+import com.aelitis.net.magneturi.MagnetURIHandler;
+import com.aelitis.net.magneturi.MagnetURIHandlerException;
+import com.aelitis.net.magneturi.MagnetURIHandlerListener;
+import com.aelitis.net.magneturi.MagnetURIHandlerProgressListener;
 
 /**
  * @author parg

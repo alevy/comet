@@ -78,7 +78,6 @@ public class DHTDBFactory {
 	// Default factory class:
 	
 	private static class DefaultFactoryAdapter implements FactoryInterface {
-		@Override
 		public DHTDB
 		create(
 			DHTStorageAdapter	adapter,

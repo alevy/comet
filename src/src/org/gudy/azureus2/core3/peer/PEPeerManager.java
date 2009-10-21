@@ -28,9 +28,11 @@ package org.gudy.azureus2.core3.peer;
  *
  */
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.disk.DiskManager;
+import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityDataID;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;

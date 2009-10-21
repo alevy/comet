@@ -30,7 +30,10 @@ package com.aelitis.azureus.core.dht.router.impl;
 
 import org.gudy.azureus2.core3.util.SHA1Simple;
 
-import com.aelitis.azureus.core.dht.router.*;
+import com.aelitis.azureus.core.dht.router.DHTRouter;
+import com.aelitis.azureus.core.dht.router.DHTRouterAdapter;
+import com.aelitis.azureus.core.dht.router.DHTRouterContact;
+import com.aelitis.azureus.core.dht.router.DHTRouterFactory;
 
 
 public class 

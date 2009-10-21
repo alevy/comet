@@ -20,11 +20,11 @@
  */
 package org.gudy.azureus2.pluginsimpl.local.dht.mainline;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTHandshake;
-
 import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTManager;
 import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
+
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTHandshake;
 
 
 /**

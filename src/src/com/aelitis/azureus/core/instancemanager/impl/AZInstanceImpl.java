@@ -22,8 +22,7 @@
 
 package com.aelitis.azureus.core.instancemanager.impl;
 
-import java.util.*;
-
+import java.util.Map;
 
 import com.aelitis.azureus.core.instancemanager.AZInstance;
 

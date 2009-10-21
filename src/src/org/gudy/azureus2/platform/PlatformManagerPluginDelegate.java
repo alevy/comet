@@ -24,7 +24,6 @@ import java.util.Properties;
 
 import org.gudy.azureus2.platform.unix.PlatformManagerUnixPlugin;
 import org.gudy.azureus2.platform.win32.PlatformManagerUpdateChecker;
-
 import org.gudy.azureus2.plugins.Plugin;
 import org.gudy.azureus2.plugins.PluginException;
 import org.gudy.azureus2.plugins.PluginInterface;

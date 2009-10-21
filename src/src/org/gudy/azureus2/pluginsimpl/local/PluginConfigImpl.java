@@ -22,19 +22,26 @@
 package org.gudy.azureus2.pluginsimpl.local;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.gudy.azureus2.core3.config.*;
-import org.gudy.azureus2.core3.config.impl.*;
+import org.gudy.azureus2.core3.config.COConfigurationListener;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.config.impl.ConfigurationDefaults;
+import org.gudy.azureus2.core3.config.impl.StringListImpl;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
-
 import org.gudy.azureus2.plugins.PluginConfig;
 import org.gudy.azureus2.plugins.PluginConfigListener;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.config.ConfigParameter;
 import org.gudy.azureus2.plugins.config.PluginConfigSource;
-import org.gudy.azureus2.pluginsimpl.local.config.*;
+import org.gudy.azureus2.pluginsimpl.local.config.ConfigParameterImpl;
+import org.gudy.azureus2.pluginsimpl.local.config.PluginConfigSourceImpl;
 
 import com.aelitis.net.magneturi.MagnetURIHandler;
 

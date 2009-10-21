@@ -27,7 +27,7 @@ package com.aelitis.azureus.core;
  *
  */
 
-import com.aelitis.azureus.core.impl.*;
+import com.aelitis.azureus.core.impl.AzureusCoreImpl;
 
 public class 
 AzureusCoreFactory 

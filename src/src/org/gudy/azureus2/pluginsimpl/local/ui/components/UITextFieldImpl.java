@@ -27,7 +27,7 @@ package org.gudy.azureus2.pluginsimpl.local.ui.components;
  *
  */
 
-import org.gudy.azureus2.plugins.ui.components.*;
+import org.gudy.azureus2.plugins.ui.components.UITextField;
 
 public class 
 UITextFieldImpl 

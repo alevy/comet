@@ -26,37 +26,47 @@ package org.gudy.azureus2.pluginsimpl.remote;
  *
  */
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Random;
 
-import org.gudy.azureus2.plugins.*;
-import org.gudy.azureus2.plugins.utils.*;
-import org.gudy.azureus2.plugins.sharing.ShareManager;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.tracker.Tracker;
-import org.gudy.azureus2.plugins.logging.Logger;
-import org.gudy.azureus2.plugins.messaging.MessageManager;
-import org.gudy.azureus2.plugins.network.ConnectionManager;
-import org.gudy.azureus2.plugins.ipc.IPCInterface;
-import org.gudy.azureus2.plugins.ipfilter.IPFilter;
-import org.gudy.azureus2.plugins.torrent.TorrentManager;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginConfig;
+import org.gudy.azureus2.plugins.PluginEvent;
+import org.gudy.azureus2.plugins.PluginEventListener;
+import org.gudy.azureus2.plugins.PluginException;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginListener;
+import org.gudy.azureus2.plugins.PluginManager;
+import org.gudy.azureus2.plugins.PluginState;
+import org.gudy.azureus2.plugins.PluginView;
 import org.gudy.azureus2.plugins.clientid.ClientIDManager;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
 import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTManager;
 import org.gudy.azureus2.plugins.download.DownloadManager;
+import org.gudy.azureus2.plugins.ipc.IPCInterface;
+import org.gudy.azureus2.plugins.ipfilter.IPFilter;
+import org.gudy.azureus2.plugins.logging.Logger;
+import org.gudy.azureus2.plugins.messaging.MessageManager;
+import org.gudy.azureus2.plugins.network.ConnectionManager;
 import org.gudy.azureus2.plugins.platform.PlatformManager;
-import org.gudy.azureus2.plugins.ui.*;
-import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.sharing.ShareException;
+import org.gudy.azureus2.plugins.sharing.ShareManager;
+import org.gudy.azureus2.plugins.torrent.TorrentManager;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.ui.UIManager;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.config.Parameter;
 import org.gudy.azureus2.plugins.ui.config.PluginConfigUIFactory;
-
-import org.gudy.azureus2.core3.util.Constants;
-
-import org.gudy.azureus2.pluginsimpl.remote.download.*;
-import org.gudy.azureus2.pluginsimpl.remote.ipfilter.*;
-import org.gudy.azureus2.pluginsimpl.remote.torrent.*;
-import org.gudy.azureus2.pluginsimpl.remote.utils.*;
-import org.gudy.azureus2.pluginsimpl.remote.tracker.*;
+import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.plugins.utils.ShortCuts;
+import org.gudy.azureus2.plugins.utils.Utilities;
+import org.gudy.azureus2.pluginsimpl.remote.download.RPDownloadManager;
+import org.gudy.azureus2.pluginsimpl.remote.ipfilter.RPIPFilter;
+import org.gudy.azureus2.pluginsimpl.remote.torrent.RPTorrentManager;
+import org.gudy.azureus2.pluginsimpl.remote.tracker.RPTracker;
+import org.gudy.azureus2.pluginsimpl.remote.utils.RPShortCuts;
 
 public class 
 RPPluginInterface

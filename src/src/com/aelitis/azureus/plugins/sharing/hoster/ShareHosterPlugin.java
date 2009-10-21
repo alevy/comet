@@ -26,18 +26,39 @@ package com.aelitis.azureus.plugins.sharing.hoster;
  *
  */
 
-import java.util.*;
-
-import org.gudy.azureus2.plugins.*;
-import org.gudy.azureus2.plugins.logging.*;
-import org.gudy.azureus2.plugins.torrent.*;
-import org.gudy.azureus2.plugins.tracker.*;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.sharing.*;
-import org.gudy.azureus2.plugins.download.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginEvent;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginListener;
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadAttributeListener;
+import org.gudy.azureus2.plugins.download.DownloadManager;
+import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
+import org.gudy.azureus2.plugins.download.DownloadWillBeRemovedListener;
+import org.gudy.azureus2.plugins.logging.LoggerChannel;
+import org.gudy.azureus2.plugins.sharing.ShareException;
+import org.gudy.azureus2.plugins.sharing.ShareItem;
+import org.gudy.azureus2.plugins.sharing.ShareManager;
+import org.gudy.azureus2.plugins.sharing.ShareManagerListener;
+import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.plugins.sharing.ShareResourceDeletionVetoException;
+import org.gudy.azureus2.plugins.sharing.ShareResourceDir;
+import org.gudy.azureus2.plugins.sharing.ShareResourceEvent;
+import org.gudy.azureus2.plugins.sharing.ShareResourceFile;
+import org.gudy.azureus2.plugins.sharing.ShareResourceListener;
+import org.gudy.azureus2.plugins.sharing.ShareResourceWillBeDeletedListener;
+import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrentRemovalVetoException;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrentWillBeRemovedListener;
+import org.gudy.azureus2.plugins.utils.DelayedTask;
 
 public class 
 ShareHosterPlugin

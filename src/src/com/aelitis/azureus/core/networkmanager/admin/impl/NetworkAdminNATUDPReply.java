@@ -31,8 +31,6 @@ import java.util.Map;
 import org.gudy.azureus2.core3.util.BDecoder;
 import org.gudy.azureus2.core3.util.BEncoder;
 
-
-
 import com.aelitis.net.udp.uc.PRUDPPacketReply;
 
 public class 

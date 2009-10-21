@@ -22,8 +22,11 @@
 
 package com.aelitis.net.magneturi.impl;
 
-import java.net.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 public class 
 MagnetURIHandlerClient 

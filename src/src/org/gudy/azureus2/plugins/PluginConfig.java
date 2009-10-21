@@ -30,7 +30,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.config.*;
+import org.gudy.azureus2.plugins.config.ConfigParameter;
+import org.gudy.azureus2.plugins.config.PluginConfigSource;
 
 /**
  * This class provides a way for a plugin to get and set configuration settings - both for the plugin

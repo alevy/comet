@@ -22,7 +22,8 @@
 
 package org.gudy.azureus2.core3.global.impl;
 
-import org.gudy.azureus2.core3.stats.*;
+import org.gudy.azureus2.core3.stats.StatsWriterFactory;
+import org.gudy.azureus2.core3.stats.StatsWriterPeriodic;
 import org.gudy.azureus2.core3.stats.transfer.StatsFactory;
 
 import com.aelitis.azureus.core.AzureusCore;

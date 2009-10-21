@@ -22,12 +22,12 @@
 package org.gudy.azureus2.pluginsimpl.local.utils.xml.simpleparser;
 
 import java.io.PrintWriter;
-import java.util.*;
-
-import org.w3c.dom.*;
+import java.util.Vector;
 
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentAttribute;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 
 public class 

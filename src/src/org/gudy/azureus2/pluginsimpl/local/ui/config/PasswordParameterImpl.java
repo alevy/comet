@@ -28,9 +28,10 @@ package org.gudy.azureus2.pluginsimpl.local.ui.config;
  *
  */
 import java.security.MessageDigest;
+
+import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.plugins.ui.config.PasswordParameter;
 import org.gudy.azureus2.pluginsimpl.local.PluginConfigImpl;
 

@@ -26,7 +26,11 @@ package org.gudy.azureus2.pluginsimpl.local.logging;
  *
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.logging.ILogAlertListener;
 import org.gudy.azureus2.core3.logging.LogAlert;

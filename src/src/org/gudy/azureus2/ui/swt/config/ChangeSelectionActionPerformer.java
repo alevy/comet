@@ -24,8 +24,8 @@ package org.gudy.azureus2.ui.swt.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 
 /**
  * @author Olivier

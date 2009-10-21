@@ -23,8 +23,17 @@
 package com.aelitis.azureus.core.dht.transport.udp.impl;
 
 import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.transport.*;
-import com.aelitis.azureus.core.dht.transport.udp.*;
+import com.aelitis.azureus.core.dht.transport.DHTTransport;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportFactory;
+import com.aelitis.azureus.core.dht.transport.DHTTransportFindValueReply;
+import com.aelitis.azureus.core.dht.transport.DHTTransportFullStats;
+import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandlerAdapter;
+import com.aelitis.azureus.core.dht.transport.DHTTransportRequestHandler;
+import com.aelitis.azureus.core.dht.transport.DHTTransportStoreReply;
+import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
+import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDPContact;
 
 /**
  * @author parg

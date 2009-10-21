@@ -27,9 +27,13 @@ package org.gudy.azureus2.pluginsimpl.local.ui.components;
  *
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
-import org.gudy.azureus2.plugins.ui.components.*;
+import org.gudy.azureus2.plugins.ui.components.UIComponent;
+import org.gudy.azureus2.plugins.ui.components.UIPropertyChangeEvent;
+import org.gudy.azureus2.plugins.ui.components.UIPropertyChangeListener;
 
 public class 
 UIComponentImpl

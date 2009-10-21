@@ -98,7 +98,6 @@ implements ActiveDHTDB, Constants {
 		SimpleTimer.addPeriodicEvent("DHTDB:ac",
 				getCacheRepublishInterval(),
 				new TimerEventPerformer() {
-					@Override
 					public void perform(TimerEvent event) {
 						fireMaintenanceTimerForActiveCode();
 					}
@@ -330,10 +329,8 @@ implements ActiveDHTDB, Constants {
 
 	// ActiveDHTDB interface:
 	
-	@Override
 	public DHTDBValue superGet(HashWrapper key) { return super.get(key); }
 
-	@Override
 	public DHTDBLookupResult superGet(DHTTransportContact reader,
 			                          HashWrapper key,
 			                          int max_values,
@@ -342,24 +339,20 @@ implements ActiveDHTDB, Constants {
 		return super.get(reader, key, max_values, flags, external_request);
 	}
 
-	@Override
 	public DHTDBValue superRemove(DHTTransportContact sender,
 			                      HashWrapper key) {
 		return super.remove(sender, key);
 	}
 
-	@Override
 	public DHTDBValue superStore(HashWrapper key, byte[] value, byte flags) {
 		return super.store(key, value, flags);
 	}
 
-	@Override
 	public byte superStore(DHTTransportContact sender, HashWrapper key,
 			               DHTTransportValue[] values) {
 		return super.store(sender, key, values);
 	}
 
-	@Override
 	public void registerForRepublishing(HashWrapper key, DHTDBValue value) {
 		synchronized(values_to_republish_lock) {
 			List<DHTDBValue> values_for_key = values_to_republish.get(key);

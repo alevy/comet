@@ -26,9 +26,9 @@ package org.gudy.azureus2.pluginsimpl.local.utils;
  *
  */
 
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.utils.*;
 import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.utils.Semaphore;
 
 public class
 SemaphoreImpl

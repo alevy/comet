@@ -26,20 +26,42 @@ package org.gudy.azureus2.pluginsimpl.local.torrent;
  *
  */
 
-import java.util.*;
-import java.net.URL;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
+import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
+import org.gudy.azureus2.core3.internat.LocaleUtilEncodingException;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentCreator;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
+import org.gudy.azureus2.core3.torrent.TOTorrentProgressListener;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.torrent.*;
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.internat.*;
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.plugins.torrent.TorrentCreator;
+import org.gudy.azureus2.plugins.torrent.TorrentCreatorListener;
+import org.gudy.azureus2.plugins.torrent.TorrentDownloader;
+import org.gudy.azureus2.plugins.torrent.TorrentEncodingException;
+import org.gudy.azureus2.plugins.torrent.TorrentException;
+import org.gudy.azureus2.plugins.torrent.TorrentManager;
+import org.gudy.azureus2.plugins.torrent.TorrentManagerEvent;
+import org.gudy.azureus2.plugins.torrent.TorrentManagerListener;
 
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 

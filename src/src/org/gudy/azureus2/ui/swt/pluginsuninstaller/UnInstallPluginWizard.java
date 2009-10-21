@@ -24,11 +24,14 @@ package org.gudy.azureus2.ui.swt.pluginsuninstaller;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.eclipse.swt.widgets.Display;
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.logging.LogAlert;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.ui.swt.wizard.Wizard;
+
 import com.aelitis.azureus.core.AzureusCore;
 
 /**

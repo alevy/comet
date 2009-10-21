@@ -26,8 +26,8 @@ package org.gudy.azureus2.core3.peer;
  *
  */
 
-import org.gudy.azureus2.core3.disk.*;
-import org.gudy.azureus2.core3.peer.impl.*;
+import org.gudy.azureus2.core3.disk.DiskManager;
+import org.gudy.azureus2.core3.peer.impl.PEPeerControlFactory;
 
 public class 
 PEPeerManagerFactory 

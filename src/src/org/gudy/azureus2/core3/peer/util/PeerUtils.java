@@ -24,7 +24,8 @@ package org.gudy.azureus2.core3.peer.util;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.util.Constants;
 
 

@@ -29,13 +29,16 @@ package org.gudy.azureus2.platform.win32.access.impl;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
-
-// don't use any core stuff in here as we need this access stub to be able to run in isolation
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.StringTokenizer;
 
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.platform.PlatformManagerPingCallback;
-import org.gudy.azureus2.platform.win32.access.*;
+import org.gudy.azureus2.platform.win32.access.AEWin32Access;
+import org.gudy.azureus2.platform.win32.access.AEWin32AccessException;
+import org.gudy.azureus2.platform.win32.access.AEWin32AccessListener;
 
 public class 
 AEWin32AccessImpl

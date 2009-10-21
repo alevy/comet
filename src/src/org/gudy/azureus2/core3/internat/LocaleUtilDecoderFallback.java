@@ -24,7 +24,9 @@ package org.gudy.azureus2.core3.internat;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import org.gudy.azureus2.core3.util.*;
+
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.SHA1Hasher;
 
 /**
  * @author parg

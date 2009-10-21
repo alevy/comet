@@ -35,8 +35,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import javax.naming.*;
-import javax.naming.directory.*;
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;

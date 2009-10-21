@@ -24,9 +24,15 @@
 package org.gudy.azureus2.core3.util;
 
 import java.io.File;
-import java.lang.ref.*;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 import com.aelitis.azureus.core.util.HashCodeUtils;
 

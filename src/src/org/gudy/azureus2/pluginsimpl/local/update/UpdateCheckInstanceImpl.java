@@ -27,13 +27,26 @@ package org.gudy.azureus2.pluginsimpl.local.update;
  *
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.logging.*;
-
-import org.gudy.azureus2.plugins.update.*;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.core3.util.AEThread2;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.plugins.update.UpdatableComponent;
+import org.gudy.azureus2.plugins.update.Update;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
+import org.gudy.azureus2.plugins.update.UpdateChecker;
+import org.gudy.azureus2.plugins.update.UpdateException;
+import org.gudy.azureus2.plugins.update.UpdateInstaller;
+import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 
 public class 
 UpdateCheckInstanceImpl

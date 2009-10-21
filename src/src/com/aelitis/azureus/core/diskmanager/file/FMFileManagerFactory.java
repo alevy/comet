@@ -26,7 +26,7 @@ package com.aelitis.azureus.core.diskmanager.file;
  *
  */
 
-import com.aelitis.azureus.core.diskmanager.file.impl.*;
+import com.aelitis.azureus.core.diskmanager.file.impl.FMFileManagerImpl;
 
 
 public class 

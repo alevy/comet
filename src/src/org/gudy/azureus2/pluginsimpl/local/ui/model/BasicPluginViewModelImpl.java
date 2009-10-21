@@ -33,10 +33,14 @@ import java.io.StringWriter;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
-import org.gudy.azureus2.plugins.ui.model.*;
-import org.gudy.azureus2.plugins.ui.components.*;
+import org.gudy.azureus2.plugins.ui.components.UIProgressBar;
+import org.gudy.azureus2.plugins.ui.components.UITextArea;
+import org.gudy.azureus2.plugins.ui.components.UITextField;
+import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
 import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.components.*;
+import org.gudy.azureus2.pluginsimpl.local.ui.components.UIProgressBarImpl;
+import org.gudy.azureus2.pluginsimpl.local.ui.components.UITextAreaImpl;
+import org.gudy.azureus2.pluginsimpl.local.ui.components.UITextFieldImpl;
 
 public class 
 BasicPluginViewModelImpl 

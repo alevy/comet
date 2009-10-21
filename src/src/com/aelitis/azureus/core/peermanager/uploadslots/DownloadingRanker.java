@@ -22,7 +22,7 @@
 
 package com.aelitis.azureus.core.peermanager.uploadslots;
 
-import java.util.*;
+import java.util.ArrayList;
 
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;

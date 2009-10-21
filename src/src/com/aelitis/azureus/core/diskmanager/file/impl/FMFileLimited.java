@@ -31,7 +31,9 @@ import java.io.File;
 
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
-import com.aelitis.azureus.core.diskmanager.file.*;
+import com.aelitis.azureus.core.diskmanager.file.FMFile;
+import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
+import com.aelitis.azureus.core.diskmanager.file.FMFileOwner;
 
 public class 
 FMFileLimited

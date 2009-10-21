@@ -28,8 +28,8 @@ package org.gudy.azureus2.core3.download;
 
 import java.util.List;
 
-import org.gudy.azureus2.core3.download.impl.*;
-import org.gudy.azureus2.core3.global.*;
+import org.gudy.azureus2.core3.download.impl.DownloadManagerImpl;
+import org.gudy.azureus2.core3.global.GlobalManager;
 
 public class 
 DownloadManagerFactory 

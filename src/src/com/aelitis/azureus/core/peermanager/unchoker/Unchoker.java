@@ -22,7 +22,7 @@
 
 package com.aelitis.azureus.core.peermanager.unchoker;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Performs peer choke/unchoke calculations.

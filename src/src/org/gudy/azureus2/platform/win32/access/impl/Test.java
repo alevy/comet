@@ -27,9 +27,6 @@ package org.gudy.azureus2.platform.win32.access.impl;
  *
  */
 
-import java.net.InetAddress;
-
-import org.gudy.azureus2.platform.PlatformManagerPingCallback;
 
 public class 
 Test 

@@ -29,7 +29,9 @@ package com.aelitis.net.upnp.impl.services;
 
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
 
-import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.UPnPAction;
+import com.aelitis.net.upnp.UPnPActionInvocation;
+import com.aelitis.net.upnp.UPnPService;
 
 public class 
 UPnPActionImpl

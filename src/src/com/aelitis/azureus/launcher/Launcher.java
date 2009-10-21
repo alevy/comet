@@ -24,7 +24,9 @@ import java.net.URL;
 
 import org.gudy.azureus2.core3.util.Constants;
 
-import com.aelitis.azureus.launcher.classloading.*;
+import com.aelitis.azureus.launcher.classloading.PeeringClassloader;
+import com.aelitis.azureus.launcher.classloading.PrimaryClassloader;
+import com.aelitis.azureus.launcher.classloading.SecondaryClassLoader;
 
 /**
  * This will (hopefully) become a unified launching pathway covering everything

@@ -25,12 +25,14 @@ package org.gudy.azureus2.core3.download.impl;
  * @author parg
  */
 
-import org.gudy.azureus2.core3.download.*;
-import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.disk.DiskManager;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerState;
+import org.gudy.azureus2.core3.download.DownloadManagerStats;
+import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.disk.*;
 
 public class 
 DownloadManagerStatsImpl 

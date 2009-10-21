@@ -22,11 +22,13 @@
  
 package org.gudy.azureus2.ui.swt.views.table.utils;
 
+import org.gudy.azureus2.plugins.ui.tables.TableColumn;
+import org.gudy.azureus2.plugins.ui.tables.TableColumnExtraInfoListener;
+import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.views.table.TableCellSWTPaintListener;
 
 import com.aelitis.azureus.ui.common.table.impl.TableColumnImpl;
-
-import org.gudy.azureus2.plugins.ui.tables.*;
 
 /** This class  provides constructors for setting most of
  * the common column attributes and sets the column as a 'core' column.<p>

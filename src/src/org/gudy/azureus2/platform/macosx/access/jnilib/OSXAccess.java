@@ -20,8 +20,7 @@
 package org.gudy.azureus2.platform.macosx.access.jnilib;
 
 import org.eclipse.swt.internal.carbon.AEDesc;
-
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.Debug;
 
 /**
  * @author TuxPaper

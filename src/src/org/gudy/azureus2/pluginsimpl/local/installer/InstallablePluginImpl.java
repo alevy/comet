@@ -25,10 +25,12 @@ package org.gudy.azureus2.pluginsimpl.local.installer;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginException;
+import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.installer.InstallablePlugin;
 import org.gudy.azureus2.plugins.installer.PluginInstaller;
-import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
 import org.gudy.azureus2.pluginsimpl.update.PluginUpdatePlugin;
 
 /**

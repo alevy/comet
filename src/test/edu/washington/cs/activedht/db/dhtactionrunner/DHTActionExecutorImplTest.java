@@ -138,19 +138,15 @@ class TestDHTControl implements DHTControl {
 		this.operation_duration = operation_duration;
 	}
 	
-	@Override
 	public void addListener(DHTControlListener l) { }
 
-	@Override
 	public int computeAndCompareDistances(byte[] n1, byte[] n2, byte[] pivot) {
 		return 0;
 	}
 
-	@Override
 	public void exportState(DataOutputStream os, int max) throws IOException {
 	}
 
-	@Override
 	public void get(byte[] key, String description, byte flags, int max_values,
 			long timeout,
 			boolean exhaustive,
@@ -167,11 +163,9 @@ class TestDHTControl implements DHTControl {
 		listener.complete(execution_timed_out);
 	}
 
-	@Override
 	public DHTControlActivity[] getActivities() { return null; }
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public List getClosestContactsList(byte[] id, int num_to_return,
 			boolean live_only) {
 		
@@ -179,81 +173,68 @@ class TestDHTControl implements DHTControl {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public List getClosestKContactsList(byte[] id, boolean live_only) {
 		
 		return null;
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public List getContacts() {
 		
 		return null;
 	}
 
-	@Override
 	public DHTDB getDataBase() {
 		
 		return null;
 	}
 
-	@Override
 	public DHTTransportValue getLocalValue(byte[] key) {
 		
 		return null;
 	}
 
-	@Override
 	public DHTRouter getRouter() {
 		
 		return null;
 	}
 
-	@Override
 	public DHTControlStats getStats() {
 		
 		return null;
 	}
 
-	@Override
 	public DHTTransport getTransport() {
 		
 		return null;
 	}
 
-	@Override
 	public void importState(DataInputStream is) throws IOException {
 		
 		
 	}
 
-	@Override
 	public boolean isDiversified(byte[] key) {
 		
 		return false;
 	}
 
-	@Override
 	public boolean lookup(byte[] id, long timeout,
 			              DHTOperationListener listener) {
 		
 		return false;
 	}
 
-	@Override
 	public void pingAll() {
 		
 		
 	}
 
-	@Override
 	public void print(boolean full) {
 		
 		
 	}
 
-	@Override
 	public void put(byte[] key, String description, byte[] value, byte flags,
 			boolean high_priority, DHTOperationListener listener) {
 		++num_puts;
@@ -261,46 +242,38 @@ class TestDHTControl implements DHTControl {
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public void putDirectEncodedKeys(byte[][] keys, String description,
 			DHTTransportValue[][] value_sets, List contacts) {
 	}
 
-	@Override
 	public void putEncodedKey(byte[] key, String description,
 			DHTTransportValue value, long timeout, boolean original_mappings) {
 		
 		
 	}
 
-	@Override
 	public byte[] remove(byte[] key, String description,
 			DHTOperationListener listener) {
 		
 		return null;
 	}
 
-	@Override
 	public byte[] remove(DHTTransportContact[] contacts, byte[] key,
 			String description, DHTOperationListener listener) {
 		
 		return null;
 	}
 
-	@Override
 	public void removeListener(DHTControlListener l) {
 		
 		
 	}
 
-	@Override
 	public void seed(boolean full_wait) { }
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public List sortContactsByDistance(List contacts) { return null; }
 
-	@Override
 	public boolean verifyContact(DHTTransportContact c, boolean direct) {
 		
 		return false;

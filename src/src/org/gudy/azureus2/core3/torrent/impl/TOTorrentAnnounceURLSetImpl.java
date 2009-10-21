@@ -23,7 +23,7 @@ package org.gudy.azureus2.core3.torrent.impl;
 
 import java.net.URL;
 
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
 import org.gudy.azureus2.core3.util.StringInterner;
 
 public class 

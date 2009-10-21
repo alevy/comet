@@ -22,8 +22,8 @@
 
 package com.aelitis.azureus.core.instancemanager;
 
-import java.util.List;
 import java.net.InetAddress;
+import java.util.List;
 
 public interface 
 AZInstance 

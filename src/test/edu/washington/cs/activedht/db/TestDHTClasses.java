@@ -30,94 +30,67 @@ public interface TestDHTClasses {
 			this.id = "" + id;
 		}
 		
-		@Override
 		public void exportContact(DataOutputStream os)
 		throws IOException, DHTTransportException { }
 
-		@Override
 		public InetSocketAddress getAddress() {
 			return new InetSocketAddress("host."+ id +".com", 1024);
 		}
 
-		@Override
 		public long getClockSkew() { return 0; }
 
-		@Override
 		public InetSocketAddress getExternalAddress() { return getAddress(); }
 
-		@Override
 		public byte[] getID() { return id.getBytes(); }
 
-		@Override
 		public int getInstanceID() { return id.hashCode(); }
 
-		@Override
 		public int getMaxFailForLiveCount() { return 0; }
 
-		@Override
 		public int getMaxFailForUnknownCount() { return 0; }
 
-		@Override
 		public String getName() { return id; }
 
-		@Override
 		public DHTNetworkPosition getNetworkPosition(byte position_type) {
 			return null;
 		}
 
-		@Override
 		public DHTNetworkPosition[] getNetworkPositions() { return null; }
 
-		@Override
 		public byte getProtocolVersion() { return 0; }
 
-		@Override
 		public int getRandomID() { return id.hashCode(); }
 
-		@Override
 		public DHTTransportFullStats getStats() { return null; }
 
-		@Override
 		public String getString() { return id; }
 
-		@Override
 		public DHTTransport getTransport() { return null; }
 
-		@Override
 		public boolean isAlive(long timeout) { return true; }
 
-		@Override
 		public boolean isValid() { return true; }
 
-		@Override
 		public void remove() { }
 
-		@Override
 		public void sendFindNode(DHTTransportReplyHandler handler, byte[] id) { }
 
-		@Override
 		public void sendFindValue(DHTTransportReplyHandler handler, byte[] key,
 				int max_values, byte flags) { }
 
-		@Override
 		public void sendImmediatePing(DHTTransportReplyHandler handler,
 				                      long timeout) { }
 
-		@Override
 		public void sendKeyBlock(DHTTransportReplyHandler handler,
 				byte[] key_block_request, byte[] key_block_signature) { }
 
-		@Override
 		public void sendPing(DHTTransportReplyHandler handler) { }
 
-		@Override
 		public void sendStats(DHTTransportReplyHandler handler) { }
 
-		@Override
 		public void sendStore(DHTTransportReplyHandler handler, byte[][] keys,
 				DHTTransportValue[][] value_sets, boolean immediate) { }
 
-		@Override
 		public void setRandomID(int id) { }
 	}
 
@@ -133,25 +106,18 @@ public interface TestDHTClasses {
 			this.is_local = is_local;
 		}
 		
-		@Override
 		public long getCreationTime() { return 0; }
 
-		@Override
 		public int getFlags() { return 0; }
 
-		@Override
 		public DHTTransportContact getOriginator() { return originator; }
 
-		@Override
 		public String getString() { return "" + value; }
 
-		@Override
 		public byte[] getValue() { return value; }
 
-		@Override
 		public int getVersion() { return 0; }
 
-		@Override
 		public boolean isLocal() { return is_local; }	
 	}
 

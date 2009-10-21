@@ -24,8 +24,16 @@ package com.aelitis.azureus.core.proxy.socks.impl;
 
 import java.io.IOException;
 
-import com.aelitis.azureus.core.proxy.socks.*;
-import com.aelitis.azureus.core.proxy.*;
+import com.aelitis.azureus.core.proxy.AEProxy;
+import com.aelitis.azureus.core.proxy.AEProxyConnection;
+import com.aelitis.azureus.core.proxy.AEProxyException;
+import com.aelitis.azureus.core.proxy.AEProxyFactory;
+import com.aelitis.azureus.core.proxy.AEProxyHandler;
+import com.aelitis.azureus.core.proxy.AEProxyState;
+import com.aelitis.azureus.core.proxy.socks.AESocksProxy;
+import com.aelitis.azureus.core.proxy.socks.AESocksProxyConnection;
+import com.aelitis.azureus.core.proxy.socks.AESocksProxyPlugableConnection;
+import com.aelitis.azureus.core.proxy.socks.AESocksProxyPlugableConnectionFactory;
 
 /**
  * @author parg

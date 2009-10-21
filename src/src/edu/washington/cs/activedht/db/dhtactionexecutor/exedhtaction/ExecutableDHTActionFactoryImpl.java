@@ -14,7 +14,6 @@ import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 
 public class ExecutableDHTActionFactoryImpl
 implements ExecutableDHTActionFactory {
-	@Override
 	@SuppressWarnings("unchecked")
 	public ExecutableDHTAction createAction(DHTAction action,
 			                                HashWrapper key,

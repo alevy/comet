@@ -22,9 +22,14 @@
 
 package org.gudy.azureus2.pluginsimpl.local.utils.resourceuploader;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -38,7 +43,8 @@ import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourceuploader.*;
+import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploader;
+import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploaderException;
 
 public class 
 ResourceUploaderURLImpl

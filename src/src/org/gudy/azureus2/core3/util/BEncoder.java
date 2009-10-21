@@ -22,10 +22,18 @@
 
 package org.gudy.azureus2.core3.util;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.gudy.azureus2.core3.xml.util.XUXmlWriter;
 

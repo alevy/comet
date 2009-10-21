@@ -22,7 +22,7 @@
  
 package org.gudy.azureus2.core3.disk.impl.access.impl;
 
-import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.disk.DiskManagerWriteRequest;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
 

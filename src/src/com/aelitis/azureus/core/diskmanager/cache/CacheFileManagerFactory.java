@@ -27,7 +27,7 @@ package com.aelitis.azureus.core.diskmanager.cache;
  *
  */
 
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AEMonitor;
 
 public class 
 CacheFileManagerFactory 

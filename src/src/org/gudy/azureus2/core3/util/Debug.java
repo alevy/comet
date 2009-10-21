@@ -21,9 +21,14 @@
  */
 package org.gudy.azureus2.core3.util;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * Debug-assisting class.

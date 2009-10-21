@@ -20,7 +20,8 @@
 
 package com.aelitis.azureus.util;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.gudy.azureus2.core3.util.Base32;

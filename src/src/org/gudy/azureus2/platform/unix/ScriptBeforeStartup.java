@@ -1,6 +1,10 @@
 package org.gudy.azureus2.platform.unix;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -12,10 +16,9 @@ import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
+import org.gudy.azureus2.plugins.PluginManager;
 
 import com.aelitis.azureus.core.impl.AzureusCoreSingleInstanceClient;
-
-import org.gudy.azureus2.plugins.PluginManager;
 
 public class ScriptBeforeStartup
 {

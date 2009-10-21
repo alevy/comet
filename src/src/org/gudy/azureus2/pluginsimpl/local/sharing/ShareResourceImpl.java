@@ -26,14 +26,30 @@ package org.gudy.azureus2.pluginsimpl.local.sharing;
  *
  */
 
-import java.util.*;
-import java.io.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.gudy.azureus2.plugins.sharing.*;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.util.BrokenMd5Hasher;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.plugins.sharing.ShareException;
+import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.plugins.sharing.ShareResourceDeletionVetoException;
+import org.gudy.azureus2.plugins.sharing.ShareResourceDirContents;
+import org.gudy.azureus2.plugins.sharing.ShareResourceEvent;
+import org.gudy.azureus2.plugins.sharing.ShareResourceListener;
+import org.gudy.azureus2.plugins.sharing.ShareResourceWillBeDeletedListener;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
 import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.internat.*;
 
 public abstract class 
 ShareResourceImpl

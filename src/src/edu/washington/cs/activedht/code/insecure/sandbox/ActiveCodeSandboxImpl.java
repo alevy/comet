@@ -38,7 +38,6 @@ implements ActiveCodeSandbox<RETURN_TYPE>,
 	
 	// ActiveCodeSandbox interface:
 	
-	@Override
 	public void init() throws InitializationException {
 		// TODO(roxana): Set up all the required things here.
 		
@@ -48,13 +47,10 @@ implements ActiveCodeSandbox<RETURN_TYPE>,
 		is_initialized = true;
 	}
 	
-	@Override
 	public boolean isInitialized() { return is_initialized; }
 	
-	@Override
 	public void stop() { handler_pool.purge(); }
 
-	@Override
 	public RETURN_TYPE executeWithinSandbox(Callable<RETURN_TYPE> task)
 	throws ActiveCodeExecutionInterruptedException {
 		assert(isInitialized());
@@ -112,7 +108,6 @@ implements ActiveCodeSandbox<RETURN_TYPE>,
 	 */
 	private class MyRejectedExecutionHandler
 	implements RejectedExecutionHandler {
-		@Override
 		public void rejectedExecution(Runnable r, 
 				                      ThreadPoolExecutor executor) {
 			// TODO(roxana): drop task silently for now.
@@ -154,7 +149,6 @@ class InsecureThreadFactory implements ThreadFactory {
 		insecure_thread_group = InsecureThreadGroupSingleton.getInstance();
 	}
 	
-	@Override
 	public Thread newThread(Runnable target) {
 		return new Thread(insecure_thread_group, target);
 	}

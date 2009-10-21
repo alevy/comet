@@ -21,13 +21,14 @@
  
 package org.gudy.azureus2.core3.config;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.io.IOException;
-import java.net.URL;
 
-import org.gudy.azureus2.core3.config.impl.*;
+import org.gudy.azureus2.core3.config.impl.ConfigurationDefaults;
+import org.gudy.azureus2.core3.config.impl.ConfigurationManager;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.core3.util.protocol.AzURLStreamHandlerFactory;

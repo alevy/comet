@@ -22,6 +22,7 @@ package com.aelitis.azureus.core.peermanager.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 
 public class BTPeerIDByteDecoderDefinitions {

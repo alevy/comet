@@ -27,7 +27,7 @@ package com.aelitis.net.upnp.impl.services;
  *
  */
 
-import com.aelitis.net.upnp.services.*;
+import com.aelitis.net.upnp.services.UPnPWANIPConnection;
 
 public class 
 UPnPSSWANIPConnectionImpl

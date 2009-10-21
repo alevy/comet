@@ -24,7 +24,11 @@ package org.gudy.azureus2.pluginsimpl.local.network;
 
 import java.nio.ByteBuffer;
 
-import org.gudy.azureus2.plugins.network.*;
+import org.gudy.azureus2.plugins.network.Connection;
+import org.gudy.azureus2.plugins.network.ConnectionListener;
+import org.gudy.azureus2.plugins.network.IncomingMessageQueue;
+import org.gudy.azureus2.plugins.network.OutgoingMessageQueue;
+import org.gudy.azureus2.plugins.network.Transport;
 
 import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
 

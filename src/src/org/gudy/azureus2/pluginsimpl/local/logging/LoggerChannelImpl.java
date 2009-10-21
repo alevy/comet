@@ -21,22 +21,21 @@
 
 package org.gudy.azureus2.pluginsimpl.local.logging;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+
 import org.gudy.azureus2.core3.logging.LogAlert;
-
-/**
- * @author parg
- *
- */
-
-import java.util.*;
-
-import org.gudy.azureus2.plugins.logging.*;
-import org.gudy.azureus2.plugins.logging.Logger;
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.util.AEDiagnostics;
 import org.gudy.azureus2.core3.util.AEDiagnosticsLogger;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
+import org.gudy.azureus2.plugins.logging.Logger;
+import org.gudy.azureus2.plugins.logging.LoggerChannel;
+import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
 
 public class 
 LoggerChannelImpl 

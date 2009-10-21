@@ -22,8 +22,8 @@
 
 package org.gudy.azureus2.ui.swt.components;
 
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 
 public abstract interface BufferedGraphicTableItem
 {

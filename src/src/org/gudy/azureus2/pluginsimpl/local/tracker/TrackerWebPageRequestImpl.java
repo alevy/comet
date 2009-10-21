@@ -32,8 +32,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.tracker.*;
-import org.gudy.azureus2.plugins.tracker.web.*;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.tracker.web.TrackerWebContext;
+import org.gudy.azureus2.plugins.tracker.web.TrackerWebPageRequest;
 
 public class 
 TrackerWebPageRequestImpl

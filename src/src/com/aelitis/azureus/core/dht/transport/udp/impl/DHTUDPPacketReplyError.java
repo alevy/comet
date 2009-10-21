@@ -26,7 +26,9 @@ package com.aelitis.azureus.core.dht.transport.udp.impl;
  *
  */
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import org.gudy.azureus2.core3.util.Debug;

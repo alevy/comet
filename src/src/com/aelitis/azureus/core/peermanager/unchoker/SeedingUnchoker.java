@@ -22,7 +22,10 @@
 
 package com.aelitis.azureus.core.peermanager.unchoker;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
 

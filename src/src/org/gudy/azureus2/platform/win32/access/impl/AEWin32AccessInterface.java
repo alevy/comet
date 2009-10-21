@@ -27,8 +27,9 @@ package org.gudy.azureus2.platform.win32.access.impl;
  *
  */
 
-import org.gudy.azureus2.platform.win32.access.*;
-import org.gudy.azureus2.platform.win32.*;
+import org.gudy.azureus2.platform.win32.PlatformManagerImpl;
+import org.gudy.azureus2.platform.win32.access.AEWin32Access;
+import org.gudy.azureus2.platform.win32.access.AEWin32AccessException;
 import org.gudy.azureus2.update.UpdaterUtils;
 
 public class 

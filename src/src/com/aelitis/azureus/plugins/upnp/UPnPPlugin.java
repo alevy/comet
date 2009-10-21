@@ -27,15 +27,39 @@ package com.aelitis.azureus.plugins.upnp;
  *
  */
 
-import java.util.*;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
-import org.gudy.azureus2.plugins.*;
-import org.gudy.azureus2.plugins.logging.*;
-import org.gudy.azureus2.plugins.network.*;
-import org.gudy.azureus2.plugins.ui.*;
-import org.gudy.azureus2.plugins.ui.model.*;
-import org.gudy.azureus2.plugins.ui.config.*;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginConfig;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginListener;
+import org.gudy.azureus2.plugins.logging.LoggerChannel;
+import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
+import org.gudy.azureus2.plugins.network.ConnectionManager;
+import org.gudy.azureus2.plugins.ui.UIManager;
+import org.gudy.azureus2.plugins.ui.config.ActionParameter;
+import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.plugins.ui.config.LabelParameter;
+import org.gudy.azureus2.plugins.ui.config.Parameter;
+import org.gudy.azureus2.plugins.ui.config.ParameterListener;
+import org.gudy.azureus2.plugins.ui.config.StringParameter;
+import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
+import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
 import org.gudy.azureus2.plugins.utils.UTTimer;
 import org.gudy.azureus2.plugins.utils.UTTimerEvent;
 import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
@@ -43,18 +67,23 @@ import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFact
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
 
-import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Debug;
-
 import com.aelitis.net.natpmp.NATPMPDeviceAdapter;
 import com.aelitis.net.natpmp.NatPMPDeviceFactory;
 import com.aelitis.net.natpmp.upnp.NatPMPUPnP;
 import com.aelitis.net.natpmp.upnp.NatPMPUPnPFactory;
-import com.aelitis.net.upnp.*;
-import com.aelitis.net.upnp.services.*;
+import com.aelitis.net.upnp.UPnP;
+import com.aelitis.net.upnp.UPnPAdapter;
+import com.aelitis.net.upnp.UPnPDevice;
+import com.aelitis.net.upnp.UPnPException;
+import com.aelitis.net.upnp.UPnPFactory;
+import com.aelitis.net.upnp.UPnPListener;
+import com.aelitis.net.upnp.UPnPLogListener;
+import com.aelitis.net.upnp.UPnPRootDevice;
+import com.aelitis.net.upnp.UPnPRootDeviceListener;
+import com.aelitis.net.upnp.UPnPService;
+import com.aelitis.net.upnp.services.UPnPWANConnection;
+import com.aelitis.net.upnp.services.UPnPWANConnectionListener;
+import com.aelitis.net.upnp.services.UPnPWANConnectionPortMapping;
 
 public class 
 UPnPPlugin

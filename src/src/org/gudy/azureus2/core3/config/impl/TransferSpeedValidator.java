@@ -22,7 +22,8 @@ package org.gudy.azureus2.core3.config.impl;
  *
  */
 
-import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.global.GlobalManager;
 
 import com.aelitis.azureus.core.AzureusCore;

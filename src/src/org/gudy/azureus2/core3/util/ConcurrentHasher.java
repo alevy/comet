@@ -27,8 +27,10 @@ package org.gudy.azureus2.core3.util;
  *
  */
 
-import java.util.*;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;

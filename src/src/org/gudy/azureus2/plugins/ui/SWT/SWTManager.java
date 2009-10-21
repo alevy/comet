@@ -14,9 +14,8 @@
 
 package org.gudy.azureus2.plugins.ui.SWT;
 
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.graphics.Image;
-
+import org.eclipse.swt.widgets.Display;
 import org.gudy.azureus2.plugins.PluginView;
 
 /** Evil SWT Specific stuff that plugins may need access to

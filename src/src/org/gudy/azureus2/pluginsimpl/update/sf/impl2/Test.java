@@ -28,7 +28,9 @@ package org.gudy.azureus2.pluginsimpl.update.sf.impl2;
  */
 
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.pluginsimpl.update.sf.*;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetails;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoader;
+import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoaderFactory;
 
 public class 
 Test 

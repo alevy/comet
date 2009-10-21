@@ -25,11 +25,9 @@ package org.gudy.azureus2.ui.swt.pluginsimpl;
 
 
 import org.eclipse.swt.graphics.Image;
-
-import org.gudy.azureus2.ui.swt.plugins.UISWTGraphic;
-
 import org.gudy.azureus2.plugins.ui.SWT.GraphicSWT;
 import org.gudy.azureus2.plugins.ui.SWT.SWTManager;
+import org.gudy.azureus2.ui.swt.plugins.UISWTGraphic;
 
 /** An SWT image to be used in Azureus
  *

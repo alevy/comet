@@ -22,10 +22,12 @@
 
 package com.aelitis.azureus.core.security.impl;
 
-import java.util.*;
-
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -50,7 +52,6 @@ import com.aelitis.azureus.core.security.CryptoManagerException;
 import com.aelitis.azureus.core.security.CryptoManagerKeyListener;
 import com.aelitis.azureus.core.security.CryptoManagerPasswordException;
 import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler;
-import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler.passwordDetails;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 
 public class 

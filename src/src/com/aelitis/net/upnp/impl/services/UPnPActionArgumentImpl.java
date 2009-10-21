@@ -27,7 +27,7 @@ package com.aelitis.net.upnp.impl.services;
  *
  */
 
-import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.UPnPActionArgument;
 
 public class 
 UPnPActionArgumentImpl 

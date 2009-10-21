@@ -20,8 +20,11 @@
 
 package org.gudy.azureus2.ui.swt.views.table;
 
-import org.eclipse.swt.graphics.*;
-
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.gudy.azureus2.ui.swt.components.BufferedTableItem;
 
 /**

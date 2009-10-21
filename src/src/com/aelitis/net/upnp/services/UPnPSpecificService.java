@@ -27,7 +27,7 @@ package com.aelitis.net.upnp.services;
  *
  */
 
-import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.UPnPService;
 
 public interface 
 UPnPSpecificService 

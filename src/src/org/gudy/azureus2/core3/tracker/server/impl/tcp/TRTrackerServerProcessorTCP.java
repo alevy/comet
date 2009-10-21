@@ -22,16 +22,45 @@
 package org.gudy.azureus2.core3.tracker.server.impl.tcp;
 
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-import org.gudy.azureus2.core3.tracker.server.*;
-import org.gudy.azureus2.core3.tracker.server.impl.*;
-import org.gudy.azureus2.core3.util.*;
-
 import org.bouncycastle.util.encoders.Base64;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
+import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerImpl;
+import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerPeerImpl;
+import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerProcessor;
+import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerTorrentImpl;
+import org.gudy.azureus2.core3.util.AsyncController;
+import org.gudy.azureus2.core3.util.BDecoder;
+import org.gudy.azureus2.core3.util.BEncoder;
+import org.gudy.azureus2.core3.util.Base32;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.HostNameToIPResolver;
+import org.gudy.azureus2.core3.util.SHA1Hasher;
+import org.gudy.azureus2.core3.util.UrlUtils;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;

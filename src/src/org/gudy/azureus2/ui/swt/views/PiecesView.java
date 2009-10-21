@@ -23,26 +23,35 @@ package org.gudy.azureus2.ui.swt.views;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
-
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerPeerListener;
 import org.gudy.azureus2.core3.download.DownloadManagerPieceListener;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.peer.PEPiece;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.components.Legend;
 import org.gudy.azureus2.ui.swt.views.piece.MyPieceDistributionView;
 import org.gudy.azureus2.ui.swt.views.piece.PieceInfoView;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.*;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.AvailabilityItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.BlockCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.BlocksItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.CompletedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.PieceNumberItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.PriorityItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.RequestedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.ReservedByItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.SizeItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.SpeedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.TypeItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.WritersItem;
 
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
 import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
 import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
 
 /**
  * @author Olivier

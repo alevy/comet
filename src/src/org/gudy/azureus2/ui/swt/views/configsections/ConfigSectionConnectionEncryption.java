@@ -32,7 +32,10 @@ import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.*;
+import org.gudy.azureus2.ui.swt.config.BooleanParameter;
+import org.gudy.azureus2.ui.swt.config.GenericActionPerformer;
+import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
+import org.gudy.azureus2.ui.swt.config.StringListParameter;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 public class ConfigSectionConnectionEncryption implements UISWTConfigSection {

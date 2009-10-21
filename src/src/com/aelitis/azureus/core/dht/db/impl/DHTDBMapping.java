@@ -24,15 +24,23 @@ package com.aelitis.azureus.core.dht.db.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SystemTime;
-// import org.gudy.azureus2.core3.util.SHA1Hasher;
 
-import com.aelitis.azureus.core.dht.*;
+import com.aelitis.azureus.core.dht.DHT;
+import com.aelitis.azureus.core.dht.DHTStorageKey;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.util.bloom.BloomFilter;

@@ -28,7 +28,7 @@ package com.aelitis.azureus.core.update;
  */
 
 import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.update.impl.*;
+import com.aelitis.azureus.core.update.impl.AzureusRestarterImpl;
 
 public class 
 AzureusRestarterFactory 

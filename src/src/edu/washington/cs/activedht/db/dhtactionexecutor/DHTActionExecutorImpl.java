@@ -36,7 +36,6 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	
 	// DHTActionExecutor interface:
 	
-	@Override
 	public String getThisHostAddr() {
 		try {
 			return db_pointer.getControl().getTransport()
@@ -47,7 +46,6 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@Override
 	public void executeActions(DHTActionList actions,
 			                   HashWrapper key,
 			                   ActiveDHTDBValueImpl value,
@@ -140,36 +138,30 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 			new ActiveDHTOperationListener() {
 				private DHTOperationListener delegate;
 				
-				@Override
 				public void setActionSpecificListener(
 						DHTOperationListener delegate) {
 					this.delegate = delegate;
 				}
 
-				@Override
 				public void complete(boolean timeout) {
 					if (delegate != null) delegate.complete(timeout);
 					if (!timeout) action.markAsExecuted();
 					sem.release();
 				}
 
-				@Override
 				public void diversified(String desc) { 
 					if (delegate != null) delegate.diversified(desc);
 				}
 
-				@Override
 				public void found(DHTTransportContact contact) {
 					if (delegate != null) delegate.found(contact);
 				}
 
-				@Override
 				public void read(DHTTransportContact contact,
 						         DHTTransportValue value) {
 					if (delegate != null) delegate.read(contact, value);
 				}
 				
-				@Override
 				public void searching(DHTTransportContact contact, int level,
 			 			              int active_searches) {
 					if (delegate != null) {
@@ -177,7 +169,6 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 					}
 				}
 
-				@Override
 				public void wrote(DHTTransportContact contact,
 						          DHTTransportValue value) {
 					if (delegate != null) delegate.wrote(contact, value);
@@ -190,16 +181,13 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 
 	// Initializable interface:
 	
-	@Override
 	public void init() throws InitializationException {
 		is_initialized = true;
 	}
 
-	@Override
 	public boolean isInitialized() {
 		return is_initialized;
 	}
 
-	@Override
 	public void stop() { }
 }

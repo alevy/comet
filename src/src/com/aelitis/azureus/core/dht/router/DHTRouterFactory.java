@@ -27,12 +27,13 @@ package com.aelitis.azureus.core.dht.router;
  *
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.util.Debug;
 
 import com.aelitis.azureus.core.dht.DHTLogger;
-import com.aelitis.azureus.core.dht.router.impl.*;
+import com.aelitis.azureus.core.dht.router.impl.DHTRouterImpl;
 
 public class 
 DHTRouterFactory 

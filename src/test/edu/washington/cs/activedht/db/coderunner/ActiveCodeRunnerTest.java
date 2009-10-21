@@ -290,7 +290,6 @@ class TestDHTActionExecutorImpl extends DHTActionExecutorImpl {
 class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 
 	@SuppressWarnings("unchecked")
-	@Override
 	public ExecutableDHTAction createAction(DHTAction action,
                                             HashWrapper key,
                                             ActiveDHTDBValueImpl value,

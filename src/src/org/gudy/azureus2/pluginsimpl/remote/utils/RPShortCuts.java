@@ -27,11 +27,17 @@ package org.gudy.azureus2.pluginsimpl.remote.utils;
  *
  */
 
-import org.gudy.azureus2.plugins.utils.*;
-import org.gudy.azureus2.plugins.download.*;
-
-import org.gudy.azureus2.pluginsimpl.remote.*;
-import org.gudy.azureus2.pluginsimpl.remote.download.*;
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadException;
+import org.gudy.azureus2.plugins.download.DownloadStats;
+import org.gudy.azureus2.plugins.utils.ShortCuts;
+import org.gudy.azureus2.pluginsimpl.remote.RPException;
+import org.gudy.azureus2.pluginsimpl.remote.RPObject;
+import org.gudy.azureus2.pluginsimpl.remote.RPReply;
+import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
+import org.gudy.azureus2.pluginsimpl.remote.RPRequestDispatcher;
+import org.gudy.azureus2.pluginsimpl.remote.download.RPDownload;
+import org.gudy.azureus2.pluginsimpl.remote.download.RPDownloadStats;
 
 public class 
 RPShortCuts

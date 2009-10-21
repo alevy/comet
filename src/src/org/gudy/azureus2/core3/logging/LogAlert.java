@@ -19,11 +19,12 @@
  */
 package org.gudy.azureus2.core3.logging;
 
-import com.aelitis.azureus.core.util.GeneralUtils;
+import java.util.ArrayList;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
+
+import com.aelitis.azureus.core.util.GeneralUtils;
 
 /**
  * @author TuxPaper

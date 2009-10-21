@@ -19,7 +19,6 @@ public class StoreListener implements Iterable<StoreOutcome> {
 		outcomes.add(new StoreOutcome(overwritten_value, added_value));
 	}
 	
-	@Override
 	public Iterator<StoreOutcome> iterator() {
 		return outcomes.iterator();
 	}

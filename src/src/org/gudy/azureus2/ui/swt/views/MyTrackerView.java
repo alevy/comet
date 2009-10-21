@@ -33,8 +33,10 @@ import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.widgets.*;
-
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.gudy.azureus2.core3.category.Category;
 import org.gudy.azureus2.core3.category.CategoryManager;
 import org.gudy.azureus2.core3.category.CategoryManagerListener;
@@ -47,7 +49,13 @@ import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AsyncController;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
+import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
+import org.gudy.azureus2.ui.swt.Alerts;
+import org.gudy.azureus2.ui.swt.CategoryAdderWindow;
+import org.gudy.azureus2.ui.swt.Messages;
+import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 import org.gudy.azureus2.ui.swt.views.table.TableRowSWT;
@@ -55,18 +63,36 @@ import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWTMenuFillListener;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.*;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AnnounceCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AverageBytesInItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AverageBytesOutItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.BadNATCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.CategoryItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.CompletedCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.DateAddedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.DownloadedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.LeftItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.NameItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.PassiveItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.PeerCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.ScrapeCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.SeedCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.StatusItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TotalBytesInItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TotalBytesOutItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TrackerItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.UploadedItem;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
-import com.aelitis.azureus.ui.common.table.*;
-
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
-
-import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
+import com.aelitis.azureus.ui.common.table.TableColumnCore;
+import com.aelitis.azureus.ui.common.table.TableGroupRowRunner;
+import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
+import com.aelitis.azureus.ui.common.table.TableRefreshListener;
+import com.aelitis.azureus.ui.common.table.TableRowCore;
+import com.aelitis.azureus.ui.common.table.TableSelectionListener;
 
 
 /**

@@ -18,9 +18,9 @@
  
 package org.gudy.azureus2.ui.swt.views.table;
 
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-
 import org.gudy.azureus2.plugins.ui.tables.TableColumnCreationListener;
+
+import com.aelitis.azureus.ui.common.table.TableColumnCore;
 
 /**
  * @author TuxPaper

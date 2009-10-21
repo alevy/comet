@@ -27,12 +27,21 @@ package org.gudy.azureus2.core3.tracker.server.impl;
  */
 
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.config.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AENetworkClassifier;
+import org.gudy.azureus2.core3.util.ByteEncodedKeyHashMap;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.ThreadPoolTask;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 

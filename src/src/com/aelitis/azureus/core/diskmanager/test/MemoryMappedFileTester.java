@@ -22,8 +22,9 @@
 
 package com.aelitis.azureus.core.diskmanager.test;
 
-import java.io.*;
-import java.nio.channels.*;
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;

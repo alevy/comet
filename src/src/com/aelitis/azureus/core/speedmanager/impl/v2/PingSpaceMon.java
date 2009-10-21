@@ -1,13 +1,14 @@
 package com.aelitis.azureus.core.speedmanager.impl.v2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.gudy.azureus2.core3.util.SystemTime;
+
+import com.aelitis.azureus.core.speedmanager.SpeedManager;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerLimitEstimate;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerPingMapper;
-import com.aelitis.azureus.core.speedmanager.SpeedManager;
 import com.aelitis.azureus.core.speedmanager.impl.SpeedManagerAlgorithmProviderAdapter;
-
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Created on Jul 16, 2007

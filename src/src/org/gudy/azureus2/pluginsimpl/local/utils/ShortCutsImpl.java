@@ -27,12 +27,13 @@ package org.gudy.azureus2.pluginsimpl.local.utils;
  *
  */
 
-import org.gudy.azureus2.plugins.*;
-import org.gudy.azureus2.plugins.download.*;
-
-import org.gudy.azureus2.pluginsimpl.local.download.*;
-
-import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadException;
+import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
+import org.gudy.azureus2.plugins.download.DownloadStats;
+import org.gudy.azureus2.plugins.utils.ShortCuts;
+import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
 
 public class 
 ShortCutsImpl

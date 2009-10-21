@@ -20,10 +20,12 @@
  */
 package org.gudy.azureus2.cl;
 
-import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerFactory;
+import org.gudy.azureus2.core3.download.DownloadManagerStats;
 import org.gudy.azureus2.core3.security.SESecurityManager;
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.util.DisplayFormatters;
 
 /**
  * @author Olivier

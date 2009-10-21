@@ -22,10 +22,11 @@
 
 package com.aelitis.azureus.core.dht.transport.udp.impl;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.aelitis.azureus.core.dht.transport.udp.impl.packethandler.DHTUDPPacketNetworkHandler;
 import com.aelitis.net.udp.uc.PRUDPPacketHandler;

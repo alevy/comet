@@ -23,8 +23,8 @@
 package org.gudy.azureus2.pluginsimpl.local.messaging;
 
 import java.nio.ByteBuffer;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 import org.gudy.azureus2.plugins.messaging.MessageException;

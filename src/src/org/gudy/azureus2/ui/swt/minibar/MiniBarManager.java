@@ -20,9 +20,9 @@
  */
 package org.gudy.azureus2.ui.swt.minibar;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.ArrayList;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;

@@ -28,7 +28,15 @@ import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
@@ -47,12 +55,30 @@ import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWTMenuFillListener;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.*;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.DoneItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.FileExtensionItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.FirstPieceItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.ModeItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.NameItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.PathItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.PercentItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.PieceCountItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.PriorityItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.ProgressGraphItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.RemainingPiecesItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.SizeItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.StorageTypeItem;
 import org.gudy.azureus2.ui.swt.views.utils.ManagerUtils;
 
 import com.aelitis.azureus.core.AzureusCoreOperation;
 import com.aelitis.azureus.core.AzureusCoreOperationTask;
-import com.aelitis.azureus.ui.common.table.*;
+import com.aelitis.azureus.ui.common.table.TableColumnCore;
+import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
+import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
+import com.aelitis.azureus.ui.common.table.TableRefreshListener;
+import com.aelitis.azureus.ui.common.table.TableRowCore;
+import com.aelitis.azureus.ui.common.table.TableSelectedRowsListener;
+import com.aelitis.azureus.ui.common.table.TableSelectionListener;
 
 /**
  * @author Olivier

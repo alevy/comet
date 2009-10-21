@@ -26,7 +26,7 @@ package org.gudy.azureus2.pluginsimpl.local.torrent;
  *
  */
 
-import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.plugins.torrent.TorrentFile;
 
 public class 
 TorrentFileImpl

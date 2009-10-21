@@ -27,7 +27,9 @@ package com.aelitis.net.upnp.impl;
  *
  */
 
-import java.net.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.URL;
 
 public interface 
 SSDPIGDListener 

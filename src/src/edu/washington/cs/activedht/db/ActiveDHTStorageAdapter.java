@@ -98,13 +98,11 @@ public class ActiveDHTStorageAdapter implements DHTStorageAdapter {
 	
 	// Modified DB event handlers:
 
-	@Override
 	public void valueAdded(DHTStorageKey key, DHTTransportValue value) {
 		adapter.valueAdded(key, value);
 		addOutcome(key, null, value);
 	}
 
-	@Override
 	public void valueUpdated(DHTStorageKey key,
 			DHTTransportValue old_value, DHTTransportValue new_value) {
 		adapter.valueUpdated(key, old_value, new_value);
@@ -118,35 +116,29 @@ public class ActiveDHTStorageAdapter implements DHTStorageAdapter {
 		listener.addOutcome(old_value, new_value);
 	}
 	
-	@Override
 	public DHTStorageKey keyCreated(HashWrapper key, boolean local) {
 		return adapter.keyCreated(key, local);
 	} 
 
 	// Unmodified DB event handlers:
 	
-	@Override
 	public void keyRead(DHTStorageKey adapter_key,
             DHTTransportContact contact) {
 		adapter.keyRead(adapter_key, contact);
 	}
 
-	@Override
 	public void valueDeleted(DHTStorageKey key, DHTTransportValue value) {
 		adapter.valueDeleted(key, value);
 	}
 	
-	@Override
 	public void keyDeleted(DHTStorageKey adapter_key) {
 		adapter.keyDeleted(adapter_key);
 	}
 	
-	@Override
 	public void setStorageForKey(String key, byte[] data) {
 		adapter.setStorageForKey(key, data);
 	}
 	
-	@Override
 	public byte[][] createNewDiversification(DHTTransportContact cause,
 			byte[] key, boolean put_operation, byte diversification_type,
 			boolean exhaustive_get, int max_depth) {
@@ -154,64 +146,51 @@ public class ActiveDHTStorageAdapter implements DHTStorageAdapter {
 				diversification_type, exhaustive_get, max_depth);
 	}
 
-	@Override
 	public DHTStorageKeyStats deserialiseStats(DataInputStream is)
 	throws IOException { return adapter.deserialiseStats(is); }
 
-	@Override
 	public DHTStorageBlock[] getDirectKeyBlocks() {
 		return adapter.getDirectKeyBlocks();
 	}
 
-	@Override
 	public byte[][] getExistingDiversification(byte[] key,
 			boolean put_operation, boolean exhaustive_get, int max_depth) {
 		return adapter.getExistingDiversification(key, put_operation,
 				exhaustive_get, max_depth);
 	}
 
-	@Override
 	public DHTStorageBlock getKeyBlockDetails(byte[] key) {
 		return adapter.getKeyBlockDetails(key);
 	}
 
-	@Override
 	public int getKeyCount() { return adapter.getKeyCount(); }
 
-	@Override
 	public byte[] getKeyForKeyBlock(byte[] request) {
 		return adapter.getKeyForKeyBlock(request);
 	}
 
-	@Override
 	public int getNetwork() { return adapter.getNetwork(); }
 
-	@Override
 	public int getNextValueVersions(int num) {
 		return adapter.getNextValueVersions(num);
 	}
 
-	@Override
 	public int getRemoteFreqDivCount() {
 		return adapter.getRemoteFreqDivCount();
 	}
 
-	@Override
 	public int getRemoteSizeDivCount() {
 		return adapter.getRemoteSizeDivCount(); 
 	}
 
-	@Override
 	public byte[] getStorageForKey(String key) {
 		return adapter.getStorageForKey(key);
 	}
 
-	@Override
 	public boolean isDiversified(byte[] key) {
 		return adapter.isDiversified(key);
 	}
 
-	@Override
 	public DHTStorageBlock keyBlockRequest(DHTTransportContact direct_sender,
 			byte[] request, byte[] signature) {
 		return adapter.keyBlockRequest(direct_sender, request, signature);

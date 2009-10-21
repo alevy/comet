@@ -24,7 +24,8 @@ package org.gudy.azureus2.plugins.disk;
 
 import java.io.File;
 
-import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadException;
 
 /**
  * @author TuxPaper

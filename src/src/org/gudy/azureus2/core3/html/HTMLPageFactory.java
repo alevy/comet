@@ -27,8 +27,9 @@ package org.gudy.azureus2.core3.html;
  *
  */
 
-import java.io.*;
-import org.gudy.azureus2.core3.html.impl.*;
+import java.io.InputStream;
+
+import org.gudy.azureus2.core3.html.impl.HTMLPageImpl;
 
 public class 
 HTMLPageFactory 

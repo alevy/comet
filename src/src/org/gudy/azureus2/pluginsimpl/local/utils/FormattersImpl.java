@@ -30,9 +30,13 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.Map;
 
-import org.gudy.azureus2.core3.util.*;
-
-import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.core3.util.BDecoder;
+import org.gudy.azureus2.core3.util.BEncoder;
+import org.gudy.azureus2.core3.util.Base32;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.DisplayFormatters;
+import org.gudy.azureus2.core3.util.TimeFormatter;
+import org.gudy.azureus2.plugins.utils.Formatters;
 
 public class 
 FormattersImpl

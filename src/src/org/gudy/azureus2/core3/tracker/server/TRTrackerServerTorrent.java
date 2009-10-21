@@ -29,7 +29,7 @@ package org.gudy.azureus2.core3.tracker.server;
 import java.net.URL;
 import java.util.List;
 
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.HashWrapper;
 
 public interface 
 TRTrackerServerTorrent 

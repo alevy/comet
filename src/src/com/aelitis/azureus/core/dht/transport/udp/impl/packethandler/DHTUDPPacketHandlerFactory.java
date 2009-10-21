@@ -23,7 +23,8 @@
 package com.aelitis.azureus.core.dht.transport.udp.impl.packethandler;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;

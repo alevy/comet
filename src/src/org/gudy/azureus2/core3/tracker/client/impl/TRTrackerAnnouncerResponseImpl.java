@@ -24,7 +24,8 @@ package org.gudy.azureus2.core3.tracker.client.impl;
 import java.net.URL;
 import java.util.Map;
 
-import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 public class 

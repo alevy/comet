@@ -26,7 +26,8 @@ package org.gudy.azureus2.core3.download;
  *
  */
 
-import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.PEPeer;
+import org.gudy.azureus2.core3.peer.PEPeerManager;
 
 public interface 
 DownloadManagerPeerListener 

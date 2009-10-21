@@ -22,12 +22,17 @@ package org.gudy.azureus2.ui.swt;
 
 import java.io.File;
 
-import com.aelitis.azureus.core.*;
-import com.aelitis.azureus.launcher.Launcher;
-
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.logging.LogAlert;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.ui.swt.mainwindow.Initializer;
+
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreException;
+import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.launcher.Launcher;
 
 /**
  * @author Olivier

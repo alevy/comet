@@ -26,35 +26,49 @@ package org.gudy.azureus2.pluginsimpl.local.download;
  *
  */
 
-import java.util.*;
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import com.aelitis.azureus.core.*;
-import com.aelitis.azureus.core.util.CopyOnWriteList;
-
-import org.gudy.azureus2.plugins.torrent.*;
-import org.gudy.azureus2.plugins.ui.UIManagerEvent;
-import org.gudy.azureus2.pluginsimpl.local.torrent.*;
-import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
-import org.gudy.azureus2.plugins.download.DownloadException;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.disk.DiskManager;
+import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerInitialisationAdapter;
+import org.gudy.azureus2.core3.download.impl.DownloadManagerDefaultPaths;
+import org.gudy.azureus2.core3.download.impl.DownloadManagerMoveHandler;
+import org.gudy.azureus2.core3.global.GlobalManager;
+import org.gudy.azureus2.core3.global.GlobalManagerDownloadRemovalVetoException;
+import org.gudy.azureus2.core3.global.GlobalManagerDownloadWillBeRemovedListener;
+import org.gudy.azureus2.core3.global.GlobalManagerListener;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadEventNotifier;
+import org.gudy.azureus2.plugins.download.DownloadException;
 import org.gudy.azureus2.plugins.download.DownloadManagerListener;
 import org.gudy.azureus2.plugins.download.DownloadManagerStats;
 import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
 import org.gudy.azureus2.plugins.download.DownloadWillBeAddedListener;
 import org.gudy.azureus2.plugins.download.savelocation.DefaultSaveLocationManager;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationManager;
+import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.azureus2.plugins.torrent.TorrentException;
+import org.gudy.azureus2.plugins.ui.UIManagerEvent;
+import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentImpl;
+import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
 
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.config.*;
-import org.gudy.azureus2.core3.global.*;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.download.*;
-import org.gudy.azureus2.core3.download.impl.DownloadManagerMoveHandler;
-import org.gudy.azureus2.core3.download.impl.DownloadManagerDefaultPaths;
-import org.gudy.azureus2.core3.util.*;
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.util.CopyOnWriteList;
 
 
 public class 

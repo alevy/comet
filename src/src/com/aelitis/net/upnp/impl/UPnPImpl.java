@@ -27,11 +27,28 @@ package com.aelitis.net.upnp.impl;
  *
  */
 
-import java.util.*;
-import java.net.*;
-import java.io.*;
-
-import com.aelitis.azureus.core.util.Java15Utils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.Socket;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
@@ -39,7 +56,6 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.ThreadPool;
 import org.gudy.azureus2.core3.util.TorrentUtils;
-
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
@@ -48,8 +64,16 @@ import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
 
 import com.aelitis.azureus.core.util.HTTPUtils;
-import com.aelitis.net.upnp.*;
-import com.aelitis.net.upnp.impl.device.*;
+import com.aelitis.azureus.core.util.Java15Utils;
+import com.aelitis.net.upnp.UPnP;
+import com.aelitis.net.upnp.UPnPAdapter;
+import com.aelitis.net.upnp.UPnPException;
+import com.aelitis.net.upnp.UPnPListener;
+import com.aelitis.net.upnp.UPnPLogListener;
+import com.aelitis.net.upnp.UPnPRootDevice;
+import com.aelitis.net.upnp.UPnPService;
+import com.aelitis.net.upnp.impl.device.UPnPDeviceImpl;
+import com.aelitis.net.upnp.impl.device.UPnPRootDeviceImpl;
 
 public class 
 UPnPImpl

@@ -23,7 +23,6 @@
 package com.aelitis.azureus.core.instancemanager.impl;
 
 import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;

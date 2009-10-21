@@ -22,7 +22,8 @@
 
 package com.aelitis.azureus.core.proxy;
 
-import com.aelitis.azureus.core.proxy.impl.*;
+import com.aelitis.azureus.core.proxy.impl.AEProxyAddressMapperImpl;
+import com.aelitis.azureus.core.proxy.impl.AEProxyImpl;
 
 /**
  * @author parg

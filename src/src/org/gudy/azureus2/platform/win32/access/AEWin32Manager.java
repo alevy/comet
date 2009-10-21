@@ -27,7 +27,7 @@ package org.gudy.azureus2.platform.win32.access;
  *
  */
 
-import org.gudy.azureus2.platform.win32.access.impl.*;
+import org.gudy.azureus2.platform.win32.access.impl.AEWin32AccessImpl;
 
 public class 
 AEWin32Manager 

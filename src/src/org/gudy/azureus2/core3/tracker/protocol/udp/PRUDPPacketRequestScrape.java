@@ -26,12 +26,15 @@ package org.gudy.azureus2.core3.tracker.protocol.udp;
  *
  */
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.ByteFormatter;
+import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.net.udp.uc.PRUDPPacketRequest;
 

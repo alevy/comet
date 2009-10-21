@@ -27,7 +27,8 @@ package com.aelitis.azureus.core.dht.transport;
  *
  */
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;

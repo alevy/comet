@@ -23,8 +23,8 @@ package com.aelitis.azureus.core.lws;
 
 import java.io.File;
 import java.net.URL;
-import java.util.*;
-
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.util.Debug;

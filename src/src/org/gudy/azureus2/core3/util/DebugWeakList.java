@@ -24,7 +24,10 @@
 package org.gudy.azureus2.core3.util;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 public class 
 DebugWeakList 

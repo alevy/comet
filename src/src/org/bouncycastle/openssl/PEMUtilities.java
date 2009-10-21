@@ -1,16 +1,17 @@
 package org.bouncycastle.openssl;
 
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
+import java.io.IOException;
+import java.security.Key;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.RC2ParameterSpec;
-import java.io.IOException;
-import java.security.Key;
-import java.security.spec.AlgorithmParameterSpec;
+
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
 
 final class PEMUtilities
 {

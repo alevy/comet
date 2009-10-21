@@ -29,8 +29,9 @@ import java.util.Date;
 import java.util.List;
 
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.utils.xml.rss.*;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.*;
+import org.gudy.azureus2.plugins.utils.xml.rss.RSSChannel;
+import org.gudy.azureus2.plugins.utils.xml.rss.RSSItem;
+import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
 
 /**
  * @author parg

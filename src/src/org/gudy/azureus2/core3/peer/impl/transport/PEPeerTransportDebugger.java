@@ -27,9 +27,9 @@ package org.gudy.azureus2.core3.peer.impl.transport;
  *
  */
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 
 public class 

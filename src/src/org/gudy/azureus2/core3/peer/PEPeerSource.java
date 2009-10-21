@@ -22,7 +22,8 @@
 
 package org.gudy.azureus2.core3.peer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 

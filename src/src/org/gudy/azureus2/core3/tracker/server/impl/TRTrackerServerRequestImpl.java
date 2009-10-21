@@ -26,9 +26,11 @@ package org.gudy.azureus2.core3.tracker.server.impl;
  *
  */
 
-import java.util.*;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrent;
 
 public class 
 TRTrackerServerRequestImpl

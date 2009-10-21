@@ -22,11 +22,10 @@
 
 package com.aelitis.azureus.core.networkmanager.impl;
 
-import java.util.*;
+import java.util.HashMap;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
 import com.aelitis.azureus.core.networkmanager.NetworkConnectionBase;

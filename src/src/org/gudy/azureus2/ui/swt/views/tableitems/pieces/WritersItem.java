@@ -20,11 +20,14 @@
  
 package org.gudy.azureus2.ui.swt.views.tableitems.pieces;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.peer.PEPiece;
-import org.gudy.azureus2.plugins.ui.tables.*;
-
+import org.gudy.azureus2.plugins.ui.tables.TableCell;
+import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
+import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /**

@@ -25,7 +25,8 @@ import java.net.URLDecoder;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Shell;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
@@ -36,7 +37,12 @@ import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloaderCallBackInterf
 import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloaderFactory;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
-import org.gudy.azureus2.ui.swt.progress.*;
+import org.gudy.azureus2.ui.swt.progress.IProgressReport;
+import org.gudy.azureus2.ui.swt.progress.IProgressReportConstants;
+import org.gudy.azureus2.ui.swt.progress.IProgressReporter;
+import org.gudy.azureus2.ui.swt.progress.IProgressReporterListener;
+import org.gudy.azureus2.ui.swt.progress.ProgressReporterWindow;
+import org.gudy.azureus2.ui.swt.progress.ProgressReportingManager;
 
 import com.aelitis.azureus.core.AzureusCore;
 

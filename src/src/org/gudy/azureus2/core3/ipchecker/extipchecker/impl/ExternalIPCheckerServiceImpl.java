@@ -26,13 +26,18 @@ package org.gudy.azureus2.core3.ipchecker.extipchecker.impl;
  *
  */
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Vector;
 
-import org.gudy.azureus2.core3.internat.*;
-import org.gudy.azureus2.core3.ipchecker.extipchecker.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerService;
+import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerServiceListener;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.AESemaphore;
+import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.Debug;
 
 public abstract class 
 ExternalIPCheckerServiceImpl 

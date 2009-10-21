@@ -29,7 +29,7 @@ package com.aelitis.azureus.core.dht.transport;
 
 
 import com.aelitis.azureus.core.dht.DHTLogger;
-import com.aelitis.azureus.core.dht.transport.loopback.*;
+import com.aelitis.azureus.core.dht.transport.loopback.DHTTransportLoopbackImpl;
 import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 

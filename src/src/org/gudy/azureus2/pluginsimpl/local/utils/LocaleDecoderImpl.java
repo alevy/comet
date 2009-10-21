@@ -30,8 +30,7 @@ import java.io.UnsupportedEncodingException;
 
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
 import org.gudy.azureus2.core3.util.Debug;
-
-import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.plugins.utils.LocaleDecoder;
 
 public class 
 LocaleDecoderImpl

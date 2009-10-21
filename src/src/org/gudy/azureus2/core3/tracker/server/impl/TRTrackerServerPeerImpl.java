@@ -21,11 +21,16 @@
 
 package org.gudy.azureus2.core3.tracker.server.impl;
 
-import java.net.*;
-import java.util.*;
+import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.HostNameToIPResolver;
+import org.gudy.azureus2.core3.util.HostNameToIPResolverListener;
+import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 

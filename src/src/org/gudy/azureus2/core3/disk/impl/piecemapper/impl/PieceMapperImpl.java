@@ -22,7 +22,8 @@
 
 package org.gudy.azureus2.core3.disk.impl.piecemapper.impl;
 
-import java.io.*;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,9 +32,9 @@ import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMap;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapper;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapperFile;
-
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentFile;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.StringInterner;
 

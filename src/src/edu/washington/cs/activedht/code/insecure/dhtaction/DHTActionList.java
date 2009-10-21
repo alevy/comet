@@ -42,7 +42,6 @@ implements Serializable, Iterable<DHTAction> {
 	
     // Iterable interface:
 	
-	@Override
 	public Iterator<DHTAction> iterator() { return this.list.iterator(); }
 	
 	// Object functions:

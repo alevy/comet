@@ -22,19 +22,21 @@ package org.gudy.azureus2.platform.macosx.access.cocoa;
  *
  */
 
-import com.apple.cocoa.foundation.NSAppleEventDescriptor;
-import com.apple.cocoa.foundation.NSAppleScript;
-import com.apple.cocoa.foundation.NSAutoreleasePool;
-import com.apple.cocoa.foundation.NSMutableDictionary;
-import org.gudy.azureus2.core3.logging.*;
+import java.io.File;
+import java.text.MessageFormat;
+
+import org.gudy.azureus2.core3.logging.LogAlert;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AEThread;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.platform.macosx.NativeInvocationBridge;
 
-import java.io.File;
-import java.text.MessageFormat;
+import com.apple.cocoa.foundation.NSAppleEventDescriptor;
+import com.apple.cocoa.foundation.NSAppleScript;
+import com.apple.cocoa.foundation.NSAutoreleasePool;
+import com.apple.cocoa.foundation.NSMutableDictionary;
 
 /**
  * <p>Performs PlatformManager tasks using Cocoa-Java (FoundationKit only)</p>

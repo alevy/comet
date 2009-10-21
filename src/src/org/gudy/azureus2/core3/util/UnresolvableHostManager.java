@@ -27,9 +27,12 @@ package org.gudy.azureus2.core3.util;
  *
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
 
 public class 
 UnresolvableHostManager 

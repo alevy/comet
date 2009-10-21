@@ -9,8 +9,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Menu;
-
 import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.plugins.ui.menus.MenuContext;
+import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.pluginsimpl.local.ui.menus.MenuContextImpl;
 import org.gudy.azureus2.ui.common.util.MenuItemManager;
 import org.gudy.azureus2.ui.swt.MenuBuildUtils;
@@ -19,9 +20,6 @@ import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntry;
 import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntryListener;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
-
-import org.gudy.azureus2.plugins.ui.menus.MenuContext;
-import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 
 /**
  * @author Allan Crooks

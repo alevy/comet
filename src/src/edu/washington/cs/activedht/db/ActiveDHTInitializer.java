@@ -38,7 +38,6 @@ public class ActiveDHTInitializer implements Constants {
 	private static void initVuzeForActiveCode() {
 		// Initialize the DHTDB factory:
 		DHTDBFactory.init(new DHTDBFactory.FactoryInterface() {
-			@Override
 			public DHTDB create(DHTStorageAdapter adapter,
 					            int original_republish_interval,
 					            int cache_republish_interval,

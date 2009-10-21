@@ -27,8 +27,8 @@ package org.gudy.azureus2.core3.security;
  *
  */
 
-import java.net.URL;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 
 public interface 
 SEPasswordListener 

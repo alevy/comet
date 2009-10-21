@@ -21,10 +21,10 @@
 
 package org.gudy.azureus2.core3.tracker.client;
 
-import java.util.Map;
 import java.net.URL;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
 

@@ -27,8 +27,8 @@ package org.gudy.azureus2.core3.global.impl;
  */
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.global.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.global.GlobalManagerStats;
+import org.gudy.azureus2.core3.util.Average;
 
 
 public class 

@@ -30,14 +30,13 @@ package org.gudy.azureus2.core3.security.impl;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 
-import org.bouncycastle.jce.*;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.X509V3CertificateGenerator;
 import org.gudy.azureus2.core3.util.RandomUtils;
 import org.gudy.azureus2.core3.util.SystemTime;
 

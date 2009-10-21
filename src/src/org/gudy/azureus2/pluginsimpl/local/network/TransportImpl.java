@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 
 import org.gudy.azureus2.plugins.network.Transport;
 import org.gudy.azureus2.plugins.network.TransportFilter;
+
 import com.aelitis.azureus.core.networkmanager.NetworkConnection;
 
 /**

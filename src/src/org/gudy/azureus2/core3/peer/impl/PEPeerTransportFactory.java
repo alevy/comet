@@ -27,7 +27,10 @@ package org.gudy.azureus2.core3.peer.impl;
  */
 
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.peer.impl.transport.PEPeerTransportProtocol;
 

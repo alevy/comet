@@ -26,16 +26,22 @@ package org.gudy.azureus2.pluginsimpl.local;
  *
  */
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.Plugin;
+import org.gudy.azureus2.plugins.PluginException;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginManager;
 import org.gudy.azureus2.plugins.installer.PluginInstaller;
-import org.gudy.azureus2.pluginsimpl.local.installer.*;
+import org.gudy.azureus2.pluginsimpl.local.installer.PluginInstallerImpl;
 
-import com.aelitis.azureus.core.*;
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreFactory;
 
 public class 
 PluginManagerImpl 

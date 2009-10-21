@@ -22,9 +22,9 @@
 
 package com.aelitis.azureus.plugins.extseed.impl.getright;
 
-import java.util.*;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;

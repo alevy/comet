@@ -20,11 +20,11 @@
 package org.gudy.azureus2.ui.swt.ipchecker;
 
 import org.eclipse.swt.widgets.Display;
-
-import com.aelitis.azureus.core.*;
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerService;
 import org.gudy.azureus2.ui.swt.wizard.IWizardPanel;
 import org.gudy.azureus2.ui.swt.wizard.Wizard;
+
+import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author Olivier

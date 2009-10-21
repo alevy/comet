@@ -30,13 +30,15 @@ import java.util.Map;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 
-import com.aelitis.azureus.core.networkmanager.*;
+import com.aelitis.azureus.core.networkmanager.OutgoingMessageQueue;
+import com.aelitis.azureus.core.networkmanager.Transport;
 import com.aelitis.azureus.core.networkmanager.impl.OutgoingMessageQueueImpl;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportImpl;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TransportEndpointTCP;
 import com.aelitis.azureus.core.peermanager.messaging.Message;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.*;
+import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageDecoder;
+import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageEncoder;
 
 
 /**

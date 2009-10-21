@@ -26,9 +26,10 @@ package org.gudy.azureus2.core3.stats.impl;
  *
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 
-import org.gudy.azureus2.core3.stats.*;
+import org.gudy.azureus2.core3.stats.StatsWriterStreamer;
 
 import com.aelitis.azureus.core.AzureusCore;
 

@@ -22,9 +22,9 @@
 
 package com.aelitis.net.upnp;
 
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URL;
-import java.net.InetAddress;
 
 
 /**

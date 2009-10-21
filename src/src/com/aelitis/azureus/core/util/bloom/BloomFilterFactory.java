@@ -22,7 +22,10 @@
 
 package com.aelitis.azureus.core.util.bloom;
 
-import com.aelitis.azureus.core.util.bloom.impl.*;
+import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddOnly;
+import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddRemove4Bit;
+import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddRemove8Bit;
+import com.aelitis.azureus.core.util.bloom.impl.BloomFilterRotator;
 
 public class 
 BloomFilterFactory 

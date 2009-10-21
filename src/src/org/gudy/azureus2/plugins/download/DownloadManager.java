@@ -25,9 +25,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.torrent.Torrent;
 import org.gudy.azureus2.plugins.download.savelocation.DefaultSaveLocationManager;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationManager;
+import org.gudy.azureus2.plugins.torrent.Torrent;
 
 /**
  * The DownloadManager gives access to functions used to monitor and manage Azureus's downloads

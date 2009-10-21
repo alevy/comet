@@ -27,7 +27,8 @@ package org.gudy.azureus2.core3.html.impl;
  *
  */
 
-import org.gudy.azureus2.core3.html.*;
+import org.gudy.azureus2.core3.html.HTMLTable;
+import org.gudy.azureus2.core3.html.HTMLTableRow;
 
 public class 
 HTMLTableImpl

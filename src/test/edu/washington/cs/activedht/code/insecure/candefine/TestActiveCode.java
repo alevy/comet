@@ -25,7 +25,6 @@ public class TestActiveCode implements ActiveCode {
 
 	// ActiveCode interface:
 
-	@Override
 	public void onValueAdded(String this_node_ip, String caller_ip,
 			DHTActionMap preactions_map,
 			DHTActionList postactions) {
@@ -38,35 +37,30 @@ public class TestActiveCode implements ActiveCode {
 		}
 	}
 	
-	@Override
 	public void onValueChanged(String caller_ip, byte[] plain_new_value,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
-	@Override
 	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
-	@Override
 	public void onGet(String caller_ip,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 	
-	@Override
 	public void onDelete(String caller_ip,
 			DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);
 	}
 
-	@Override
 	public void onTimer(DHTActionList executed_preactions,
 			DHTActionList postactions) {
 		onAnyEvent(executed_preactions, postactions);

@@ -21,9 +21,12 @@
 
 package org.gudy.azureus2.core3.peer.impl;
 
-import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.PEPeer;
+import org.gudy.azureus2.core3.peer.PEPeerManagerAdapter;
+import org.gudy.azureus2.core3.peer.PEPeerManagerStats;
 import org.gudy.azureus2.core3.peer.impl.control.PEPeerControlImpl;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.Average;
+import org.gudy.azureus2.core3.util.SystemTime;
 
 public class 
 PEPeerManagerStatsImpl 

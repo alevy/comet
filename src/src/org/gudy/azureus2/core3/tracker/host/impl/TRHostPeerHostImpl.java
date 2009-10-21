@@ -25,8 +25,8 @@ package org.gudy.azureus2.core3.tracker.host.impl;
  * @author parg
  */
 
-import org.gudy.azureus2.core3.tracker.host.*;
-import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.tracker.host.TRHostPeer;
+import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
 
 public class 
 TRHostPeerHostImpl

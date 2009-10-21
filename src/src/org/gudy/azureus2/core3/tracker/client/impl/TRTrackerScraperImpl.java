@@ -28,11 +28,19 @@ package org.gudy.azureus2.core3.tracker.client.impl;
 
 import java.net.URL;
 
-import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerScraper;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperClientResolver;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperListener;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
 import org.gudy.azureus2.core3.tracker.client.impl.bt.TRTrackerBTScraperImpl;
 import org.gudy.azureus2.core3.tracker.client.impl.dht.TRTrackerDHTScraperImpl;
-import org.gudy.azureus2.core3.torrent.*;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.ListenerManager;
+import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
 
 public class 

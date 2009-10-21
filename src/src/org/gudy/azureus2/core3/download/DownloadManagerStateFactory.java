@@ -22,9 +22,9 @@
 
 package org.gudy.azureus2.core3.download;
 
-import org.gudy.azureus2.core3.download.impl.*;
-
-import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.download.impl.DownloadManagerStateImpl;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
 
 /**
  * @author parg

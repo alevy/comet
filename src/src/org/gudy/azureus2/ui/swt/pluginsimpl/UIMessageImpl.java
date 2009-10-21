@@ -22,7 +22,6 @@ package org.gudy.azureus2.ui.swt.pluginsimpl;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Shell;
-
 import org.gudy.azureus2.pluginsimpl.local.ui.AbstractUIMessage;
 import org.gudy.azureus2.ui.swt.Utils;
 

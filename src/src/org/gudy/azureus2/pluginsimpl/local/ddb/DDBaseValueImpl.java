@@ -22,7 +22,9 @@
 
 package org.gudy.azureus2.pluginsimpl.local.ddb;
 
-import org.gudy.azureus2.plugins.ddb.*;
+import org.gudy.azureus2.plugins.ddb.DistributedDatabaseContact;
+import org.gudy.azureus2.plugins.ddb.DistributedDatabaseException;
+import org.gudy.azureus2.plugins.ddb.DistributedDatabaseValue;
 
 import com.aelitis.azureus.plugins.dht.DHTPlugin;
 

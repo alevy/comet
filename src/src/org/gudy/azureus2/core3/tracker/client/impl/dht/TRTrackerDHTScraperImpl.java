@@ -22,8 +22,9 @@
 
 package org.gudy.azureus2.core3.tracker.client.impl.dht;
 
-import java.util.*;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;

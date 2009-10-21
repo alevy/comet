@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.util.*;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.FirstPieceItem;
+import org.gudy.azureus2.core3.util.AERunnable;
+import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.FileUtil;
 
 /**
  * @author TuxPaper

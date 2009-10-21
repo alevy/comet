@@ -20,8 +20,10 @@
  
 package org.gudy.azureus2.ui.swt.views.tableitems.myshares;
 
-import org.gudy.azureus2.plugins.sharing.*;
-import org.gudy.azureus2.plugins.ui.tables.*;
+import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.plugins.ui.tables.TableCell;
+import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /**

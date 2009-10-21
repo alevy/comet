@@ -26,7 +26,9 @@ package org.gudy.azureus2.core3.util.protocol.tcp;
  *
  */
 
-import java.net.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 
 public class 
 Handler 

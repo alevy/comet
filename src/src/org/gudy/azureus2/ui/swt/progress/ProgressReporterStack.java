@@ -1,6 +1,9 @@
 package org.gudy.azureus2.ui.swt.progress;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Stack;
 
 /**
  * A convenience Stack for tracking <code>ProgressReporter</code>s

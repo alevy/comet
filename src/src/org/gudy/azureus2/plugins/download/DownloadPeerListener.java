@@ -27,7 +27,7 @@ package org.gudy.azureus2.plugins.download;
  * @since 2.1.0.0
  */
 
-import org.gudy.azureus2.plugins.peers.*;
+import org.gudy.azureus2.plugins.peers.PeerManager;
 
 public interface 
 DownloadPeerListener 

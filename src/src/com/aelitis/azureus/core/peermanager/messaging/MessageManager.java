@@ -22,10 +22,12 @@
 
 package com.aelitis.azureus.core.peermanager.messaging;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.gudy.azureus2.core3.util.*;
-
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.ByteArrayHashMap;
+import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
 import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageFactory;
 import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessageFactory;

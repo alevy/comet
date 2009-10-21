@@ -27,7 +27,7 @@ package org.gudy.azureus2.pluginsimpl.local.update;
  *
  */
 
-import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.update.UpdatableComponent;
 
 public class 
 UpdatableComponentImpl 

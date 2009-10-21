@@ -1,7 +1,7 @@
 package com.aelitis.azureus.core.speedmanager.impl.v2;
 
-import com.aelitis.azureus.core.speedmanager.SpeedManagerListener;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerLimitEstimate;
+import com.aelitis.azureus.core.speedmanager.SpeedManagerListener;
 
 /**
  * Created on Jul 24, 2007

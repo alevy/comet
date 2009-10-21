@@ -28,13 +28,12 @@ package org.gudy.azureus2.ui.swt.views.tableitems.mytorrents;
  */
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.ui.swt.debug.ObfusticateCellText;
-import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
-
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.ui.tables.TableCell;
 import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
 import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.ui.swt.debug.ObfusticateCellText;
+import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 
 public class TorrentPathItem

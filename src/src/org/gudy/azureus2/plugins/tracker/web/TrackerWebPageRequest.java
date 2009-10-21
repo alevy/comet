@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.tracker.*;
+import org.gudy.azureus2.plugins.tracker.Tracker;
 
 public interface 
 TrackerWebPageRequest

@@ -21,8 +21,6 @@
 
 package org.gudy.azureus2.core3.category;
 
-import org.gudy.azureus2.core3.category.Category;
-import org.gudy.azureus2.core3.category.CategoryManagerListener;
 import org.gudy.azureus2.core3.category.impl.CategoryManagerImpl;
 
 /** A singleton to manage Categories of Torrents (DownloadManagers).

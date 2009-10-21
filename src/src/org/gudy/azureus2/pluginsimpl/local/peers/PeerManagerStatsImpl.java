@@ -27,9 +27,9 @@ package org.gudy.azureus2.pluginsimpl.local.peers;
  *
  */
 
-import org.gudy.azureus2.plugins.peers.*;
-
-import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.PEPeerManager;
+import org.gudy.azureus2.core3.peer.PEPeerManagerStats;
+import org.gudy.azureus2.plugins.peers.PeerManagerStats;
 
 public class 
 PeerManagerStatsImpl

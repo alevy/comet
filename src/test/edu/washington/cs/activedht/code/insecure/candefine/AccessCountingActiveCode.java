@@ -19,12 +19,10 @@ public class AccessCountingActiveCode implements ActiveCode {
 		this.accessor_ips = new ArrayList<String>();
 	}
 
-	@Override
 	public void onDelete(String caller_ip, DHTActionList executed_preactions,
 			             DHTActionList postactions) {
 	}
 
-	@Override
 	public void onGet(String caller_ip, DHTActionList executed_preactions,
 			          DHTActionList postactions) {
 		if (executed_preactions.size() > 0) {
@@ -36,15 +34,12 @@ public class AccessCountingActiveCode implements ActiveCode {
 		accessor_ips.add(caller_ip);
 	}
 
-	@Override
 	public boolean onTest(int value) { return accessor_ips.size() == value; }
 
-	@Override
 	public void onTimer(DHTActionList executed_preactions,
 			            DHTActionList postactions) {
 	}
 
-	@Override
 	public void onValueAdded(String this_node_ip, String caller_ip,
 			                 DHTActionMap preactions_map,
 			                 DHTActionList postactions) {
@@ -54,19 +49,16 @@ public class AccessCountingActiveCode implements ActiveCode {
 		} catch (Exception e) { }
 	}
 
-	@Override
 	public void onValueChanged(String caller_ip, byte[] plain_new_value,
 			                   DHTActionList executed_preactions,
 			                   DHTActionList postactions) {
 	}
 
-	@Override
 	public void onValueChanged(String caller_ip, ActiveCode new_active_value,
 			                   DHTActionList executed_preactions,
 			                   DHTActionList postactions) {
 	}
 	
-	@Override
 	public String toString() {
 		return "Value " + id + " (seen by: " + accessor_ips + ")";
 	}

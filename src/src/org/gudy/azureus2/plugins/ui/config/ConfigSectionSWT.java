@@ -22,7 +22,6 @@
 package org.gudy.azureus2.plugins.ui.config;
 
 import org.eclipse.swt.widgets.Composite;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 /**
  * Extend this class to add a new configuration panel to the SWT config view.

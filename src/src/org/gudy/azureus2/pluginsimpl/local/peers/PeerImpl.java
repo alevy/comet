@@ -26,15 +26,23 @@ package org.gudy.azureus2.pluginsimpl.local.peers;
  *
  */
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.PEPeer;
+import org.gudy.azureus2.core3.peer.PEPeerListener;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.messaging.Message;
 import org.gudy.azureus2.plugins.network.Connection;
-import org.gudy.azureus2.plugins.peers.*;
+import org.gudy.azureus2.plugins.peers.Peer;
+import org.gudy.azureus2.plugins.peers.PeerEvent;
+import org.gudy.azureus2.plugins.peers.PeerListener;
+import org.gudy.azureus2.plugins.peers.PeerListener2;
+import org.gudy.azureus2.plugins.peers.PeerManager;
+import org.gudy.azureus2.plugins.peers.PeerReadRequest;
+import org.gudy.azureus2.plugins.peers.PeerStats;
 import org.gudy.azureus2.pluginsimpl.local.messaging.MessageAdapter;
 
 import com.aelitis.azureus.core.peermanager.piecepicker.util.BitFlags;

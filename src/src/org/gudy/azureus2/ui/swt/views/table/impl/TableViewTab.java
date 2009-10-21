@@ -1,7 +1,6 @@
 package org.gudy.azureus2.ui.swt.views.table.impl;
 
 import org.eclipse.swt.widgets.Composite;
-
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;

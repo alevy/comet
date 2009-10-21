@@ -22,7 +22,8 @@
 
 package com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1;
 
-import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.*;
+import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.HeightCoordinatesImpl;
+import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.VivaldiPositionImpl;
 
 
 public class 

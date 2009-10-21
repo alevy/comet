@@ -1,12 +1,12 @@
 package org.bouncycastle.asn1.x509;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.util.Strings;
-
-import java.io.IOException;
 
 /**
  * It turns out that the number of standard ways the fields in a DN should be 

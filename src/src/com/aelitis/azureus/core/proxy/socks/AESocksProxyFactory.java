@@ -28,7 +28,8 @@ package com.aelitis.azureus.core.proxy.socks;
  */
 
 import com.aelitis.azureus.core.proxy.AEProxyException;
-import com.aelitis.azureus.core.proxy.socks.impl.*;
+import com.aelitis.azureus.core.proxy.socks.impl.AESocksProxyImpl;
+import com.aelitis.azureus.core.proxy.socks.impl.AESocksProxyPlugableConnectionDefault;
 
 public class 
 AESocksProxyFactory 

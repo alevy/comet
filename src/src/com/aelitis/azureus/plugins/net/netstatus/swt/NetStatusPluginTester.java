@@ -21,12 +21,29 @@
 
 package com.aelitis.azureus.plugins.net.netstatus.swt;
 
-import java.util.*;
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.gudy.azureus2.core3.util.Debug;
 
-import com.aelitis.azureus.core.networkmanager.admin.*;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminASN;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminHTTPProxy;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNATDevice;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterface;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterfaceAddress;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNode;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminProgressListener;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminProtocol;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminRoutesListener;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminSocksProxy;
 import com.aelitis.azureus.plugins.net.netstatus.NetStatusPlugin;
 import com.aelitis.azureus.plugins.net.netstatus.NetStatusProtocolTesterBT;
 import com.aelitis.azureus.plugins.net.netstatus.NetStatusProtocolTesterListener;

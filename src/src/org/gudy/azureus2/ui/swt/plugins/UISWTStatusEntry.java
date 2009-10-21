@@ -21,10 +21,9 @@
  */
 package org.gudy.azureus2.ui.swt.plugins;
 
+import org.eclipse.swt.graphics.Image;
 import org.gudy.azureus2.plugins.ui.menus.MenuContext;
 import org.gudy.azureus2.plugins.ui.menus.MenuManager;
-
-import org.eclipse.swt.graphics.Image;
 
 /**
  * This interface represents a status entry indicator in the status bar. Examples

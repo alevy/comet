@@ -27,12 +27,18 @@ package com.aelitis.net.upnp.impl.services;
  *
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
 
-import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.UPnPActionArgument;
+import com.aelitis.net.upnp.UPnPActionInvocation;
+import com.aelitis.net.upnp.UPnPException;
+import com.aelitis.net.upnp.UPnPService;
 import com.aelitis.net.upnp.impl.device.UPnPDeviceImpl;
 
 public class 

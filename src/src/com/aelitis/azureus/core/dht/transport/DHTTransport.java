@@ -27,7 +27,8 @@ package com.aelitis.azureus.core.dht.transport;
  *
  */
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 public interface 
 DHTTransport 

@@ -22,10 +22,11 @@
 
 package com.aelitis.azureus.core.peermanager.uploadslots;
 
-import java.util.*;
+import java.util.ArrayList;
 
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.RandomUtils;
 
 import com.aelitis.azureus.core.peermanager.unchoker.UnchokerUtil;
 

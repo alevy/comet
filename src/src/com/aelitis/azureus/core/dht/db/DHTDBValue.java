@@ -22,7 +22,8 @@
 
 package com.aelitis.azureus.core.dht.db;
 
-import com.aelitis.azureus.core.dht.transport.*;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 /**
  * @author parg

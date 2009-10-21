@@ -27,7 +27,7 @@ package org.gudy.azureus2.plugins.update;
  *
  */
 
-import java.io.*;
+import java.io.InputStream;
 
 public interface 
 UpdateInstaller 

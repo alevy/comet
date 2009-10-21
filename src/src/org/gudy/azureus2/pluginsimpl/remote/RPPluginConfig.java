@@ -21,20 +21,16 @@
 
 package org.gudy.azureus2.pluginsimpl.remote;
 
-import org.gudy.azureus2.plugins.config.PluginConfigSource;
-
-/**
- * @author parg
- *
- */
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.PluginConfig;
+import org.gudy.azureus2.plugins.PluginConfigListener;
+import org.gudy.azureus2.plugins.PluginException;
 import org.gudy.azureus2.plugins.config.ConfigParameter;
+import org.gudy.azureus2.plugins.config.PluginConfigSource;
 
 public class 
 RPPluginConfig

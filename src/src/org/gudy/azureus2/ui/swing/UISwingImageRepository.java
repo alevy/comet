@@ -28,12 +28,14 @@ package org.gudy.azureus2.ui.swing;
  *
  */
 
-import java.io.*;
-import java.awt.*;
-import javax.swing.*;
-import javax.imageio.*;
+import java.awt.Image;
+import java.io.InputStream;
 
-import org.gudy.azureus2.ui.common.*;
+import javax.imageio.ImageIO;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+
+import org.gudy.azureus2.ui.common.UIImageRepository;
 
 public class 
 UISwingImageRepository 

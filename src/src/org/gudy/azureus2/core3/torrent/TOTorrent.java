@@ -21,11 +21,13 @@
 
 package org.gudy.azureus2.core3.torrent;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
-import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.util.AEMonitor;
+import org.gudy.azureus2.core3.util.HashWrapper;
 
 public interface 
 TOTorrent

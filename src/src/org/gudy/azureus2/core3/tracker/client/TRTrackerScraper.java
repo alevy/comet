@@ -27,7 +27,8 @@ package org.gudy.azureus2.core3.tracker.client;
  */
 
 import java.net.URL;
-import org.gudy.azureus2.core3.torrent.*;
+
+import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
 
 public interface 
