@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.concurrent.Semaphore;
 
+import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -103,7 +104,7 @@ public class OneTimeValue {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1]);
+		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1], true);
 		peer.init();
 		int data[] = new OneTimeValue(peer, new PrintStream(new File(
 				"/tmp/activedht/onetime.out"))).run(0, 50);

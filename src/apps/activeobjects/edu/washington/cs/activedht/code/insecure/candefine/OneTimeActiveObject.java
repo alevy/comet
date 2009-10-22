@@ -44,8 +44,8 @@ public class OneTimeActiveObject extends ActiveObjectAdapter {
 		if (selfDestructionInitiated()) {
 			// With one of the last breaths, send out the self-destruct
 			// announcement to the other replicas.
-			//try { postactions.addAction(new GetDHTAction(20)); }
-			//catch (Exception e) { }
+			try { postactions.addAction(new GetDHTAction(20)); }
+			catch (Exception e) { }
 			
 			// If it's time to self-destruct, do it.
 			if (timeToSelfDestruct()) selfDestruct(postactions);

@@ -4,7 +4,6 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -32,6 +31,7 @@ import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
+import edu.washington.cs.vanish.internal.backend.VanishBackendException;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
@@ -108,12 +108,16 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private int current_udp_timeout;
 
 	public ActivePeer(int port, String bootstrap) throws Exception {
+		this(port, bootstrap, false);
+	}
+	
+	public ActivePeer(int port, String bootstrap, boolean logging) throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode();
 		this.LOG = Logger.getLogger(this.getClass());
 
 		// Load the parameters from the configuration:
 
-		kDhtLoggingOn = false;
+		kDhtLoggingOn = logging;
 		kDhtLookupConcurrency = 20;
 		kDhtPort = port;
 		kDhtNumReplicas = 20;
@@ -452,8 +456,9 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		} else {
 			FailureDistribution dist = new UniformFailureDistribution(360000);
 			while (true) {
-				port = new ServerSocket(port).getLocalPort();
-				ActivePeer peer = new ActivePeer(port, bootstrap);
+				int _port = new ServerSocket(port).getLocalPort();
+				ActivePeer peer = new ActivePeer(_port, bootstrap, false);
+				System.out.println(_port);
 				peer.init();
 				long timeout = dist.nextFailureInterval();
 				Thread.sleep(timeout);
