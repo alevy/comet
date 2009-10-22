@@ -1,7 +1,10 @@
 package edu.washington.cs.activedht.expt;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -61,6 +64,7 @@ class DHTParams {
 }
 
 public class ActivePeer implements DHTNATPuncherAdapter {
+	private static final AzureusCore azureusCore = AzureusCoreFactory.create();
 	// DHT-related params (these are fixed forever, as we give them to DHT):
 	private final boolean kDhtLoggingOn;
 	private final int kDhtLookupConcurrency;
@@ -209,8 +213,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	public void stop() throws RuntimeException {
 		if (dht != null)
 			dht.destroy();
-		AzureusCore core = AzureusCoreFactory.getSingleton();
-		core.stop();
+		azureusCore.stop();
 	}
 
 	// Helper functions:
@@ -276,7 +279,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			if (exception != null)
 				throw exception;
 		} catch (Throwable e) {
-			throw new RuntimeException("Failed to create dht");
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -286,23 +289,23 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	}
 
 	protected DHTLogger getLogger() {
-		final PluginInterface plugin_interface = AzureusCoreFactory.create()
-				.getPluginManager().getDefaultPluginInterface();
+		final PluginInterface plugin_interface = azureusCore.getPluginManager()
+				.getDefaultPluginInterface();
 
 		DHTLogger ret_logger = new DHTLogger() {
 			public void log(String str) {
 				if (DHTLog.logging_on)
-					System.err.println(str);//LOG.debug(str);
+					System.err.println(str);// LOG.debug(str);
 			}
 
 			public void log(Throwable e) {
 				if (DHTLog.logging_on)
-					System.err.println(e.getMessage());//LOG.error("", e);
+					System.err.println(e.getMessage());// LOG.error("", e);
 			}
 
 			public void log(int log_type, String str) {
 				if (isEnabled(log_type))
-					System.err.println(str);//LOG.debug(str);
+					System.err.println(str);// LOG.debug(str);
 			}
 
 			public boolean isEnabled(int log_type) {
@@ -424,10 +427,38 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1]);
-		peer.init();
-		while(true) {
-			Thread.yield();
+		boolean booting = false;
+		int port = 0;
+		String bootstrap = InetAddress.getLocalHost().getHostName();
+		
+		int i = 0;
+		if (args.length > i && "-b".equals(args[2])) {
+			booting = true;
+			++i;
+		}
+		if (args.length > i) {
+			bootstrap = args[i];
+		}
+		++i;
+		if (args.length > i) {
+			port = Integer.parseInt(args[0]);
+		}
+		if (booting) {
+			ActivePeer peer = new ActivePeer(port, bootstrap);
+			peer.init();
+			while (true) {
+				Thread.sleep(10000);
+			}
+		} else {
+			FailureDistribution dist = new UniformFailureDistribution(360000);
+			while (true) {
+				port = new ServerSocket(port).getLocalPort();
+				ActivePeer peer = new ActivePeer(port, bootstrap);
+				peer.init();
+				long timeout = dist.nextFailureInterval();
+				Thread.sleep(timeout);
+				peer.stop();
+			}
 		}
 	}
 }
