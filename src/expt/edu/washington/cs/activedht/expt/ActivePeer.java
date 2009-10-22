@@ -432,7 +432,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		String bootstrap = InetAddress.getLocalHost().getHostName();
 		
 		int i = 0;
-		if (args.length > i && "-b".equals(args[2])) {
+		if (args.length > i && "-b".equals(args[i])) {
 			booting = true;
 			++i;
 		}
