@@ -441,7 +441,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 		++i;
 		if (args.length > i) {
-			port = Integer.parseInt(args[0]);
+			port = Integer.parseInt(args[i]);
 		}
 		if (booting) {
 			ActivePeer peer = new ActivePeer(port, bootstrap);
