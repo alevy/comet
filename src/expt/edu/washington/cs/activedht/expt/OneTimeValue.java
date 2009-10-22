@@ -23,59 +23,68 @@ public class OneTimeValue {
 		this.out = out;
 	}
 
-	public void run(int gap, int iterations) throws InterruptedException{
+	public int[] run(int gap, int iterations) throws InterruptedException {
+
+		final int data[] = new int[iterations];
+
+		String baseKey = "" + System.currentTimeMillis();
 		Thread.sleep(10000);
-		
+
 		final Semaphore semaphore = new Semaphore(iterations);
 		semaphore.drainPermits();
 		for (int i = 0; i < iterations; ++i) {
 
-			byte[] key = ("hello" + i).getBytes();
+			byte[] key = (baseKey + i).getBytes();
 			peer.put(key, getOneTimeValueBytes("world"),
 					new DHTOperationAdapter() {
-				@Override
-				public void complete(boolean timeout) {
-					semaphore.release();
-					System.out.println("Released");
-				}
-			});
-			Thread.sleep(500);
+						@Override
+						public void complete(boolean timeout) {
+							semaphore.release();
+							System.out.println("Released");
+						}
+					});
+			Thread.sleep(0);
 		}
 		System.out.println("Waiting for puts to finish...");
-		semaphore.acquire();
-
+		semaphore.acquire(iterations);
+		semaphore.release(iterations * 2);
+		System.out.println(semaphore.availablePermits());
+		
+		
 		for (int i = 0; i < iterations; ++i) {
 			final int _i = i;
-			byte[] key = ("hello" + i).getBytes();
-
+			byte[] key = (baseKey + i).getBytes();
+			semaphore.acquire();
 			peer.get(key, new DHTOperationAdapter() {
 				boolean found = false;
-
 				public void read(DHTTransportContact contact,
 						DHTTransportValue value) {
 					found = true;
+					out.println(contact.getAddress().getHostName());
 				}
-
 				public void complete(boolean timeout) {
-					out.println("Before-" + _i + ":" + found);
+					semaphore.release();
+					if (found) data[_i]++;
 				}
 			});
 
 			Thread.sleep(gap);
-
+			semaphore.acquire();
 			peer.get(key, new DHTOperationAdapter() {
-						boolean found = false;
-
-						public void read(DHTTransportContact contact,
-								DHTTransportValue value) {
-							found = true;
-						}
-
-						public void complete(boolean timeout) {
-							out.println("After-" + _i + ": " + found);
-						}
-					});
+				boolean found = false;
+				public void read(DHTTransportContact contact,
+						DHTTransportValue value) {
+					found = true;
+					out.println(contact.getAddress().getHostName());
+				}
+				public void complete(boolean timeout) {
+					semaphore.release();
+					if (found) data[_i]++;
+				}
+			});
 		}
+		semaphore.acquire(iterations * 2);
+		return data;
 	}
 
 	private byte[] getOneTimeValueBytes(String string) {
@@ -96,7 +105,15 @@ public class OneTimeValue {
 	public static void main(String[] args) throws Exception {
 		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1]);
 		peer.init();
-		new OneTimeValue(peer, new PrintStream(new File("/tmp/activedht/onetime.out"))).run(1000, 40);
+		int data[] = new OneTimeValue(peer, new PrintStream(new File(
+				"/tmp/activedht/onetime.out"))).run(0, 50);
+		PrintStream out = new PrintStream(new File(
+				"/tmp/activedht/onetime.results"));
+		for (int d : data) {
+			out.println(d);
+		}
+		peer.stop();
+		System.out.println("DONE");
 	}
 
 }
