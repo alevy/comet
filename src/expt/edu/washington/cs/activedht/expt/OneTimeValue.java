@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.concurrent.Semaphore;
 
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -29,7 +27,7 @@ public class OneTimeValue {
 		final int data[] = new int[iterations];
 
 		String baseKey = "" + System.currentTimeMillis();
-		Thread.sleep(10000);
+		Thread.sleep(60000);
 
 		final Semaphore semaphore = new Semaphore(iterations);
 		semaphore.drainPermits();

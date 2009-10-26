@@ -455,7 +455,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				Thread.sleep(10000);
 			}
 		} else {
-			FailureDistribution dist = new UniformFailureDistribution(360000);
+			FailureDistribution dist = new UniformFailureDistribution(3600000);
 			port = new ServerSocket(port).getLocalPort();
 			ActivePeer peer = new ActivePeer(port, bootstrap, false);
 			System.out.println(port);
