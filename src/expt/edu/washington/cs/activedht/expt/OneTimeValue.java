@@ -107,7 +107,7 @@ public class OneTimeValue {
 		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1], true);
 		peer.init();
 		int data[] = new OneTimeValue(peer, new PrintStream(new File(
-				"/tmp/activedht/onetime.out"))).run(0, 50);
+				"/tmp/activedht/onetime.out"))).run(10000, 50);
 		PrintStream out = new PrintStream(new File(
 				"/tmp/activedht/onetime.results"));
 		for (int d : data) {
