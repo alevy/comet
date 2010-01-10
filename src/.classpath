@@ -5,6 +5,11 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="src" path="apps/activeobjects"/>
 	<classpathentry kind="src" path="expt"/>
+	<classpathentry kind="src" path="luajava">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="src/ldlib"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/apple-extensions.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli.jar"/>

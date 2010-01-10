@@ -60,7 +60,7 @@ DHTDBValueImpl
 		 * @param _flags
 		 */
 	
-	protected
+	public
 	DHTDBValueImpl(
 		long				_creation_time,
 		byte[]				_value,
@@ -111,7 +111,7 @@ DHTDBValueImpl
 				_other.getFlags());
 	}
 	
-	protected void
+	public void
 	reset()
 	{
 		store_time	= SystemTime.getCurrentTime();
@@ -130,20 +130,20 @@ DHTDBValueImpl
 		return( creation_time );
 	}
 	
-	protected void
+	public void
 	setCreationTime()
 	{
 		creation_time = SystemTime.getCurrentTime();
 	}
 	
-	protected void
+	public void
 	setStoreTime(
 		long	l )
 	{
 		store_time	= l;
 	}
 	
-	protected long
+	public long
 	getStoreTime()
 	{
 		return( store_time );
@@ -197,12 +197,15 @@ DHTDBValueImpl
 		flags = _flags;
 	}
 	
-	protected void
-	setOriginatorAndSender(
+	public void
+	setOriginator(
 		DHTTransportContact	_originator )
 	{
 		originator	= _originator;
-		sender		= _originator;
+	}
+	
+	public void setSender(DHTTransportContact _sender) {
+		sender = _sender;
 	}
 	
 	public DHTDBValue
@@ -216,7 +219,7 @@ DHTDBValueImpl
 	getValueForDeletion(
 		int		_version )
 	{
-		DHTDBValueImpl	res = DHTDBValueFactory.create( originator,
+		DHTDBValueImpl	res = (DHTDBValueImpl)DHTDBValueFactory.create( originator,
 				this,
 				local );
 		

@@ -340,7 +340,7 @@ DHTDBImpl
 				stored_values.put( key, mapping );
 			}
 			
-			DHTDBValueImpl res =	
+			DHTDBValue res =	
 				DHTDBValueFactory.create( 
 						SystemTime.getCurrentTime(), 
 						value, 
@@ -529,7 +529,7 @@ DHTDBImpl
 
 				if ( ok_to_store ){
 					
-					DHTDBValueImpl mapping_value	=
+					DHTDBValue mapping_value	=
 						DHTDBValueFactory.create( sender, value, false );
 			
 					mapping.add( mapping_value );
@@ -621,7 +621,7 @@ DHTDBImpl
 	/**
 	 * This function is not synchronized. It assumes that the monitor is taken.
 	 */
-	protected DHTDBValueImpl getValueFromOriginator(
+	protected DHTDBValue getValueFromOriginator(
 			DHTTransportContact originator,
 			HashWrapper	key) {
 		DHTDBMapping mapping = (DHTDBMapping)stored_values.get( key );
@@ -629,7 +629,7 @@ DHTDBImpl
 		else return null;
 	}
 		
-	public DHTDBValue
+	public DHTTransportValue
 	remove(
 		DHTTransportContact 	originator,
 		HashWrapper				key )
@@ -643,7 +643,7 @@ DHTDBImpl
 
 			if ( mapping != null ){
 				
-				DHTDBValueImpl	res = mapping.remove( originator );
+				DHTDBValue	res = mapping.remove( originator );
 
 				if ( res != null ){
 					
@@ -840,7 +840,7 @@ DHTDBImpl
 	protected interface KeyValueMappingFilter {
 		public boolean matches(final HashWrapper key,
 				               final DHTDBMapping mapping);
-		public boolean matches(DHTDBValueImpl value);
+		public boolean matches(DHTDBValue value);
 	} 
 	
 	protected Map getFilteredKeyValuePairs(KeyValueMappingFilter filter) {
@@ -866,7 +866,7 @@ DHTDBImpl
 				
 				while( it2.hasNext()){
 					
-					DHTDBValueImpl	value = (DHTDBValueImpl)it2.next();
+					DHTDBValue	value = (DHTDBValue)it2.next();
 				
 					if (filter.matches(value)) {
 						
@@ -893,7 +893,7 @@ DHTDBImpl
 		public boolean matches(HashWrapper key, DHTDBMapping mapping) {
 			return true;
 		}
-		public boolean matches(DHTDBValueImpl value) {
+		public boolean matches(DHTDBValue value) {
 			boolean matches = (value != null && value.isLocal());
 			if (matches) value.setCreationTime();  // will republish; reset.
 			return matches;
@@ -925,7 +925,7 @@ DHTDBImpl
 				
 				values_published++;
 				
-				control.putEncodedKey( key.getHash(), "Republish", (DHTDBValueImpl)values.get(i), 0, true );
+				control.putEncodedKey( key.getHash(), "Republish", (DHTDBValue)values.get(i), 0, true );
 			}
 		}
 		
@@ -970,7 +970,7 @@ DHTDBImpl
 				
 				while( it2.hasNext()){
 					
-					DHTDBValueImpl	value = (DHTDBValueImpl)it2.next();
+					DHTDBValue	value = (DHTDBValue)it2.next();
 				
 					if ( !value.isLocal()){
 						
@@ -1165,7 +1165,7 @@ DHTDBImpl
 										
 										for (int j=0;j<values.size();j++){
 										
-											DHTDBValueImpl	value	= (DHTDBValueImpl)values.get(j);
+											DHTDBValue	value	= (DHTDBValue)values.get(j);
 												
 												// we reduce the cache distance by 1 here as it is incremented by the
 												// recipients
@@ -1384,7 +1384,7 @@ DHTDBImpl
 					
 					while( it2.hasNext()){
 						
-						DHTDBValueImpl	value = (DHTDBValueImpl)it2.next();				
+						DHTDBValue	value = (DHTDBValue)it2.next();				
 						
 						if ( !value.isLocal()){
 							
@@ -1435,7 +1435,7 @@ DHTDBImpl
 
 				while( it2.hasNext()){
 					
-					DHTDBValueImpl	value = (DHTDBValueImpl)it2.next();				
+					DHTDBValue	value = (DHTDBValue)it2.next();				
 
 					if ( value.isLocal()){
 						
@@ -1478,7 +1478,7 @@ DHTDBImpl
 			
 			for (int i=0;i<values.size();i++){
 								
-				control.putEncodedKey( key.getHash(), "Precious republish", (DHTDBValueImpl)values.get(i), 0, true );
+				control.putEncodedKey( key.getHash(), "Precious republish", (DHTDBValue)values.get(i), 0, true );
 			}
 		}
 	}
@@ -1777,7 +1777,7 @@ DHTDBImpl
 				
 				while( it2.hasNext()){
 					
-					DHTDBValueImpl	val = (DHTDBValueImpl)it2.next();
+					DHTDBValue	val = (DHTDBValue)it2.next();
 					
 					if ( !val.isLocal()){
 						
@@ -1818,7 +1818,7 @@ DHTDBImpl
 				
 				while( it2.hasNext()){
 					
-					DHTDBValueImpl	val = (DHTDBValueImpl)it2.next();
+					DHTDBValue	val = (DHTDBValue)it2.next();
 					
 					DHTTransportContact sender = val.getSender();
 					
@@ -2050,7 +2050,7 @@ DHTDBImpl
 			
 			if ( !value.isLocal() ){
 				
-				DHTDBValueImpl	val = (DHTDBValueImpl)value;
+				DHTDBValue	val = (DHTDBValue)value;
 				
 				boolean	direct = Arrays.equals( value.getOriginator().getID(), val.getSender().getID());
 				
@@ -2088,7 +2088,7 @@ DHTDBImpl
 			
 			if ( !value.isLocal() ){
 				
-				DHTDBValueImpl	val = (DHTDBValueImpl)value;
+				DHTDBValue	val = (DHTDBValue)value;
 				
 				boolean	direct = Arrays.equals( value.getOriginator().getID(), val.getSender().getID());
 				

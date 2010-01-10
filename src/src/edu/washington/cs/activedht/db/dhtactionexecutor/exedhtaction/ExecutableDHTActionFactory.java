@@ -4,7 +4,7 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTAction;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
+import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 
 /**
@@ -19,7 +19,7 @@ public interface ExecutableDHTActionFactory {
 	@SuppressWarnings("unchecked")
 	public ExecutableDHTAction createAction(DHTAction action,
 			                                HashWrapper key,
-			                                ActiveDHTDBValueImpl value,
+			                                ActiveDHTDBValue value,
                                             ActiveDHTDB control,
                                             long running_timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException;

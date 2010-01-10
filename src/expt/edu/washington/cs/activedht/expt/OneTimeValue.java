@@ -31,93 +31,67 @@ public class OneTimeValue {
 		final int data[] = new int[iterations];
 
 		String baseKey = "" + System.currentTimeMillis();
-		Thread.sleep(1200000);
-		//final Semaphore semaphore = new Semaphore(iterations);
 		final Semaphore semas[] = new Semaphore[iterations];
 		for (int i = 0; i < iterations; ++i) {
 			final int _i = i;
 			final byte[] key = (baseKey + i).getBytes();
 			semas[i] = new Semaphore(1);
 			semas[i].acquire();
-			
-			peer.put(key, getOneTimeValueBytes("world"),
-					new DHTOperationAdapter() {
-						@Override
-						public void complete(boolean timeout) {
-							semas[_i].release();
-							System.out.println("Released");
-						}
-					});
+
+			peer.put(key, "0".getBytes(), new DHTOperationAdapter() {
+				@Override
+				public void wrote(DHTTransportContact contact,
+						DHTTransportValue value) {
+					System.out.println(contact + " - " + value.getString());
+				}
+				
+				@Override
+				public void found(DHTTransportContact contact) {
+					System.out.println(contact.getString());
+				}
+				
+				@Override
+				public void complete(boolean timeout) {
+					semas[_i].release();
+				}
+			});
 
 			semas[_i].acquire();
-			long eventTime = System.currentTimeMillis() + 300000;
+			long eventTime = System.currentTimeMillis() + 30000;//00;
 			Timer t = new Timer(new String(key));
-			t.addEvent(eventTime, new TimerEventPerformer() {
+		/*	t.addEvent(eventTime, new TimerEventPerformer() {
 				public void perform(TimerEvent event) {
-					peer.get(key, new DHTOperationAdapter() {
-						boolean found = false;
-						public void read(DHTTransportContact contact,
-								DHTTransportValue value) {
-							found = true;
-							out.println(contact.getAddress().getHostName());
-						}
+					peer.put(key, "1".getBytes(), new DHTOperationAdapter() {
+						@Override
 						public void complete(boolean timeout) {
-							if (found) data[_i]++;
+							System.out.println(new String(key));
 						}
 					});
 				}
-			});
+			});*/
 			t.addEvent(eventTime + gap, new TimerEventPerformer() {
 				public void perform(TimerEvent event) {
 					peer.get(key, new DHTOperationAdapter() {
 						boolean found = false;
+
 						public void read(DHTTransportContact contact,
 								DHTTransportValue value) {
 							found = true;
+							System.out.println(value.getString());
 							out.println(contact.getAddress().getHostName());
 						}
+
 						public void complete(boolean timeout) {
-							if (found) data[_i]++;
+							System.out.println(found);
+							if (found)
+								data[_i]++;
 							semas[_i].release();
 						}
 					});
 				}
 			});
 		}
-		
-		/*for (int i = 0; i < iterations; ++i) {
-			final int _i = i;
-			byte[] key = (baseKey + i).getBytes();
-			semaphore.acquire();
-			peer.get(key, new DHTOperationAdapter() {
-				boolean found = false;
-				public void read(DHTTransportContact contact,
-						DHTTransportValue value) {
-					found = true;
-					out.println(contact.getAddress().getHostName());
-				}
-				public void complete(boolean timeout) {
-					semaphore.release();
-					if (found) data[_i]++;
-				}
-			});
 
-			Thread.sleep(gap);
-			semaphore.acquire();
-			peer.get(key, new DHTOperationAdapter() {
-				boolean found = false;
-				public void read(DHTTransportContact contact,
-						DHTTransportValue value) {
-					found = true;
-					out.println(contact.getAddress().getHostName());
-				}
-				public void complete(boolean timeout) {
-					semaphore.release();
-					if (found) data[_i]++;
-				}
-			});
-		}
-		semaphore.acquire(iterations * 2);*/
 		for (Semaphore s : semas) {
 			s.acquire();
 		}
@@ -140,17 +114,22 @@ public class OneTimeValue {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), args[1], false);
+		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), "213.186.46.164:6881",
+				false);
 		peer.init();
-		int data[] = new OneTimeValue(peer, new PrintStream(new File(
-				"/tmp/activedht/onetime.out"))).run(20000, 500);
-		PrintStream out = new PrintStream(new File(
-				"/tmp/activedht/onetime.results"));
-		for (int d : data) {
-			out.println(d);
+		Thread.sleep(120000);
+		for (int i = 0; i < 20; ++i) {
+			int data[] = new OneTimeValue(peer, new PrintStream(new File(
+					"/tmp/activedht/onetime.out.320" + i * 1000 + ".100")))
+					.run(i * 1000, 10);
+			PrintStream out = new PrintStream(new File(
+					"/tmp/activedht/onetime.results.320" + i * 1000 + ".100"));
+			for (int d : data) {
+				out.println(d);
+			}
+			System.out.println("DONE");
 		}
 		peer.stop();
-		System.out.println("DONE");
 		System.exit(0);
 	}
 

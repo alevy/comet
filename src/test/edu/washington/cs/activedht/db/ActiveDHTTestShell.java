@@ -200,8 +200,8 @@ public class ActiveDHTTestShell extends Test {
 	
 	@Override
 	protected String getString(DHTTransportValue value) {		
-		ActiveDHTDBValueImpl active_val =
-			new ActiveDHTDBValueImpl(null, value, false);
+		JavaActiveDHTDBValue active_val =
+			new JavaActiveDHTDBValue(null, value, false);
 				
 		byte[] active_object = active_val.getValue();
 		ObjectInputStream ois = null;

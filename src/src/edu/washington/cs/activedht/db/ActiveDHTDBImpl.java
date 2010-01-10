@@ -15,14 +15,10 @@ import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBMapping;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
 import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
-import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
-import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactoryImpl;
 import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.Pair;
 
@@ -73,15 +69,11 @@ implements ActiveDHTDB, Constants {
 		
 		this.active_storage_adapter_ptr = _adapter;
 		
-		ActiveCodeRunner.ActiveCodeRunnerParam param =
-			new ActiveCodeRunner.ActiveCodeRunnerParam();
+		//TODO: delete 
+		//ActiveCodeRunner.ActiveCodeRunnerParam param =
+			//new ActiveCodeRunner.ActiveCodeRunnerParam();
 
-		active_code_handler = new ActiveCodeRunner(
-				new ActiveCodeSandboxImpl<byte[]>(
-						param.active_code_execution_timeout),
-				new DHTActionExecutorImpl(this,
-						new ExecutableDHTActionFactoryImpl()),
-				param);
+		active_code_handler = new ActiveCodeRunner();
 		
 		values_to_republish_lock = new Object();
 		values_to_republish = new HashMap<HashWrapper, List<DHTDBValue>>();
@@ -128,8 +120,12 @@ implements ActiveDHTDB, Constants {
 		if (result == null || ! external_request) return result;  // nothing.
 
 		// Announce all of the values that they're being read.
-		final DHTDBValue[] all_values = result.getValues();
-		final DHTDBValue[] values_allowing_access =
+		DHTDBValue[] values = result.getValues();
+		final ActiveDHTDBValue[] all_values = new ActiveDHTDBValue[values.length];
+		for (int i = 0; i < values.length; ++i) {
+			all_values[i] = (ActiveDHTDBValue)values[i];
+		}
+		final ActiveDHTDBValue[] values_allowing_access =
 			active_code_handler.onGet(reader, key, all_values);
 		
 		// If not all values have decided to remain, create a result with
@@ -137,7 +133,7 @@ implements ActiveDHTDB, Constants {
 		if (values_allowing_access != null) {
 			final byte div_type = result.getDiversificationType();
 			result = new DHTDBLookupResult() {
-				public DHTDBValue[] getValues() {
+				public ActiveDHTDBValue[] getValues() {
 					return values_allowing_access;
 				}
 				public byte getDiversificationType() { return div_type; }
@@ -158,7 +154,7 @@ implements ActiveDHTDB, Constants {
 	@Override
 	public DHTDBValue remove(DHTTransportContact sender, HashWrapper key) {
 		// Remove the object.
-		DHTDBValue removed_value = super.remove(sender, key);
+		ActiveDHTDBValue removed_value = (ActiveDHTDBValue)super.remove(sender, key);
 		if (removed_value == null) return removed_value;  // nothing to do.
 		
 		// Announce the object of its eviction and re-add if it so requests.
@@ -299,13 +295,13 @@ implements ActiveDHTDB, Constants {
 				return true;
 			}
 
-			public boolean matches(DHTDBValueImpl value) { return true; }
+			public boolean matches(DHTDBValue value) { return true; }
 		};
 	
 	@SuppressWarnings("unchecked")
 	private void fireMaintenanceTimerForActiveCode() {
-		Map<HashWrapper, List<DHTDBValueImpl>> to_activate =
-			(Map<HashWrapper, List<DHTDBValueImpl>>)
+		Map<HashWrapper, List<ActiveDHTDBValue>> to_activate =
+			(Map<HashWrapper, List<ActiveDHTDBValue>>)
 				super.getFilteredKeyValuePairs(TIMER_FILTER);
 		active_code_handler.onTimer(to_activate);
 		
@@ -339,7 +335,7 @@ implements ActiveDHTDB, Constants {
 		return super.get(reader, key, max_values, flags, external_request);
 	}
 
-	public DHTDBValue superRemove(DHTTransportContact sender,
+	public DHTTransportValue superRemove(DHTTransportContact sender,
 			                      HashWrapper key) {
 		return super.remove(sender, key);
 	}

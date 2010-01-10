@@ -29,15 +29,16 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
  * @author roxana
  *
  */
-public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
+@Deprecated
+public class JavaActiveDHTDBValue extends DHTDBValueImpl implements ActiveDHTDBValue {
 	private DHTActionMap preactions_map;
 	
-	public ActiveDHTDBValueImpl(DHTTransportContact _sender,
+	public JavaActiveDHTDBValue(DHTTransportContact _sender,
 			DHTTransportValue _other, boolean _local) {
 		super(_sender, _other, _local);
 	}
 	
-	public ActiveDHTDBValueImpl(long _creation_time, byte[] _value,
+	public JavaActiveDHTDBValue(long _creation_time, byte[] _value,
 			int _version,
 			DHTTransportContact _originator, DHTTransportContact _sender,
 			boolean _local, int _flags) {
@@ -62,5 +63,9 @@ public class ActiveDHTDBValueImpl extends DHTDBValueImpl {
 	
 	public String toString() {
 		return getString();
+	}
+
+	public ActiveDHTDBValue executeCallback(String string) {
+		throw new RuntimeException("Unimplmente method");
 	}
 }

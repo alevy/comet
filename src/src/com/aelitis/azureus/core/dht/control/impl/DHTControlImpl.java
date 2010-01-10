@@ -1672,7 +1672,7 @@ DHTControlImpl
 			DHTLog.log( "remove for " + DHTLog.getString( encoded_key ));
 		}
 
-		DHTDBValue	res = database.remove( local_contact, new HashWrapper( encoded_key ));
+		DHTTransportValue	res = database.remove( local_contact, new HashWrapper( encoded_key ));
 		
 		if ( res == null ){
 			
@@ -1712,7 +1712,7 @@ DHTControlImpl
 			DHTLog.log( "remove for " + DHTLog.getString( encoded_key ));
 		}
 
-		DHTDBValue	res = database.remove( local_contact, new HashWrapper( encoded_key ));
+		DHTTransportValue	res = database.remove( local_contact, new HashWrapper( encoded_key ));
 		
 		if ( res == null ){
 			

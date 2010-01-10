@@ -34,15 +34,25 @@ public interface
 DHTDBValue 
 	extends DHTTransportValue
 {
-	public void
-	setFlags(
-		byte	flags );
-	
-	public void
-	setValue(
-		byte[]	value );
-	
-	public DHTDBValue
+	public DHTTransportValue
 	getValueForRelay(
 		DHTTransportContact	new_originator );
+
+	public DHTTransportContact getSender();
+
+	long getCreationTime();
+
+	void setCreationTime();
+
+	void setStoreTime(long l);
+
+	long getStoreTime();
+
+	public DHTTransportValue getValueForDeletion(int nextValueVersion);
+
+	public void reset();
+
+	public void setSender(DHTTransportContact contact);
+
+	public void setOriginator(DHTTransportContact contact);
 }

@@ -432,6 +432,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	public static void main(String[] args) throws Exception {
 		boolean booting = false;
+		boolean churn = false;
 		int port = 0;
 		String bootstrap = InetAddress.getLocalHost().getHostName();
 
@@ -447,6 +448,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		if (args.length > i) {
 			port = Integer.parseInt(args[i]);
 		}
+		++i;
+		if (args.length > i && "-c".equals(args[i])) {
+			churn = true;
+		}
 		if (booting) {
 			ActivePeer peer = new ActivePeer(port, bootstrap);
 			peer.init();
@@ -454,13 +459,17 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				Thread.sleep(10000);
 			}
 		} else {
-			FailureDistribution dist = new UniformFailureDistribution(3600000);
 			port = new ServerSocket(port).getLocalPort();
 			ActivePeer peer = new ActivePeer(port, bootstrap, false);
 			System.out.println(port);
 			peer.init();
-			long timeout = dist.nextFailureInterval();
-			Thread.sleep(timeout);
+			long timeout = 10000;
+			while (true) {
+				Thread.sleep(timeout);
+				if (churn && Math.random() < 0.002) {
+					break;
+				}
+			}
 			peer.stop();
 		}
 		System.exit(0);

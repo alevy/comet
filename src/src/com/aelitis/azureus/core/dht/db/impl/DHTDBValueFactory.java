@@ -1,5 +1,6 @@
 package com.aelitis.azureus.core.dht.db.impl;
 
+import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -25,7 +26,7 @@ public class DHTDBValueFactory {
 		}
 	}
 	
-	public static DHTDBValueImpl
+	public static DHTDBValue
 	create(
 		long _creation_time,
 		byte[] _value,
@@ -43,7 +44,7 @@ public class DHTDBValueFactory {
 				_flags );
 	}
 	
-	public static DHTDBValueImpl
+	public static DHTDBValue
 	create(
 		DHTTransportContact	_sender,
 		DHTTransportValue _other,
@@ -53,7 +54,7 @@ public class DHTDBValueFactory {
 	}
 	
 	public static interface FactoryInterface {
-		public DHTDBValueImpl
+		public DHTDBValue
 		create(
 			long _creation_time,
 			byte[] _value,
@@ -63,7 +64,7 @@ public class DHTDBValueFactory {
 			boolean _local,
 			int	_flags );
 		
-		public DHTDBValueImpl
+		public DHTDBValue
 		create(
 			DHTTransportContact	_sender,
 			DHTTransportValue _other,

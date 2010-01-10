@@ -100,7 +100,7 @@ DHTDB
 		 * @return
 		 */
 	
-	public DHTDBValue
+	public DHTTransportValue
 	remove(	
 		DHTTransportContact 	sender,
 		HashWrapper				key );

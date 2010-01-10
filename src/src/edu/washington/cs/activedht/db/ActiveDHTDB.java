@@ -24,7 +24,7 @@ public interface ActiveDHTDB extends DHTDB {
 		                              byte flags,
 		                              boolean external_request);
 	
-	public DHTDBValue superRemove(DHTTransportContact sender,
+	public DHTTransportValue superRemove(DHTTransportContact sender,
 			                      HashWrapper key);
 }
 

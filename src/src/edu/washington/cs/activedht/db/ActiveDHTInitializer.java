@@ -6,9 +6,9 @@ import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.impl.DHTControlImpl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBFactory;
+import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
@@ -54,16 +54,16 @@ public class ActiveDHTInitializer implements Constants {
 		
 		// Initialize the DHTDBValue factory:
 		DHTDBValueFactory.init(new DHTDBValueFactory.FactoryInterface() {
-			public DHTDBValueImpl create(long _creation_time, byte[] _value,
+			public DHTDBValue create(long _creation_time, byte[] _value,
 					int _version, DHTTransportContact _originator,
 					DHTTransportContact _sender, boolean _local, int _flags) {
-				return new ActiveDHTDBValueImpl(_creation_time, _value,
+				return new LuaActiveDHTDBValue(_creation_time, _value,
 						_version, _originator, _sender, _local, _flags);
 			}
 
-			public DHTDBValueImpl create(DHTTransportContact _sender,
+			public DHTDBValue create(DHTTransportContact _sender,
 					DHTTransportValue _other, boolean _local) {
-				return new ActiveDHTDBValueImpl(_sender, _other, _local);
+				return new LuaActiveDHTDBValue(_sender, _other, _local);
 			}
 		});
 		

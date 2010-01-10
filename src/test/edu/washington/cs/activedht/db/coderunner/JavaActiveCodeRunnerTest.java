@@ -21,20 +21,23 @@ import edu.washington.cs.activedht.code.insecure.exceptions.InitializationExcept
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
+import edu.washington.cs.activedht.db.ActiveDHTDBValue;
+import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.StoreListener;
 import edu.washington.cs.activedht.db.TestDHTClasses;
 import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
+import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutorImpl;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
+import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.NoSuchDHTActionException;
 import edu.washington.cs.activedht.util.Pair;
 import junit.framework.TestCase;
 
-public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
-	private ActiveCodeRunner runner;
+public class JavaActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
+	private JavaActiveCodeRunner runner;
 	
 	private ActiveCode active_object;
 	private byte[] active_object_bytes;
@@ -46,8 +49,8 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	protected void setUp() {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode();
 		
-		ActiveCodeRunner.ActiveCodeRunnerParam params =
-			new ActiveCodeRunner.ActiveCodeRunnerParam();
+		JavaActiveCodeRunner.ActiveCodeRunnerParam params =
+			new JavaActiveCodeRunner.ActiveCodeRunnerParam();
 		ActiveCodeSandbox<byte[]> sandbox =
 			new ActiveCodeSandboxImpl<byte[]>(
 					params.active_code_execution_timeout);
@@ -58,7 +61,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 			fail("Failed to initialize sandbox.");
 		}
 		
-		runner = new ActiveCodeRunner(sandbox, new TestDHTActionExecutorImpl(),
+		runner = new JavaActiveCodeRunner(sandbox, new TestDHTActionExecutorImpl(),
 				                      params);
 		
 		active_object = new TestActiveCode(DHTEvent.GET,
@@ -82,7 +85,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	 * Assumes that value has already been unpacked.
 	 * @param value
 	 */
-	private void checkPreactionsForUnpackedValue(ActiveDHTDBValueImpl value) {
+	private void checkPreactionsForUnpackedValue(JavaActiveDHTDBValue value) {
 		DHTActionMap all_preactions = value.getPreactions(null);
 
 		assertNotNull(all_preactions);
@@ -99,7 +102,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	 * @param num_execution_times
 	 */
 	private void checkActiveObjectStateForUnpackedValue(
-			ActiveDHTDBValueImpl value,
+			JavaActiveDHTDBValue value,
 			int num_execution_times) {
 		TestActiveCode current_object =
 			(TestActiveCode)DHTEventHandlerCallbackTest
@@ -112,7 +115,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	// Test cases:
 
 	public void testOnInitialStoreNoOverwriteNoCancellation() {		
-		ActiveDHTDBValueImpl added_value = new ActiveDHTDBValueImpl(
+		JavaActiveDHTDBValue added_value = new JavaActiveDHTDBValue(
 				sender,
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);
@@ -146,7 +149,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	}
 	
 	public void testOnOverwritingStoreNoCancellation() {
-		ActiveDHTDBValueImpl old_value = new ActiveDHTDBValueImpl(
+		JavaActiveDHTDBValue old_value = new JavaActiveDHTDBValue(
 				sender,
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
@@ -164,7 +167,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 				new TestPreaction(2), new TestPostaction(2));
 		byte[] new_object_bytes = DHTEventHandlerCallbackTest
 				.serializeActiveObject(new_object);
-		ActiveDHTDBValueImpl new_value = new ActiveDHTDBValueImpl(
+		JavaActiveDHTDBValue new_value = new JavaActiveDHTDBValue(
 				sender,
 				new TestDHTTransportValue(sender, new_object_bytes, false),
 				false);
@@ -205,7 +208,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	}
 	
 	public void testOnGetNoCancellation() {
-		ActiveDHTDBValueImpl value = new ActiveDHTDBValueImpl(
+		JavaActiveDHTDBValue value = new JavaActiveDHTDBValue(
 				sender,
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
@@ -218,7 +221,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 		clearCounters();
 		
 		// Do a Get:
-		DHTDBValue[] values = new ActiveDHTDBValueImpl[] { value };
+		DHTDBValue[] values = new JavaActiveDHTDBValue[] { value };
 		
 		DHTDBValue[] values_allowing_access = runner.onGet(
 				sender,
@@ -245,7 +248,7 @@ public class ActiveCodeRunnerTest extends TestCase implements TestDHTClasses {
 	}
 	
 	public void testOnRemoveNoCancellation() {
-		ActiveDHTDBValueImpl value = new ActiveDHTDBValueImpl(
+		JavaActiveDHTDBValue value = new JavaActiveDHTDBValue(
 				sender,
 				new TestDHTTransportValue(sender, active_object_bytes, false),
 				false);		
@@ -292,7 +295,7 @@ class TestExecutableDHTActionFactory implements ExecutableDHTActionFactory {
 	@SuppressWarnings("unchecked")
 	public ExecutableDHTAction createAction(DHTAction action,
                                             HashWrapper key,
-                                            ActiveDHTDBValueImpl value,
+                                            ActiveDHTDBValue value,
                                             ActiveDHTDB db,
                                             long running_timeout) {
 		if (action instanceof TestPreaction) {

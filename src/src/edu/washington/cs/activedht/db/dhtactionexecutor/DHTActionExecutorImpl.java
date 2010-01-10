@@ -16,7 +16,8 @@ import edu.washington.cs.activedht.code.insecure.dhtaction.ReturnAction;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
-import edu.washington.cs.activedht.db.ActiveDHTDBValueImpl;
+import edu.washington.cs.activedht.db.ActiveDHTDBValue;
+import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
@@ -48,7 +49,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	@SuppressWarnings("unchecked")
 	public void executeActions(DHTActionList actions,
 			                   HashWrapper key,
-			                   ActiveDHTDBValueImpl value,
+			                   JavaActiveDHTDBValue value,
 			                   long max_running_time,
 			                   boolean wait_for_responses)
 	throws ActiveCodeExecutionInterruptedException, AbortDHTActionException {
@@ -122,7 +123,7 @@ public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {
 	
 	private void startExecutingDHTAction(final DHTAction action,
 			                             final HashWrapper key,
-			                             final ActiveDHTDBValueImpl value,
+			                             final ActiveDHTDBValue value,
 			                             final Semaphore sem,
 			                             final long timeout)
 	throws AbortDHTActionException, NoSuchDHTActionException {
