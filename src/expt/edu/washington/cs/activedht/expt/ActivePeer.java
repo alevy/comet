@@ -25,6 +25,7 @@ import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportException;
 import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
@@ -149,6 +150,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 		// Initialize non-final state:
 		initState();
+	}
+	
+	public DHTTransportContact getLocalContact() {
+		return dht.getControl().getTransport().getLocalContact();
 	}
 
 	private void initState() {
@@ -379,9 +384,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	// Protected to enable testing.
 	protected void get(byte[] key, DHTOperationAdapter adapter) {
-		dht.get(key, "", (byte) 0, 32, 60000/*
-											 * getWaitTimeForNumOperations(1)
-											 */, false, false, adapter);
+		dht.get(key, "", (byte) 0, 32, 60000, true, false, adapter);
 	}
 
 	// DHTNATPuncherInterface:

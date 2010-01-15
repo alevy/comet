@@ -14,6 +14,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
+import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 /**
  * Must call the initialization function before

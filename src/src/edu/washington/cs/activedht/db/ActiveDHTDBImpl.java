@@ -73,7 +73,7 @@ implements ActiveDHTDB, Constants {
 		//ActiveCodeRunner.ActiveCodeRunnerParam param =
 			//new ActiveCodeRunner.ActiveCodeRunnerParam();
 
-		active_code_handler = new ActiveCodeRunner();
+		active_code_handler = new ActiveCodeRunner(this);
 		
 		values_to_republish_lock = new Object();
 		values_to_republish = new HashMap<HashWrapper, List<DHTDBValue>>();
@@ -264,7 +264,7 @@ implements ActiveDHTDB, Constants {
 		Pair<List<DHTTransportValue>, List<DHTTransportValue>> p =
 			active_code_handler.onStore(sender, key, store_listener);
 		
-		// Add back the ones that want in and remote the ones that want out.
+		// Add back the ones that want in and remove the ones that want out.
 		if (p != null) {
 			List<DHTTransportValue> values_to_add_back = p.getFirst();
 			// Add the values that want to go back.

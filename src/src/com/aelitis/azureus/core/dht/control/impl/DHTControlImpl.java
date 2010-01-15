@@ -818,7 +818,19 @@ DHTControlImpl
 		String				description,
 		DHTTransportValue	value,
 		long				timeout,
-		boolean				original_mappings )
+		boolean				original_mappings)
+	{
+		putEncodedKey(encoded_key, description, value, timeout, original_mappings, new DHTOperationAdapter());
+	}
+	
+	public void
+	putEncodedKey(
+		byte[]				encoded_key,
+		String				description,
+		DHTTransportValue	value,
+		long				timeout,
+		boolean				original_mappings,
+		DHTOperationAdapter adapter)
 	{
 		put( 	internal_put_pool, 
 				false,
@@ -829,7 +841,7 @@ DHTControlImpl
 				original_mappings,
 				new HashSet(),
 				1,
-				new DHTOperationListenerDemuxer( new DHTOperationAdapter()));
+				new DHTOperationListenerDemuxer( adapter));
 	}
 	
 	
@@ -4421,5 +4433,12 @@ DHTControlImpl
 		{
 			return( type + ":" + DHTLog.getString( getTarget()) + "/" + getDescription() + ", q = " + isQueued());
 		}
+	}
+
+	public void put(byte[] unencoded_key, String description,
+			DHTTransportValue value, long timeout,
+			boolean original_mappings, DHTOperationAdapter listener) {
+		putEncodedKey(encodeKey(unencoded_key), description, value, timeout, original_mappings, listener);
+		
 	}
 }

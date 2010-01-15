@@ -18,69 +18,80 @@ import edu.washington.cs.activedht.lua.Serializer;
 
 /**
  * @author levya
- *
+ * 
  */
 public class Microbenchmark {
 
 	private final ActivePeer peer;
-	private static final LuaState luaState = LuaStateFactory.newLuaState(); 
+	private static final LuaState luaState = LuaStateFactory.newLuaState();
 
 	public Microbenchmark(ActivePeer peer) {
 		this.peer = peer;
 	}
-	
-	public void put() throws InterruptedException {
-		luaState.LdoString("activeobject = { onGet = function(self) return self.message end, message = \"world\" }");
-		byte[] value = new Serializer(luaState).serialize(luaState.getLuaObject("activeobject"));
-		
+
+	public void put(String key, String lua) throws InterruptedException {
+		luaState.LdoString(lua);
+		byte[] value = new Serializer(luaState).serialize(luaState
+				.getLuaObject("activeobject"));
+
 		final Semaphore sema = new Semaphore(1);
 		sema.acquire();
 		final List<DHTTransportContact> contacts = new LinkedList<DHTTransportContact>();
-		peer.put("hello".getBytes(), value, new DHTOperationAdapter() {
+		peer.put(key.getBytes(), value, new DHTOperationAdapter() {
 			public void wrote(DHTTransportContact contact,
 					DHTTransportValue value) {
 				contacts.add(contact);
 			}
-			
+
 			@Override
 			public void complete(boolean t) {
-				System.out.println(t);
 				sema.release();
 			}
 		});
 		sema.acquire();
-		System.out.println(contacts);
 	}
-	
-	public void get() throws InterruptedException {
-		final Semaphore sema = new Semaphore(1);
+
+	public void get(String key, final Semaphore sema)
+			throws InterruptedException {
 		sema.acquire();
-		final List<DHTTransportContact> contacts = new LinkedList<DHTTransportContact>();
-		peer.get("hello".getBytes(), new DHTOperationAdapter() {
+		peer.get(key.getBytes(), new DHTOperationAdapter() {
 			public void complete(boolean t) {
-				System.out.println(t);
 				sema.release();
 			}
-			
-			public void read(DHTTransportContact contact,
-					DHTTransportValue value) {
-				contacts.add(contact);
-				System.out.println(new Serializer(luaState).deserialize(value.getValue()));
-			}
 		});
-		sema.acquire();
-		System.out.println(contacts);
 	}
-	
+
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(1234, "marykate.cs.washington.edu:48386");
+		int numObjects = 100;
+
+		ActivePeer bootstrap = new ActivePeer(48386,
+				"marykate.cs.washington.edu:48386", false);
+		bootstrap.init();
+		Thread.sleep(5000);
+		ActivePeer peer = new ActivePeer(1234,
+				"marykate.cs.washington.edu:48386", false);
 		peer.init();
+		Thread.sleep(5000);
 		Microbenchmark microbenchmark = new Microbenchmark(peer);
-		microbenchmark.put();
-		
-		Thread.sleep(10000);
-		
-		microbenchmark.get();
+		for (int i = 0; i < numObjects; ++i) {
+			String key = "" + i;
+			microbenchmark.put(key,
+					"activeobject = { onGet = function(self) return \"" + key
+							+ "\" end }");
+		}
+
+		Semaphore sema = new Semaphore(numObjects);
+		long start = System.currentTimeMillis();
+		for (int j = 0; j < numObjects; ++j) {
+			String key = "" + j;
+			microbenchmark.get(key, sema);
+		}
+		sema.acquire(numObjects);
+		long elapsed = System.currentTimeMillis() - start;
+		System.out.println(1.0 * elapsed / numObjects);
+
+		peer.stop();
+		bootstrap.stop();
 	}
-	
+
 }

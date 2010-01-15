@@ -1,7 +1,6 @@
 package edu.washington.cs.activedht.lua;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.keplerproject.luajava.CPtr;
 import org.keplerproject.luajava.LuaObject;
@@ -24,8 +23,9 @@ public class Serializer {
 	private synchronized native int _deserialize(CPtr L, byte[] buffer);
 	
 	public byte[] serialize(LuaObject lObj) {
+		LuaState luaState = lObj.getLuaState();
 		byte[] buffer = new byte[MAX_SIZE];
-		lObj.getLuaState().newTable();
+		luaState.newTable();
 		lObj.push();
 		int size = _serialize(luaState.getCPtr(), buffer);
 		luaState.pop(luaState.getTop());

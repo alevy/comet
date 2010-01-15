@@ -22,7 +22,6 @@ import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandboxImpl;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
-import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.StoreListener;
 import edu.washington.cs.activedht.db.TestDHTClasses;
@@ -33,6 +32,7 @@ import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOp
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.NoSuchDHTActionException;
+import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Pair;
 import junit.framework.TestCase;
 

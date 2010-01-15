@@ -5,7 +5,7 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import edu.washington.cs.activedht.code.insecure.Initializable;
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionList;
 import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionInterruptedException;
-import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
+import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
 
 public interface DHTActionExecutor extends Initializable {
 	/**

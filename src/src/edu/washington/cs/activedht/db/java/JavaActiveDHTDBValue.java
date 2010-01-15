@@ -1,11 +1,16 @@
-package edu.washington.cs.activedht.db;
+package edu.washington.cs.activedht.db.java;
 
+import org.gudy.azureus2.core3.util.HashWrapper;
+
+import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueImpl;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
+import edu.washington.cs.activedht.db.ActiveDHTDBValue;
+import edu.washington.cs.activedht.db.DhtWrapper;
 
 /**
  * The implementation of a value that has the potential of being either
@@ -65,7 +70,28 @@ public class JavaActiveDHTDBValue extends DHTDBValueImpl implements ActiveDHTDBV
 		return getString();
 	}
 
-	public ActiveDHTDBValue executeCallback(String string) {
-		throw new RuntimeException("Unimplmente method");
+	public ActiveDHTDBValue executeCallback(String string, DhtWrapper dhtWrapper) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public ActiveDHTDBValue executeCallback(String string,
+			DhtWrapper dhtWrapper, Object... args) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Object deserialize(byte[] value) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public byte[] serialize(Object object) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

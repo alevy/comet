@@ -21,6 +21,7 @@ import edu.washington.cs.activedht.code.insecure.candefine.TimeReleaseActiveObje
 import edu.washington.cs.activedht.code.insecure.candefine.TimeoutActiveObject;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
+import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
 
 /**
  * USAGE:

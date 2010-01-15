@@ -4,3 +4,8 @@ dist
 reports
 plugins
 .metadata
+activedht.*
+doc
+old_reports
+results
+onetime.results*

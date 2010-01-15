@@ -5,9 +5,14 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="src" path="apps/activeobjects"/>
 	<classpathentry kind="src" path="expt"/>
-	<classpathentry kind="src" path="luajava">
+	<classpathentry kind="src" path="luajava/src/java">
 		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="src/ldlib"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="src/luajava"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="luajava/test">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="src/luajava"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>

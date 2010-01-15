@@ -24,11 +24,11 @@ import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionI
 import edu.washington.cs.activedht.code.insecure.exceptions.NotAnActiveObjectException;
 import edu.washington.cs.activedht.code.insecure.io.InputStreamSecureClassLoader;
 import edu.washington.cs.activedht.code.insecure.sandbox.ActiveCodeSandbox;
-import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.StoreListener;
 import edu.washington.cs.activedht.db.StoreOutcome;
 import edu.washington.cs.activedht.db.dhtactionexecutor.AbortDHTActionException;
 import edu.washington.cs.activedht.db.dhtactionexecutor.DHTActionExecutor;
+import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 import edu.washington.cs.activedht.util.Pair;
 

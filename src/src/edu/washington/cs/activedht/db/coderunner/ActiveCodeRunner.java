@@ -1,11 +1,13 @@
 package edu.washington.cs.activedht.db.coderunner;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
+import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -16,8 +18,14 @@ import edu.washington.cs.activedht.util.Pair;
 
 public class ActiveCodeRunner {
 
-	public ActiveDHTDBValue[] onGet(DHTTransportContact reader, HashWrapper key,
-			ActiveDHTDBValue[] values) {
+	private final DHTDBImpl control;
+
+	public ActiveCodeRunner(DHTDBImpl control) {
+		this.control = control;
+	}
+
+	public ActiveDHTDBValue[] onGet(DHTTransportContact reader,
+			HashWrapper key, ActiveDHTDBValue[] values) {
 		ActiveDHTDBValue[] intermediate = new ActiveDHTDBValue[values.length];
 		int resultTotal = 0;
 		for (int i = 0; i < values.length; ++i) {
@@ -36,30 +44,70 @@ public class ActiveCodeRunner {
 		}
 		return resultValues;
 	}
-	
+
 	public ActiveDHTDBValue onGet(DHTTransportContact reader, HashWrapper key,
 			ActiveDHTDBValue value) {
-		return value.executeCallback("onGet");
+		ActiveDHTDBValue result = value.executeCallback("onGet", value.getDhtWrapper(control
+				.getControl(), key));
+		return result;
 	}
 
-	public ActiveDHTDBValue onRemove(DHTTransportContact sender, HashWrapper key,
-			ActiveDHTDBValue removedValue) {
-		return removedValue.executeCallback("onRemove");
+	public ActiveDHTDBValue onRemove(DHTTransportContact sender,
+			HashWrapper key, ActiveDHTDBValue removedValue) {
+		return removedValue.executeCallback("onRemove", removedValue
+				.getDhtWrapper(control.getControl(), key));
 	}
-	
+
 	public Pair<List<DHTTransportValue>, List<DHTTransportValue>> onStore(
 			DHTTransportContact sender, HashWrapper key,
 			StoreListener store_listener) {
+		List<DHTTransportValue> valuesToAddBack = new ArrayList<DHTTransportValue>();
+		List<DHTTransportValue> valuesToRemove = new ArrayList<DHTTransportValue>();
+
 		for (StoreOutcome outcome : store_listener) {
-			onStore(sender, key, outcome);
+			DHTTransportValue overwrittenValue = outcome.getOverwrittenValue();
+			DHTTransportValue addedValue = outcome.getAddedValue();
+			if (overwrittenValue != null) {
+				DHTTransportValue value = onUpdate(sender, key,
+						overwrittenValue, addedValue);
+				if (value != null) {
+					valuesToAddBack.add(value);
+				}
+			} else {
+				DHTTransportValue value = onStore(sender, key, addedValue);
+				if (value == null) {
+					valuesToRemove.add(addedValue);
+				}
+			}
 		}
-		return null;
+		return new Pair<List<DHTTransportValue>, List<DHTTransportValue>>(
+				valuesToAddBack, valuesToRemove);
 	}
 
 	public DHTTransportValue onStore(DHTTransportContact sender,
-			HashWrapper key, StoreOutcome store_outcome) {
-		// TODO Auto-generated method stub
-		return null;
+			HashWrapper key, DHTTransportValue value) {
+		if (ActiveDHTDBValue.class.isInstance(value)) {
+			ActiveDHTDBValue activeValue = ActiveDHTDBValue.class.cast(value);
+			return activeValue.executeCallback("onStore", activeValue
+					.getDhtWrapper(control.getControl(), key));
+		} else {
+			return DHTDBValueFactory.create(value.getOriginator(), value, value
+					.isLocal());
+		}
+	}
+
+	public DHTTransportValue onUpdate(DHTTransportContact sender,
+			HashWrapper key, DHTTransportValue value,
+			DHTTransportValue updateValue) {
+		if (ActiveDHTDBValue.class.isInstance(value)) {
+			ActiveDHTDBValue activeValue = ActiveDHTDBValue.class.cast(value);
+			return activeValue.executeCallback("onUpdate", activeValue
+					.getDhtWrapper(control.getControl(), key), activeValue
+					.deserialize(updateValue.getValue()));
+		} else {
+			return DHTDBValueFactory.create(value.getOriginator(), value, value
+					.isLocal());
+		}
 	}
 
 	public void onTimer(Map<HashWrapper, List<ActiveDHTDBValue>> to_activate) {
@@ -71,10 +119,10 @@ public class ActiveCodeRunner {
 			}
 		}
 	}
-	
+
 	public void onTimer(HashWrapper key, ActiveDHTDBValue value) {
-		// TODO Auto-generated method stub
-		
+		value.executeCallback("onTimes", value.getDhtWrapper(control
+				.getControl(), key));
 	}
 
 }

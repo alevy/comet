@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
+import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 import com.aelitis.azureus.core.dht.DHTStorageBlock;
 import com.aelitis.azureus.core.dht.control.DHTControl;
@@ -251,6 +252,12 @@ class TestDHTControl implements DHTControl {
 		
 		
 	}
+	
+	public void putEncodedKey(byte[] key, String description,
+			DHTTransportValue value, long timeout, boolean original_mappings, DHTOperationAdapter adapter) {
+		
+		
+	}
 
 	public byte[] remove(byte[] key, String description,
 			DHTOperationListener listener) {
@@ -286,6 +293,13 @@ class TestDHTControl implements DHTControl {
 			boolean exhaustive,
 			boolean high_priority,
 			DHTOperationListener listener) { }
+
+	public void put(byte[] key, String description, DHTTransportValue value,
+			long timeout, boolean original_mappings,
+			DHTOperationAdapter listener) {
+		// TODO Auto-generated method stub
+		
+	}
 }
 
 class TestDB implements DHTDB {

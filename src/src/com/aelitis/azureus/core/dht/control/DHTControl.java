@@ -27,9 +27,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.router.DHTRouter;
+import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransport;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -208,4 +210,12 @@ DHTControl
 	public void
 	print(
 		boolean	full );
+
+	void putEncodedKey(byte[] encoded_key, String description,
+			DHTTransportValue value, long timeout, boolean original_mappings,
+			DHTOperationAdapter adapter);
+
+	public void put(byte[] key, String description,
+			DHTTransportValue value, long timeout,
+			boolean original_mappings, DHTOperationAdapter listener);
 }

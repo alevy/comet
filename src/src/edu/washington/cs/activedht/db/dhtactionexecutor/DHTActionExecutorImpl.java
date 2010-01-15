@@ -17,11 +17,11 @@ import edu.washington.cs.activedht.code.insecure.exceptions.ActiveCodeExecutionI
 import edu.washington.cs.activedht.code.insecure.exceptions.InitializationException;
 import edu.washington.cs.activedht.db.ActiveDHTDB;
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
-import edu.washington.cs.activedht.db.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ActiveDHTOperationListener;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTAction;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.ExecutableDHTActionFactory;
 import edu.washington.cs.activedht.db.dhtactionexecutor.exedhtaction.NoSuchDHTActionException;
+import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 
 public class DHTActionExecutorImpl implements DHTActionExecutor, Constants {

@@ -61,7 +61,7 @@ public class ActiveDHTStorageAdapter implements DHTStorageAdapter {
 	 * 
 	 * @return true if the listener was added, false otherwise.
 	 */
-	protected boolean registerStoreListener(HashWrapper key,
+	protected boolean registerStorListener(HashWrapper key,
                                             StoreListener listener,
                                             long wait_timeout) {
 		if (wait_timeout <= 0) {
