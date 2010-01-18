@@ -185,16 +185,17 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	/**
 	 * Thread-safe.
+	 * @param default_ip_address 
 	 */
 	// @Override
-	public void init() throws RuntimeException {
+	public void init(String default_ip_address) throws RuntimeException {
 		// final LogStat log_stat = LOG.logStat("DHTVanishBackend.init");
 
 		dht_lock.writeLock().lock();
 		if (isInitialized())
 			throw new RuntimeException("Already init");
 		try {
-			startDHTNode(current_udp_timeout);
+			startDHTNode(current_udp_timeout, default_ip_address);
 		} finally {
 			dht_lock.writeLock().unlock();
 		}
@@ -259,14 +260,15 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	/**
 	 * Must be called while holding the writelock on dht_lock.
+	 * @param defaultIpAddress 
 	 * 
 	 * @param bootstrapAddress
 	 * @throws VanishBackendException
 	 */
-	protected void startDHTNode(int udp_timeout) throws RuntimeException {
+	protected void startDHTNode(int udp_timeout, String defaultIpAddress) throws RuntimeException {
 		try {
 			transport = new ConfigurableTimeoutDHTTransport(
-					kDhtProtocolVersion, kDhtNetwork, false, null, null,
+					kDhtProtocolVersion, kDhtNetwork, false, defaultIpAddress, defaultIpAddress,
 					kDhtPort, 3, 1, udp_timeout, 0, 0, false, false,
 					kDhtLogger);
 			dht = DHTFactory.create(transport, kDhtProperties, kStorageManager,
@@ -457,7 +459,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 		if (booting) {
 			ActivePeer peer = new ActivePeer(port, bootstrap);
-			peer.init();
+			peer.init(null);
 			while (true) {
 				Thread.sleep(10000);
 			}
@@ -465,7 +467,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			port = new ServerSocket(port).getLocalPort();
 			ActivePeer peer = new ActivePeer(port, bootstrap, false);
 			System.out.println(port);
-			peer.init();
+			peer.init(null);
 			long timeout = 10000;
 			while (true) {
 				Thread.sleep(timeout);

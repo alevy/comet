@@ -1,51 +1,41 @@
-/**
- * 
- */
 package edu.washington.cs.activedht.expt;
 
-import java.io.File;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.concurrent.Semaphore;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
-import org.keplerproject.luajava.LuaState;
-import org.keplerproject.luajava.LuaStateFactory;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.lua.Serializer;
-
 /**
  * @author levya
  * 
  */
-public class Microbenchmark {
+public abstract class Microbenchmark {
 
 	private final ActivePeer peer;
-	private static final LuaState luaState = LuaStateFactory.newLuaState();
 	private int gets = 0;
 	private AEMonitor getsMon = new AEMonitor("Gets");
+	private boolean keepRunning = false;
 
 	private byte[] value;
+	private int numCurRequests;
 
-	public Microbenchmark(ActivePeer peer, String lua) {
+	public Microbenchmark(ActivePeer peer, String lua, int numCurRequests)
+			throws Exception {
 		this.peer = peer;
-		luaState.LdoString(lua);
-		value = new Serializer(luaState).serialize(luaState
-				.getLuaObject("activeobject"));
+		this.numCurRequests = numCurRequests;
+		value = generateValue(lua);
 	}
+
+	public abstract byte[] generateValue(String lua) throws Exception;
 
 	public void put(String key) throws InterruptedException {
 		final Semaphore sema = new Semaphore(1);
 		sema.acquire();
 		peer.put(key.getBytes(), value, new DHTOperationAdapter() {
-			public void wrote(DHTTransportContact contact,
-					DHTTransportValue value) {
-				System.out.println(contact.getString());
-			}
 			public void complete(boolean t) {
 				sema.release();
 			}
@@ -66,7 +56,7 @@ public class Microbenchmark {
 					DHTTransportValue value) {
 				read = true;
 			}
-
+			
 			public void complete(boolean t) {
 				if (read) {
 					getsMon.enter();
@@ -74,65 +64,44 @@ public class Microbenchmark {
 					getsMon.exit();
 				}
 				sema.release();
-				get(key, sema);
+				if (keepRunning) {
+					get(key, sema);
+				}
 			}
 		});
 	}
 
-	public static void main(String[] args) throws Exception {
-		final int numCurRequests = 10;
-		// File file = new File("/Users/levya/activedhtdata/bench_load_" +
-		// numCurRequests + ".csv");
-		// file.createNewFile();
-		// final PrintStream out = System.out;//new PrintStream(file);
-
-		ActivePeer bootstrap = new ActivePeer(48386,
-				"marykate.cs.washington.edu:48386", false);
-		bootstrap.init();
-		Thread.sleep(5000);
-		ActivePeer peer = new ActivePeer(1234,
-				"marykate.cs.washington.edu:48386", false);
-		peer.init();
-		Thread.sleep(5000);
-		final Microbenchmark microbenchmark = new Microbenchmark(peer,
-				"activeobject = {onGet = \"hello\"}");
+	public void run(final Semaphore sema, final int observations, final PrintStream out)
+			throws InterruptedException {
+		keepRunning = true;
 		for (int i = 0; i < numCurRequests; ++i) {
 			String key = "hello" + i;
-			microbenchmark.put(key);
+			put(key);
 		}
-		final Semaphore sema = new Semaphore(numCurRequests);
 		for (int j = 0; j < numCurRequests; ++j) {
 			String key = "hello" + j;
-			microbenchmark.get(key, sema);
+			get(key, sema);
 		}
-
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					// Thread.sleep(5000);
-					System.out.println("Benchmarking...");
-					microbenchmark.getsMon.enter();
-					microbenchmark.gets = 0;
-					microbenchmark.getsMon.exit();
-					for (int i = 0; i < 30; ++i) {
+					Thread.sleep(5000);
+					getsMon.enter();
+					gets = 0;
+					getsMon.exit();
+					for (int i = 0; i < observations; ++i) {
 						Thread.sleep(1000);
-						microbenchmark.getsMon.enter();
-						System.out.println(numCurRequests + ","
-								+ (numCurRequests - sema.availablePermits())
-								+ "," + microbenchmark.gets);
-						microbenchmark.gets = 0;
-						microbenchmark.getsMon.exit();
+						getsMon.enter();
+						out.println(numCurRequests + "," + gets);
+						gets = 0;
+						getsMon.exit();
 					}
+					keepRunning = false;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}).start();
-		sema.acquire(numCurRequests);
-
-		peer.stop();
-		bootstrap.stop();
-		// out.close();
 	}
 
 }
