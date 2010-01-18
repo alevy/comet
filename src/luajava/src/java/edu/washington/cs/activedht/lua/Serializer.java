@@ -1,7 +1,5 @@
 package edu.washington.cs.activedht.lua;
 
-import java.util.Arrays;
-
 import org.keplerproject.luajava.CPtr;
 import org.keplerproject.luajava.LuaObject;
 import org.keplerproject.luajava.LuaState;

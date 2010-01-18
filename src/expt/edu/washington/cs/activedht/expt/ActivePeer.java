@@ -267,7 +267,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		try {
 			transport = new ConfigurableTimeoutDHTTransport(
 					kDhtProtocolVersion, kDhtNetwork, false, null, null,
-					kDhtPort, 3, 1, udp_timeout, 25, 25, false, false,
+					kDhtPort, 3, 1, udp_timeout, 0, 0, false, false,
 					kDhtLogger);
 			dht = DHTFactory.create(transport, kDhtProperties, kStorageManager,
 					this, kDhtLogger);
