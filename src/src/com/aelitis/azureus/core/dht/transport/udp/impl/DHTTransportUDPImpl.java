@@ -314,7 +314,7 @@ DHTTransportUDPImpl
 		String	default_ip = _default_ip==null?(v6?"::1":"127.0.0.1"):_default_ip;
 				
 		getExternalAddress( default_ip, logger );
-		
+		external_address = "localhost";
 		InetSocketAddress	address = new InetSocketAddress( external_address, port );
 
 		logger.log( "Initial external address: " + address );

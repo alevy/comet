@@ -5,25 +5,25 @@ LUA_LIBDIR= /usr/local/lib
 LUA_INCLUDES= /usr/local/include
 JDK=$(JAVA_HOME)
 # For Mac OS, comment the above line and uncomment this one
-JDK=/System/Library/Frameworks/JavaVM.framework/Versions/1.5/Home/
+#JDK=/System/Library/Frameworks/JavaVM.framework/Versions/1.5/Home/
 
 # Full path to Lua static library
 LIB_LUA=$(LUA_LIBDIR)/liblua.a
 
 #Linux/BSD
-#LIB_EXT= .so
+LIB_EXT= .so
 #Mac OS
-LIB_EXT= .jnilib
+#LIB_EXT= .jnilib
 
 LIB_PREFIX= lib
 
 #Linux/BSD
-#LIB_OPTION= -shared
+LIB_OPTION= -shared
 #Mac OS
-LIB_OPTION= -dynamiclib -all_load
+#LIB_OPTION= -dynamiclib -all_load
 
 ## On FreeBSD and Mac OS systems, the following line should be commented
-#DLLIB= -ldl
+DLLIB= -ldl
 
 WARN= -O2 -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings
 INCS= -I$(JDK)/include -I$(JDK)/include/linux -I$(LUA_INCLUDES)
