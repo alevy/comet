@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.keplerproject.luajava.LuaException;
@@ -26,6 +28,11 @@ import edu.washington.cs.activedht.lua.Serializer;
  */
 public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 
+	private static final Logger logger = Logger.getLogger(LuaActiveDHTDBValue.class.getName());
+	static {
+		logger.setLevel(Level.OFF);
+	}
+	
 	private final Set<String> neighbors = new HashSet<String>();
 	private final Queue<Runnable> postActions = new LinkedBlockingQueue<Runnable>();
 
@@ -74,6 +81,7 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	 */
 	public synchronized ActiveDHTDBValue executeCallback(String callback,
 			final DhtWrapper dhtWrapper, Object... args) {
+		logger.info("Entering executeCallback");
 		LuaState luaState = luaObject.getLuaState();
 		luaState.pushJavaObject(dhtWrapper);
 		luaState.setGlobal("dht");
@@ -108,7 +116,7 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 				postActions.poll().run();
 			}
 		}
-
+		logger.info("Exiting executeCallback");
 		return result;
 	}
 
@@ -141,11 +149,12 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 				getString(), version, originator, local, flags);
 	}
 
-	public String getString() {
-		return "LuaActiveObject: " + luaObject.toString();
+	public synchronized String getString() {
+		logger.info("getString");
+		return "LuaActiveObject";
 	}
 
-	public byte[] serialize(Object object) {
+	public synchronized byte[] serialize(Object object) {
 		LuaObject luaObject = null;
 		if (LuaObject.class.isInstance(object)) {
 			luaObject = LuaObject.class.cast(object);
@@ -164,11 +173,12 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 		return serializer.serialize(luaObject);
 	}
 
-	public Object deserialize(byte[] value) {
+	public synchronized Object deserialize(byte[] value) {
 		return new Serializer(luaObject.getLuaState()).deserialize(value);
 	}
 
-	public byte[] getValue() {
+	public synchronized byte[] getValue() {
+		logger.info("getValue");
 		return serialize(luaObject);
 	}
 
@@ -215,5 +225,9 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 					postActions);
 		}
 		return dhtWrapper;
+	}
+
+	public LuaObject getLuaObject() {
+		return luaObject;
 	}
 }
