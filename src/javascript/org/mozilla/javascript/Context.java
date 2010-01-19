@@ -1971,9 +1971,13 @@ public class Context
         classShutter = shutter;
     }
 
-    public final ClassShutter getClassShutter()
+    final ClassShutter getClassShutter()
     {
         return classShutter;
+    }
+    
+    public final boolean hasClassShutter() {
+    	return classShutter != null;
     }
 
     /**

@@ -84,8 +84,8 @@ public class JSActiveDHTDBValue implements ActiveDHTDBValue {
 
 	private void initContext() {
 		context.setOptimizationLevel(-1);
-		if (context.getClassShutter() == null) {
-			context.setClassShutter(new ActiveDhtClassShutter(this));
+		if (!context.hasClassShutter()) {
+			context.setClassShutter(new ActiveDhtClassShutter());
 		}
 	}
 
@@ -109,6 +109,7 @@ public class JSActiveDHTDBValue implements ActiveDHTDBValue {
 				}
 			}
 		} catch (RhinoException e) {
+			e.printStackTrace();
 			result = null;
 		}
 		
@@ -136,10 +137,6 @@ public class JSActiveDHTDBValue implements ActiveDHTDBValue {
 		this.dhtWrapper = dhtWrapper;
 	}
 
-	public DhtWrapper getDhtWrapper() {
-		return dhtWrapper;
-	}
-	
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
 		if (dhtWrapper == null) {
 			dhtWrapper = new DhtWrapper(control, key, this, neighbors,
