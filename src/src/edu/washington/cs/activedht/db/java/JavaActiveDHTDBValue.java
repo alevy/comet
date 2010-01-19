@@ -10,7 +10,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.code.insecure.dhtaction.DHTActionMap;
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
-import edu.washington.cs.activedht.db.DhtWrapper;
+import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
 
 /**
  * The implementation of a value that has the potential of being either

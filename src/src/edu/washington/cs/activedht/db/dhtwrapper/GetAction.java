@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.washington.cs.activedht.db.lua;
+package edu.washington.cs.activedht.db.dhtwrapper;
 
 import java.util.HashSet;
 import java.util.Set;

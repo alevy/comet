@@ -1,9 +1,9 @@
 package edu.washington.cs.activedht.db.lua;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,7 +19,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
-import edu.washington.cs.activedht.db.DhtWrapper;
+import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
 import edu.washington.cs.activedht.lua.Serializer;
 
 /**
@@ -34,7 +34,7 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	}
 	
 	private final Set<String> neighbors = new HashSet<String>();
-	private final Queue<Runnable> postActions = new LinkedBlockingQueue<Runnable>();
+	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
 	private final LuaObject luaObject;
 	private long creationTime;
@@ -221,7 +221,7 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
 		if (dhtWrapper == null) {
-			dhtWrapper = new LuaDhtWrapper(control, key, this, neighbors,
+			dhtWrapper = new DhtWrapper(control, key, this, neighbors,
 					postActions);
 		}
 		return dhtWrapper;

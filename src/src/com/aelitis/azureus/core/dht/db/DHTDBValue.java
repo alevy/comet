@@ -34,6 +34,8 @@ public interface
 DHTDBValue 
 	extends DHTTransportValue
 {
+	public static final byte[] ZERO_LENGTH_BYTE_ARRAY = new byte[] {};
+	
 	public DHTTransportValue
 	getValueForRelay(
 		DHTTransportContact	new_originator );

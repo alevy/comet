@@ -29,11 +29,11 @@ public class JSMicrobenchmark extends Microbenchmark {
 
 	@Override
 	public byte[] generateValue(String js) throws IOException {
-		context.evaluateString(scope, js, "<cmd>", 1, null);
+		Object obj = context.evaluateString(scope, js, "", 1, null);
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		ScriptableOutputStream sos = new ScriptableOutputStream(os, scope);
 		sos.excludeStandardObjectNames();
-		sos.writeObject(scope.get("activeobject", scope));
+		sos.writeObject(obj);
 		return os.toByteArray();
 	}
 
@@ -49,16 +49,17 @@ public class JSMicrobenchmark extends Microbenchmark {
 		}
 
 		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false);
+		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false);
+		JSMicrobenchmark microbenchmark = new JSMicrobenchmark(
+				peer,
+				"activeobject = {onGet: function(self) { return \"hello\" }}",
+				numObjects);
+		
 		bootstrap.init("localhost");
 		Thread.sleep(5000);
-		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false);
 		peer.init("localhost");
 		Thread.sleep(5000);
 
-		JSMicrobenchmark microbenchmark = new JSMicrobenchmark(
-				peer,
-				"activeobject = { onGet: function() { return \"hello\" } }",
-				numObjects);
 		Semaphore sema = new Semaphore(numObjects);
 		microbenchmark.run(sema, 100, out);
 		sema.acquire(numObjects);
