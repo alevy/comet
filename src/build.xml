@@ -10,6 +10,7 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 
    <property name="root.dir" value="." />  <!-- REMINDER: this needs to be "." for public source -->
    <property name="src.dir" value="src" />
+   <property name="rhino.dir" value="javascript" />
    <property name="test.dir" value="test" />
    <property name="testdata.dir" value="testdata" />
    <property name="apps.dir" value="apps/activeobjects" />
@@ -45,7 +46,9 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
          <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
       </path>
    
-      <javac srcdir="${root.dir}/${src.dir}" destdir="${root.dir}/${build.dir}" nowarn="yes" source="1.5" target="1.5" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+      <javac destdir="${root.dir}/${build.dir}" nowarn="yes" source="1.5" target="1.5" includeAntRuntime="no" debug="true" debuglevel="lines,vars,source" >
+         <src path="${root.dir}/${src.dir}" />
+         <src path="${root.dir}/${rhino.dir}" />
          <classpath refid="libs.classpath" />
       </javac>
    </target>
