@@ -327,11 +327,11 @@ public class ContextFactory
 
         if (isDom3Present()) {
             return edu.washington.cs.rhino.javascript.xml.XMLLib.Factory.create(
-                "org.mozilla.javascript.xmlimpl.XMLLibImpl"
+                "edu.washington.cs.rhino.javascript.xmlimpl.XMLLibImpl"
             );
         } else if (Kit.classOrNull("org.apache.xmlbeans.XmlCursor") != null) {
             return edu.washington.cs.rhino.javascript.xml.XMLLib.Factory.create(
-                "org.mozilla.javascript.xml.impl.xmlbeans.XMLLibImpl"
+                "edu.washington.cs.rhino.javascript.xml.impl.xmlbeans.XMLLibImpl"
             );
         } else {
             return null;

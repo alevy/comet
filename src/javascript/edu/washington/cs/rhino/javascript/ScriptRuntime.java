@@ -128,30 +128,30 @@ public class ScriptRuntime {
 
     public final static Class<?>
         ContextClass
-            = Kit.classOrNull("org.mozilla.javascript.Context"),
+            = Kit.classOrNull("edu.washington.cs.rhino.javascript.Context"),
         ContextFactoryClass
-            = Kit.classOrNull("org.mozilla.javascript.ContextFactory"),
+            = Kit.classOrNull("edu.washington.cs.rhino.javascript.ContextFactory"),
         FunctionClass
-            = Kit.classOrNull("org.mozilla.javascript.Function"),
+            = Kit.classOrNull("edu.washington.cs.rhino.javascript.Function"),
         ScriptableObjectClass
-            = Kit.classOrNull("org.mozilla.javascript.ScriptableObject");
+            = Kit.classOrNull("edu.washington.cs.rhino.javascript.ScriptableObject");
     public static final Class<Scriptable> ScriptableClass =
         Scriptable.class;
 
 
     private static final String[] lazilyNames = {
-        "RegExp",        "org.mozilla.javascript.regexp.NativeRegExp",
-        "Packages",      "org.mozilla.javascript.NativeJavaTopPackage",
-        "java",          "org.mozilla.javascript.NativeJavaTopPackage",
-        "javax",         "org.mozilla.javascript.NativeJavaTopPackage",
-        "org",           "org.mozilla.javascript.NativeJavaTopPackage",
-        "com",           "org.mozilla.javascript.NativeJavaTopPackage",
-        "edu",           "org.mozilla.javascript.NativeJavaTopPackage",
-        "net",           "org.mozilla.javascript.NativeJavaTopPackage",
-        "getClass",      "org.mozilla.javascript.NativeJavaTopPackage",
-        "JavaAdapter",   "org.mozilla.javascript.JavaAdapter",
-        "JavaImporter",  "org.mozilla.javascript.ImporterTopLevel",
-        "Continuation",  "org.mozilla.javascript.NativeContinuation",
+        "RegExp",        "edu.washington.cs.rhino.javascript.regexp.NativeRegExp",
+        "Packages",      "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "java",          "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "javax",         "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "org",           "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "com",           "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "edu",           "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "net",           "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "getClass",      "edu.washington.cs.rhino.javascript.NativeJavaTopPackage",
+        "JavaAdapter",   "edu.washington.cs.rhino.javascript.JavaAdapter",
+        "JavaImporter",  "edu.washington.cs.rhino.javascript.ImporterTopLevel",
+        "Continuation",  "edu.washington.cs.rhino.javascript.NativeContinuation",
         //	TODO	Grotesque hack using literal string (xml) just to minimize
 		//			changes for now
         "XML",           "(xml)",
@@ -3020,7 +3020,7 @@ public class ScriptRuntime {
     // ------------------
 
     public static ScriptableObject getGlobal(Context cx) {
-        final String GLOBAL_CLASS = "org.mozilla.javascript.tools.shell.Global";
+        final String GLOBAL_CLASS = "edu.washington.cs.rhino.javascript.tools.shell.Global";
         Class<?> globalClass = Kit.classOrNull(GLOBAL_CLASS);
         if (globalClass != null) {
             try {
@@ -3599,7 +3599,7 @@ public class ScriptRuntime {
     private static class DefaultMessageProvider implements MessageProvider {
         public String getMessage(String messageId, Object[] arguments) {
             final String defaultResource
-                = "org.mozilla.javascript.resources.Messages";
+                = "edu.washington.cs.rhino.javascript.resources.Messages";
 
             Context cx = Context.getCurrentContext();
             Locale locale = cx != null ? cx.getLocale() : Locale.getDefault();

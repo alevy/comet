@@ -527,11 +527,11 @@ public class Context
     public static void addContextListener(ContextListener listener)
     {
         // Special workaround for the debugger
-        String DBG = "org.mozilla.javascript.tools.debugger.Main";
+        String DBG = "edu.washington.cs.rhino.javascript.tools.debugger.Main";
         if (DBG.equals(listener.getClass().getName())) {
             Class<?> cl = listener.getClass();
             Class<?> factoryClass = Kit.classOrNull(
-                "org.mozilla.javascript.ContextFactory");
+                "edu.washington.cs.rhino.javascript.ContextFactory");
             Class<?>[] sig = { factoryClass };
             Object[] args = { ContextFactory.getGlobal() };
             try {
@@ -2426,9 +2426,9 @@ public class Context
     }
 
     private static Class<?> codegenClass = Kit.classOrNull(
-                             "org.mozilla.javascript.optimizer.Codegen");
+                             "edu.washington.cs.rhino.javascript.optimizer.Codegen");
     private static Class<?> interpreterClass = Kit.classOrNull(
-                             "org.mozilla.javascript.Interpreter");
+                             "edu.washington.cs.rhino.javascript.Interpreter");
 
     private Evaluator createCompiler()
     {
@@ -2504,7 +2504,7 @@ public class Context
     {
         if (regExpProxy == null) {
             Class<?> cl = Kit.classOrNull(
-                          "org.mozilla.javascript.regexp.RegExpImpl");
+                          "edu.washington.cs.rhino.javascript.regexp.RegExpImpl");
             if (cl != null) {
                 regExpProxy = (RegExpProxy)Kit.newInstanceOrNull(cl);
             }

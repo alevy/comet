@@ -88,7 +88,7 @@ public class Codegen implements Evaluator
         synchronized (globalLock) {
             serial = ++globalSerialClassCounter;
         }
-        String mainClassName = "org.mozilla.javascript.gen.c"+serial;
+        String mainClassName = "edu.washington.cs.rhino.javascript.gen.c"+serial;
 
         byte[] mainClassBytes = compileToClassFile(compilerEnv, mainClassName,
                                                    tree, encodedSource,
@@ -1281,10 +1281,10 @@ public class Codegen implements Evaluator
      }
 
      static final String DEFAULT_MAIN_METHOD_CLASS
-        = "org.mozilla.javascript.optimizer.OptRuntime";
+        = "edu.washington.cs.rhino.javascript.optimizer.OptRuntime";
 
     private static final String SUPER_CLASS_NAME
-        = "org.mozilla.javascript.NativeFunction";
+        = "edu.washington.cs.rhino.javascript.NativeFunction";
 
     static final String DIRECT_CALL_PARENT_FIELD = "_dcp";
     private static final String ID_FIELD_NAME = "_id";
@@ -4850,7 +4850,7 @@ Else pass the JS object in the aReg and 0.0 in the dReg.
                                         String methodSignature)
     {
         cfw.addInvoke(ByteCode.INVOKESTATIC,
-                      "org.mozilla.javascript.ScriptRuntime",
+                      "edu.washington.cs.rhino.javascript.ScriptRuntime",
                       methodName,
                       methodSignature);
     }
