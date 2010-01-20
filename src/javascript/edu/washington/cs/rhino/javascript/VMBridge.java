@@ -51,13 +51,13 @@ public abstract class VMBridge
     private static VMBridge makeInstance()
     {
         String[] classNames = {
-            "org.mozilla.javascript.VMBridge_custom",
-            "org.mozilla.javascript.jdk15.VMBridge_jdk15",
-            "org.mozilla.javascript.jdk13.VMBridge_jdk13",
-            "org.mozilla.javascript.jdk11.VMBridge_jdk11",
+            ".VMBridge_custom",
+            ".jdk15.VMBridge_jdk15",
+            ".jdk13.VMBridge_jdk13",
+            ".jdk11.VMBridge_jdk11",
         };
         for (int i = 0; i != classNames.length; ++i) {
-            String className = classNames[i];
+            String className = VMBridge.class.getPackage().getName() + classNames[i];
             Class<?> cl = Kit.classOrNull(className);
             if (cl != null) {
                 VMBridge bridge = (VMBridge)Kit.newInstanceOrNull(cl);
