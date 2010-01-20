@@ -5,7 +5,7 @@ package edu.washington.cs.activedht.db.js;
 
 import java.util.Collections;
 
-import org.mozilla.javascript.ClassShutter;
+import edu.washington.cs.rhino.javascript.ClassShutter;
 
 public class ActiveDhtClassShutter implements ClassShutter {
 	

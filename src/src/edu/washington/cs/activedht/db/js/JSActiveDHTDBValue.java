@@ -9,14 +9,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.RhinoException;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.serialize.ScriptableInputStream;
-import org.mozilla.javascript.serialize.ScriptableOutputStream;
 
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
@@ -26,6 +18,14 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
+import edu.washington.cs.rhino.javascript.Context;
+import edu.washington.cs.rhino.javascript.Function;
+import edu.washington.cs.rhino.javascript.NativeJavaObject;
+import edu.washington.cs.rhino.javascript.RhinoException;
+import edu.washington.cs.rhino.javascript.Scriptable;
+import edu.washington.cs.rhino.javascript.ScriptableObject;
+import edu.washington.cs.rhino.javascript.serialize.ScriptableInputStream;
+import edu.washington.cs.rhino.javascript.serialize.ScriptableOutputStream;
 
 /**
  * @author alevy

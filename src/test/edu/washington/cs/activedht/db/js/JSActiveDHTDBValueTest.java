@@ -8,13 +8,13 @@ import java.util.HashSet;
 
 import junit.framework.TestCase;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.serialize.ScriptableInputStream;
-import org.mozilla.javascript.serialize.ScriptableOutputStream;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
+import edu.washington.cs.rhino.javascript.Context;
+import edu.washington.cs.rhino.javascript.ScriptableObject;
+import edu.washington.cs.rhino.javascript.serialize.ScriptableInputStream;
+import edu.washington.cs.rhino.javascript.serialize.ScriptableOutputStream;
 
 /**
  * @author levya
