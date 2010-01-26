@@ -14,6 +14,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
+import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
 import edu.washington.cs.activedht.db.js.JSActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 
@@ -45,12 +46,13 @@ public class ActiveDHTInitializer implements Constants {
 			public DHTDB create(DHTStorageAdapter adapter,
 					int original_republish_interval,
 					int cache_republish_interval, DHTLogger logger) {
-				ActiveDHTDBImpl dht_db = new ActiveDHTDBImpl(
+				/*ActiveDHTDBImpl dht_db = new ActiveDHTDBImpl(
 						new ActiveDHTStorageAdapter(adapter),
 						original_republish_interval, cache_republish_interval,
 						logger);
 				dht_db.init(); // initialize the DB.
-				return dht_db;
+				return dht_db;*/
+				return new ActiveDB(adapter, original_republish_interval, cache_republish_interval, logger);
 			}
 		});
 
