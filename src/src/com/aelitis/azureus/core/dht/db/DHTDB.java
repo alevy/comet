@@ -54,7 +54,7 @@ DHTDB
 		 * @return
 		 */
 	
-	public DHTDBValue
+	public DHTTransportValue
 	store(
 		HashWrapper		key,
 		byte[]			value,
@@ -81,7 +81,7 @@ DHTDB
 		 * @return
 		 */
 	
-	public DHTDBValue
+	public DHTTransportValue
 	get(
 		HashWrapper		key );
 	

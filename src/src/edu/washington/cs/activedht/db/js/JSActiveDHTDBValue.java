@@ -167,7 +167,6 @@ public class JSActiveDHTDBValue implements ActiveDHTDBValue {
 		return this.sender;
 	}
 
-	@Override
 	public long getStoreTime() {
 		return this.storeTime;
 	}

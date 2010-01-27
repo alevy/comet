@@ -16,6 +16,7 @@ import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
 import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
 import edu.washington.cs.activedht.db.js.JSActiveDHTDBValue;
+import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 
 /**
@@ -61,14 +62,14 @@ public class ActiveDHTInitializer implements Constants {
 			public DHTDBValue create(long _creation_time, byte[] _value,
 					int _version, DHTTransportContact _originator,
 					DHTTransportContact _sender, boolean _local, int _flags) {
-				return new JSActiveDHTDBValue(_value, _creation_time, _version,
+				return new LuaActiveDHTDBValue(_creation_time, _value, _version,
 						_originator, _sender, _local, _flags);
 			}
 
 			public DHTDBValue create(DHTTransportContact sender,
 					DHTTransportValue other, boolean local) {
-				return new JSActiveDHTDBValue(other.getValue(), other
-						.getCreationTime(), other.getVersion(), other
+				return new LuaActiveDHTDBValue(other
+						.getCreationTime(), other.getValue(), other.getVersion(), other
 						.getOriginator(), sender, local, other.getFlags());
 			}
 		});

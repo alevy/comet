@@ -44,8 +44,9 @@ public class ActiveDB implements DHTDB {
 		this.codeRunner = new ActiveCodeRunner(this);
 	}
 
-	public ActiveDHTDBValue get(HashWrapper key) {
-		return get(key, control.getTransport().getLocalContact());
+	public DHTTransportValue get(HashWrapper key) {
+		ActiveDHTDBValue result = get(key, control.getTransport().getLocalContact());
+		return result.getValueForRelay(result.getOriginator());
 	}
 	
 	private ActiveDHTDBValue get(HashWrapper key, DHTTransportContact reader) {
@@ -90,7 +91,7 @@ public class ActiveDB implements DHTDB {
 		this.control = control;
 	}
 
-	public DHTDBValue store(HashWrapper key, byte[] value, byte flags) {
+	public DHTTransportValue store(HashWrapper key, byte[] value, byte flags) {
 		DHTTransportContact localContact = control.getTransport()
 				.getLocalContact();
 		ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory
@@ -98,7 +99,7 @@ public class ActiveDB implements DHTDB {
 						.getNextValueVersions(1), localContact, localContact,
 						true, flags);
 		store(localContact, key, new DHTTransportValue[] { activeValue });
-		return activeValue;
+		return activeValue.getValueForRelay(localContact);
 	}
 
 	public byte store(DHTTransportContact sender, HashWrapper key,

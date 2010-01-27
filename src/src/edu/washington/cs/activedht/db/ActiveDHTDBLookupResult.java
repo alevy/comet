@@ -9,13 +9,13 @@ import com.aelitis.azureus.core.dht.db.DHTDBValue;
 
 class ActiveDHTDBLookupResult implements DHTDBLookupResult {
 
-	private final ActiveDHTDBValue[] values;
+	private final DHTDBValue[] values;
 
-	public ActiveDHTDBLookupResult(ActiveDHTDBValue value) {
+	public ActiveDHTDBLookupResult(DHTDBValue value) {
 		if (value != null) {
-			this.values = new ActiveDHTDBValue[] { value };
+			this.values = new DHTDBValue[] { value };
 		} else {
-			this.values = new ActiveDHTDBValue[] {};
+			this.values = new DHTDBValue[] {};
 		}
 	}
 

@@ -796,7 +796,7 @@ DHTControlImpl
 			DHTLog.log( "put for " + DHTLog.getString( encoded_key ));
 		}
 		
-		DHTDBValue	value = database.store( new HashWrapper( encoded_key ), _value, _flags );
+		DHTTransportValue	value = database.store( new HashWrapper( encoded_key ), _value, _flags );
 		
 		put( 	external_put_pool,
 				_high_priority,
@@ -1295,7 +1295,7 @@ DHTControlImpl
 			DHTLog.log( "getLocalValue for " + DHTLog.getString( encoded_key ));
 		}
 
-		DHTDBValue	res = database.get( new HashWrapper( encoded_key ));
+		DHTTransportValue	res = database.get( new HashWrapper( encoded_key ));
 	
 		if ( res == null ){
 			
