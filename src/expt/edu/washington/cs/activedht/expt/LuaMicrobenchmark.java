@@ -37,7 +37,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 
 		int numCurRequests = 10;
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
-				"activeobject = {onGet = \"hello\"}", numCurRequests);
+				"activeobject = {onGet = function(self) return \"hello\" end}", numCurRequests);
 
 		Semaphore sema = new Semaphore(numCurRequests);
 		microbenchmark.run(sema, 100, System.out);

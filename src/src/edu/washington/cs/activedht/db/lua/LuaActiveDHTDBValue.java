@@ -28,15 +28,18 @@ import edu.washington.cs.activedht.lua.Serializer;
  */
 public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 
-	private static final Logger logger = Logger.getLogger(LuaActiveDHTDBValue.class.getName());
+	private static final Logger logger = Logger
+			.getLogger(LuaActiveDHTDBValue.class.getName());
 	static {
 		logger.setLevel(Level.OFF);
 	}
-	
+
 	private final Set<String> neighbors = new HashSet<String>();
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
-	private final LuaObject luaObject;
+	private LuaState luaState;
+	private Serializer serializer;
+
 	private long creationTime;
 	private final int version;
 	private DHTTransportContact originator;
@@ -46,30 +49,26 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	private long storeTime;
 	private DhtWrapper dhtWrapper;
 
+	private byte[] value;
+	private LuaObject luaObject;
+	private boolean luaObjectChanged = false;
+
 	public LuaActiveDHTDBValue(DHTTransportContact sender,
 			DHTTransportValue other, boolean local) {
-		this(new Serializer(LuaStateFactory.newLuaState()).deserialize(other
-				.getValue()), other.getCreationTime(), other.getVersion(),
+		this(other.getCreationTime(), other.getValue(), other.getVersion(),
 				other.getOriginator(), sender, local, other.getFlags());
 	}
 
-	public LuaActiveDHTDBValue(LuaObject luaObject, long creationTime,
-			int version, DHTTransportContact originator,
-			DHTTransportContact sender, boolean local, int flags) {
-		this.luaObject = luaObject;
+	public LuaActiveDHTDBValue(long creationTime, byte[] value, int version,
+			DHTTransportContact originator, DHTTransportContact sender,
+			boolean local, int flags) {
+		this.value = value;
 		this.creationTime = creationTime;
 		this.version = version;
 		this.originator = originator;
 		this.sender = sender;
 		this.local = local;
 		this.flags = flags;
-	}
-
-	public LuaActiveDHTDBValue(long creationTime, byte[] value, int version,
-			DHTTransportContact originator, DHTTransportContact sender,
-			boolean local, int flags) {
-		this(new Serializer(LuaStateFactory.newLuaState()).deserialize(value),
-				creationTime, version, originator, sender, local, flags);
 	}
 
 	/**
@@ -81,34 +80,41 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	 */
 	public synchronized ActiveDHTDBValue executeCallback(String callback,
 			final DhtWrapper dhtWrapper, Object... args) {
-		logger.info("Entering executeCallback");
-		LuaState luaState = luaObject.getLuaState();
-		luaState.pushJavaObject(dhtWrapper);
-		luaState.setGlobal("dht");
 		ActiveDHTDBValue result = this;
-		Object[] functionArgs = new Object[args.length + 1];
-		functionArgs[0] = luaObject;
-		for (int i = 1; i < functionArgs.length; ++i) {
-			functionArgs[i] = args[i - 1];
-		}
-		try {
-			if (luaObject.isTable()) {
-				LuaObject callbackFunction = luaObject.getField(callback);
-				if (callbackFunction.isFunction()) {
-					LuaObject returnValue = (LuaObject) callbackFunction
-							.call(functionArgs);
-					if (returnValue.isNil()) {
-						result = null;
-					} else {
-						result = new LuaActiveDHTDBValue(returnValue,
-								getCreationTime(), getVersion(),
-								getOriginator(), getSender(), isLocal(),
-								getFlags());
+		LuaState state = getLuaState();
+		synchronized (state) {
+			logger.info("Entering executeCallback");
+			if (luaObject == null) {
+				luaObject = getSerializer().deserialize(value);
+			}
+
+			state.pushJavaObject(dhtWrapper);
+			state.setGlobal("dht");
+			Object[] functionArgs = new Object[args.length + 1];
+			functionArgs[0] = luaObject;
+			for (int i = 1; i < functionArgs.length; ++i) {
+				functionArgs[i] = args[i - 1];
+			}
+			try {
+				if (luaObject.isTable()) {
+					LuaObject callbackFunction = luaObject.getField(callback);
+					if (callbackFunction.isFunction()) {
+						LuaObject returnValue = (LuaObject) callbackFunction
+								.call(functionArgs);
+						luaObjectChanged = true;
+						if (returnValue.isNil()) {
+							result = null;
+						} else {
+							result = new LuaActiveDHTDBValue(getCreationTime(),
+									getSerializer().serialize(returnValue),
+									getVersion(), getOriginator(), getSender(),
+									isLocal(), getFlags());
+						}
 					}
 				}
+			} catch (LuaException e) {
+				result = null;
 			}
-		} catch (LuaException e) {
-			result = null;
 		}
 
 		synchronized (postActions) {
@@ -159,27 +165,32 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 		if (LuaObject.class.isInstance(object)) {
 			luaObject = LuaObject.class.cast(object);
 		} else {
-			LuaState luaState = this.luaObject.getLuaState();
+			LuaState state = getLuaState();
 			try {
-				luaState.pushObjectValue(object);
+				state.pushObjectValue(object);
 			} catch (LuaException e) {
 				e.printStackTrace();
 				return null;
 			}
-			luaObject = luaState.getLuaObject(-1);
-			luaState.pop(1);
+			luaObject = state.getLuaObject(-1);
+			state.pop(1);
 		}
-		Serializer serializer = new Serializer(luaObject.getLuaState());
-		return serializer.serialize(luaObject);
+		return getSerializer().serialize(luaObject);
 	}
 
 	public synchronized Object deserialize(byte[] value) {
-		return new Serializer(luaObject.getLuaState()).deserialize(value);
+		return getSerializer().deserialize(value);
 	}
 
 	public synchronized byte[] getValue() {
 		logger.info("getValue");
-		return serialize(luaObject);
+		if (luaObjectChanged) {
+			synchronized (getLuaState()) {
+				value = getSerializer().serialize(luaObject);
+			}
+			luaObjectChanged = false;
+		}
+		return value;
 	}
 
 	@Override
@@ -229,5 +240,19 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 
 	public LuaObject getLuaObject() {
 		return luaObject;
+	}
+
+	private synchronized LuaState getLuaState() {
+		if (luaState == null) {
+			luaState = LuaStateFactory.newLuaState();
+		}
+		return luaState;
+	}
+
+	private synchronized Serializer getSerializer() {
+		if (serializer == null) {
+			serializer = new Serializer(getLuaState());
+		}
+		return serializer;
 	}
 }
