@@ -31,7 +31,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 
 	public static void main(String[] args) throws Exception {
 		int numObjects = 100;
-		int observations = 100;
+		int observations = 12;
 		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
