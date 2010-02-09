@@ -1,14 +1,17 @@
 #!/usr/bin/env ruby
 
-include 'arrays.rb'
+$:.unshift File.dirname(__FILE__)
+
+require 'arrays'
 
 hash = Hash.new
-while(line = gets.split(","))
-  hash[line[0]] ||= []
-  hash[line[0]] << line[1].to_i
+while(line = gets)
+  k,v = line.split(',')
+  hash[k.to_i] ||= []
+  hash[k.to_i] << v.to_i
 end
 
-hash.each |k,v| do
+hash.sort.each do |k,v|
   puts "#{k},#{v.mean},#{v.stdev}"
 end
 
