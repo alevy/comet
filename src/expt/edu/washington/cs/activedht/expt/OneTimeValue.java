@@ -114,8 +114,7 @@ public class OneTimeValue {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), "213.186.46.164:6881",
-				false);
+		ActivePeer peer = new ActivePeer(Integer.parseInt(args[0]), "213.186.46.164:6881");
 		peer.init(null);
 		Thread.sleep(120000);
 		for (int i = 0; i < 20; ++i) {

@@ -22,6 +22,7 @@ import edu.washington.cs.activedht.code.insecure.candefine.TimeoutActiveObject;
 import edu.washington.cs.activedht.code.insecure.io.ClassObjectOutputStream;
 import edu.washington.cs.activedht.db.coderunner.InvalidActiveObjectException;
 import edu.washington.cs.activedht.db.java.JavaActiveDHTDBValue;
+import edu.washington.cs.activedht.expt.ActivePeer;
 
 /**
  * USAGE:
@@ -230,7 +231,7 @@ public class ActiveDHTTestShell extends Test {
 	
 	private static void doMain(int num_dhts) {
         // First, initialize the active engine of the DHT.
-		ActiveDHTInitializer.prepareRuntimeForActiveCode();
+		ActiveDHTInitializer.prepareRuntimeForActiveCode(ActivePeer.LUA_VALUE_FACTORY_INTERFACE);
 		
 		// Create a test shell using Azureus' one.
 		new ActiveDHTTestShell(num_dhts);

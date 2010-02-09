@@ -138,7 +138,7 @@ public class OneTimeValueExpt implements DHTNATPuncherAdapter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActiveDHTInitializer.prepareRuntimeForActiveCode();
+		ActiveDHTInitializer.prepareRuntimeForActiveCode(ActivePeer.NA_VALUE_FACTORY_INTERFACE);
 		new OneTimeValueExpt(10, new PrintStream(new File(OUTPUT_FILE)), 5000);
 	}
 

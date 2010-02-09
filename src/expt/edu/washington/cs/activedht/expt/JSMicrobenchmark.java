@@ -48,8 +48,8 @@ public class JSMicrobenchmark extends Microbenchmark {
 			out = new PrintStream(new FileOutputStream(args[1], true));
 		}
 
-		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false);
-		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false);
+		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386");
+		ActivePeer peer = new ActivePeer(1234, "localhost:48386");
 		JSMicrobenchmark microbenchmark = new JSMicrobenchmark(
 				peer,
 				"activeobject = {onGet: function(self) { return \"hello\" }}",

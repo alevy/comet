@@ -47,7 +47,7 @@ public class JavaActiveCodeRunnerTest extends TestCase implements TestDHTClasses
 	
 	@Override
 	protected void setUp() {
-		ActiveDHTInitializer.prepareRuntimeForActiveCode();
+		//ActiveDHTInitializer.prepareRuntimeForActiveCode();
 		
 		JavaActiveCodeRunner.ActiveCodeRunnerParam params =
 			new JavaActiveCodeRunner.ActiveCodeRunnerParam();
