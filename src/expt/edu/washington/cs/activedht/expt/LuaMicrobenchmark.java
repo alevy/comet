@@ -29,6 +29,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 
 	public static void main(String[] args) throws Exception {
 		int numObjects = 100;
+		int observations = 100;
 		PrintStream out = System.out;
 		
 		if (args.length > 0) {
@@ -36,6 +37,9 @@ public class LuaMicrobenchmark extends Microbenchmark {
 		}
 		if (args.length > 1) {
 			out = new PrintStream(new FileOutputStream(args[1], true));
+		}
+		if (args.length > 2) {
+			observations = Integer.parseInt(args[2]);
 		}
 
 		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false);
@@ -49,7 +53,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 		Thread.sleep(5000);
 
 		Semaphore sema = new Semaphore(numObjects);
-		microbenchmark.run(sema, 100, out);
+		microbenchmark.run(sema, observations, out);
 		sema.acquire(numObjects);
 
 		peer.stop();
