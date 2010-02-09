@@ -7,6 +7,8 @@ import java.util.concurrent.Semaphore;
 import org.keplerproject.luajava.LuaState;
 import org.keplerproject.luajava.LuaStateFactory;
 
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
+
 import edu.washington.cs.activedht.lua.Serializer;
 
 /**
@@ -30,23 +32,31 @@ public class LuaMicrobenchmark extends Microbenchmark {
 	public static void main(String[] args) throws Exception {
 		int numObjects = 100;
 		int observations = 100;
+		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
-		
+
 		if (args.length > 0) {
 			numObjects = Integer.parseInt(args[0]);
 		}
 		if (args.length > 1) {
-			out = new PrintStream(new FileOutputStream(args[1], true));
+			if (args[1].equals("na")) {
+				valueFactory = ActivePeer.NA_VALUE_FACTORY_INTERFACE;
+			}
 		}
 		if (args.length > 2) {
-			observations = Integer.parseInt(args[2]);
+			out = new PrintStream(new FileOutputStream(args[2], true));
+		}
+		if (args.length > 3) {
+			observations = Integer.parseInt(args[3]);
 		}
 
-		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false);
-		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false);
+		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false,
+				valueFactory);
+		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false, valueFactory);
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
-				"activeobject = {onGet = function(self) return \"hello\" end}", numObjects);
-		
+				"activeobject = {onGet = function(self) return \"hello\" end}",
+				numObjects);
+
 		bootstrap.init("localhost");
 		Thread.sleep(5000);
 		peer.init("localhost");

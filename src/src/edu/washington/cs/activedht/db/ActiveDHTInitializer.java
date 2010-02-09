@@ -9,6 +9,7 @@ import com.aelitis.azureus.core.dht.db.DHTDBFactory;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
@@ -28,12 +29,12 @@ import edu.washington.cs.activedht.util.Constants;
 public class ActiveDHTInitializer implements Constants {
 	private static boolean isInitialized = false;
 
-	public static void prepareRuntimeForActiveCode() {
+	public static void prepareRuntimeForActiveCode(FactoryInterface valueFactory) {
 		if (isInitialized)
 			return;
 
 		// Initialize Vuze to run active code:
-		initVuzeForActiveCode();
+		initVuzeForActiveCode(valueFactory);
 
 		// Add the rest here:
 
@@ -41,7 +42,7 @@ public class ActiveDHTInitializer implements Constants {
 		isInitialized = true;
 	}
 
-	private static void initVuzeForActiveCode() {
+	private static void initVuzeForActiveCode(FactoryInterface valueFactory) {
 		// Initialize the DHTDB factory:
 		DHTDBFactory.init(new DHTDBFactory.FactoryInterface() {
 			public DHTDB create(DHTStorageAdapter adapter,
@@ -58,21 +59,7 @@ public class ActiveDHTInitializer implements Constants {
 		});
 
 		// Initialize the DHTDBValue factory:
-		DHTDBValueFactory.init(new DHTDBValueFactory.FactoryInterface() {
-			public DHTDBValue create(long _creation_time, byte[] _value,
-					int _version, DHTTransportContact _originator,
-					DHTTransportContact _sender, boolean _local, int _flags) {
-				return new LuaActiveDHTDBValue(_creation_time, _value, _version,
-						_originator, _sender, _local, _flags);
-			}
-
-			public DHTDBValue create(DHTTransportContact sender,
-					DHTTransportValue other, boolean local) {
-				return new LuaActiveDHTDBValue(other
-						.getCreationTime(), other.getValue(), other.getVersion(), other
-						.getOriginator(), sender, local, other.getFlags());
-			}
-		});
+		DHTDBValueFactory.init(valueFactory);
 
 		configureAllConstants();
 
