@@ -14,7 +14,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
 
 /**
  * @author levya
- *
+ * 
  */
 public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 		ActiveDHTDBValue {
@@ -24,7 +24,8 @@ public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 	public NonActiveDHTDBValue(long creationTime, byte[] value, int version,
 			DHTTransportContact originator, DHTTransportContact sender,
 			boolean local, int flags) {
-		super(creationTime, value, "Nonactive", version, originator, local, flags);
+		super(creationTime, value, "Nonactive", version, originator, local,
+				flags);
 		this.sender = sender;
 	}
 
@@ -34,10 +35,7 @@ public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 
 	public ActiveDHTDBValue executeCallback(String string,
 			DhtWrapper dhtWrapper, Object... args) {
-		if (string.equals("onGet")) {
-			return this;
-		}
-		return null;
+		return this;
 	}
 
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
@@ -73,7 +71,7 @@ public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 	}
 
 	public void setOriginator(DHTTransportContact contact) {
-		
+
 	}
 
 	public void setSender(DHTTransportContact contact) {
