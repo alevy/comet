@@ -86,12 +86,12 @@ public abstract class Microbenchmark {
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(600000);
 					getsMon.enter();
 					gets = 0;
 					getsMon.exit();
 					for (int i = 0; i < observations; ++i) {
-						Thread.sleep(1000);
+						Thread.sleep(600000);
 						getsMon.enter();
 						out.println(numCurRequests + "," + gets);
 						gets = 0;
