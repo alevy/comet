@@ -6,6 +6,7 @@ import java.util.concurrent.Semaphore;
 import org.gudy.azureus2.core3.util.AEMonitor;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
+import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -56,7 +57,7 @@ public abstract class Microbenchmark {
 					DHTTransportValue value) {
 				read = true;
 			}
-			
+
 			public void complete(boolean t) {
 				if (read) {
 					getsMon.enter();
@@ -71,8 +72,8 @@ public abstract class Microbenchmark {
 		});
 	}
 
-	public void run(final Semaphore sema, final int observations, final PrintStream out)
-			throws InterruptedException {
+	public void run(final Semaphore sema, final int observations,
+			final PrintStream out) throws InterruptedException {
 		keepRunning = true;
 		for (int i = 0; i < numCurRequests; ++i) {
 			String key = "hello" + i;
@@ -85,12 +86,12 @@ public abstract class Microbenchmark {
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(600000);
 					getsMon.enter();
 					gets = 0;
 					getsMon.exit();
 					for (int i = 0; i < observations; ++i) {
-						Thread.sleep(1000);
+						Thread.sleep(600000);
 						getsMon.enter();
 						out.println(numCurRequests + "," + gets);
 						gets = 0;
