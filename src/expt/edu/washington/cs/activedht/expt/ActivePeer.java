@@ -158,7 +158,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		// Load the parameters from the configuration:
 
 		kDhtLoggingOn = logging;
-		kDhtLookupConcurrency = 20;
+		kDhtLookupConcurrency = 200;
 		kDhtPort = port;
 		kDhtNumReplicas = 20;
 

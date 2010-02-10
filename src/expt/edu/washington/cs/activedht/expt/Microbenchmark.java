@@ -6,7 +6,6 @@ import java.util.concurrent.Semaphore;
 import org.gudy.azureus2.core3.util.AEMonitor;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -91,7 +90,7 @@ public abstract class Microbenchmark {
 					gets = 0;
 					getsMon.exit();
 					for (int i = 0; i < observations; ++i) {
-						Thread.sleep(600000);
+						Thread.sleep(300000);
 						getsMon.enter();
 						out.println(numCurRequests + "," + gets);
 						gets = 0;
