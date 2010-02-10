@@ -370,19 +370,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		return ret_logger;
 	}
 
-	protected int getNewTimeout(boolean success) {
-		if (success) { // Decrease
-			current_udp_timeout_range_max = current_udp_timeout;
-		} else { // Increase
-			current_udp_timeout_range_min = current_udp_timeout;
-			if (current_udp_timeout_range_max - current_udp_timeout_range_min <= 1) {
-				current_udp_timeout_range_max = kDhtUDPOperationTimeoutMax_ms;
-			}
-		}
-		int new_udp_timeout = (current_udp_timeout_range_min + current_udp_timeout_range_max) / 2;
-		return new_udp_timeout;
-	}
-
 	/**
 	 * CAlled only while holding writerlock on dht_lock.
 	 */
@@ -425,7 +412,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	// Protected to enable testing.
 	protected void get(byte[] key, DHTOperationAdapter adapter) {
-		dht.get(key, "", (byte) 0, 32, 60000, true, false, adapter);
+		dht.get(key, "", (byte) 0, 32, 6000000, true, false, adapter);
 	}
 
 	// DHTNATPuncherInterface:
