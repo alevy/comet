@@ -1,13 +1,10 @@
 package edu.washington.cs.activedht.expt;
 
 import java.io.File;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -38,6 +35,7 @@ import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
+import edu.washington.cs.vanish.internal.backend.VanishBackendException;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
@@ -70,6 +68,17 @@ class DHTParams {
 }
 
 public class ActivePeer implements DHTNATPuncherAdapter {
+	
+	public enum ValueFactory {
+		LUA(LUA_VALUE_FACTORY_INTERFACE), NA(NA_VALUE_FACTORY_INTERFACE);
+		
+		public final FactoryInterface fi;
+
+		ValueFactory(FactoryInterface fi) {
+			this.fi = fi;
+		}
+	}
+	
 	public static final FactoryInterface LUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
 		public DHTDBValue create(long _creation_time, byte[] _value,
 				int _version, DHTTransportContact _originator,
@@ -183,7 +192,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		kDhtProperties = constructDHTProperties(kDhtLoggingOn);
 
 		params = this.getRenewedParamsFromConfig();
-		setParams(params);
 
 		timeout_recalibration_process = new Timer("timeoutrecalib", true);
 
@@ -191,10 +199,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		initState();
 	}
 	
-	public DHTTransportContact getLocalContact() {
-		return dht.getControl().getTransport().getLocalContact();
-	}
-
 	private void initState() {
 		resetTimeoutInterval();
 
@@ -304,7 +308,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	 * @param bootstrapAddress
 	 * @throws VanishBackendException
 	 */
-	protected void startDHTNode(int udp_timeout, String defaultIpAddress) throws RuntimeException {
+	private void startDHTNode(int udp_timeout, String defaultIpAddress) throws RuntimeException {
 		try {
 			transport = new ConfigurableTimeoutDHTTransport(
 					kDhtProtocolVersion, kDhtNetwork, false, defaultIpAddress, defaultIpAddress,
@@ -333,12 +337,12 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 	}
 
-	protected DHTStorageAdapter createStorageAdapter(int network,
+	private DHTStorageAdapter createStorageAdapter(int network,
 			DHTLogger logger, File storage_dir) {
 		return new DHTPluginStorageManager(network, logger, storage_dir);
 	}
 
-	protected DHTLogger getLogger() {
+	private DHTLogger getLogger() {
 		final PluginInterface plugin_interface = azureusCore.getPluginManager()
 				.getDefaultPluginInterface();
 
@@ -389,30 +393,14 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 	}
 
-	// @Override
-	public byte[] generateLocation(Random prg) {
-		byte[] index = new byte[params.kDhtIndexLen];
-		prg.nextBytes(index);
-		return index;
-	}
-
-	// @Override
-	public byte[] getID() {
-		byte[] res = null;
-		dht_lock.readLock().lock();
-		res = dht.getControl().getRouter().getLocalContact().getID();
-		dht_lock.readLock().unlock();
-		return res;
-	}
-
 	// Protected to enable testing.
 	protected void put(byte[] key, byte[] value, DHTOperationAdapter adapter) {
 		dht.put(key, "", value, (byte) 0, adapter);
 	}
 
 	// Protected to enable testing.
-	protected void get(byte[] key, DHTOperationAdapter adapter) {
-		dht.get(key, "", (byte) 0, 32, 6000000, true, false, adapter);
+	protected void get(byte[] key, int timeout, DHTOperationAdapter adapter) {
+		dht.get(key, "", (byte) 0, 32, timeout, true, false, adapter);
 	}
 
 	// DHTNATPuncherInterface:
@@ -428,8 +416,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	// RefreshableConfig interface:
 
-	// @Override
-	public DHTParams getRenewedParamsFromConfig() {
+	private DHTParams getRenewedParamsFromConfig() {
 		final int kDhtIndexLen = 20;
 		final int kNumTries = 1;
 		final int kRetrySleep_ms = 0;
@@ -456,53 +443,27 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		return params;
 	}
 
-	// @Override
-	public void setParams(DHTParams params) {
-		this.params = params;
-	}
-
 	public static void main(String[] args) throws Exception {
-		boolean booting = false;
-		boolean churn = false;
-		int port = 0;
-		String bootstrap = InetAddress.getLocalHost().getHostName();
+		int port = 4321;
+		String hostname = "localhost";
+		String bootstrapLoc = "localhost:4321";
+		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
 
-		int i = 0;
-		if (args.length > i && "-b".equals(args[i])) {
-			booting = true;
-			++i;
-		}
-		if (args.length > i) {
-			bootstrap = args[i];
-		}
-		++i;
-		if (args.length > i) {
-			port = Integer.parseInt(args[i]);
-		}
-		++i;
-		if (args.length > i && "-c".equals(args[i])) {
-			churn = true;
-		}
-		if (booting) {
-			ActivePeer peer = new ActivePeer(port, bootstrap);
-			peer.init(null);
-			while (true) {
-				Thread.sleep(10000);
+		for (int i = 0; i < args.length; ++i) {
+			if (args[i].equals("-v")) {
+				valueFactory = ActivePeer.ValueFactory.valueOf(args[++i]).fi;
+			} else if (args[i].equals("-p")) {
+				port = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-h")) {
+				hostname = args[++i];
+			} else if (args[i].equals("-b")) {
+				bootstrapLoc = args[++i];
 			}
-		} else {
-			port = new ServerSocket(port).getLocalPort();
-			ActivePeer peer = new ActivePeer(port, bootstrap, false, LUA_VALUE_FACTORY_INTERFACE);
-			System.out.println(port);
-			peer.init(null);
-			long timeout = 10000;
-			while (true) {
-				Thread.sleep(timeout);
-				if (churn && Math.random() < 0.002) {
-					break;
-				}
-			}
-			peer.stop();
 		}
-		System.exit(0);
+		ActivePeer peer = new ActivePeer(port, bootstrapLoc, false,
+				valueFactory);
+		peer.init(hostname);
+		while(true)
+			Thread.sleep(60000);
 	}
 }

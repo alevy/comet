@@ -2,7 +2,6 @@ package edu.washington.cs.activedht.expt;
 
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.util.concurrent.Semaphore;
 
 import org.keplerproject.luajava.LuaState;
 import org.keplerproject.luajava.LuaStateFactory;
@@ -17,9 +16,10 @@ import edu.washington.cs.activedht.lua.Serializer;
  */
 public class LuaMicrobenchmark extends Microbenchmark {
 
-	public LuaMicrobenchmark(ActivePeer peer, String lua, int numCurRequests)
+	public LuaMicrobenchmark(ActivePeer peer, String lua, int numCurRequests,
+			int observations, int startupTime, int gap, PrintStream out)
 			throws Exception {
-		super(peer, lua, numCurRequests);
+		super(peer, lua, numCurRequests, observations, startupTime, gap, out);
 	}
 
 	public byte[] generateValue(String lua) throws Exception {
@@ -30,44 +30,50 @@ public class LuaMicrobenchmark extends Microbenchmark {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int numObjects = 100;
-		int observations = 5;
+		int numObjects = 10;
+		int observations = 100;
+		int startupTime = 5000;
+		int gap = 1000;
+		int localPort = 1234;
+		String localHostname = "localhost";
+		String bootstrapLoc = "localhost:4321";
 		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
-		if (args.length > 0) {
-			numObjects = Integer.parseInt(args[0]);
-		}
-		if (args.length > 1) {
-			if (args[1].equals("na")) {
-				valueFactory = ActivePeer.NA_VALUE_FACTORY_INTERFACE;
+		for (int i = 0; i < args.length; ++i) {
+			if (args[i].equals("-n")) {
+				numObjects = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-i")) {
+				observations = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-o")) {
+				out = new PrintStream(new FileOutputStream(args[++i], true));
+			} else if (args[i].equals("-v")) {
+				valueFactory = ActivePeer.ValueFactory.valueOf(args[++i]).fi;
+			} else if (args[i].equals("-w")) {
+				startupTime = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-g")) {
+				gap = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-p")) {
+				localPort = Integer.parseInt(args[++i]);
+			} else if (args[i].equals("-h")) {
+				localHostname = args[++i];
+			} else if (args[i].equals("-b")){ // bootstrap host:port
+				bootstrapLoc = args[++i];
 			}
 		}
-		if (args.length > 2) {
-			out = new PrintStream(new FileOutputStream(args[2], true));
-		}
-		if (args.length > 3) {
-			observations = Integer.parseInt(args[3]);
-		}
 
-		ActivePeer bootstrap = new ActivePeer(48386, "localhost:48386", false,
+		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, false,
 				valueFactory);
-		ActivePeer peer = new ActivePeer(1234, "localhost:48386", false, valueFactory);
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
 				"activeobject = {onGet = function(self) return \"hello\" end}",
-				numObjects);
+				numObjects, observations, startupTime, gap, out);
 
-		bootstrap.init("localhost");
-		Thread.sleep(5000);
-		peer.init("localhost");
+		peer.init(localHostname);
 		Thread.sleep(5000);
 
-		Semaphore sema = new Semaphore(numObjects);
-		microbenchmark.run(sema, observations, out);
-		sema.acquire(numObjects);
+		microbenchmark.run();
 
 		peer.stop();
-		bootstrap.stop();
 		out.close();
 	}
 

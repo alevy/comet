@@ -15,18 +15,27 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
  */
 public abstract class Microbenchmark {
 
+	private final AEMonitor getsMon = new AEMonitor("Gets");
+
 	private final ActivePeer peer;
+	private final byte[] value;
+	private final int numCurRequests;
+	private final int observations;
+	private final int startupTime;
+	private final int gap;
+	private final PrintStream out;
+
 	private int gets = 0;
-	private AEMonitor getsMon = new AEMonitor("Gets");
 	private boolean keepRunning = false;
 
-	private byte[] value;
-	private int numCurRequests;
-
-	public Microbenchmark(ActivePeer peer, String lua, int numCurRequests)
+	public Microbenchmark(ActivePeer peer, String lua, int numCurRequests, int observations, int startupTime, int gap, PrintStream out)
 			throws Exception {
 		this.peer = peer;
 		this.numCurRequests = numCurRequests;
+		this.observations = observations;
+		this.startupTime = startupTime;
+		this.gap = gap;
+		this.out = out;
 		value = generateValue(lua);
 	}
 
@@ -49,7 +58,7 @@ public abstract class Microbenchmark {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		peer.get(key.getBytes(), new DHTOperationAdapter() {
+		peer.get(key.getBytes(), 0, new DHTOperationAdapter() {
 			boolean read = false;
 
 			public void read(DHTTransportContact contact,
@@ -71,8 +80,8 @@ public abstract class Microbenchmark {
 		});
 	}
 
-	public void run(final Semaphore sema, final int observations,
-			final PrintStream out) throws InterruptedException {
+	public void run() throws InterruptedException {
+		Semaphore sema = new Semaphore(numCurRequests);
 		keepRunning = true;
 		for (int i = 0; i < numCurRequests; ++i) {
 			String key = "hello" + i;
@@ -85,16 +94,17 @@ public abstract class Microbenchmark {
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					Thread.sleep(600000);
+					Thread.sleep(startupTime);
 					getsMon.enter();
 					gets = 0;
 					getsMon.exit();
 					for (int i = 0; i < observations; ++i) {
-						Thread.sleep(300000);
+						Thread.sleep(gap);
 						getsMon.enter();
-						out.println(numCurRequests + "," + gets);
+						int tmpGets = gets;
 						gets = 0;
 						getsMon.exit();
+						out.println(numCurRequests + "," + tmpGets);
 					}
 					keepRunning = false;
 				} catch (InterruptedException e) {
@@ -102,6 +112,7 @@ public abstract class Microbenchmark {
 				}
 			}
 		}).start();
+		sema.acquire(numCurRequests);
 	}
 
 }

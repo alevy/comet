@@ -3,5 +3,7 @@
 for i in $(seq 10 10 100)
 do
  echo "Benchmarking $i"
- java -Djava.library.path=luajava  -classpath build/classes:lib/commons-cli.jar:lib/log4j.jar edu.washington.cs.activedht.expt.LuaMicrobenchmark $i $1 $2
+ ssh nethack.cs.washingotn.edu "screen -d -m workspace/activedht/src/runclass edu.washington.cs.activedht.expt.ActivePeer -h nethack.cs.washington.edu -p 4321 -b nethack.cs.washington.edu:4321"
+ `dirname $0`/runclass.sh edu.washington.cs.activedht.expt.LuaMicrobenchmark $i -h `hostname -f` -p 1234 -b nethack.cs.washington.edu:4321 $*
+ ssh nethack.cs.washington.edu "killall java"
 done

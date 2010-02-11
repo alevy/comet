@@ -71,7 +71,7 @@ public class OneTimeValue {
 			});*/
 			t.addEvent(eventTime + gap, new TimerEventPerformer() {
 				public void perform(TimerEvent event) {
-					peer.get(key, new DHTOperationAdapter() {
+					peer.get(key, 60000, new DHTOperationAdapter() {
 						boolean found = false;
 
 						public void read(DHTTransportContact contact,
