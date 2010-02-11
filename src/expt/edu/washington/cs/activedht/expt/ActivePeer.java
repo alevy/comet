@@ -35,7 +35,6 @@ import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
-import edu.washington.cs.vanish.internal.backend.VanishBackendException;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
