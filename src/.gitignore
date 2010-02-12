@@ -3,3 +3,8 @@ build
 dist
 reports
 plugins
+*.o
+*.so
+*.jnilib
+*luajava.h
+*luajava-1.1.jar
