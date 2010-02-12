@@ -55,9 +55,6 @@ public final class LuaStateFactory
 	 */
 	public synchronized static LuaState newLuaState()
 	{
-		if (states.size() > 500) {
-			throw new RuntimeException("Too many lua states!");
-		}
 		
 		int i = getNextStateIndex();
 		LuaState L = new LuaState(i);

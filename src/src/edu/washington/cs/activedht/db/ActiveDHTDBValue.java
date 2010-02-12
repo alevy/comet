@@ -14,7 +14,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
  */
 public interface ActiveDHTDBValue extends DHTDBValue {
 
-	public ActiveDHTDBValue executeCallback(String string, DhtWrapper dhtWrapper, Object...args);
+	public ActiveDHTDBValue executeCallback(String string, Object...args);
 	
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key);
 	

@@ -89,8 +89,7 @@ public class JSActiveDHTDBValue implements ActiveDHTDBValue {
 		}
 	}
 
-	public ActiveDHTDBValue executeCallback(String callback,
-			DhtWrapper dhtWrapper, Object... args) {
+	public ActiveDHTDBValue executeCallback(String callback, Object... args) {
 		ActiveDHTDBValue result = this;
 		try {
 			if (Scriptable.class.isInstance(jsObj)) {

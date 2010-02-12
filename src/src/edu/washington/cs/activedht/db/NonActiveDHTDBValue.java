@@ -33,9 +33,9 @@ public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 		return null;
 	}
 
-	public ActiveDHTDBValue executeCallback(String string,
-			DhtWrapper dhtWrapper, Object... args) {
-		return new NonActiveDHTDBValue(getCreationTime(),getValue(), getVersion(), getOriginator(), sender, isLocal(), getFlags());
+	public ActiveDHTDBValue executeCallback(String string, Object... args) {
+		return new NonActiveDHTDBValue(getCreationTime(), getValue(),
+				getVersion(), getOriginator(), sender, isLocal(), getFlags());
 	}
 
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {

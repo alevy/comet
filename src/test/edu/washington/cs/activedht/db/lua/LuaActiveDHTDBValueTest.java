@@ -5,6 +5,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.keplerproject.luajava.LuaObject;
 import org.keplerproject.luajava.LuaState;
 import org.keplerproject.luajava.LuaStateFactory;
 
@@ -18,13 +19,11 @@ public class LuaActiveDHTDBValueTest extends TestCase {
 		LuaState state = LuaStateFactory.newLuaState();
 		state
 				.LdoString("activeobject = { onGet = function(self) return \"hello\" end }");
-		byte[] bytes = new Serializer(state).serialize(state
-				.getLuaObject("activeobject"));
-		LuaActiveDHTDBValue value = new LuaActiveDHTDBValue(0, bytes, 1, null,
-				null, false, (byte) DHT.FLAG_STATS);
-		LuaActiveDHTDBValue result = (LuaActiveDHTDBValue) value
-				.executeCallback("onGet", value.getDhtWrapper(null, null));
-		assertEquals("hello", result.getLuaObject().getString());
+		LuaObject luaObject = state.getLuaObject("activeobject");
+		Serializer serializer = new Serializer(state);
+		while (true) {
+			byte[] bytes = serializer.serialize(luaObject);
+		}
 	}
 
 	public void testStressTest() throws Exception {

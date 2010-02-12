@@ -78,8 +78,7 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	 *            specifies which callback to execute
 	 * @return the value from the callback or null in case of an error
 	 */
-	public synchronized ActiveDHTDBValue executeCallback(String callback,
-			final DhtWrapper dhtWrapper, Object... args) {
+	public synchronized ActiveDHTDBValue executeCallback(String callback, Object... args) {
 		ActiveDHTDBValue result = this;
 		LuaState state = getLuaState();
 		synchronized (state) {
@@ -88,8 +87,6 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 				luaObject = getSerializer().deserialize(value);
 			}
 
-			state.pushJavaObject(dhtWrapper);
-			state.setGlobal("dht");
 			Object[] functionArgs = new Object[args.length + 1];
 			functionArgs[0] = luaObject;
 			for (int i = 1; i < functionArgs.length; ++i) {
@@ -187,8 +184,8 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 		if (luaObjectChanged) {
 			synchronized (getLuaState()) {
 				value = getSerializer().serialize(luaObject);
+				luaObjectChanged = false;
 			}
-			luaObjectChanged = false;
 		}
 		return value;
 	}
@@ -231,9 +228,14 @@ public class LuaActiveDHTDBValue implements ActiveDHTDBValue {
 	}
 
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
-		if (dhtWrapper == null) {
-			dhtWrapper = new DhtWrapper(control, key, this, neighbors,
-					postActions);
+		LuaState state = getLuaState();
+		synchronized(state) {
+			if (dhtWrapper == null) {
+				dhtWrapper = new DhtWrapper(control, key, this, neighbors,
+						postActions);
+			}
+			state.pushJavaObject(dhtWrapper);
+			state.setGlobal("dht");
 		}
 		return dhtWrapper;
 	}

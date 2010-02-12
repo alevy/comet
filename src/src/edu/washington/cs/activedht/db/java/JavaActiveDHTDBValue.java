@@ -70,7 +70,7 @@ public class JavaActiveDHTDBValue extends DHTDBValueImpl implements ActiveDHTDBV
 		return getString();
 	}
 
-	public ActiveDHTDBValue executeCallback(String string, DhtWrapper dhtWrapper) {
+	public ActiveDHTDBValue executeCallback(String string, Object... objs) {
 		// TODO Auto-generated method stub
 		return null;
 	}

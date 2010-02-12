@@ -47,15 +47,15 @@ public class ActiveCodeRunner {
 
 	public ActiveDHTDBValue onGet(DHTTransportContact reader, HashWrapper key,
 			ActiveDHTDBValue value) {
-		ActiveDHTDBValue result = value.executeCallback("onGet", value
-				.getDhtWrapper(db.getControl(), key));
+		value.getDhtWrapper(db.getControl(), key);
+		ActiveDHTDBValue result = value.executeCallback("onGet");
 		return result;
 	}
 
 	public ActiveDHTDBValue onRemove(DHTTransportContact sender,
 			HashWrapper key, ActiveDHTDBValue removedValue) {
-		return removedValue.executeCallback("onRemove", removedValue
-				.getDhtWrapper(db.getControl(), key));
+		removedValue.getDhtWrapper(db.getControl(), key);
+		return removedValue.executeCallback("onRemove");
 	}
 
 	public Pair<List<DHTTransportValue>, List<DHTTransportValue>> onStore(
@@ -95,15 +95,15 @@ public class ActiveCodeRunner {
 
 	public ActiveDHTDBValue onStore(DHTTransportContact sender,
 			HashWrapper key, ActiveDHTDBValue activeValue) {
-		return activeValue.executeCallback("onStore", activeValue
-				.getDhtWrapper(db.getControl(), key));
+		activeValue.getDhtWrapper(db.getControl(), key);
+		return activeValue.executeCallback("onStore");
 	}
 
 	public ActiveDHTDBValue onUpdate(DHTTransportContact sender,
 			HashWrapper key, ActiveDHTDBValue activeValue,
 			DHTTransportValue updateValue) {
+		activeValue.getDhtWrapper(db.getControl(), key);
 		return activeValue.executeCallback("onUpdate", activeValue
-				.getDhtWrapper(db.getControl(), key), activeValue
 				.deserialize(updateValue.getValue()));
 	}
 
@@ -118,6 +118,7 @@ public class ActiveCodeRunner {
 	}
 
 	public void onTimer(HashWrapper key, ActiveDHTDBValue value) {
+		value.getDhtWrapper(db.getControl(), key);
 		value.executeCallback("onTimes", value.getDhtWrapper(db
 				.getControl(), key));
 	}
