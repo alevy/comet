@@ -49,7 +49,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 		int localPort = 1234;
 		String localHostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.KALUA_VALUE_FACTORY_INTERFACE;
+		FactoryInterface valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
 		for (int i = 0; i < args.length; ++i) {

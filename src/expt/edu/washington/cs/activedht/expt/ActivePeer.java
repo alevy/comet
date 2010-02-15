@@ -70,7 +70,7 @@ class DHTParams {
 public class ActivePeer implements DHTNATPuncherAdapter {
 	
 	public enum ValueFactory {
-		LUA(LUA_VALUE_FACTORY_INTERFACE), NA(NA_VALUE_FACTORY_INTERFACE);
+		LUA(LUA_VALUE_FACTORY_INTERFACE), NA(NA_VALUE_FACTORY_INTERFACE), KAHLUA(KAHLUA_VALUE_FACTORY_INTERFACE);
 		
 		public final FactoryInterface fi;
 
@@ -95,7 +95,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 	};
 	
-	public static final FactoryInterface KALUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
+	public static final FactoryInterface KAHLUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
 		public DHTDBValue create(long _creation_time, byte[] _value,
 				int _version, DHTTransportContact _originator,
 				DHTTransportContact _sender, boolean _local, int _flags) {
@@ -463,7 +463,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		int port = 4321;
 		String hostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.KALUA_VALUE_FACTORY_INTERFACE;
+		FactoryInterface valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-v")) {
