@@ -34,6 +34,7 @@ import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
+import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
 
 /**
@@ -89,6 +90,22 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		public DHTDBValue create(DHTTransportContact sender,
 				DHTTransportValue other, boolean local) {
 			return new LuaActiveDHTDBValue(other
+					.getCreationTime(), other.getValue(), other.getVersion(), other
+					.getOriginator(), sender, local, other.getFlags());
+		}
+	};
+	
+	public static final FactoryInterface KALUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
+		public DHTDBValue create(long _creation_time, byte[] _value,
+				int _version, DHTTransportContact _originator,
+				DHTTransportContact _sender, boolean _local, int _flags) {
+			return new KahluaActiveDHTDBValue(_creation_time, _value, _version,
+					_originator, _sender, _local, _flags);
+		}
+		
+		public DHTDBValue create(DHTTransportContact sender,
+				DHTTransportValue other, boolean local) {
+			return new KahluaActiveDHTDBValue(other
 					.getCreationTime(), other.getValue(), other.getVersion(), other
 					.getOriginator(), sender, local, other.getFlags());
 		}
@@ -446,7 +463,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		int port = 4321;
 		String hostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
+		FactoryInterface valueFactory = ActivePeer.KALUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-v")) {

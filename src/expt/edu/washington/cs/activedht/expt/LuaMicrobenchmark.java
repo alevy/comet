@@ -1,14 +1,16 @@
 package edu.washington.cs.activedht.expt;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-import org.keplerproject.luajava.LuaState;
-import org.keplerproject.luajava.LuaStateFactory;
+import se.krka.kahlua.luaj.compiler.LuaCompiler;
+import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaState;
+import se.krka.kahlua.vm.serialize.Serializer;
 
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
-
-import edu.washington.cs.activedht.lua.Serializer;
 
 /**
  * @author levya
@@ -23,10 +25,20 @@ public class LuaMicrobenchmark extends Microbenchmark {
 	}
 
 	public byte[] generateValue(String lua) throws Exception {
-		LuaState luaState = LuaStateFactory.newLuaState();
+		/*LuaState luaState = LuaStateFactory.newLuaState();
 		luaState.LdoString(lua);
 		return new Serializer(luaState).serialize(luaState
-				.getLuaObject("activeobject"));
+				.getLuaObject("activeobject"));*/
+		LuaState state = new LuaState();
+		LuaClosure closure = LuaCompiler
+				.loadstring(
+						lua,
+						"stdin", state.getEnvironment());
+		state.call(closure, new Object[] {});
+		Object obj = state.getEnvironment().rawget("activeobject");
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		new Serializer(new DataOutputStream(bos)).serialize(obj);
+		return bos.toByteArray();
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -37,7 +49,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 		int localPort = 1234;
 		String localHostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.LUA_VALUE_FACTORY_INTERFACE;
+		FactoryInterface valueFactory = ActivePeer.KALUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
 		for (int i = 0; i < args.length; ++i) {
@@ -61,13 +73,11 @@ public class LuaMicrobenchmark extends Microbenchmark {
 				bootstrapLoc = args[++i];
 			}
 		}
-
 		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, false,
 				valueFactory);
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
 				"activeobject = {onGet = function(self) return \"hello\" end}",
 				numObjects, observations, startupTime, gap, out);
-
 		peer.init(localHostname);
 		Thread.sleep(5000);
 

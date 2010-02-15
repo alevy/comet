@@ -1,0 +1,31 @@
+Has a compiler?
+Kahlua		No
+LuaJ		Yes
+MochaLua	No
+
+Coroutines as threads or plain java? [Is it possible to garbage collect a suspended Thread?]
+Kahlua		plain
+LuaJ		threads
+MochaLua	plain
+
+
+Weak tables?
+Kahlua			LuaJ			MochaLua
+Yes			Only weak values	Yes
+
+Switch between regular table and weak table?
+Kahlua			LuaJ			MochaLua
+Yes			No			Yes
+
+Default jar file size
+Kahlua			LuaJ			MochaLua
+68 KB			103 KB			288 KB
+
+Number of compiled class files
+Kahlua			LuaJ			MochaLua
+18			61			230
+
+Kilo-lines of code [2009-02-11]
+Kahlua			LuaJ			MochaLua
+6			13			17
+

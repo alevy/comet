@@ -53,11 +53,6 @@ public abstract class Microbenchmark {
 	}
 
 	public void get(final String key, final Semaphore sema) {
-		try {
-			sema.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		peer.get(key.getBytes(), 0, new DHTOperationAdapter() {
 			boolean read = false;
 
@@ -72,9 +67,10 @@ public abstract class Microbenchmark {
 					++gets;
 					getsMon.exit();
 				}
-				sema.release();
 				if (keepRunning) {
 					get(key, sema);
+				} else {
+					sema.release();
 				}
 			}
 		});
@@ -88,6 +84,7 @@ public abstract class Microbenchmark {
 			put(key);
 		}
 		for (int j = 0; j < numCurRequests; ++j) {
+			sema.acquire();
 			String key = "hello" + j;
 			get(key, sema);
 		}
