@@ -5,11 +5,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.log4j.Logger;
 import org.gudy.azureus2.plugins.PluginInterface;
 
 import com.aelitis.azureus.core.AzureusCore;
@@ -36,6 +33,7 @@ import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
+import edu.washington.cs.vanish.internal.backend.VanishBackendException;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
@@ -69,6 +67,8 @@ class DHTParams {
 
 public class ActivePeer implements DHTNATPuncherAdapter {
 	
+	private static final int DEFAULT_LOOKUP_CONCURRENCY = 200;
+
 	public enum ValueFactory {
 		LUA(LUA_VALUE_FACTORY_INTERFACE), NA(NA_VALUE_FACTORY_INTERFACE), KAHLUA(KAHLUA_VALUE_FACTORY_INTERFACE);
 		
@@ -133,10 +133,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private final boolean kDhtLoggingOn;
 	private final int kDhtLookupConcurrency;
 
-	private final int kDhtUDPOperationTimeoutMin_ms;
-	private final int kDhtUDPOperationTimeoutMax_ms;
-	private final long kDhtUDPTimeoutIntervalRecalibrationPeriod;
-
 	private final String kDhtBootstrapAddress;
 	private final int kDhtBootstrapPort;
 
@@ -157,39 +153,28 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	// State:
 
-	private final Logger LOG;
-
-	private final Timer timeout_recalibration_process;
-
 	/** The DHT object. */
 	private DHT dht = null; // null until init is called
 	private ConfigurableTimeoutDHTTransport transport = null;
 	/** Protects the DHT and transport. */
-	ReentrantReadWriteLock dht_lock = new ReentrantReadWriteLock();
+	private final ReentrantReadWriteLock dht_lock = new ReentrantReadWriteLock();
 
-	private int current_udp_timeout_range_min;
-	private int current_udp_timeout_range_max;
-	private int current_udp_timeout;
+	private final int current_udp_timeout;
 
 	public ActivePeer(int port, String bootstrap) throws Exception {
-		this(port, bootstrap, false, LUA_VALUE_FACTORY_INTERFACE);
+		this(port, bootstrap, false, LUA_VALUE_FACTORY_INTERFACE, DEFAULT_LOOKUP_CONCURRENCY);
 	}
 
-	public ActivePeer(int port, String bootstrap, boolean logging, FactoryInterface factoryInterface)
+	public ActivePeer(int port, String bootstrap, boolean logging, FactoryInterface factoryInterface, int lookupConurrency)
 			throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
-		this.LOG = Logger.getLogger(this.getClass());
 
 		// Load the parameters from the configuration:
 
 		kDhtLoggingOn = logging;
-		kDhtLookupConcurrency = 200;
+		kDhtLookupConcurrency = lookupConurrency;
 		kDhtPort = port;
 		kDhtNumReplicas = 20;
-
-		kDhtUDPOperationTimeoutMin_ms = 200;
-		kDhtUDPOperationTimeoutMax_ms = 2000;
-		kDhtUDPTimeoutIntervalRecalibrationPeriod = 1;
 
 		String full_addr = bootstrap;
 		kDhtBootstrapAddress = getHostname(full_addr);
@@ -209,22 +194,9 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 		params = this.getRenewedParamsFromConfig();
 
-		timeout_recalibration_process = new Timer("timeoutrecalib", true);
-
-		// Initialize non-final state:
-		initState();
+		current_udp_timeout = 500;
 	}
 	
-	private void initState() {
-		resetTimeoutInterval();
-
-		if (current_udp_timeout_range_max < current_udp_timeout_range_min) {
-			throw new IllegalStateException("Invalid UDP timeout range");
-		}
-
-		current_udp_timeout = (current_udp_timeout_range_min + current_udp_timeout_range_max) / 2;
-	}
-
 	/**
 	 * @param full_address
 	 *            machine:port format.
@@ -259,12 +231,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			dht_lock.writeLock().unlock();
 		}
 
-		if (kDhtUDPTimeoutIntervalRecalibrationPeriod > 0) {
-			timeout_recalibration_process.schedule(
-					new TimeoutRecalibrationTask(),
-					kDhtUDPTimeoutIntervalRecalibrationPeriod,
-					kDhtUDPTimeoutIntervalRecalibrationPeriod);
-		}
 		// log_stat.end();
 	}
 
@@ -390,25 +356,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		return ret_logger;
 	}
 
-	/**
-	 * CAlled only while holding writerlock on dht_lock.
-	 */
-	private void resetTimeoutInterval() {
-		current_udp_timeout_range_max = kDhtUDPOperationTimeoutMax_ms;
-		current_udp_timeout_range_min = kDhtUDPOperationTimeoutMin_ms;
-	}
-
-	private class TimeoutRecalibrationTask extends TimerTask {
-		@Override
-		public void run() {
-			LOG.info("DHTVanishBackend#TimeoutRecalibrationTask reenabling "
-					+ "recalibration");
-			dht_lock.writeLock().lock();
-			resetTimeoutInterval();
-			dht_lock.writeLock().unlock();
-		}
-	}
-
 	// Protected to enable testing.
 	protected void put(byte[] key, byte[] value, DHTOperationAdapter adapter) {
 		dht.put(key, "", value, (byte) 0, adapter);
@@ -477,7 +424,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			}
 		}
 		ActivePeer peer = new ActivePeer(port, bootstrapLoc, false,
-				valueFactory);
+				valueFactory, DEFAULT_LOOKUP_CONCURRENCY);
 		peer.init(hostname);
 		while(true)
 			Thread.sleep(60000);

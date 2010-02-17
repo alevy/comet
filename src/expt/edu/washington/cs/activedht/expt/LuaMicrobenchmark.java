@@ -74,7 +74,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 			}
 		}
 		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, false,
-				valueFactory);
+				valueFactory, 200);
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
 				"activeobject = {onGet = function(self) return \"hello\" end}",
 				numObjects, observations, startupTime, gap, out);

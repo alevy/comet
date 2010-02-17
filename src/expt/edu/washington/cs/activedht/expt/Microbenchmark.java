@@ -3,8 +3,6 @@ package edu.washington.cs.activedht.expt;
 import java.io.PrintStream;
 import java.util.concurrent.Semaphore;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -15,7 +13,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
  */
 public abstract class Microbenchmark {
 
-	private final AEMonitor getsMon = new AEMonitor("Gets");
+	private final Object getsMon = new Object();
 
 	private final ActivePeer peer;
 	private final byte[] value;
@@ -26,9 +24,11 @@ public abstract class Microbenchmark {
 	private final PrintStream out;
 
 	private int gets = 0;
+	private int timedout = 0;
 	private boolean keepRunning = false;
 
-	public Microbenchmark(ActivePeer peer, String lua, int numCurRequests, int observations, int startupTime, int gap, PrintStream out)
+	public Microbenchmark(ActivePeer peer, String lua, int numCurRequests,
+			int observations, int startupTime, int gap, PrintStream out)
 			throws Exception {
 		this.peer = peer;
 		this.numCurRequests = numCurRequests;
@@ -63,9 +63,11 @@ public abstract class Microbenchmark {
 
 			public void complete(boolean t) {
 				if (read) {
-					getsMon.enter();
-					++gets;
-					getsMon.exit();
+					synchronized (getsMon) {
+						++gets;
+					}
+				} else {
+					++timedout;
 				}
 				if (keepRunning) {
 					get(key, sema);
@@ -92,16 +94,17 @@ public abstract class Microbenchmark {
 			public void run() {
 				try {
 					Thread.sleep(startupTime);
-					getsMon.enter();
-					gets = 0;
-					getsMon.exit();
+					synchronized (getsMon) {
+						gets = 0;
+					}
 					for (int i = 0; i < observations; ++i) {
 						Thread.sleep(gap);
-						getsMon.enter();
-						int tmpGets = gets;
-						gets = 0;
-						getsMon.exit();
-						out.println(numCurRequests + "," + tmpGets);
+						int tmpGets;
+						synchronized (getsMon) {
+							tmpGets = gets;
+							gets = 0;
+						}
+						out.println(numCurRequests + "," + tmpGets + "," + timedout);
 					}
 					keepRunning = false;
 				} catch (InterruptedException e) {
