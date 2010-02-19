@@ -33,7 +33,6 @@ import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
-import edu.washington.cs.vanish.internal.backend.VanishBackendException;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
@@ -201,7 +200,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	 * @param full_address
 	 *            machine:port format.
 	 * @return
-	 * @throws VanishBackendException
 	 */
 	private String getHostname(String full_address) {
 		return full_address.substring(0, full_address.indexOf(':'));
@@ -288,7 +286,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	 * @param defaultIpAddress 
 	 * 
 	 * @param bootstrapAddress
-	 * @throws VanishBackendException
 	 */
 	private void startDHTNode(int udp_timeout, String defaultIpAddress) throws RuntimeException {
 		try {
