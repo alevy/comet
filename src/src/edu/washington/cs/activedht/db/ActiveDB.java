@@ -12,7 +12,6 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.DHTStorageBlock;
 import com.aelitis.azureus.core.dht.control.DHTControl;
@@ -37,14 +36,17 @@ public class ActiveDB implements DHTDB {
 	private DHTControl control;
 	private final DHTStorageAdapter adapter;
 
-	public ActiveDB(DHTStorageAdapter adapter, int original_republish_interval,
-			int cache_republish_interval, DHTLogger logger) {
+	public ActiveDB(DHTStorageAdapter adapter) {
 		this.adapter = adapter;
 		this.codeRunner = new ActiveCodeRunner(this);
 	}
 
 	public DHTTransportValue get(HashWrapper key) {
-		ActiveDHTDBValue result = get(key, control.getTransport().getLocalContact());
+		DHTTransportContact localContact = null;
+		if (control != null) {
+			localContact = control.getTransport().getLocalContact();
+		}
+		ActiveDHTDBValue result = get(key, localContact);
 		return result.getValueForRelay(result.getOriginator());
 	}
 	

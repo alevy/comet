@@ -358,6 +358,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		dht.put(key, "", value, (byte) 0, adapter);
 	}
 
+	protected DHTTransportValue getLocal(byte[] key) {
+		return dht.getLocalValue(key);
+	}
+	
 	// Protected to enable testing.
 	protected void get(byte[] key, int timeout, DHTOperationAdapter adapter) {
 		dht.get(key, "", (byte) 0, 32, timeout, true, false, adapter);

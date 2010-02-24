@@ -6,18 +6,12 @@ import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.impl.DHTControlImpl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBFactory;
-import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
-import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
-import edu.washington.cs.activedht.db.js.JSActiveDHTDBValue;
-import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
 import edu.washington.cs.activedht.util.Constants;
 
 /**
@@ -54,7 +48,7 @@ public class ActiveDHTInitializer implements Constants {
 						logger);
 				dht_db.init(); // initialize the DB.
 				return dht_db;*/
-				return new ActiveDB(adapter, original_republish_interval, cache_republish_interval, logger);
+				return new ActiveDB(adapter);
 			}
 		});
 
