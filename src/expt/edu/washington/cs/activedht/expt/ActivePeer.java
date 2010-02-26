@@ -29,10 +29,8 @@ import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
-import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
-import edu.washington.cs.activedht.db.lua.LuaActiveDHTDBValue;
 
 /**
  * Vuze-based implementation of the VanishBackendInterface.
@@ -69,7 +67,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private static final int DEFAULT_LOOKUP_CONCURRENCY = 200;
 
 	public enum ValueFactory {
-		LUA(LUA_VALUE_FACTORY_INTERFACE), NA(NA_VALUE_FACTORY_INTERFACE), KAHLUA(KAHLUA_VALUE_FACTORY_INTERFACE);
+		NA(NA_VALUE_FACTORY_INTERFACE), KAHLUA(KAHLUA_VALUE_FACTORY_INTERFACE);
 		
 		public final FactoryInterface fi;
 
@@ -77,22 +75,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			this.fi = fi;
 		}
 	}
-	
-	public static final FactoryInterface LUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
-		public DHTDBValue create(long _creation_time, byte[] _value,
-				int _version, DHTTransportContact _originator,
-				DHTTransportContact _sender, boolean _local, int _flags) {
-			return new LuaActiveDHTDBValue(_creation_time, _value, _version,
-					_originator, _sender, _local, _flags);
-		}
-		
-		public DHTDBValue create(DHTTransportContact sender,
-				DHTTransportValue other, boolean local) {
-			return new LuaActiveDHTDBValue(other
-					.getCreationTime(), other.getValue(), other.getVersion(), other
-					.getOriginator(), sender, local, other.getFlags());
-		}
-	};
 	
 	public static final FactoryInterface KAHLUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
 		public DHTDBValue create(long _creation_time, byte[] _value,
@@ -161,12 +143,12 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private final int current_udp_timeout;
 
 	public ActivePeer(int port, String bootstrap) throws Exception {
-		this(port, bootstrap, false, LUA_VALUE_FACTORY_INTERFACE, DEFAULT_LOOKUP_CONCURRENCY);
+		this(port, bootstrap, false, KAHLUA_VALUE_FACTORY_INTERFACE, DEFAULT_LOOKUP_CONCURRENCY);
 	}
 
 	public ActivePeer(int port, String bootstrap, boolean logging, FactoryInterface factoryInterface, int lookupConurrency)
 			throws Exception {
-		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
+		//ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
 
 		// Load the parameters from the configuration:
 
