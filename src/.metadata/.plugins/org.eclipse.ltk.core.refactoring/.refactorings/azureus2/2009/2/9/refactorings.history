@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<session version="1.0">
-<refactoring comment="Rename package 'edu.washington.cs.roxana' to 'edu.washington.cs.activedht'&#10;- Original element: 'azureus2/edu.washington.cs.roxana'&#10;- Renamed element: 'azureus2/edu.washington.cs.activedht'&#10;- Update references to refactored element&#10;- Update textual occurrences in comments and strings" description="Rename package 'edu.washington.cs.roxana'" flags="589830" hierarchical="false" id="org.eclipse.jdt.ui.rename.package" input="/&lt;edu.washington.cs.roxana" name="edu.washington.cs.activedht" qualified="false" references="true" stamp="1235605119958" textual="false" version="1.0"/>
-</session>
