@@ -9,7 +9,7 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 <project default="jar" name="ActiveVuze" basedir=".">
 
    <property name="root.dir" value="." />  <!-- REMINDER: this needs to be "." for public source -->
-   <property name="comet.dir" value="src" />
+   <property name="comet.dir" value="comet" />
    <property name="dht.dir" value="dht" />
    <property name="test.dir" value="test" />
    <property name="expt.dir" value="expt" />
@@ -53,7 +53,7 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
       </javac>
    </target>
 
-   <target name="jar" depends="compile, compile-apps" >
+   <target name="jar" depends="compile" >
       <jar destfile="${root.dir}/${dist.dir}/${jarname}"
    	       basedir="${root.dir}/${build.dir}"
       	   excludes="${dist.jar.excludes}" >
@@ -67,22 +67,8 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
 
    </target>
 	
-   <!-- Apps: -->
-   <target name="compile-apps" depends="compile" >
-   	    <path id="apps.classpath">
-   	    	<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
-   	    	<dirset dir="${root.dir}/${build.dir}" />
-   	    </path>
-        <javac srcdir="${root.dir}/${apps.dir}"
-        	   destdir="${root.dir}/${build.dir}"
-        	   nowarn="yes" source="1.6" target="1.6" includeAntRuntime="no"
-          	   debug="true" debuglevel="lines,vars,source" >
-   	        <classpath refid="apps.classpath" />
-        </javac>
-   </target>
-
    <!-- Expt: -->
-   <target name="compile-expt" depends="compile-apps" >
+   <target name="compile-expt" depends="compile" >
    	    <path id="expt.classpath">
    	    	<fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
    	    	<dirset dir="${root.dir}/${build.dir}" />
@@ -96,7 +82,7 @@ NOTE:  You may need to set the  ANT_OPTS="-Xmx512m"  env prop in order to compil
    </target>
     
    <!-- Tests: -->
-   <target name="compile-tests" depends="compile,compile-apps" >
+   <target name="compile-tests" depends="compile" >
        <path id="libs.classpath">
 	         <fileset dir="${root.dir}/${libs.dir}" includes="**/*.jar" />
 	   </path>
