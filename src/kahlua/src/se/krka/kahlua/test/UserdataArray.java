@@ -39,7 +39,7 @@ public class UserdataArray implements JavaFunction {
 	private static final int PUSH = 4;
 
 	// NOTE: Vector.class won't work in J2ME - so this is used as a workaround
-	private static final Class VECTOR_CLASS = new Vector().getClass();
+	private static final Class VECTOR_CLASS = Vector.class;
 
 	private static LuaTable metatable;
 
