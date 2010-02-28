@@ -43,7 +43,7 @@ public class ActiveCodeRunner {
 	public ActiveDHTDBValue onGet(DHTTransportContact reader, HashWrapper key,
 			ActiveDHTDBValue value) {
 		value.getDhtWrapper(db.getControl(), key);
-		ActiveDHTDBValue result = value.executeCallback("onGet");
+		ActiveDHTDBValue result = value.executeCallback("onGet", reader.getAddress().toString());
 		return result;
 	}
 

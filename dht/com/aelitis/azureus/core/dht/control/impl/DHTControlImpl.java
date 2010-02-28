@@ -1413,14 +1413,17 @@ DHTControlImpl
 		return( adapter.isDiversified( encoded_key ));
 	}
 	
+	public boolean lookup(byte[] id, long timeout, DHTOperationListener listener) {
+		byte[]	encoded_key = encodeKey( id );
+		return lookupEncodedKey(encoded_key, timeout, listener);
+	}
+	
 	public boolean
-   	lookup(		
-   		byte[]							unencoded_key,
+   	lookupEncodedKey(		
+   		byte[]							encoded_key,
    		long							timeout,
    		final DHTOperationListener		lookup_listener )
 	{
-		final byte[]	encoded_key = encodeKey( unencoded_key );
-
 		if ( DHTLog.isOn()){
 			DHTLog.log( "lookup for " + DHTLog.getString( encoded_key ));
 		}

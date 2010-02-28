@@ -39,7 +39,7 @@ public class LuaDBBenchmark extends DBBenchmark {
 		state.call(closure, new Object[] {});
 		Object obj = state.getEnvironment().rawget("activeobject");
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		new Serializer(new DataOutputStream(bos)).serialize(obj);
+		new Serializer(new DataOutputStream(bos)).serializeObject(obj);
 		return bos.toByteArray();
 	}
 

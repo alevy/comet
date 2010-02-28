@@ -10,7 +10,7 @@ import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
 
 /**
  * @author levya

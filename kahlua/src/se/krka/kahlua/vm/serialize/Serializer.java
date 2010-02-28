@@ -1,5 +1,6 @@
 package se.krka.kahlua.vm.serialize;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
@@ -20,9 +21,9 @@ public class Serializer {
 		stream.writeInt(table.len());
 		Object key = table.next(null);
 		while (key != null) {
-			serialize(key);
+			serializeObject(key);
 			Object value = table.rawget(key);
-			serialize(value);
+			serializeObject(value);
 			key = table.next(key);
 		}
 	}
@@ -47,8 +48,12 @@ public class Serializer {
 		stream.writeByte(Type.PROTOTYPE);
 		value.dump(stream);
 	}
+	
+	public void serializeNull() throws IOException {
+		stream.writeByte(Type.NULL);
+	}
 
-	public void serialize(Object value) {
+	public void serializeObject(Object value) {
 		try {
 			if (String.class.isInstance(value)) {
 				serializeString((String) value);
@@ -63,12 +68,17 @@ public class Serializer {
 			} else if (LuaPrototype.class.isInstance(value)) {
 				serializePrototype((LuaPrototype) value);
 			} else {
-				throw new IllegalArgumentException(value.getClass()
-						+ " is not serializeable");
+				serializeNull();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static byte[] serialize(Object value) {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		new Serializer(new DataOutputStream(out)).serializeObject(value);
+		return out.toByteArray();
 	}
 
 }

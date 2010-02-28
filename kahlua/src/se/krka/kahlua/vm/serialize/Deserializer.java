@@ -1,5 +1,6 @@
 package se.krka.kahlua.vm.serialize;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -57,10 +58,16 @@ public class Deserializer {
 				return readTable();
 			case Type.PROTOTYPE:
 				return readPrototype();
+			case Type.NULL:
+				return null;
+			default: throw new IllegalStateException("Stream does not represent a Lua Object: " + type);
 			}
 		} catch (IOException e) {
 			throw new IllegalStateException("Stream does not represent a Lua Object", e);
 		}
-		throw new IllegalStateException("Stream does not represent a Lua Object: " + type);
+	}
+
+	public static Object deserializeBytes(byte[] value, LuaTable env) {
+		return new Deserializer(new DataInputStream(new ByteArrayInputStream(value)), env).deserialize();
 	}
 }

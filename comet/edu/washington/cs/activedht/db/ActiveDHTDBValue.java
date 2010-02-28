@@ -5,7 +5,7 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 
-import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
 
 
 /**

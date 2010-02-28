@@ -4,7 +4,7 @@
 package se.krka.kahlua.vm.serialize;
 
 public class Type {
-	public static final byte DONE = 0xf;
+	public static final byte NULL = 0x0;
 	
 	public static final byte STRING = 0x1;
 	public static final byte DOUBLE = 0x2;

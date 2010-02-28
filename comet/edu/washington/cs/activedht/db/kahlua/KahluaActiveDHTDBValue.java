@@ -24,7 +24,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
-import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
 
 /**
  * @author levya
@@ -32,6 +32,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.DhtWrapper;
  */
 public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 
+	private static final byte[] ZERO_LENGTH_BYTE_ARRAY = new byte[] {};
 	private final int version;
 	private final boolean local;
 	private final int flags;
@@ -114,10 +115,7 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	}
 
 	public byte[] serialize(Object object) {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		new Serializer(new DataOutputStream(bos))
-				.serialize(object);
-		return bos.toByteArray();
+		return Serializer.serialize(object);
 	}
 	
 	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
@@ -139,7 +137,7 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	}
 
 	public DHTTransportValue getValueForDeletion(int nextValueVersion) {
-		return new BasicDHTTransportValue(getCreationTime(), getValue(),
+		return new BasicDHTTransportValue(getCreationTime(), ZERO_LENGTH_BYTE_ARRAY,
 				getString(), nextValueVersion, getOriginator(), isLocal(),
 				getFlags());
 	}

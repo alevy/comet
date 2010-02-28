@@ -180,6 +180,11 @@ DHTControl
 		DHTTransportContact c,
 		boolean				direct );
 	
+	public boolean lookupEncodedKey(
+		byte[]					encoded_id,
+		long					timeout,
+		DHTOperationListener	listener);
+	
 	public boolean
 	lookup(
 		byte[]					id,
