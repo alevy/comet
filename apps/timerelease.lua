@@ -1,13 +1,10 @@
-time = 300000
-value = "myValue"
-
 onStore = function(self)
   self.start = dht.currentTime()
 end
 
 onGet = function(self)
-  if (self.start + self.time > dht.currentTime())
-    return self.value
+  if (self.start + 300000 > dht.currentTime())
+    return "myValue"
   end
   return null
 end
