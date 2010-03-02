@@ -6,8 +6,6 @@ package edu.washington.cs.activedht.db.dhtwrapper;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.gudy.azureus2.core3.util.HashWrapper;
-
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 
@@ -24,8 +22,7 @@ public class UpdateNeighborsOperationAdapter extends
 	
 	public void found(DHTTransportContact contact) {
 		synchronized (tmpNeighbors) {
-			tmpNeighbors.add(new NodeWrapper(contact, new HashWrapper(
-					contact.getID())));
+			tmpNeighbors.add(new NodeWrapper(contact));
 		}
 	}
 

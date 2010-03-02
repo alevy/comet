@@ -50,8 +50,8 @@ public class DhtWrapper implements JavaFunction {
 	private final HashWrapper key;
 
 	public DhtWrapper(Function function, LuaState state, HashWrapper key,
-			NodeWrapper localNode, Map<HashWrapper, Set<NodeWrapper>> neighbors,
-			DHTControl control) {
+			NodeWrapper localNode,
+			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
@@ -80,7 +80,7 @@ public class DhtWrapper implements JavaFunction {
 			return 0;
 		}
 	}
-	
+
 	private int lookup(LuaCallFrame callFrame, int nArguments) {
 		HashWrapper key = this.key;
 		if (nArguments > 0) {
@@ -160,14 +160,19 @@ public class DhtWrapper implements JavaFunction {
 	}
 
 	public static void register(LuaState state, HashWrapper key,
-			NodeWrapper localNode, Map<HashWrapper, Set<NodeWrapper>> neighbors,
-			DHTControl control) {
+			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
 		LuaTable dht = new LuaTableImpl();
 		state.getEnvironment().rawset("dht", dht);
+		NodeWrapper node = null;
+		if (control != null) {
+			node = new NodeWrapper(control.getTransport().getLocalContact());
+		}
 
 		for (Function function : Function.values()) {
 			dht.rawset(function.name, new DhtWrapper(function, state, key,
-					localNode, neighbors, control));
+					node,
+					neighbors, control));
 		}
 	}
+
 }

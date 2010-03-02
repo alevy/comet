@@ -19,6 +19,7 @@ import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
 import com.aelitis.azureus.core.dht.db.DHTDBStats;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
+import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
@@ -38,7 +39,7 @@ public class ActiveDB implements DHTDB {
 
 	public ActiveDB(DHTStorageAdapter adapter) {
 		this.adapter = adapter;
-		this.codeRunner = new ActiveCodeRunner(this);
+		this.codeRunner = new ActiveCodeRunner();
 	}
 
 	public DHTTransportValue get(HashWrapper key) {
@@ -49,7 +50,7 @@ public class ActiveDB implements DHTDB {
 		ActiveDHTDBValue result = get(key, localContact);
 		return result.getValueForRelay(result.getOriginator());
 	}
-	
+
 	private ActiveDHTDBValue get(HashWrapper key, DHTTransportContact reader) {
 		ActiveDHTDBValue value = store.get(key);
 		if (value != null) {
@@ -84,7 +85,16 @@ public class ActiveDB implements DHTDB {
 	}
 
 	public ActiveDHTDBValue remove(DHTTransportContact sender, HashWrapper key) {
-		// TODO Auto-generated method stub
+		ActiveDHTDBValue removedValue = store.get(key);
+		if (removedValue != null) {
+			ActiveDHTDBValue result = codeRunner.onRemove(sender, key,
+					removedValue);
+			if (result == null) {
+				store.remove(key);
+			} else {
+				store.put(key, result);
+			}
+		}
 		return null;
 	}
 
@@ -95,12 +105,11 @@ public class ActiveDB implements DHTDB {
 	public DHTTransportValue store(HashWrapper key, byte[] value, byte flags) {
 		DHTTransportContact localContact = control.getTransport()
 				.getLocalContact();
-		ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory
-				.create(SystemTime.getCurrentTime(), value, adapter
-						.getNextValueVersions(1), localContact, localContact,
-						true, flags);
+		DHTTransportValue activeValue = new BasicDHTTransportValue(SystemTime
+				.getCurrentTime(), value, "", adapter.getNextValueVersions(1),
+				localContact, true, flags);
 		store(localContact, key, new DHTTransportValue[] { activeValue });
-		return activeValue.getValueForRelay(localContact);
+		return activeValue;
 	}
 
 	public byte store(DHTTransportContact sender, HashWrapper key,
@@ -124,9 +133,9 @@ public class ActiveDB implements DHTDB {
 							.isLocal()), oldValue, result);
 				}
 			} else {
-				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) (ActiveDHTDBValue.class
-						.isInstance(value) ? value : DHTDBValueFactory.create(
-						value.getOriginator(), value, value.isLocal()));
+				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory.create(
+						value.getOriginator(), value, value.isLocal());
+				activeValue.registerGlobalState(control, key);
 				if (codeRunner.onStore(sender, key, activeValue) != null) {
 					store.put(key, activeValue);
 					adapter.valueAdded(adapter.keyCreated(key, activeValue

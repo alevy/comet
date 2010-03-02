@@ -14,11 +14,9 @@ import se.krka.kahlua.vm.LuaCallFrame;
 public class NodeWrapper implements JavaFunction {
 
 	protected final DHTTransportContact contact;
-	private final HashWrapper nodeId;
 
-	public NodeWrapper(DHTTransportContact contact, HashWrapper nodeId) {
+	public NodeWrapper(DHTTransportContact contact) {
 		this.contact = contact;
-		this.nodeId = nodeId;
 	}
 	
 	public int call(LuaCallFrame callFrame, int nArguments) {
@@ -35,7 +33,7 @@ public class NodeWrapper implements JavaFunction {
 	}
 
 	public HashWrapper getNodeID() {
-		return nodeId;
+		return new HashWrapper(contact.getID());
 	}
 
 }

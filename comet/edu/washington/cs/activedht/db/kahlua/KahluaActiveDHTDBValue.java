@@ -8,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -25,6 +27,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
 
 /**
  * @author levya
@@ -117,12 +120,15 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	public byte[] serialize(Object object) {
 		return Serializer.serialize(object);
 	}
-	
-	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
-		// TODO Auto-generated method stub
-		return null;
+
+	public void registerGlobalState(DHTControl control, HashWrapper key) {
+		DhtWrapper.register(getLuaState(), key,
+				new HashMap<HashWrapper, Set<NodeWrapper>>(), control);
 	}
 
+	public Object wrap(DHTTransportContact contact) {
+		return new NodeWrapper(contact);
+	}
 
 	public long getCreationTime() {
 		return creationTime;
@@ -137,9 +143,9 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	}
 
 	public DHTTransportValue getValueForDeletion(int nextValueVersion) {
-		return new BasicDHTTransportValue(getCreationTime(), ZERO_LENGTH_BYTE_ARRAY,
-				getString(), nextValueVersion, getOriginator(), isLocal(),
-				getFlags());
+		return new BasicDHTTransportValue(getCreationTime(),
+				ZERO_LENGTH_BYTE_ARRAY, getString(), nextValueVersion,
+				getOriginator(), isLocal(), getFlags());
 	}
 
 	public DHTTransportValue getValueForRelay(DHTTransportContact newOriginator) {

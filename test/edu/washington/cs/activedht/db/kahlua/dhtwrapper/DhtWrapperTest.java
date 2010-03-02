@@ -50,7 +50,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testLocalNode() throws Exception {
-		NodeWrapper node = new NodeWrapper(null, null);
+		NodeWrapper node = new NodeWrapper(null);
 		DhtWrapper localNode = new DhtWrapper(Function.LOCAL_NODE, null, null,
 				node, null, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
@@ -235,7 +235,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testRegister() {
-		DhtWrapper.register(state, null, null, null, null);
+		DhtWrapper.register(state, null, null, null);
 		LuaTable dht = (LuaTable) state.getEnvironment().rawget("dht");
 		assertNotNull(dht);
 		for (Function function : Function.values()) {

@@ -10,8 +10,6 @@ import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
-import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
-
 /**
  * @author levya
  * 
@@ -38,8 +36,12 @@ public class NonActiveDHTDBValue extends BasicDHTTransportValue implements
 				getVersion(), getOriginator(), sender, isLocal(), getFlags());
 	}
 
-	public DhtWrapper getDhtWrapper(DHTControl control, HashWrapper key) {
-		return null;
+	public Object wrap(DHTTransportContact contact) {
+		return contact;
+	}
+	
+	public void registerGlobalState(DHTControl control, HashWrapper key) {
+		return;
 	}
 
 	public byte[] serialize(Object object) {
