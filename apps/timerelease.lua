@@ -3,7 +3,7 @@ onStore = function(self)
 end
 
 onGet = function(self)
-  if (self.start + 300000 > dht.currentTime())
+  if (self.start + 300000 > dht.currentTime()) then
     return "myValue"
   end
   return null

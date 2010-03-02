@@ -1,7 +1,7 @@
 pending = {}
 
 onGet = function(self, callerNode, callbackKey)
-  if(self.value)
+  if(self.value) then
     return self.value
   end
   pending[callerNode] = callbackKey

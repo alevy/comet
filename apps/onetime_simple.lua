@@ -1,5 +1,5 @@
 onGet = function(self)
-  if(self.read)
+  if(self.read) then
     return null
   end
   self.read = true
