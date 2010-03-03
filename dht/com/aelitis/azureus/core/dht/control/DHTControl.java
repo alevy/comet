@@ -72,11 +72,13 @@ DHTControl
 	
 	public DHTTransportValue
 	getLocalValue(
-		byte[]		key );
+		byte[]		key, byte[] payload );
 		
 	public void
 	get(
 		byte[]					unencoded_key,
+		byte[]					reader_id,
+		byte[]					payload,
 		String					description,
 		byte					flags,
 		int						max_values,
@@ -88,6 +90,8 @@ DHTControl
 	public void
 	getEncodedKey(
 		byte[]					encoded_key,
+		byte[]					reader_id,
+		byte[]					payload,
 		String					description,
 		byte					flags,
 		int						max_values,

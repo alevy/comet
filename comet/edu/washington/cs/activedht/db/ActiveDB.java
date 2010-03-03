@@ -42,26 +42,28 @@ public class ActiveDB implements DHTDB {
 		this.codeRunner = new ActiveCodeRunner();
 	}
 
-	public DHTTransportValue get(HashWrapper key) {
+	public DHTTransportValue get(HashWrapper key, HashWrapper readerId,
+			byte[] payload) {
 		DHTTransportContact localContact = null;
 		if (control != null) {
 			localContact = control.getTransport().getLocalContact();
 		}
-		ActiveDHTDBValue result = get(key, localContact);
+		ActiveDHTDBValue result = get(localContact, key, readerId, payload);
 		return result.getValueForRelay(result.getOriginator());
 	}
 
-	private ActiveDHTDBValue get(HashWrapper key, DHTTransportContact reader) {
+	private ActiveDHTDBValue get(DHTTransportContact reader, HashWrapper key, HashWrapper readerId, byte[] payload) {
 		ActiveDHTDBValue value = store.get(key);
 		if (value != null) {
-			value = codeRunner.onGet(reader, key, value);
+			value = codeRunner.onGet(reader, key, readerId, payload, value);
 		}
 		return value;
 	}
 
 	public DHTDBLookupResult get(DHTTransportContact reader, HashWrapper key,
-			int max_values, byte flags, boolean external_request) {
-		return new ActiveDHTDBLookupResult(get(key, reader));
+			HashWrapper readerId, byte[] payload, int max_values, byte flags,
+			boolean external_request) {
+		return new ActiveDHTDBLookupResult(get(reader, key, readerId, payload));
 	}
 
 	public DHTControl getControl() {
@@ -133,8 +135,8 @@ public class ActiveDB implements DHTDB {
 							.isLocal()), oldValue, result);
 				}
 			} else {
-				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory.create(
-						value.getOriginator(), value, value.isLocal());
+				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory
+						.create(value.getOriginator(), value, value.isLocal());
 				activeValue.registerGlobalState(control, key);
 				if (codeRunner.onStore(sender, key, activeValue) != null) {
 					store.put(key, activeValue);

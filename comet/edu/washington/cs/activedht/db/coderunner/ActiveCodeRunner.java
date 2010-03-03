@@ -9,10 +9,10 @@ import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 
 public class ActiveCodeRunner {
 
-	public ActiveDHTDBValue onGet(DHTTransportContact reader, HashWrapper key,
+	public ActiveDHTDBValue onGet(DHTTransportContact reader, HashWrapper key, HashWrapper readerId, byte[] payload,
 			ActiveDHTDBValue value) {
 		ActiveDHTDBValue result = value.executeCallback("onGet", value
-				.wrap(reader));
+				.wrap(reader), readerId, value.deserialize(payload));
 		return result;
 	}
 

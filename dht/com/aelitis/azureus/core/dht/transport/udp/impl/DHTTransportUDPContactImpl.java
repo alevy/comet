@@ -320,10 +320,12 @@ DHTTransportUDPContactImpl
 	sendFindValue(
 		DHTTransportReplyHandler	handler,
 		byte[]						key,
+		byte[]						readerId,
+		byte[]						payload,
 		int							max_values,
 		byte						flags )
 	{
-		transport.sendFindValue( this, handler, key, max_values, flags );
+		transport.sendFindValue( this, handler, key, readerId, payload, max_values, flags );
 	}
 	
 	public void

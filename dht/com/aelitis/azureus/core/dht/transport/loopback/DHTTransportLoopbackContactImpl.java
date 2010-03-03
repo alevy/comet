@@ -189,10 +189,12 @@ DHTTransportLoopbackContactImpl
 	sendFindValue(
 		DHTTransportReplyHandler	handler,
 		byte[]						key,
+		byte[]						readerId,
+		byte[]						payload,
 		int							max,
 		byte						flags )
 	{
-		transport.sendFindValue( this, handler, key, max, flags );
+		transport.sendFindValue( this, handler, key, readerId, payload, max, flags );
 	}
 	
 	public DHTTransportFullStats

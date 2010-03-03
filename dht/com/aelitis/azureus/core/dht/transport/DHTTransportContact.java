@@ -106,6 +106,8 @@ DHTTransportContact
 	sendFindValue(
 		DHTTransportReplyHandler	handler,
 		byte[]						key,
+		byte[]						readerId,
+		byte[]						payload,
 		int							max_values,
 		byte						flags );
 		

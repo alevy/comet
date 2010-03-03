@@ -83,13 +83,16 @@ DHTDB
 	
 	public DHTTransportValue
 	get(
-		HashWrapper		key );
+		HashWrapper		key,
+		HashWrapper		readerId,
+		byte[] payload);
 	
 	public DHTDBLookupResult
 	get(
 		DHTTransportContact		reader,
 		HashWrapper				key,
-		int						max_values,
+		HashWrapper				readerId,
+		byte[] payload, int						max_values,
 		byte					flags,
 		boolean					external_request );
 		

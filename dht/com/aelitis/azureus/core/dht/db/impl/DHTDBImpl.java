@@ -548,6 +548,8 @@ DHTDBImpl
 	get(
 		DHTTransportContact		reader,
 		HashWrapper				key,
+		HashWrapper				readerId,
+		byte[]					payload,
 		int						max_values,	// 0 -> all
 		byte					flags,
 		boolean					external_request )	
@@ -595,7 +597,7 @@ DHTDBImpl
 	
 	public DHTDBValue
 	get(
-		HashWrapper				key )
+		HashWrapper				key, HashWrapper readerId, byte[] payload )
 	{
 			// local get
 		

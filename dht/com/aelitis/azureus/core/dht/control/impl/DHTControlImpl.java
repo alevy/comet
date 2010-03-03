@@ -105,6 +105,7 @@ public class
 DHTControlImpl 
 	implements DHTControl, DHTTransportRequestHandler
 {
+	private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 	private static final int EXTERNAL_LOOKUP_CONCURRENCY	= 16;
 	private static final int EXTERNAL_PUT_CONCURRENCY		= 8;
 	
@@ -390,7 +391,7 @@ DHTControlImpl
 					String		description )
 				{
 					lookup( internal_lookup_pool, false,
-							id, 
+							id, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
 							description,
 							(byte)0,
 							false, 
@@ -662,6 +663,8 @@ DHTControlImpl
 		
 		lookup( internal_lookup_pool, false,
 				router.getID(), 
+				EMPTY_BYTE_ARRAY,
+				EMPTY_BYTE_ARRAY,
 				"Seeding DHT",
 				(byte)0,
 				false, 
@@ -923,6 +926,8 @@ DHTControlImpl
 			lookup( thread_pool, 
 					high_priority,
 					encoded_key,
+					EMPTY_BYTE_ARRAY,
+					EMPTY_BYTE_ARRAY,
 					this_description,
 					(byte)0,
 					false, 
@@ -1287,7 +1292,7 @@ DHTControlImpl
 	
 	public DHTTransportValue
 	getLocalValue(
-		byte[]		unencoded_key )
+		byte[]		unencoded_key, byte[] payload )
 	{
 		final byte[]	encoded_key = encodeKey( unencoded_key );
 
@@ -1295,7 +1300,7 @@ DHTControlImpl
 			DHTLog.log( "getLocalValue for " + DHTLog.getString( encoded_key ));
 		}
 
-		DHTTransportValue	res = database.get( new HashWrapper( encoded_key ));
+		DHTTransportValue	res = database.get( new HashWrapper( encoded_key ), new HashWrapper(transport.getLocalContact().getID()), payload);
 	
 		if ( res == null ){
 			
@@ -1308,6 +1313,8 @@ DHTControlImpl
 	public void
 	get(
 		byte[]						unencoded_key,
+		byte[]						reader_id,
+		byte[]						payload,
 		String						description,
 		byte						flags,
 		int							max_values,
@@ -1318,6 +1325,8 @@ DHTControlImpl
 	{
 		final byte[]	encoded_key = encodeKey( unencoded_key );
 		getEncodedKey( encoded_key,
+					reader_id,
+					   payload,
 					   description,
 					   flags,
 					   max_values,
@@ -1330,6 +1339,8 @@ DHTControlImpl
 	public void
 	getEncodedKey(
 		byte[]						encoded_key,
+		byte[]						reader_id,
+		byte[]						payload,
 		String						description,
 		byte						flags,
 		int							max_values,
@@ -1401,7 +1412,7 @@ DHTControlImpl
 				});
 			
 
-		task_set[0] = getSupport( encoded_key, description, flags, max_values, timeout, exhaustive, high_priority, demuxer );
+		task_set[0] = getSupport( encoded_key, reader_id, payload, description, flags, max_values, timeout, exhaustive, high_priority, demuxer );
 	}
 	
 	public boolean
@@ -1482,7 +1493,9 @@ DHTControlImpl
 			};
 			
 		lookup( 	external_lookup_pool, false,
-					encoded_key, 
+					encoded_key,
+					EMPTY_BYTE_ARRAY,
+					EMPTY_BYTE_ARRAY,
 					"lookup",
 					(byte)0,
 					false, 
@@ -1521,6 +1534,8 @@ DHTControlImpl
 	protected DhtTaskSet
 	getSupport(
 		final byte[]						initial_encoded_key,
+		final byte[]						reader_id,
+		final byte[]						payload,
 		final String						description,
 		final byte							flags,
 		final int							max_values,
@@ -1556,7 +1571,9 @@ DHTControlImpl
 			result.add(
 				lookup( external_lookup_pool,
 					high_priority,
-					encoded_key, 
+					encoded_key,
+					reader_id,
+					payload,
 					this_description,
 					flags,
 					true, 
@@ -1597,7 +1614,7 @@ DHTControlImpl
 											if ( !result.isCancelled()){
 												
 												result.add(
-													getSupport( diversified_keys[j], "Diversification of [" + this_description + "]", flags, rem,  timeout, exhaustive, high_priority, get_listener ));
+													getSupport( diversified_keys[j], reader_id, payload, "Diversification of [" + this_description + "]", flags, rem,  timeout, exhaustive, high_priority, get_listener ));
 											}
 										}
 									}
@@ -1772,7 +1789,9 @@ DHTControlImpl
 	lookup(
 		final ThreadPool 			thread_pool, 
 		boolean 					high_priority, 
-		final byte[] 				lookup_id, 
+		final byte[] 				lookup_id,
+		final byte[]				reader_id,
+		final byte[]				payload,
 		final String 				description, 
 		final byte 					flags, 
 		final boolean 				value_search, 
@@ -2314,7 +2333,7 @@ DHTControlImpl
 										Debug.out("eh?");
 										rem = 1;
 									}
-									closest.sendFindValue(replyHandler, lookup_id, rem, flags);
+									closest.sendFindValue(replyHandler, lookup_id, reader_id, payload, rem, flags);
 								} else
 								{
 									closest.sendFindNode(replyHandler, lookup_id);
@@ -2482,6 +2501,8 @@ DHTControlImpl
 	findValueRequest(
 		DHTTransportContact originating_contact, 
 		byte[]				key,
+		byte[]				readerId,
+		byte[]				payload,
 		int					max_values,
 		byte				flags )
 	{
@@ -2489,7 +2510,7 @@ DHTControlImpl
 			DHTLog.log( "findValueRequest from " + DHTLog.getString( originating_contact.getID()));
 		}
 		
-		DHTDBLookupResult	result	= database.get( originating_contact, new HashWrapper( key ), max_values, flags, true );
+		DHTDBLookupResult	result	= database.get( originating_contact, new HashWrapper( key ), new HashWrapper(readerId), payload, max_values, flags, true );
 					
 		if ( result != null ){
 			
@@ -2680,7 +2701,7 @@ DHTControlImpl
 				continue;
 			}
 			
-			DHTDBLookupResult	result = database.get( null, key, 0, (byte)0, false );
+			DHTDBLookupResult	result = database.get( null, key, null, EMPTY_BYTE_ARRAY, 0, (byte)0, false );
 			
 			if ( result == null  ){
 				
@@ -4066,10 +4087,12 @@ DHTControlImpl
 		sendFindValue(
 			DHTTransportReplyHandler	handler,
 			byte[]						key,
+			byte[]						readerId,
+			byte[]						payload,
 			int							max_values,
 			byte						flags )
 		{
-			delegate.sendFindValue(handler, key, max_values, flags);
+			delegate.sendFindValue(handler, key, readerId, payload, max_values, flags);
 		}
 			
 		public void

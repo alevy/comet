@@ -14,6 +14,8 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
  */
 public abstract class DBBenchmark {
 
+	private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
+
 	private final Object getsMon = new Object();
 	
 	private final DHTDB db;
@@ -49,10 +51,11 @@ public abstract class DBBenchmark {
 
 	public void get(final String key) {
 		final HashWrapper hashKey = new HashWrapper(key.getBytes());
+		final HashWrapper readerId = new HashWrapper("19876543".getBytes());
 		new Thread() {
 			public void run() {
 				while (keepRunning) {
-					db.get(hashKey);
+					db.get(hashKey, readerId, EMPTY_BYTE_ARRAY);
 					synchronized (getsMon) {
 						++gets;
 					}

@@ -235,7 +235,7 @@ DHTImpl
 	getLocalValue(
 		byte[]		key )
 	{
-		return( control.getLocalValue( key ));
+		return( control.getLocalValue( key, new byte[] {} ));
 	}
 		
 	public void
@@ -249,7 +249,7 @@ DHTImpl
 		boolean					high_priority,
 		DHTOperationListener	listener )
 	{
-		control.get( key, description, flags, max_values, timeout, exhaustive, high_priority, listener );
+		control.get( key, getTransport().getLocalContact().getID(), new byte[] {}, description, flags, max_values, timeout, exhaustive, high_priority, listener );
 	}
 		
 	public byte[]

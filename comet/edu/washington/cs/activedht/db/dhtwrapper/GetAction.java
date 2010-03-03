@@ -13,9 +13,11 @@ public class GetAction implements Runnable {
 	public final HashWrapper key;
 	public final int maxValues;
 	public final GetOperationAdapter getOperationAdapter;
+	private final HashWrapper readerId;
 
-	public GetAction(HashWrapper key, int maxValues, DHTControl control,
+	public GetAction(HashWrapper key, HashWrapper readerId, int maxValues, DHTControl control,
 			GetOperationAdapter getOperationAdapter) {
+		this.readerId = readerId;
 		this.control = control;
 		this.key = key;
 		this.maxValues = maxValues;
@@ -23,7 +25,7 @@ public class GetAction implements Runnable {
 	}
 
 	public void run() {
-		control.getEncodedKey(key.getBytes(), "LuaActiveDHT Get", (byte) 0,
+		control.getEncodedKey(key.getBytes(), readerId.getBytes(), new byte[] {}, "LuaActiveDHT Get", (byte) 0,
 				maxValues, 60000, true, false, getOperationAdapter);
 	}
 }

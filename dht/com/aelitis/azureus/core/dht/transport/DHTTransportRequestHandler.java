@@ -59,6 +59,8 @@ DHTTransportRequestHandler
 	findValueRequest(
 		DHTTransportContact contact, 
 		byte[]				key,
+		byte[]				readerId,
+		byte[]				payload,
 		int					max_values,
 		byte				flags );
 

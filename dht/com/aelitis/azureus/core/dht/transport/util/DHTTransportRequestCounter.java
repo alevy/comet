@@ -104,12 +104,14 @@ DHTTransportRequestCounter
 	findValueRequest(
 		DHTTransportContact contact, 
 		byte[]				key,
+		byte[]				readerId,
+		byte[]				payload,
 		int					max,
 		byte				flags )
 	{
 		stats.findValueReceived();
 		
-		return( delegate.findValueRequest( contact, key, max, flags ));
+		return( delegate.findValueRequest( contact, key, readerId, payload, max, flags ));
 	}
 		
 	public void

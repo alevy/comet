@@ -26,6 +26,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.transport.udp.impl.packethandler.DHTUDPPacketNetworkHandler;
 
 
@@ -39,6 +40,8 @@ DHTUDPPacketRequestFindValue
 	extends DHTUDPPacketRequest
 {
 	private byte[]		id;
+	private byte[]		readerId;
+	private byte[] 		payload;
 	private byte		flags;
 	private byte		maximum_values;
 	
@@ -65,6 +68,10 @@ DHTUDPPacketRequestFindValue
 		
 		id = DHTUDPUtils.deserialiseByteArray( is, 64 );
 		
+		readerId = DHTUDPUtils.deserialiseByteArray( is, 64 );
+		
+		payload = DHTUDPUtils.deserialiseByteArray( is, DHTConstants.MAX_VALUE_SIZE );
+		
 		flags = is.readByte();
 		
 		maximum_values	= is.readByte();
@@ -81,6 +88,10 @@ DHTUDPPacketRequestFindValue
 		super.serialise(os);
 		
 		DHTUDPUtils.serialiseByteArray( os, id, 64 );
+		
+		DHTUDPUtils.serialiseByteArray( os, readerId, 64 );
+		
+		DHTUDPUtils.serialiseByteArray( os, payload, DHTConstants.MAX_VALUE_SIZE );
 		
 		os.writeByte( flags );
 		
@@ -100,6 +111,24 @@ DHTUDPPacketRequestFindValue
 	getID()
 	{
 		return( id );
+	}
+	
+	protected void
+	setReaderID(
+		byte[]	_id )
+	{
+		readerId	= _id;
+	}
+	
+	protected byte[]
+	getReaderID()
+	{
+		return( readerId );
+	}
+	
+	protected void
+	setPayload(byte[] payload) {
+		this.payload = payload;
 	}
 	
 	protected byte
@@ -137,5 +166,9 @@ DHTUDPPacketRequestFindValue
 	getString()
 	{
 		return( super.getString());
+	}
+
+	protected byte[] getPayload() {
+		return payload;
 	}
 }

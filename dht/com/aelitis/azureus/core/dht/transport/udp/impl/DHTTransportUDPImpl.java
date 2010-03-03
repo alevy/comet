@@ -2002,6 +2002,8 @@ DHTTransportUDPImpl
 		final DHTTransportUDPContactImpl	contact,
 		final DHTTransportReplyHandler		handler,
 		byte[]								key,
+		byte[]								readerId,
+		byte[]								payload,
 		int									max_values,
 		byte								flags )
 	{
@@ -2016,6 +2018,10 @@ DHTTransportUDPImpl
 			stats.findValueSent( request );
 
 			request.setID( key );
+			
+			request.setReaderID(readerId);
+			
+			request.setPayload(payload);
 			
 			request.setMaximumValues( max_values );
 			
@@ -3430,6 +3436,8 @@ DHTTransportUDPImpl
 							request_handler.findValueRequest(
 										originating_contact,
 										find_request.getID(),
+										find_request.getReaderID(),
+										find_request.getPayload(),
 										find_request.getMaximumValues(),
 										find_request.getFlags());
 					

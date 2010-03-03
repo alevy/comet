@@ -608,6 +608,8 @@ DHTTransportLoopbackImpl
 		final DHTTransportContact		contact,
 		final DHTTransportReplyHandler	handler,
 		final byte[]					key,
+		final byte[]					readerId,
+		final byte[]					payload,
 		final int						max,
 		final byte						flags )
 	{
@@ -617,7 +619,7 @@ DHTTransportLoopbackImpl
 				public void
 				runSupport()
 				{
-					sendFindValueSupport( contact, handler, key, max, flags );
+					sendFindValueSupport( contact, handler, key, readerId, payload, max, flags );
 				}
 			};
 		
@@ -629,8 +631,10 @@ DHTTransportLoopbackImpl
 		DHTTransportContact			contact,
 		DHTTransportReplyHandler	handler,
 		byte[]						key,
+		byte[] 						readerId,
+		byte[]						payload,
 		int							max,
-		byte						flags )
+		byte						flags)
 	{
 		DHTTransportLoopbackImpl	target = findTarget( contact.getID());
 		
@@ -649,7 +653,7 @@ DHTTransportLoopbackImpl
 			DHTTransportFindValueReply find_res =
 				target.getRequestHandler().findValueRequest( 
 					new DHTTransportLoopbackContactImpl( target, node_id ),
-					key, max, flags );
+					key, readerId, payload, max, flags );
 			
 			if ( find_res.hit()){
 				

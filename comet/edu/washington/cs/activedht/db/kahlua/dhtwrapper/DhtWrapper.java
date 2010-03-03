@@ -131,7 +131,7 @@ public class DhtWrapper implements JavaFunction {
 			final LuaClosure closure = (LuaClosure) callFrame.get(2);
 			callback = new LuaGetCallback(closure, state);
 		}
-		postActions.offer(new GetAction(key, maxValues, control,
+		postActions.offer(new GetAction(key, this.key, maxValues, control,
 				new GetOperationAdapter(neighbors.get(key), callback)));
 		return 0;
 	}
