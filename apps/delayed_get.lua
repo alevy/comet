@@ -1,6 +1,8 @@
-pending = {}
+object = {}
 
-onGet = function(self, callerNode, callbackKey)
+object.pending = {}
+
+object.onGet = function(self, callerNode, callbackKey)
   if(self.value) then
     return self.value
   end
@@ -8,7 +10,7 @@ onGet = function(self, callerNode, callbackKey)
   return null
 end
 
-onUpdate = function(self, value)
+object.onUpdate = function(self, callerNode, value)
   self.value = value
   for callerNode,key in pairs(self.pending) do
     dht.put(key, value, {callerNode})
