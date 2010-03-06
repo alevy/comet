@@ -7,5 +7,5 @@ function object.onUpdate(self,caller, value)
 end
 
 function object.onTimer(self)
-  dht.put(dht.getKey(), dht.currentTime, 20)
+  dht.put(dht.getKey(), dht.currentTime(), 20)
 end

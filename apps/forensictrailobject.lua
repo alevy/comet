@@ -1,22 +1,22 @@
-replicaIps = {}
-hostIps = {}
-accessorIps = {}
-value = "myValue"
+object = {}
+object.replicaIps = {}
+object.hostIps = {}
+object.accessorIps = {}
 
-onGet = function(self, callerIp)
-  table.insert(self.accessorIps, caller_ip)
-  return self.value
-end
-
-onStore = function(self, callerIp)
-  table.insert(accessorIps, callerIp)
-  table.insert(hostIps, dht.localNode.getIP())
+object.onGet = function(self, callerIp)
+  table.insert(self.accessorIps, callerIp)
   return self
 end
 
-onTimer = function(self)
+object.onStore = function(self, caller)
+  table.insert(self.accessorIps, caller.getIP())
+  table.insert(self.hostIps, dht.localNode.getIP())
+  return self
+end
+
+object.onTimer = function(self)
   dht.put(dht.getKey(), self, 20, function(nodes)
-    for i,v in ipairs(nodes) do table.insert(replicaIps, v.getIp()) end
+    for i,v in ipairs(nodes) do table.insert(self.replicaIps, v.getIp()) end
   end)
 end
 
