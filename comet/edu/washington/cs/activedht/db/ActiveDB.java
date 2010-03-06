@@ -49,6 +49,9 @@ public class ActiveDB implements DHTDB {
 			localContact = control.getTransport().getLocalContact();
 		}
 		ActiveDHTDBValue result = get(localContact, key, readerId, payload);
+		if (result == null) {
+			return null;
+		}
 		return result.getValueForRelay(result.getOriginator());
 	}
 

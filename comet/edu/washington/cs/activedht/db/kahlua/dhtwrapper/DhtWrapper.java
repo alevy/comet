@@ -111,7 +111,7 @@ public class DhtWrapper implements JavaFunction {
 			key = (HashWrapper) callFrame.get(0);
 			++valIndex;
 		}
-		byte[] value = Serializer.serialize(callFrame.get(valIndex));
+		byte[] value = Serializer.serialize(callFrame.get(valIndex), state.getEnvironment());
 		postActions.offer(new PutAction(key, value, control,
 				new UpdateNeighborsOperationAdapter(neighbors.get(key))));
 		return 0;

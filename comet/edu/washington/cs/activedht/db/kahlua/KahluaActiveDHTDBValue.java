@@ -4,16 +4,12 @@
 package edu.washington.cs.activedht.db.kahlua;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
-import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
@@ -84,9 +80,18 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 			}
 
 			if (LuaTable.class.isInstance(luaObject)) {
-				Object function = ((LuaTable) luaObject).rawget(callback);
+				LuaTable luaTable = (LuaTable) luaObject;
+				Object function = luaTable.rawget(callback);
+				if (function == null && luaTable.getMetatable() != null) {
+					function = luaTable.getMetatable().rawget(callback);
+				}
 				if (LuaClosure.class.isInstance(function)) {
-					Object returnedValue = state.call(function, args);
+					Object returnedValue = null;
+					try {
+						returnedValue = state.call(function, functionArgs);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 					if (returnedValue == null) {
 						result = null;
 					} else {
@@ -112,13 +117,12 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	public Object deserialize(byte[] value) {
 		LuaState state = getLuaState();
 		synchronized (state) {
-			return new Deserializer(new DataInputStream(
-					new ByteArrayInputStream(value)), state.getEnvironment());
+			return Deserializer.deserializeBytes(value, state.getEnvironment());
 		}
 	}
 
 	public byte[] serialize(Object object) {
-		return Serializer.serialize(object);
+		return Serializer.serialize(object, getLuaState().getEnvironment());
 	}
 
 	public void registerGlobalState(DHTControl control, HashWrapper key) {
@@ -198,23 +202,6 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 
 	public boolean isLocal() {
 		return local;
-	}
-
-	public static void main(String[] args) throws Exception {
-		LuaState state = new LuaState();
-		LuaClosure closure = LuaCompiler
-				.loadstring(
-						"ac = { onGet = \"hello world\", onRemove = function() return 1234 end }",
-						"stdin", state.getEnvironment());
-		state.call(closure, new Object[] {});
-		LuaTable env = (LuaTable) state.getEnvironment().rawget("ac");
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		new Serializer(new DataOutputStream(bos)).serializeTable(env);
-		byte[] byteArray = bos.toByteArray();
-		System.out.println(Arrays.toString(byteArray));
-		System.out.println(new Deserializer(new DataInputStream(
-				new ByteArrayInputStream(byteArray)), state.getEnvironment())
-				.deserialize());
 	}
 
 }

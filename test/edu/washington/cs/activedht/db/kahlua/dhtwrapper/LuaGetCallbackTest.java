@@ -33,7 +33,7 @@ public class LuaGetCallbackTest extends TestCase {
 				state.call(LuaCompiler.loadstring("x = " + vals[i], "num",
 						state.getEnvironment()), new Object[] {});
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				new Serializer(new DataOutputStream(out)).serializeObject(state.getEnvironment().rawget("x"));
+				new Serializer(new DataOutputStream(out), state.getEnvironment()).serializeObject(state.getEnvironment().rawget("x"));
 				objs[i] = out.toByteArray();
 			}
 		} catch (Exception e) {

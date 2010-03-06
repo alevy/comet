@@ -146,7 +146,7 @@ public class LuaState {
 		this(System.out, true);
 	}
 	
-	private LuaState(PrintStream stream, boolean callReset) {
+	public LuaState(PrintStream stream, boolean callReset) {
 		out = stream;
 		if (callReset) {
 			reset();
@@ -181,7 +181,7 @@ public class LuaState {
 				getEnvironment());
 		if (closure != null) {
 			//BaseLib.fail("Could not load /stdlib.lbc");
-			call(closure, null, null, null);
+			call(closure);
 		}
 	}
 
@@ -1114,27 +1114,7 @@ public class LuaState {
 		return toDouble(res);
 	}
 
-	public Object call(Object fun, Object arg1, Object arg2, Object arg3) {
-		int oldTop = currentThread.getTop();
-		final int argslen = 3;
-		currentThread.setTop(oldTop + 1 + argslen);
-		currentThread.objectStack[oldTop] = fun;
-
-		currentThread.objectStack[oldTop + 1] = arg1;
-		currentThread.objectStack[oldTop + 2] = arg2;
-		currentThread.objectStack[oldTop + 3] = arg3;
-
-		int nReturnValues = call(argslen);
-
-		Object ret = null;
-		if (nReturnValues >= 1) {
-			ret = currentThread.objectStack[oldTop];
-		}
-		currentThread.setTop(oldTop);
-		return ret;
-	}
-
-	public Object call(Object fun, Object[] args) {
+	public Object call(Object fun, Object... args) {
 		int oldTop = currentThread.getTop();
 		int argslen = args == null ? 0 : args.length;
 		currentThread.setTop(oldTop + 1 + argslen);
@@ -1278,6 +1258,7 @@ public class LuaState {
 			exception = e;
 			errorMessage = e.errorMessage;
 		} catch (Throwable e) {
+			e.printStackTrace();
 			exception = e;
 			errorMessage = e.getMessage();
 		}

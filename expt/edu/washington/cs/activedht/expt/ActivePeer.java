@@ -29,6 +29,7 @@ import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
+import edu.washington.cs.activedht.db.ActiveDHTInitializer;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
@@ -135,7 +136,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	// State:
 
 	/** The DHT object. */
-	private DHT dht = null; // null until init is called
+	public DHT dht = null; // null until init is called
 	private ConfigurableTimeoutDHTTransport transport = null;
 	/** Protects the DHT and transport. */
 	private final ReentrantReadWriteLock dht_lock = new ReentrantReadWriteLock();
@@ -148,7 +149,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	public ActivePeer(int port, String bootstrap, boolean logging, FactoryInterface factoryInterface, int lookupConurrency)
 			throws Exception {
-		//ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
+		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
 
 		// Load the parameters from the configuration:
 

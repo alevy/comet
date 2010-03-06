@@ -1,7 +1,5 @@
 package edu.washington.cs.activedht.expt;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
@@ -25,10 +23,6 @@ public class LuaMicrobenchmark extends Microbenchmark {
 	}
 
 	public byte[] generateValue(String lua) throws Exception {
-		/*LuaState luaState = LuaStateFactory.newLuaState();
-		luaState.LdoString(lua);
-		return new Serializer(luaState).serialize(luaState
-				.getLuaObject("activeobject"));*/
 		LuaState state = new LuaState();
 		LuaClosure closure = LuaCompiler
 				.loadstring(
@@ -36,9 +30,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 						"stdin", state.getEnvironment());
 		state.call(closure, new Object[] {});
 		Object obj = state.getEnvironment().rawget("activeobject");
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		new Serializer(new DataOutputStream(bos)).serializeObject(obj);
-		return bos.toByteArray();
+		return Serializer.serialize(obj, state.getEnvironment());
 	}
 
 	public static void main(String[] args) throws Exception {

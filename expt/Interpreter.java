@@ -1,35 +1,137 @@
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.Semaphore;
+
+import com.aelitis.azureus.core.dht.DHTOperationAdapter;
+import com.aelitis.azureus.core.dht.control.DHTControl;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
+import edu.washington.cs.activedht.expt.ActivePeer;
 
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.stdlib.BaseLib;
+import se.krka.kahlua.vm.JavaFunction;
+import se.krka.kahlua.vm.LuaCallFrame;
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
+import se.krka.kahlua.vm.LuaTable;
+import se.krka.kahlua.vm.LuaTableImpl;
+import se.krka.kahlua.vm.serialize.Deserializer;
+import se.krka.kahlua.vm.serialize.Serializer;
 
 public class Interpreter {
-	public static void main(String[] args) throws Exception {
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
-		LuaState state = new LuaState();
-		LuaCompiler.register(state);
+	private final LuaState state;
+	private final BufferedReader in;
+	private final DHTControl dhtControl;
+
+	private class Require implements JavaFunction {
+
+		public int call(LuaCallFrame callFrame, int nArguments) {
+			String filename = callFrame.get(0).toString();
+			File f = new File(filename);
+			try {
+				LuaClosure require = LuaCompiler.loadis(new FileInputStream(f),
+						filename, state.getEnvironment());
+				state.call(require);
+			} catch (Exception e) {
+				callFrame.push(e.getMessage());
+				return 1;
+			}
+			return 0;
+		}
+
+	}
+
+	private class Get implements JavaFunction {
+
+		public int call(LuaCallFrame callFrame, int nArguments) {
+			if (nArguments < 1) {
+				BaseLib.fail("get takes at least one argument");
+			}
+			byte[] key = callFrame.get(0).toString().getBytes();
+			byte[] payload = new byte[] {};
+			if (nArguments > 1) {
+				payload = Serializer.serialize(callFrame.get(1), state.getEnvironment());
+			}
+			DHTTransportValue result = dhtControl.getLocalValue(key, payload);
+			if (result == null) {
+				callFrame.pushNil();
+				return 1;
+			}
+			Object obj = Deserializer.deserializeBytes(result.getValue(), state
+					.getEnvironment());
+			callFrame.push(obj);
+			return 1;
+		}
+
+	}
+
+	private class Put implements JavaFunction {
+
+		public int call(LuaCallFrame callFrame, int nArguments) {
+			if (nArguments < 2) {
+				BaseLib.fail("put takes at least two argument");
+			}
+			String key = callFrame.get(0).toString();
+			byte[] payload = Serializer.serialize(callFrame.get(1), state
+					.getEnvironment());
+			final LuaTable contacts = new LuaTableImpl();
+			final Semaphore sema = new Semaphore(0);
+			dhtControl.put(key.getBytes(), "", payload, (byte) 0, true,
+					new DHTOperationAdapter() {
+						int i = 1;
+
+						public void wrote(DHTTransportContact contact,
+								DHTTransportValue value) {
+							contacts.rawset(i, new NodeWrapper(contact));
+							++i;
+						}
+
+						public void complete(boolean timeout) {
+							sema.release();
+						}
+					});
+			callFrame.push(contacts);
+			return 1;
+		}
+
+	}
+
+	public Interpreter(LuaState state, InputStream in, DHTControl dhtControl) {
+		this.state = state;
+		this.dhtControl = dhtControl;
+		this.in = new BufferedReader(new InputStreamReader(in));
+		state.getEnvironment().rawset("require", new Require());
+		state.getEnvironment().rawset("get", new Get());
+		state.getEnvironment().rawset("put", new Put());
+	}
+
+	public void run() throws Exception {
 		while (true) {
 			System.out.print(">> ");
 			System.out.flush();
-			LuaClosure closure = getClosure(state, in.readLine(), in);
+			LuaClosure closure = getClosure(in.readLine());
 			if (closure != null) {
 				Object[] result = state.pcall(closure);
 				if (result[0] == Boolean.TRUE) {
-					printResults(result, state);
+					printResults(result);
 				} else {
-					System.out.println(result[1].toString());
-					System.out.println(result[2].toString());
+					for (Object o : result) {
+						System.out.println(o);
+					}
 				}
 			}
 		}
 	}
 
-	private static void printResults(Object[] result, LuaState state) {
+	private void printResults(Object[] result) {
 		for (int i = 1; i < result.length; i++) {
 			if (i > 1) {
 				System.out.print("\t");
@@ -39,8 +141,7 @@ public class Interpreter {
 		System.out.println();
 	}
 
-	private static LuaClosure getClosure(LuaState state, String line,
-			BufferedReader in) throws IOException {
+	private LuaClosure getClosure(String line) throws IOException {
 		if (line == null) {
 			System.out.println();
 			System.exit(0);
@@ -62,11 +163,19 @@ public class Interpreter {
 			if (e.getMessage().contains("<eof>")) {
 				System.out.print(">> ");
 				System.out.flush();
-				return getClosure(state, line + "\n" + in.readLine(), in);
+				return getClosure(line + "\n" + in.readLine());
 			}
 			System.out.println(e.getMessage());
 			System.out.flush();
 			return null;
 		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		ActivePeer peer = new ActivePeer(1234, "localhost:4321");
+		peer.init("localhost");
+		Thread.sleep(5000);
+		new Interpreter(new LuaState(), System.in, peer.dht.getControl()).run();
+		peer.stop();
 	}
 }

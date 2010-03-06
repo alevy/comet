@@ -1,7 +1,5 @@
 package edu.washington.cs.activedht.expt;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -38,9 +36,7 @@ public class LuaDBBenchmark extends DBBenchmark {
 						"stdin", state.getEnvironment());
 		state.call(closure, new Object[] {});
 		Object obj = state.getEnvironment().rawget("activeobject");
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		new Serializer(new DataOutputStream(bos)).serializeObject(obj);
-		return bos.toByteArray();
+		return Serializer.serialize(obj, state.getEnvironment());
 	}
 
 	public static void main(String[] args) throws Exception {
