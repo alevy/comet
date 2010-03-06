@@ -41,7 +41,7 @@ public class DhtWrapperTest extends TestCase {
 
 	public void testSysTime() {
 		DhtWrapper sysTime = new DhtWrapper(Function.SYS_TIME, null, null,
-				null, null, null);
+				null, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		assertEquals(1, sysTime.call(callFrame, 0));
@@ -49,19 +49,9 @@ public class DhtWrapperTest extends TestCase {
 		assertEquals(System.currentTimeMillis(), currentTime, 100);
 	}
 
-	public void testLocalNode() throws Exception {
-		NodeWrapper node = new NodeWrapper(null);
-		DhtWrapper localNode = new DhtWrapper(Function.LOCAL_NODE, null, null,
-				node, null, null);
-		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
-
-		assertEquals(1, localNode.call(callFrame, 0));
-		assertSame(node, callFrame.get(0));
-	}
-
 	public void testGetNoArguments() throws Exception {
-		DhtWrapper get = new DhtWrapper(Function.GET, state, key, null,
-				neighbors, null);
+		DhtWrapper get = new DhtWrapper(Function.GET, state, key, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		assertEquals(0, get.call(callFrame, 0));
@@ -74,8 +64,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testGetKeyArgument() throws Exception {
-		DhtWrapper get = new DhtWrapper(Function.GET, state, null, null,
-				neighbors, null);
+		DhtWrapper get = new DhtWrapper(Function.GET, state, null, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		callFrame.push(key);
@@ -90,8 +80,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testGetMaxValuesArgument() throws Exception {
-		DhtWrapper get = new DhtWrapper(Function.GET, state, null, null,
-				neighbors, null);
+		DhtWrapper get = new DhtWrapper(Function.GET, state, null, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		callFrame.push(key);
@@ -107,8 +97,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testGetCallbackArgument() throws Exception {
-		DhtWrapper get = new DhtWrapper(Function.GET, state, null, null,
-				neighbors, null);
+		DhtWrapper get = new DhtWrapper(Function.GET, state, null, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		LuaClosure closure = new LuaClosure(new LuaPrototype(), null);
@@ -127,7 +117,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testDeleteNoKey() throws Exception {
-		DhtWrapper delete = new DhtWrapper(Function.DELETE, state, key, null,
+		DhtWrapper delete = new DhtWrapper(Function.DELETE, state, key,
 				neighbors, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
@@ -140,7 +130,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testDeleteWithKey() throws Exception {
-		DhtWrapper delete = new DhtWrapper(Function.DELETE, state, null, null,
+		DhtWrapper delete = new DhtWrapper(Function.DELETE, state, null,
 				neighbors, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
@@ -155,8 +145,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testPutNoArguments() throws Exception {
-		DhtWrapper put = new DhtWrapper(Function.PUT, state, null, null,
-				neighbors, null);
+		DhtWrapper put = new DhtWrapper(Function.PUT, state, null, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 		try {
 			assertEquals(0, put.call(callFrame, 0));
@@ -167,8 +157,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testPutNoKey() throws Exception {
-		DhtWrapper put = new DhtWrapper(Function.PUT, state, key, null,
-				neighbors, null);
+		DhtWrapper put = new DhtWrapper(Function.PUT, state, key, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		callFrame.push("hello world".getBytes());
@@ -182,8 +172,8 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testPutWithKey() throws Exception {
-		DhtWrapper put = new DhtWrapper(Function.PUT, state, null, null,
-				neighbors, null);
+		DhtWrapper put = new DhtWrapper(Function.PUT, state, null, neighbors,
+				null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		callFrame.push(key);
@@ -198,7 +188,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testLookupNoKey() throws Exception {
-		DhtWrapper lookup = new DhtWrapper(Function.LOOKUP, state, key, null,
+		DhtWrapper lookup = new DhtWrapper(Function.LOOKUP, state, key,
 				neighbors, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
@@ -211,7 +201,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testLookupWithKey() throws Exception {
-		DhtWrapper lookup = new DhtWrapper(Function.LOOKUP, state, null, null,
+		DhtWrapper lookup = new DhtWrapper(Function.LOOKUP, state, null,
 				neighbors, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
@@ -227,8 +217,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testKey() throws Exception {
-		DhtWrapper getKey = new DhtWrapper(Function.KEY, state, key, null,
-				null, null);
+		DhtWrapper getKey = new DhtWrapper(Function.KEY, state, key, null, null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 		assertEquals(1, getKey.call(callFrame, 0));
 		assertEquals(key, callFrame.get(0));

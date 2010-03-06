@@ -28,8 +28,8 @@ import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsOperationAdapter
 public class DhtWrapper implements JavaFunction {
 
 	public static enum Function {
-		SYS_TIME("sysTime"), KEY("key"), LOCAL_NODE("localNode"), GET("get"), PUT(
-				"put"), DELETE("delete"), LOOKUP("lookup");
+		SYS_TIME("sysTime"), KEY("key"), GET("get"), PUT("put"), DELETE(
+				"delete"), LOOKUP("lookup");
 		String name;
 
 		Function(String name) {
@@ -41,7 +41,6 @@ public class DhtWrapper implements JavaFunction {
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
 	private final Function function;
-	private final NodeWrapper localNode;
 	private final Map<HashWrapper, Set<NodeWrapper>> neighbors;
 	private final DHTControl control;
 
@@ -50,12 +49,10 @@ public class DhtWrapper implements JavaFunction {
 	private final HashWrapper key;
 
 	public DhtWrapper(Function function, LuaState state, HashWrapper key,
-			NodeWrapper localNode,
 			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
-		this.localNode = localNode;
 		this.neighbors = neighbors;
 		this.control = control;
 	}
@@ -66,8 +63,6 @@ public class DhtWrapper implements JavaFunction {
 			return getSystemTime(callFrame, nArguments);
 		case KEY:
 			return getKey(callFrame, nArguments);
-		case LOCAL_NODE:
-			return localNode(callFrame, nArguments);
 		case GET:
 			return get(callFrame, nArguments);
 		case PUT:
@@ -111,7 +106,8 @@ public class DhtWrapper implements JavaFunction {
 			key = (HashWrapper) callFrame.get(0);
 			++valIndex;
 		}
-		byte[] value = Serializer.serialize(callFrame.get(valIndex), state.getEnvironment());
+		byte[] value = Serializer.serialize(callFrame.get(valIndex), state
+				.getEnvironment());
 		postActions.offer(new PutAction(key, value, control,
 				new UpdateNeighborsOperationAdapter(neighbors.get(key))));
 		return 0;
@@ -134,11 +130,6 @@ public class DhtWrapper implements JavaFunction {
 		postActions.offer(new GetAction(key, this.key, maxValues, control,
 				new GetOperationAdapter(neighbors.get(key), callback)));
 		return 0;
-	}
-
-	private int localNode(LuaCallFrame callFrame, int nArguments) {
-		callFrame.push(localNode);
-		return 1;
 	}
 
 	private int getKey(LuaCallFrame callFrame, int nArguments) {
@@ -167,10 +158,11 @@ public class DhtWrapper implements JavaFunction {
 		if (control != null) {
 			node = new NodeWrapper(control.getTransport().getLocalContact());
 		}
+		
+		dht.rawset("localNode", node);
 
 		for (Function function : Function.values()) {
 			dht.rawset(function.name, new DhtWrapper(function, state, key,
-					node,
 					neighbors, control));
 		}
 	}

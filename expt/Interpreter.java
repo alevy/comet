@@ -51,7 +51,7 @@ public class Interpreter {
 
 	private class Get implements JavaFunction {
 
-		public int call(LuaCallFrame callFrame, int nArguments) {
+		public int call(final LuaCallFrame callFrame, int nArguments) {
 			if (nArguments < 1) {
 				BaseLib.fail("get takes at least one argument");
 			}
@@ -60,15 +60,29 @@ public class Interpreter {
 			if (nArguments > 1) {
 				payload = Serializer.serialize(callFrame.get(1), state.getEnvironment());
 			}
-			DHTTransportValue result = dhtControl.getLocalValue(key, payload);
-			if (result == null) {
+			final LuaTable values = new LuaTableImpl();
+			final Semaphore sema = new Semaphore(0);
+			dhtControl.get(key, dhtControl.getTransport().getLocalContact().getID(), payload, "", (byte)0, 20, 60000, false, true, new DHTOperationAdapter() {
+				int i = 1;
+				public void read(DHTTransportContact contact,
+						DHTTransportValue value) {
+					Object obj = Deserializer.deserializeBytes(value.getValue(), state
+							.getEnvironment());
+					values.rawset(i, obj);
+					++i;
+				}
+				
+				public void complete(boolean timeout) {
+					sema.release();
+				}
+			});
+			sema.acquireUninterruptibly();
+			if (values.len() == 0) {
 				callFrame.pushNil();
 				return 1;
 			}
-			Object obj = Deserializer.deserializeBytes(result.getValue(), state
-					.getEnvironment());
-			callFrame.push(obj);
-			return 1;
+			callFrame.push(values);
+			return values.len();
 		}
 
 	}
@@ -98,6 +112,7 @@ public class Interpreter {
 							sema.release();
 						}
 					});
+			sema.acquireUninterruptibly();
 			callFrame.push(contacts);
 			return 1;
 		}
