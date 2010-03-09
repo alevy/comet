@@ -1,0 +1,14 @@
+bootstrap: dht.aelitis.com
+bootstrap_port: 1234
+start_bootstrap: No
+
+nodes: [nethack.cs.washington.edu, regina.cs.washington.edu, tetris.cs.washington.edu, whitehorse.cs.washington.edu, zork.cs.washington.edu]
+ports: [1234]
+
+copyjar: No
+
+rwd: /homes/sys/levya/activedht/
+
+jarfile: /homes/sys/levya/workspace/activedht/dist/comet.jar
+
+java: java

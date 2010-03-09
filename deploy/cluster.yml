@@ -1,0 +1,14 @@
+bootstrap: nethack.cs.washington.edu
+bootstrap_port: 5432
+start_bootstrap: Yes
+
+nodes: [regina.cs.washington.edu, tetris.cs.washington.edu, whitehorse.cs.washington.edu, zork.cs.washington.edu]
+ports: [5432]
+
+copyjar: No
+
+rwd: /homes/sys/levya/activedht/
+
+jarfile: /homes/sys/levya/workspace/activedht/dist/comet.jar
+
+java: java
