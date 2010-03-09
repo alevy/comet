@@ -585,6 +585,32 @@ LightWeightSeed
 					}
 					
 					public int 
+					getPendingConnectionCount() 
+					{
+						PEPeerManager	pm = peer_manager;
+
+						if ( pm == null ){
+							
+							return( 0 );
+						}
+						
+						return( pm.getPendingPeerCount());
+					}
+					
+					public int
+					getConnectedConnectionCount()
+					{
+						PEPeerManager	pm = peer_manager;
+
+						if ( pm == null ){
+							
+							return( 0 );
+						}
+						
+						return( pm.getNbPeers() + pm.getNbSeeds());
+					}
+					
+					public int 
 					getUploadSpeedKBSec(
 						boolean estimate) 
 					{

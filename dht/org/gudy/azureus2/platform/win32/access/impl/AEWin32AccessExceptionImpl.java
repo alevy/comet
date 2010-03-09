@@ -27,7 +27,7 @@ package org.gudy.azureus2.platform.win32.access.impl;
  *
  */
 
-import org.gudy.azureus2.platform.win32.access.AEWin32AccessException;
+import org.gudy.azureus2.platform.win32.access.*;
 
 public class 
 AEWin32AccessExceptionImpl

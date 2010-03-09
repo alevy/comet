@@ -22,22 +22,12 @@
 package org.gudy.azureus2.core3.torrent.impl;
 
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.StringInterner;
+import org.gudy.azureus2.core3.internat.*;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
 
 public class 
 TOTorrentFileImpl
@@ -46,6 +36,7 @@ TOTorrentFileImpl
 	private final TOTorrent	torrent;
 	private final long		file_length;
 	private final byte[][]	path_components;
+	private final byte[][]	path_components_utf8;
 	
 	private final int		first_piece_number;
 	private final int		last_piece_number;
@@ -97,7 +88,11 @@ TOTorrentFileImpl
 			path_components		= new byte[temp.size()][];
 			
 			temp.copyInto( path_components );
+
+			path_components_utf8		= new byte[temp.size()][];
 			
+			temp.copyInto( path_components_utf8 );
+
 			checkComponents();
 			
 		}catch( UnsupportedEncodingException e ){
@@ -106,7 +101,7 @@ TOTorrentFileImpl
 											TOTorrentException.RT_UNSUPPORTED_ENCODING));
 		}
 	}
-	
+
 	protected
 	TOTorrentFileImpl(
 		TOTorrent		_torrent,
@@ -119,6 +114,30 @@ TOTorrentFileImpl
 		torrent				= _torrent;
 		file_length			= _len;
 		path_components		= _path_components;
+		path_components_utf8 = null;
+		
+		first_piece_number 	= (int)( _torrent_offset / torrent.getPieceLength());
+		last_piece_number	= (int)(( _torrent_offset + file_length - 1 ) /  torrent.getPieceLength());
+
+		is_utf8				= false;
+		
+		checkComponents();
+	}
+
+	protected
+	TOTorrentFileImpl(
+		TOTorrent		_torrent,
+		long			_torrent_offset,
+		long			_len,
+		byte[][]		_path_components,
+		byte[][]		_path_components_utf8 )
+	
+		throws TOTorrentException
+	{
+		torrent				= _torrent;
+		file_length			= _len;
+		path_components		= _path_components;
+		path_components_utf8 = _path_components_utf8;
 		
 		first_piece_number 	= (int)( _torrent_offset / torrent.getPieceLength());
 		last_piece_number	= (int)(( _torrent_offset + file_length - 1 ) /  torrent.getPieceLength());
@@ -158,11 +177,24 @@ TOTorrentFileImpl
 	}
 	
 	public byte[][]
-	getPathComponents()
+	getPathComponentsBasic()
 	{
 		return( path_components );
 	}
+
+	public byte[][]
+	getPathComponents()
+	{
+		return path_components_utf8 == null ? path_components : path_components_utf8;
+	}
+
+	public byte[][]
+	getPathComponentsUTF8()
+	{
+		return( path_components_utf8 );
+	}
 	
+
 	protected boolean
 	isUTF8()
 	{
@@ -218,22 +250,23 @@ TOTorrentFileImpl
 		}
 
 		if (decoder != null) {
-			for (int j = 0; j < path_components.length; j++) {
+			byte[][]components = getPathComponents();
+			for (int j = 0; j < components.length; j++) {
 
 				try {
 					String comp;
 					try {
-						comp = decoder.decodeString(path_components[j]);
+						comp = decoder.decodeString(components[j]);
 					} catch (UnsupportedEncodingException e) {
 						System.out.println("file - unsupported encoding!!!!");
 						try {
-							comp = new String(path_components[j]);
+							comp = new String(components[j]);
 						} catch (Exception e2) {
 							comp = "UnsupportedEncoding";
 						}
 					}
 	
-					comp = FileUtil.convertOSSpecificChars(comp, j != path_components.length-1 );
+					comp = FileUtil.convertOSSpecificChars(comp, j != components.length-1 );
 	
 					sRelativePath += (j == 0 ? "" : File.separator) + comp;
 				} catch (Exception ex) {
@@ -244,5 +277,66 @@ TOTorrentFileImpl
 
 		}
 		return sRelativePath;
+	}
+
+	/**
+	 * @return
+	 *
+	 * @since 4.1.0.5
+	 */
+	public Map serializeToMap() {
+		Map	file_map = new HashMap();
+
+		file_map.put( TOTorrentImpl.TK_LENGTH, new Long( getLength()));
+		
+		List path = new ArrayList();
+		
+		file_map.put( TOTorrentImpl.TK_PATH, path );
+		
+		byte[][]	path_comps = getPathComponentsBasic();
+		
+		for (int j=0;j<path_comps.length;j++){
+			
+			path.add( path_comps[j]);
+		}
+		
+		if ( isUTF8()){
+			
+			List utf8_path = new ArrayList();
+			
+			file_map.put( TOTorrentImpl.TK_PATH_UTF8, utf8_path );
+								
+			for (int j=0;j<path_comps.length;j++){
+				
+				utf8_path.add( path_comps[j]);
+			}
+		} else {
+			
+			byte[][]	utf8_path_comps = getPathComponentsUTF8();
+
+			if (utf8_path_comps != null) {
+  			List utf8_path = new ArrayList();
+  			
+  			file_map.put( TOTorrentImpl.TK_PATH_UTF8, utf8_path );
+  								
+  			for (int j=0;j<utf8_path_comps.length;j++){
+  				
+  				utf8_path.add( utf8_path_comps[j]);
+  			}
+			}
+		}
+		
+		Map file_additional_properties = getAdditionalProperties();
+		
+		Iterator prop_it = file_additional_properties.keySet().iterator();
+		
+		while( prop_it.hasNext()){
+			
+			String	key = (String)prop_it.next();
+			
+			file_map.put( key, file_additional_properties.get( key ));
+		}
+
+		return file_map;
 	}
 }

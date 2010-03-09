@@ -28,27 +28,14 @@ package com.aelitis.net.upnp.impl.device;
  *
  */
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
+import java.net.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
 
-import com.aelitis.net.upnp.UPnP;
-import com.aelitis.net.upnp.UPnPDevice;
-import com.aelitis.net.upnp.UPnPException;
-import com.aelitis.net.upnp.UPnPLogListener;
-import com.aelitis.net.upnp.UPnPRootDevice;
-import com.aelitis.net.upnp.UPnPRootDeviceListener;
+import com.aelitis.net.upnp.*;
 import com.aelitis.net.upnp.impl.UPnPImpl;
 
 public class 
@@ -71,12 +58,13 @@ UPnPRootDeviceImpl
 			//true,		// report always	removed, apparently it works OK now according to manufacturer
 		};
 	
-	private UPnPImpl			upnp;
-	private NetworkInterface	network_interface;
-	private InetAddress			local_address;
+	final private UPnPImpl			upnp;
+	final private NetworkInterface	network_interface;
+	final private InetAddress		local_address;
 	
-	private String		usn;
-	private URL			location;
+	final private String		usn;
+	final private URL			location;
+	
 	private URL			url_base_for_relative_urls;
 	private URL			saved_url_base_for_relative_urls;
 	
@@ -153,6 +141,27 @@ UPnPRootDeviceImpl
 		}
 	}
 	
+	public Map 
+	getDiscoveryCache() 
+	{		
+		try{
+			Map	cache = new HashMap();
+
+			cache.put( "ni", network_interface.getName().getBytes( "UTF-8" ));
+			cache.put( "la", local_address.getHostAddress().getBytes( "UTF-8" ));
+			cache.put( "usn", usn.getBytes( "UTF-8" ));
+			cache.put( "loc", location.toExternalForm().getBytes( "UTF-8" ));
+			
+			return( cache );
+		
+		}catch( Throwable e ){
+			
+			Debug.printStackTrace(e);
+			
+			return( null );
+		}
+	}
+	
 	public void
 	portMappingResult(
 		boolean	ok )
@@ -200,7 +209,7 @@ UPnPRootDeviceImpl
 						upnp.logAlert( 
 								"Device '" + model + "', version '" + version + 
 								"' has known problems with UPnP. Please update to the latest software version (see " + 
-								(url==null?"the manufacturer's web site":url) + ") and refer to http://www.azureuswiki.com/index.php/UPnP",
+								(url==null?"the manufacturer's web site":url) + ") and refer to http://wiki.vuze.com/w/UPnP",
 								false,
 								UPnPLogListener.TYPE_ONCE_EVER );
 					}

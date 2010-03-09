@@ -27,38 +27,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerCheckRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerCheckRequestListener;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfoListener;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfoSet;
-import org.gudy.azureus2.core3.disk.DiskManagerListener;
-import org.gudy.azureus2.core3.disk.DiskManagerPiece;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequestListener;
-import org.gudy.azureus2.core3.disk.DiskManagerWriteRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerWriteRequestListener;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.disk.impl.access.DMAccessFactory;
 import org.gudy.azureus2.core3.disk.impl.access.DMChecker;
 import org.gudy.azureus2.core3.disk.impl.access.DMReader;
 import org.gudy.azureus2.core3.disk.impl.access.DMWriter;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMap;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapEntry;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapper;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapperFactory;
-import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapperFile;
+import org.gudy.azureus2.core3.disk.impl.piecemapper.*;
 import org.gudy.azureus2.core3.disk.impl.resume.RDResumeHandler;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerException;
@@ -68,29 +45,11 @@ import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
 import org.gudy.azureus2.core3.internat.LocaleUtilEncodingException;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.ListenerManager;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.ThreadPool;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
@@ -137,6 +96,7 @@ DiskManagerImpl
 
         disk_access_controller =
             DiskAccessControllerFactory.create(
+            		"core",
                     max_read_threads, max_read_mb,
                     max_write_threads, max_write_mb );
 
@@ -224,18 +184,16 @@ DiskManagerImpl
     private static final int LDT_PIECE_DONE_CHANGED     = 3;
     private static final int LDT_ACCESS_MODE_CHANGED    = 4;
 
-    protected static ListenerManager    listeners_aggregator    = ListenerManager.createAsyncManager(
+    protected static ListenerManager<DiskManagerListener>    listeners_aggregator    = ListenerManager.createAsyncManager(
             "DiskM:ListenAggregatorDispatcher",
-            new ListenerManagerDispatcher()
+            new ListenerManagerDispatcher<DiskManagerListener>()
             {
                 public void
                 dispatch(
-                    Object      _listener,
-                    int         type,
-                    Object      value )
+                	DiskManagerListener      listener,
+                    int         			type,
+                    Object      			value )
                 {
-                    DiskManagerListener listener = (DiskManagerListener)_listener;
-
                     if (type == LDT_STATECHANGED){
 
                         int params[] = (int[])value;
@@ -262,15 +220,15 @@ DiskManagerImpl
                 }
             });
 
-    private ListenerManager listeners   = ListenerManager.createManager(
+    private ListenerManager<DiskManagerListener> listeners   = ListenerManager.createManager(
             "DiskM:ListenDispatcher",
-            new ListenerManagerDispatcher()
+            new ListenerManagerDispatcher<DiskManagerListener>()
             {
                 public void
                 dispatch(
-                    Object      listener,
-                    int         type,
-                    Object      value )
+                	DiskManagerListener      listener,
+                    int         			type,
+                    Object      			value )
                 {
                     listeners_aggregator.dispatch( listener, type, value );
                 }
@@ -924,12 +882,17 @@ DiskManagerImpl
 
                 fileInfo.setDownloaded(0);
                 
-                boolean mustExistOrAllocate = cache_file.getStorageType() != CacheFile.CT_COMPACT || RDResumeHandler.fileMustExist(download_manager, fileInfo);
+                boolean compact = cache_file.getStorageType() == CacheFile.CT_COMPACT;
                 
-                // delete compact files that do not contain pieces we need
-                if(!mustExistOrAllocate && cache_file.exists())
+                boolean mustExistOrAllocate = ( !compact ) || RDResumeHandler.fileMustExist(download_manager, fileInfo);
+                
+                	// delete compact files that do not contain pieces we need
+                
+                if (!mustExistOrAllocate && cache_file.exists()){
+                	
 					data_file.delete();
-
+                }
+                
                 if ( cache_file.exists() ){
 
                     try {
@@ -946,6 +909,8 @@ DiskManagerImpl
 
                                 cache_file.setLength( target_length );
 
+                                fileInfo.setAccessMode( DiskManagerFileInfo.READ );
+                                
                                 Debug.out( "Existing data file length too large [" +existing_length+ ">" +target_length+ "]: " +data_file.getAbsolutePath() + ", truncating" );
 
                             }else{
@@ -956,14 +921,23 @@ DiskManagerImpl
 
                                 return( -1 );
                             }
+                        }else if ( existing_length < target_length ){
+                        	
+                        	if ( !compact ){
+	                        		// file is too small
+	                        	
+	                         	if ( !allocateFile( fileInfo, data_file, existing_length, target_length )){
+	                            	
+	                      			// aborted
+	                    		
+	                         		return( -1 );
+	                         	}
+                        	}
                         }
+                    }catch (Throwable e) {
 
-                        fileInfo.setAccessMode( DiskManagerFileInfo.READ );
-
-                    }catch (CacheFileManagerException e) {
-
-                        this.errorMessage = Debug.getNestedExceptionMessage(e) +
-                                                " (allocateFiles existing:" + data_file.getAbsolutePath() + ")";
+                    	fileAllocFailed( data_file, target_length, false, e );
+                    	
                         setState( FAULTY );
 
                         return( -1 );
@@ -971,9 +945,9 @@ DiskManagerImpl
 
                     allocated += target_length;
 
-                } else if (mustExistOrAllocate)
-                {  //we need to allocate it
-
+                } else if ( mustExistOrAllocate ){  
+                	
+                		//we need to allocate it
                         //make sure it hasn't previously been allocated
 
                     if ( download_manager.isDataAlreadyAllocated() ){
@@ -985,100 +959,19 @@ DiskManagerImpl
                         return( -1 );
                     }
 
-                    while( started ){
-
-                        if ( allocation_scheduler.getPermission( this )){
-
-                            break;
-                        }
-                    }
-
-                    if ( !started ){
-
-                            // allocation interrupted
-
-                        return( -1 );
-                    }
-
+ 
                     try{
-                        fileInfo.setAccessMode( DiskManagerFileInfo.WRITE );
+ 
+                    	if ( !allocateFile( fileInfo, data_file, -1, target_length )){
+                    	
+                      			// aborted
+                    		
+                    		return( -1 );
+                    	}
+                    	
+                    }catch( Throwable e ){
 
-                        if( COConfigurationManager.getBooleanParameter("Enable incremental file creation") ) {
-
-                                //  do incremental stuff
-
-                            fileInfo.getCacheFile().setLength( 0 );
-
-                        }else {
-
-                                //fully allocate. XFS borks with zero length files though
-
-                            if ( 	target_length > 0 && 
-                            		COConfigurationManager.getBooleanParameter("XFS Allocation") ){
-                            	
-                                fileInfo.getCacheFile().setLength( target_length );
-                                String[] cmd = {"/usr/sbin/xfs_io","-c", "resvsp 0 " + target_length, data_file.getAbsolutePath()};
-                                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                                byte[] buffer = new byte[1024];
-                                try {
-	                                Process p = Runtime.getRuntime().exec(cmd);
-	                                for (int count = p.getErrorStream().read(buffer); count > 0; count = p.getErrorStream().read(buffer)) {
-	                                   os.write(buffer, 0, count);
-	                                }
-	                                os.close();
-	                                p.waitFor();
-                                } catch (IOException e) {
-                                	String message = MessageText.getString("xfs.allocation.xfs_io.not.found", new String[] {e.getMessage()});
-                                	Logger.log(new LogAlert(this, LogAlert.UNREPEATABLE, LogAlert.AT_ERROR, message));
-                                }
-                                if (os.size() > 0) {
-                                	String message = os.toString().trim();
-                                	if (message.endsWith("is not on an XFS filesystem")) {
-                                		Logger.log(new LogEvent(this, LogIDs.DISK, "XFS file allocation impossible because \"" + data_file.getAbsolutePath()
-                                				+ "\" is not on an XFS filesystem. Original error reported by xfs_io : \"" + message + "\""));
-                                	} else {
-                                		throw new IOException(message);
-                                	}
-                                }
-
-                                allocated += target_length;
-                            } else if( COConfigurationManager.getBooleanParameter("Zero New") ) {  //zero fill
-                            	
-                            	boolean successfulAlloc = false;
-
-                            	try {
-                            		successfulAlloc = writer.zeroFile( fileInfo, target_length );
-                            	} catch(Exception e) {
-                            		// in case an error occured set the error message before we set it to FAULTY in the finally clause, the exception handler further down is too late 
-                                    this.errorMessage = Debug.getNestedExceptionMessage(e) + " (allocateFiles new:" + data_file.toString() + ")";
-                                    throw e;
-                            	} finally
-                            	{
-                            		if (!successfulAlloc)
-									{
-										try
-										{
-											// failed to zero it, delete it so it gets done next start
-											fileInfo.getCacheFile().close();
-											fileInfo.getCacheFile().delete();
-										} catch (Throwable e)
-										{}
-										setState(FAULTY);
-									}
-                            	}
-                            }else{
-
-                                    //reserve the full file size with the OS file system
-
-                                fileInfo.getCacheFile().setLength( target_length );
-
-                                allocated += target_length;
-                            }
-                        }
-                    }catch ( Exception e ) {
-
-                        this.errorMessage = Debug.getNestedExceptionMessage(e)
-                                    + " (allocateFiles new:" + data_file.toString() + ")";
+                    	fileAllocFailed( data_file, target_length, true, e );
 
                         setState( FAULTY );
 
@@ -1125,6 +1018,164 @@ DiskManagerImpl
         }
     }
 
+    private boolean
+    allocateFile(
+    	DiskManagerFileInfoImpl		fileInfo,
+    	File						data_file,
+    	long						existing_length,	// -1 if not exists
+    	long						target_length )
+    
+    	throws Throwable
+    {
+        while( started ){
+
+            if ( allocation_scheduler.getPermission( this )){
+
+                break;
+            }
+        }
+
+        if ( !started ){
+
+                // allocation interrupted
+
+            return( false );
+        }
+
+        fileInfo.setAccessMode( DiskManagerFileInfo.WRITE );
+
+        if ( COConfigurationManager.getBooleanParameter("Enable incremental file creation" )){
+
+                //  do incremental stuff
+
+        	if ( existing_length < 0 ){
+            
+        			// only do this if it doesn't exist
+        		
+        		fileInfo.getCacheFile().setLength( 0 );
+        	}
+        }else{
+        
+	            //fully allocate. XFS borks with zero length files though
+	
+	        if ( 	target_length > 0 && 
+	        		COConfigurationManager.getBooleanParameter("XFS Allocation") ){
+	        	
+	            fileInfo.getCacheFile().setLength( target_length );
+	            
+	            long	resvp_start;
+	            long	resvp_len;
+	            
+	            if ( existing_length > 0 ){
+	            	
+	            	resvp_start = existing_length;
+	            	resvp_len	= target_length - existing_length;
+	            }else{
+	            	resvp_start = 0;
+	            	resvp_len	= target_length;
+	            }
+	            
+	            String[] cmd = {"/usr/sbin/xfs_io","-c", "resvsp " + resvp_start + " " + resvp_len, data_file.getAbsolutePath()};
+	            
+	            ByteArrayOutputStream os = new ByteArrayOutputStream();
+	            byte[] buffer = new byte[1024];
+	            try {
+	                Process p = Runtime.getRuntime().exec(cmd);
+	                for (int count = p.getErrorStream().read(buffer); count > 0; count = p.getErrorStream().read(buffer)) {
+	                   os.write(buffer, 0, count);
+	                }
+	                os.close();
+	                p.waitFor();
+	            } catch (IOException e) {
+	            	String message = MessageText.getString("xfs.allocation.xfs_io.not.found", new String[] {e.getMessage()});
+	            	Logger.log(new LogAlert(this, LogAlert.UNREPEATABLE, LogAlert.AT_ERROR, message));
+	            }
+	            if (os.size() > 0) {
+	            	String message = os.toString().trim();
+	            	if (message.endsWith("is not on an XFS filesystem")) {
+	            		Logger.log(new LogEvent(this, LogIDs.DISK, "XFS file allocation impossible because \"" + data_file.getAbsolutePath()
+	            				+ "\" is not on an XFS filesystem. Original error reported by xfs_io : \"" + message + "\""));
+	            	} else {
+	            		throw new Exception(message);
+	            	}
+	            }
+	            
+	            allocated += target_length;
+	            
+	        }else if( COConfigurationManager.getBooleanParameter("Zero New") ) {  //zero fill
+	        	
+	        	boolean successfulAlloc = false;
+	
+	        	try {
+	        		successfulAlloc = writer.zeroFile( fileInfo, target_length );
+	        		
+	        	}catch( Throwable e ){
+	        			// in case an error occured set the error message before we set it to FAULTY in the finally clause, the exception handler further down is too late
+	        		
+	        		fileAllocFailed( data_file, target_length, existing_length==-1, e );
+	                
+	                throw( e );
+	                
+	        	}finally{
+	        		
+	        		if (!successfulAlloc){
+	        			
+						try{
+								// failed to zero it, delete it so it gets done next start
+							
+							fileInfo.getCacheFile().close();
+							
+							fileInfo.getCacheFile().delete();
+							
+						}catch (Throwable e){
+							
+						}
+						
+						setState(FAULTY);
+					}
+	        	}
+	        	
+	        		// the zeroFile method updates allocation as it occurs
+	        	
+	        }else{
+	
+	                //reserve the full file size with the OS file system
+	
+	            fileInfo.getCacheFile().setLength( target_length );
+	            
+	            allocated += target_length;
+	        }
+        }
+        
+        fileInfo.setAccessMode( DiskManagerFileInfo.READ );
+        
+        return( true );
+    }
+    
+    private void
+    fileAllocFailed(
+    	File		file,
+    	long		length,
+    	boolean		is_new,
+    	Throwable 	e )
+    {
+    	errorMessage = Debug.getNestedExceptionMessage(e) + " (allocateFiles " + (is_new?"new":"existing") + ":" + file.toString() + ")";
+    	
+    	if ( errorMessage.indexOf( "not enough space" ) != -1 ){
+    		
+    		if ( length >= 4*1024*1024*1024L ){
+    			
+    				// might be FAT32 limit, see if we really have run out of space
+    			
+    			errorMessage = MessageText.getString( "DiskManager.error.nospace_fat32" );
+    			
+    		}else{
+    			
+    			errorMessage = MessageText.getString( "DiskManager.error.nospace" );
+    		}
+    	}
+    }
+    
     public DiskAccessController
     getDiskAccessController()
     {
@@ -1291,15 +1342,51 @@ DiskManagerImpl
 
                     this_file.setDownloaded(file_done);
 
-                    // change file modes based on whether or not the file is complete or not
-                    if (file_done ==file_length &&this_file.getAccessMode() ==DiskManagerFileInfo.WRITE)
-                    {
-                        try
-                        {
-                            this_file.setAccessMode(DiskManagerFileInfo.READ);
-
-                        } catch (Exception e)
-                        {
+                    	// change file modes based on whether or not the file is complete or not
+                    
+                    if ( file_done == file_length && this_file.getAccessMode() == DiskManagerFileInfo.WRITE ){
+                        
+                    	try{
+                    		this_file.setAccessMode(DiskManagerFileInfo.READ);
+                    		
+                    		DownloadManagerState state = download_manager.getDownloadState();
+                    		
+                    		String suffix = state.getAttribute( DownloadManagerState.AT_INCOMP_FILE_SUFFIX );
+                    		
+                    		if ( suffix != null && suffix.length() > 0 ){
+                    			
+                    			File base_file = this_file.getFile( false );
+                    			
+                    			File link = state.getFileLink( base_file );
+                    			
+                    			if ( link != null ){
+                    				
+                    				String	name = link.getName();
+                    				
+                    				if ( name.endsWith( suffix ) && name.length() > suffix.length()){
+                    					
+                    					String	new_name = name.substring( 0, name.length() - suffix.length());
+                    					
+                    					File new_file = new File( link.getParentFile(), new_name );
+                    					
+                    					if ( !new_file.exists()){
+                    						
+                    						this_file.renameFile( new_name, false );
+                    						
+                    						if ( base_file.equals( new_file )){
+                    							
+                    							state.setFileLink( base_file, null );
+                    							
+                    						}else{
+                    							
+                    							state.setFileLink( base_file, new_file );
+                    						}
+                    					}
+                    				}
+                    			}
+                    		}
+                        }catch ( Throwable e ){
+                        
                             setFailed("Disk access error - " +Debug.getNestedExceptionMessage(e));
 
                             Debug.printStackTrace(e);
@@ -1484,9 +1571,19 @@ DiskManagerImpl
 		return( CacheFileOwner.CACHE_MODE_NORMAL );
 	}
 	
-	public DMPieceList
-	getPieceList(
-		int	piece_number )
+	public long[]
+	getReadStats()
+	{
+		if ( reader == null ){
+	
+			return( new long[]{ 0, 0 });
+		}
+				
+		return( reader.getStats());
+	}
+	
+	public DMPieceMap  
+	getPieceMap()
 	{
 		DMPieceMap	map = piece_map_use_accessor;
 		
@@ -1498,6 +1595,15 @@ DiskManagerImpl
 		}
 		
 		piece_map_use_accessor_time = SystemTime.getCurrentTime();
+
+		return( map );
+	}
+	
+	public DMPieceList
+	getPieceList(
+		int	piece_number )
+	{
+		DMPieceMap	map = getPieceMap();
 
 		return( map.getPieceList( piece_number ));
 	}
@@ -2181,7 +2287,8 @@ DiskManagerImpl
     deleteDataFiles(
         TOTorrent   torrent,
         String      torrent_save_dir,       // enclosing dir, not for deletion
-        String      torrent_save_file )     // file or dir for torrent
+        String      torrent_save_file, 		// file or dir for torrent
+        boolean		force_no_recycle )    
     {
         if (torrent == null || torrent_save_file == null ){
 
@@ -2195,15 +2302,17 @@ DiskManagerImpl
 
                 target = FMFileManagerFactory.getSingleton().getFileLink( torrent, target.getCanonicalFile());
 
-                FileUtil.deleteWithRecycle( target );
+                FileUtil.deleteWithRecycle( target, force_no_recycle );
 
             }else{
 
                 PlatformManager mgr = PlatformManagerFactory.getPlatformManager();
-                if( Constants.isOSX &&
-                      torrent_save_file.length() > 0 &&
-                      COConfigurationManager.getBooleanParameter("Move Deleted Data To Recycle Bin" ) &&
-                      mgr.hasCapability(PlatformManagerCapabilities.RecoverableFileDelete) ) {
+                
+                if( 	Constants.isOSX &&
+                		torrent_save_file.length() > 0 &&
+                		COConfigurationManager.getBooleanParameter("Move Deleted Data To Recycle Bin" ) &&
+                		(! force_no_recycle ) &&
+                		mgr.hasCapability(PlatformManagerCapabilities.RecoverableFileDelete) ) {
 
                     try
                     {
@@ -2217,16 +2326,16 @@ DiskManagerImpl
 
                         }else{
 
-                            deleteDataFileContents( torrent, torrent_save_dir, torrent_save_file );
+                            deleteDataFileContents( torrent, torrent_save_dir, torrent_save_file, force_no_recycle );
                     }
                     }
                     catch(PlatformManagerException ex)
                     {
-                        deleteDataFileContents( torrent, torrent_save_dir, torrent_save_file );
+                        deleteDataFileContents( torrent, torrent_save_dir, torrent_save_file, force_no_recycle );
                     }
                 }
                 else{
-                    deleteDataFileContents(torrent, torrent_save_dir, torrent_save_file);
+                    deleteDataFileContents(torrent, torrent_save_dir, torrent_save_file, force_no_recycle);
                 }
 
             }
@@ -2321,9 +2430,10 @@ DiskManagerImpl
 
     private static void
     deleteDataFileContents(
-        TOTorrent torrent,
-        String torrent_save_dir,
-        String torrent_save_file )
+        TOTorrent 	torrent,
+        String 		torrent_save_dir,
+        String 		torrent_save_file,
+        boolean		force_no_recycle )
 
             throws TOTorrentException, UnsupportedEncodingException, LocaleUtilEncodingException
     {
@@ -2397,7 +2507,7 @@ DiskManagerImpl
             if ( delete && file.exists() && !file.isDirectory()){
 
                 try{
-                    FileUtil.deleteWithRecycle( file );
+                    FileUtil.deleteWithRecycle( file, force_no_recycle );
 
                 }catch (Exception e){
 
@@ -2678,7 +2788,9 @@ DiskManagerImpl
 
             }else{
 
-                if ( FileUtil.deleteWithRecycle( existing_file )){
+                if ( FileUtil.deleteWithRecycle( 
+                		existing_file,
+                		download_manager.getDownloadState().getFlag( DownloadManagerState.FLAG_LOW_NOISE ))){
 
                         // new file, recheck
 
@@ -2957,7 +3069,9 @@ DiskManagerImpl
                 FileSkeleton info = new FileSkeleton() {
 
                 	private CacheFile   read_cache_file;
-                	// do not access this field directly, use lazyGetFile() instead 
+                	
+                		// do not access this field directly, use lazyGetFile() instead
+                	
                 	private WeakReference dataFile = new WeakReference(null);
 
                 	public void
@@ -3151,17 +3265,23 @@ DiskManagerImpl
                 		 * If we a simple torrent, then we'll redirect the call to the download and move the
                 		 * data files that way - that'll keep everything in sync.
                 		 */  
-                		if (download_manager.getTorrent().isSimpleTorrent()) {
-                			try {
-                				download_manager.moveDataFiles(link_destination.getParentFile(), link_destination.getName());
+                		
+                		if ( download_manager.getTorrent().isSimpleTorrent()){
+                			
+                			try{		
+                				download_manager.moveDataFiles( link_destination.getParentFile(), link_destination.getName());
+                				
                 				return true;
-                			}
-                			catch (DownloadManagerException e) {
-                				// What should we do with the error?
+                				
+                			}catch( DownloadManagerException e ){
+                				
+                					// What should we do with the error?
+                				
                 				return false;
                 			}
                 		}
-                		return setLinkAtomic(link_destination);
+                		
+                		return( setLinkAtomic( link_destination ));
                 	}
 
                 	public boolean
@@ -3177,9 +3297,14 @@ DiskManagerImpl
                 		return( download_manager.getDownloadState().getFileLink( lazyGetFile() ));
                 	}
 
-                	public boolean setStorageType(int type) {
+                	public boolean 
+                	setStorageType(
+                		int type) 
+                	{
                 		boolean[] change = new boolean[res.length];
+                		
                 		change[file_index] = true;
+                		
                 		return fileSetSkeleton.setStorageTypes(change, type)[file_index];
                 	}
 
@@ -3199,16 +3324,36 @@ DiskManagerImpl
                 		long    offset,
                 		int     length )
 
-                	throws IOException
+                		throws IOException
                 	{
+                		CacheFile	cache_file;
+                		
                 		try{
                 			cache_read_mon.enter();
 
-                			if ( read_cache_file == null ){
+               				if ( download_manager.isDestroyed()){
+            					
+               					if ( read_cache_file != null ){
+               						
+               						try{
+               							read_cache_file.close();
+               							
+               						}catch( Throwable e ){
+               							
+               							Debug.out( e );
+               						}
+               						
+               						read_cache_file = null;
+               					}
+               					
+            					throw( new IOException( "Download has been remnoved" ));
+            				}
 
+                			if ( read_cache_file == null ){
+            				
                 				try{
                 					int type = DiskManagerImpl.getStorageType(download_manager, file_index).equals( "L")?ST_LINEAR:ST_COMPACT;
-
+                					
                 					read_cache_file =
                 						CacheFileManagerFactory.getSingleton().createFile(
                 							new CacheFileOwner()
@@ -3246,6 +3391,9 @@ DiskManagerImpl
                 					throw( new IOException( e.getMessage()));
                 				}
                 			}
+                			
+                			cache_file = read_cache_file;
+                			
                 		}finally{
 
                 			cache_read_mon.exit();
@@ -3255,7 +3403,7 @@ DiskManagerImpl
                 			DirectByteBufferPool.getBuffer( DirectByteBuffer.AL_DM_READ, length );
 
                 		try{
-                			read_cache_file.read( buffer, offset, CacheFile.CP_READ_CACHE );
+                			cache_file.read( buffer, offset, CacheFile.CP_READ_CACHE );
 
                 		}catch( Throwable e ){
 
@@ -3272,17 +3420,29 @@ DiskManagerImpl
                 	public void
                 	close()
                 	{
-                		if ( read_cache_file != null ){
+                		CacheFile	cache_file;
+                		
+                		try{
+                			cache_read_mon.enter();
 
-                			try{
-                				read_cache_file.close();
+                			cache_file = read_cache_file;
+                			
+                			read_cache_file = null;
+                			
+                		}finally{
+                			
+                			cache_read_mon.exit();
+                		}
+                		
+                		if ( cache_file != null ){
+
+                 			try{
+                 				cache_file.close();
 
                 			}catch( Throwable e ){
 
                 				Debug.printStackTrace(e);
                 			}
-
-                			read_cache_file = null;
                 		}
                 	}
 

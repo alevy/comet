@@ -13,8 +13,9 @@ import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.serialize.Serializer;
 
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 /**
  * 

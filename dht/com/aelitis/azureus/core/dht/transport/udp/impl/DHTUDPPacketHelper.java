@@ -22,11 +22,10 @@
 
 package com.aelitis.azureus.core.dht.transport.udp.impl;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
 
 import com.aelitis.azureus.core.dht.transport.udp.impl.packethandler.DHTUDPPacketNetworkHandler;
 import com.aelitis.net.udp.uc.PRUDPPacketHandler;
@@ -44,8 +43,7 @@ import com.aelitis.net.udp.uc.PRUDPPacketRequestDecoder;
 public class 
 DHTUDPPacketHelper 
 {	
-	// ROXANA: Made configurable.
-	public static int		PACKET_MAX_BYTES		= 1400;
+	public static final int		PACKET_MAX_BYTES		= 1400;
 	
 		// these actions have to co-exist with the tracker ones when the connection
 		// is shared, hence 1024
@@ -64,6 +62,8 @@ DHTUDPPacketHelper
 	public static final int		ACT_DATA				= 1035;
 	public static final int		ACT_REQUEST_KEY_BLOCK	= 1036;
 	public static final int		ACT_REPLY_KEY_BLOCK		= 1037;
+	public static final int		ACT_REQUEST_QUERY_STORE	= 1038;
+	public static final int		ACT_REPLY_QUERY_STORE	= 1039;
 	
 	
 	private static boolean	registered				= false;
@@ -138,6 +138,10 @@ DHTUDPPacketHelper
 						{
 							return( new DHTUDPPacketRequestKeyBlock(network_handler,is, connection_id, transaction_id));
 						}
+						case ACT_REQUEST_QUERY_STORE:
+						{
+							return( new DHTUDPPacketRequestQueryStorage(network_handler,is, connection_id, transaction_id));
+						}
 						default:
 						{
 							throw( new IOException( "Unknown action type" ));
@@ -155,6 +159,7 @@ DHTUDPPacketHelper
 		request_decoders.put( new Integer( ACT_REQUEST_STATS ), request_decoder );		
 		request_decoders.put( new Integer( ACT_DATA ), request_decoder );
 		request_decoders.put( new Integer( ACT_REQUEST_KEY_BLOCK ), request_decoder );
+		request_decoders.put( new Integer( ACT_REQUEST_QUERY_STORE ), request_decoder );
 		
 		PRUDPPacketRequest.registerDecoders( request_decoders );	
 			
@@ -221,6 +226,10 @@ DHTUDPPacketHelper
 						{
 							return( new DHTUDPPacketReplyKeyBlock( network_handler, originator, is, transaction_id));
 						}
+						case ACT_REPLY_QUERY_STORE:
+						{
+							return( new DHTUDPPacketReplyQueryStorage( network_handler, originator, is, transaction_id));
+						}
 						default:
 						{
 							throw( new IOException( "Unknown action type" ));
@@ -238,6 +247,7 @@ DHTUDPPacketHelper
 		reply_decoders.put( new Integer( ACT_REPLY_ERROR ), reply_decoder );
 		reply_decoders.put( new Integer( ACT_REPLY_STATS ), reply_decoder );
 		reply_decoders.put( new Integer( ACT_REPLY_KEY_BLOCK ), reply_decoder );
+		reply_decoders.put( new Integer( ACT_REPLY_QUERY_STORE ), reply_decoder );
 		
 		PRUDPPacketReply.registerDecoders( reply_decoders );
 	}

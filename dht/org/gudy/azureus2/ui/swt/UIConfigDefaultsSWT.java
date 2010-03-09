@@ -56,7 +56,6 @@ public class UIConfigDefaultsSWT
 		def.addParameter("GUI_SWT_bAlternateTablePainting", false);
 		def.addParameter("Colors.progressBar.override", false);
 		def.addParameter("GUI_SWT_DisableAlertSliding", false);
-		def.addParameter("SWT_bGTKTableBug", true);
 		def.addParameter("NameColumn.showProgramIcon", !Constants.isWindowsVista);
 		def.addParameter("Open MyTorrents", true);
 		def.addParameter("DND Always In Incomplete", false);
@@ -98,6 +97,7 @@ public class UIConfigDefaultsSWT
 		def.addParameter("GUI_SWT_bOldSpeedMenu", false);
 		
 		def.addParameter("ui.toolbar.uiswitcher", false);
+		def.addParameter("ui.systray.tooltip.enable", false);
 		
 		def.addParameter("ui", "az2");
 		
@@ -124,5 +124,8 @@ public class UIConfigDefaultsSWT
 		
 		
 		def.addParameter("MyTorrentsView.table.style", 0);
+		def.addParameter("MyTorrentsView.alwaysShowHeader", true);
+		
+		def.addParameter("ConfigView.section.style.swt.library.selection", "cocoa");
 	}
 }

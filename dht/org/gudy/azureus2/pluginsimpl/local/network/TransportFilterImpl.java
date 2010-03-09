@@ -1,8 +1,7 @@
 package org.gudy.azureus2.pluginsimpl.local.network;
 
-import org.gudy.azureus2.plugins.network.TransportFilter;
-
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilter;
+import org.gudy.azureus2.plugins.network.TransportFilter;
 
 public class TransportFilterImpl implements TransportFilter {
 	public TransportHelperFilter filter;

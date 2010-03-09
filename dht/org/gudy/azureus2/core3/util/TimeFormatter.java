@@ -56,6 +56,15 @@ public class TimeFormatter {
 		http_date_format.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
 	
+	private static final SimpleDateFormat cookie_date_format = 
+		new SimpleDateFormat("EEE, dd-MMM-yyyy HH:mm:ss z", Locale.US );
+
+	static{
+			// see http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.1
+		
+		cookie_date_format.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
+	
 	/**
 	 * Format time into two time sections, the first chunk trimmed, the second
 	 * with always with 2 digits.  Sections are *d, **h, **m, **s.  Section
@@ -65,7 +74,7 @@ public class TimeFormatter {
 	 * @return Formatted time string
 	 */
 	public static String format(long time_secs) {
-		if (time_secs == Constants.INFINITY_AS_INT || time_secs >= Constants.INFINITE_AS_LONG)
+		if (time_secs == Constants.CRAPPY_INFINITY_AS_INT || time_secs >= Constants.CRAPPY_INFINITE_AS_LONG)
 			return Constants.INFINITY_STRING;
 
 		if (time_secs < 0)
@@ -87,10 +96,14 @@ public class TimeFormatter {
 		
 		String result = vals[end] + TIME_SUFFIXES[end];
 
+		/* old logic removed to prefer showing consecutive units
 		// skip until we have a non-zero time section
 		do {
 			end--;
 		} while (end >= 0 && vals[end] == 0);
+		*/
+		
+		end--;
 		
 		if (end >= 0)
 			result += " " + twoDigits(vals[end]) + TIME_SUFFIXES[end];
@@ -121,7 +134,7 @@ public class TimeFormatter {
 	 */
     public static String formatColon(long time)
     {
-      if (time == Constants.INFINITY_AS_INT || time >= Constants.INFINITE_AS_LONG) return Constants.INFINITY_STRING;
+      if (time == Constants.CRAPPY_INFINITY_AS_INT || time >= Constants.CRAPPY_INFINITE_AS_LONG) return Constants.INFINITY_STRING;
       if (time < 0) return "";
 
       int secs = (int) time % 60;
@@ -205,6 +218,16 @@ public class TimeFormatter {
     		
     		return( 0 );
     	}
+    }
+    
+    public static String
+    getCookieDate(
+    	long		millis )
+    {
+		synchronized( cookie_date_format ){
+			
+			return( cookie_date_format.format(new Date( millis )));
+		}
     }
     
     public static String

@@ -30,8 +30,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.config.ConfigParameter;
-import org.gudy.azureus2.plugins.config.PluginConfigSource;
+import org.gudy.azureus2.plugins.config.*;
 
 /**
  * This class provides a way for a plugin to get and set configuration settings - both for the plugin
@@ -69,18 +68,19 @@ public interface
 PluginConfig 
 {  
 	public static final String CORE_PARAM_INT_MAX_UPLOAD_SPEED_KBYTES_PER_SEC			= "Max Upload Speed KBs";
-	public static final String CORE_PARAM_INT_MAX_UPLOAD_SPEED_SEEDING_KBYTES_PER_SEC = "Max Upload Speed When Only Seeding KBs";
+	public static final String CORE_PARAM_INT_MAX_UPLOAD_SPEED_SEEDING_KBYTES_PER_SEC 	= "Max Upload Speed When Only Seeding KBs";
  	public static final String CORE_PARAM_INT_MAX_DOWNLOAD_SPEED_KBYTES_PER_SEC			= "Max Download Speed KBs";
  	public static final String CORE_PARAM_INT_MAX_CONNECTIONS_PER_TORRENT				= "Max Connections Per Torrent";
  	public static final String CORE_PARAM_INT_MAX_CONNECTIONS_GLOBAL					= "Max Connections Global";
  	public static final String CORE_PARAM_INT_MAX_DOWNLOADS								= "Max Downloads";
  	public static final String CORE_PARAM_INT_MAX_ACTIVE								= "Max Active Torrents";
- 	public static final String CORE_PARAM_INT_MAX_ACTIVE_SEEDING				= "Max Active Torrents When Only Seeding";
- 	public static final String CORE_PARAM_INT_MAX_UPLOADS							= "Max Uploads";
- 	public static final String CORE_PARAM_INT_MAX_UPLOADS_SEEDING				= "Max Uploads Seeding";
- 	public static final String CORE_PARAM_BOOLEAN_AUTO_SPEED_ON = "Auto Upload Speed Enabled";
- 	public static final String CORE_PARAM_BOOLEAN_MAX_UPLOAD_SPEED_SEEDING = "Max Upload Speed When Only Seeding Enabled";
- 	public static final String CORE_PARAM_BOOLEAN_MAX_ACTIVE_SEEDING = "Max Active Torrents When Only Seeding Enabled";
+ 	public static final String CORE_PARAM_INT_MAX_ACTIVE_SEEDING						= "Max Active Torrents When Only Seeding";
+ 	public static final String CORE_PARAM_INT_MAX_UPLOADS								= "Max Uploads";
+ 	public static final String CORE_PARAM_INT_MAX_UPLOADS_SEEDING						= "Max Uploads Seeding";
+ 	public static final String CORE_PARAM_BOOLEAN_AUTO_SPEED_ON 						= "Auto Upload Speed Enabled";
+ 	public static final String CORE_PARAM_BOOLEAN_AUTO_SPEED_SEEDING_ON 				= "Auto Upload Speed Seeding Enabled";
+ 	public static final String CORE_PARAM_BOOLEAN_MAX_UPLOAD_SPEED_SEEDING 				= "Max Upload Speed When Only Seeding Enabled";
+ 	public static final String CORE_PARAM_BOOLEAN_MAX_ACTIVE_SEEDING 					= "Max Active Torrents When Only Seeding Enabled";
 	public static final String CORE_PARAM_BOOLEAN_SOCKS_PROXY_NO_INWARD_CONNECTION		= "SOCKS Proxy No Inward Connection";
 	public static final String CORE_PARAM_BOOLEAN_NEW_SEEDS_START_AT_TOP				= "Newly Seeding Torrents Get First Priority";
 	

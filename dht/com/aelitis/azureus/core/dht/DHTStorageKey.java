@@ -25,8 +25,6 @@ package com.aelitis.azureus.core.dht;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.gudy.azureus2.core3.util.HashWrapper;
-
 /**
  * @author parg
  *
@@ -43,6 +41,4 @@ DHTStorageKey
 		DataOutputStream		os )
 	
 		throws IOException;
-	
-	public HashWrapper getKey();
 }

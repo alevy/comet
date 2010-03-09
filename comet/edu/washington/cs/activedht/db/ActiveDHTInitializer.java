@@ -1,17 +1,15 @@
 package edu.washington.cs.activedht.db;
 
-import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.impl.DHTControlImpl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBFactory;
 import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
+import edu.washington.cs.activedht.DHTConstants;
 import edu.washington.cs.activedht.util.Constants;
 
 /**
@@ -23,7 +21,7 @@ import edu.washington.cs.activedht.util.Constants;
 public class ActiveDHTInitializer implements Constants {
 	private static boolean isInitialized = false;
 
-	public static void prepareRuntimeForActiveCode(FactoryInterface valueFactory) {
+	public static void prepareRuntimeForActiveCode(DHTDBValueFactory valueFactory) {
 		if (isInitialized)
 			return;
 
@@ -36,24 +34,18 @@ public class ActiveDHTInitializer implements Constants {
 		isInitialized = true;
 	}
 
-	private static void initVuzeForActiveCode(FactoryInterface valueFactory) {
+	private static void initVuzeForActiveCode(DHTDBValueFactory valueFactory) {
 		// Initialize the DHTDB factory:
-		DHTDBFactory.init(new DHTDBFactory.FactoryInterface() {
+/*		DHTDBFactory.init(new DHTDBFactory() {
 			public DHTDB create(DHTStorageAdapter adapter,
 					int original_republish_interval,
 					int cache_republish_interval, DHTLogger logger) {
-				/*ActiveDHTDBImpl dht_db = new ActiveDHTDBImpl(
-						new ActiveDHTStorageAdapter(adapter),
-						original_republish_interval, cache_republish_interval,
-						logger);
-				dht_db.init(); // initialize the DB.
-				return dht_db;*/
 				return new ActiveDB(adapter);
 			}
-		});
+		});*/
 
 		// Initialize the DHTDBValue factory:
-		DHTDBValueFactory.init(valueFactory);
+		DHTDBValueFactory.set(valueFactory);
 
 		configureAllConstants();
 
@@ -64,10 +56,5 @@ public class ActiveDHTInitializer implements Constants {
 
 	private static void configureAllConstants() {
 		DHTConstants.MAX_VALUE_SIZE = 10 * KB;
-		DHTUDPPacketHelper.PACKET_MAX_BYTES = 15 * KB; // slightly larger than
-														// DHT.MAX_VALUE_SIZE
-		DHTTransportUDPImpl.MAX_TRANSFER_QUEUE_BYTES = 80 * MB;
-		DHTDBImpl.MAX_TOTAL_SIZE = 40 * MB;
-		DHTControlImpl.SHOULD_TRANSFER_VALUES_ON_JOIN = false;
 	}
 }

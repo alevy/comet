@@ -23,8 +23,7 @@
 package com.aelitis.azureus.core.peermanager.peerdb;
 
 
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.peer.util.PeerUtils;
 import org.gudy.azureus2.core3.util.AEMonitor;
@@ -180,16 +179,43 @@ public class PeerExchangerItem {
   /**
    * Clears all current peer state records and stops any future state maintenance.
    */
-  public void disableStateMaintenance() {
-    try{  peers_mon.enter();
-      maintain_peers_state = false;
-      connections_added.clear();
-      connections_dropped.clear();
-      connected_peers.clear();
+  public void 
+  disableStateMaintenance() 
+  {
+    try{  
+    	peers_mon.enter();
+    	
+    	maintain_peers_state = false;
+    	
+    	connections_added.clear();
+    	
+    	connections_dropped.clear();
+    	
+    	connected_peers.clear();
+    	
+    }finally{  
+    	peers_mon.exit();  
     }
-    finally{  peers_mon.exit();  }
   }
   
+  public void 
+  enableStateMaintenance() 
+  {
+	    try{  
+	    	peers_mon.enter();
+	    	
+	    	if ( maintain_peers_state ){
+	    		
+	    		return;
+	    	}
+	    	
+	    	maintain_peers_state = true;
+	    	
+	    }finally{  
+	    	
+	    	peers_mon.exit();  
+	    }
+ }
   
   
   protected boolean isConnectedToPeer( PeerItem peer ) {

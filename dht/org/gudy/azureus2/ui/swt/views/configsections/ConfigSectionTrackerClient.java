@@ -25,21 +25,17 @@
 package org.gudy.azureus2.ui.swt.views.configsections;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 public class 
@@ -169,7 +165,7 @@ ConfigSectionTrackerClient
     
     StringParameter tcpOverride = new StringParameter(overrideGroup, "TCP.Listen.Port.Override");
     data = new GridData();
-    data.widthHint = 40;
+    data.widthHint = 50;
     tcpOverride.setLayoutData(data);
     
     tcpOverride.addChangeListener(new ParameterChangeAdapter() {
@@ -201,7 +197,6 @@ ConfigSectionTrackerClient
     
     IntParameter numwant = new IntParameter(overrideGroup, "Tracker Client Numwant Limit",0,100);
     data = new GridData();
-    data.widthHint = 40;
     numwant.setLayoutData(data);
     
     label = new Label(overrideGroup, SWT.WRAP);
@@ -210,7 +205,6 @@ ConfigSectionTrackerClient
     
     IntParameter minmininterval = new IntParameter(overrideGroup, "Tracker Client Min Announce Interval");
     data = new GridData();
-    data.widthHint = 40;
     minmininterval.setLayoutData(data);
 
     
@@ -223,7 +217,6 @@ ConfigSectionTrackerClient
     label = new Label(gMainTab, SWT.NULL);
     Messages.setLanguageText(label,  "ConfigView.section.tracker.client.connecttimeout");
     gridData = new GridData();
-    gridData.widthHint = 40;
     IntParameter	connect_timeout = new IntParameter(gMainTab, "Tracker Client Connect Timeout" );
     connect_timeout.setLayoutData(gridData);
     label = new Label(gMainTab, SWT.NULL);
@@ -233,7 +226,6 @@ ConfigSectionTrackerClient
     label = new Label(gMainTab, SWT.NULL);
     Messages.setLanguageText(label,  "ConfigView.section.tracker.client.readtimeout");
     gridData = new GridData();
-    gridData.widthHint = 40;
     IntParameter	read_timeout = new IntParameter(gMainTab, "Tracker Client Read Timeout" );
     read_timeout.setLayoutData(gridData);
     label = new Label(gMainTab, SWT.NULL);

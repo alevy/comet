@@ -37,6 +37,7 @@ import java.util.Map;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -52,38 +53,11 @@ import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.config.EnablerParameter;
 import org.gudy.azureus2.plugins.ui.config.ParameterListener;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ActionParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.BooleanParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ColorParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.DirectoryParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.HyperlinkParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.InfoParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.IntParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.LabelParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterGroupImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterImplListener;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.PasswordParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.StringListParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.StringParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.UIParameterImpl;
+import org.gudy.azureus2.pluginsimpl.local.ui.config.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ButtonParameter;
-import org.gudy.azureus2.ui.swt.config.DirectoryParameter;
-import org.gudy.azureus2.ui.swt.config.DualChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
-import org.gudy.azureus2.ui.swt.config.InfoParameter;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.LinkParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.PasswordParameter;
-import org.gudy.azureus2.ui.swt.config.StringListParameter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
-import org.gudy.azureus2.ui.swt.config.UISWTParameter;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 import org.gudy.azureus2.ui.swt.plugins.UISWTParameterContext;
 
@@ -263,6 +237,41 @@ BasicPluginConfigImpl
 					LinkLabel.makeLinkedLabel(label, hyperlink);
 				}
 				
+				if (param instanceof HyperlinkParameterImpl) {
+					
+					final Label f_label = label;
+					
+					param.addListener(
+							new ParameterListener()
+							{
+								public void
+								parameterChanged(
+									org.gudy.azureus2.plugins.ui.config.Parameter	p )
+								{
+									if ( f_label.isDisposed()){
+							
+										param.removeListener( this );								
+									}else{
+										
+										final String hyperlink = ((HyperlinkParameterImpl)param).getHyperlink();
+										
+										if (hyperlink != null) {
+											
+											Utils.execSWTThread(
+												new Runnable()
+												{
+													public void
+													run()
+													{
+														LinkLabel.updateLinkedLabel(f_label, hyperlink);
+													}
+												});
+										}
+									}
+								}
+							});				
+					}
+
 			}
 	
 			String	key = param.getKey();
@@ -642,6 +651,8 @@ BasicPluginConfigImpl
 				    	Control	con = (Control)stuff[k];
 				    	
 				    	con.setVisible(false);
+				    	
+				    	con.setSize( 0, 0 );
 				    	
 				    	GridData gridData = new GridData();
 						

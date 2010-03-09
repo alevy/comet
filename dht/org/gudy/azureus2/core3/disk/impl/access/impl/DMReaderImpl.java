@@ -28,26 +28,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequestListener;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.disk.impl.DiskManagerHelper;
-import org.gudy.azureus2.core3.disk.impl.access.DMReader;
+import org.gudy.azureus2.core3.disk.impl.access.*;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapEntry;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessController;
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessRequest;
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessRequestListener;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
+import com.aelitis.azureus.core.diskmanager.cache.*;
 
 /**
  * @author parg
@@ -68,6 +60,9 @@ DMReaderImpl
 	
 	private boolean					started;
 	private boolean					stopped;
+	
+	private long					total_read_ops;
+	private long					total_read_bytes;
 	
 	protected AEMonitor	this_mon	= new AEMonitor( "DMReader" );
 	
@@ -187,6 +182,12 @@ DMReaderImpl
 			
 			this_mon.exit();
 		}
+	}
+	
+	public long[]
+	getStats()
+	{
+		return( new long[]{ total_read_ops, total_read_bytes });
 	}
 	
 		// returns null if the read can't be performed
@@ -338,7 +339,7 @@ DMReaderImpl
 			List	chunks = new ArrayList();
 			
 			int	buffer_position = 0;
-			
+						
 			while ( buffer_position < length && currentFile < pieceList.size()) {
 	     
 				DMPieceMapEntry map_entry = pieceList.get( currentFile );
@@ -492,6 +493,7 @@ DMReaderImpl
 		private int	buffer_length;
 		
 		private int	chunk_index;
+		private int	chunk_limit;
 		
 		protected
 		requestDispatcher(
@@ -585,6 +587,12 @@ DMReaderImpl
 									public void 
 									requestExecuted(long bytes) 
 									{
+										if ( bytes > 0 ){
+											
+											total_read_bytes 	+= bytes;
+											total_read_ops		++;
+										}
+										
 										listener.requestExecuted( bytes );									
 									}
 								});
@@ -617,10 +625,16 @@ DMReaderImpl
 		doRequest(
 			DiskAccessRequestListener	l )
 		{
-			
 			Object[]	stuff = (Object[])chunks.get( chunk_index++ );
 			
-			buffer.limit( DirectByteBuffer.SS_DR, ((Integer)stuff[2]).intValue());
+			if ( chunk_index > 0 ){
+				
+				buffer.position( DirectByteBuffer.SS_DR, chunk_limit );
+			}
+			
+			chunk_limit = ((Integer)stuff[2]).intValue();
+			
+			buffer.limit( DirectByteBuffer.SS_DR, chunk_limit );
 			
 			short	cache_policy = dm_request.getUseCache()?CacheFile.CP_READ_CACHE:CacheFile.CP_NONE;
 			
@@ -670,6 +684,12 @@ DMReaderImpl
 		public void 
 		requestExecuted(long bytes) 
 		{
+			if ( bytes > 0 ){
+				
+				total_read_bytes 	+= bytes;
+				total_read_ops		++;
+			}
+			
 			listener.requestExecuted( bytes );									
 		}
 		

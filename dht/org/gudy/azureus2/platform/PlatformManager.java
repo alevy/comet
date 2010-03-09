@@ -22,9 +22,12 @@
 
 package org.gudy.azureus2.platform;
 
+import java.io.File;
 import java.net.InetAddress;
 
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+
+import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author parg
@@ -37,17 +40,27 @@ PlatformManager
 	public static final int	PT_WINDOWS		= 1;
 	public static final int PT_OTHER		= 2;
     public static final int PT_MACOSX 		= 3;
-  	public static final int PT_UNIX		= 4;
+  	public static final int PT_UNIX			= 4;
 
-  	public static final int USER_REQUEST_INFO = 1;
-  	public static final int USER_REQUEST_WARNING = 2;
-  	public static final int USER_REQUEST_QUESTION = 3;  	
+  	public static final int USER_REQUEST_INFO 		= 1;
+  	public static final int USER_REQUEST_WARNING 	= 2;
+  	public static final int USER_REQUEST_QUESTION 	= 3;  	
+  	
+ 	public static final int	SD_SHUTDOWN		= 0x00000001;
+ 	public static final int	SD_HIBERNATE	= 0x00000002;
+ 	public static final int	SD_SLEEP		= 0x00000004;
   	
 	public int
 	getPlatformType();
 	
 	public String
 	getVersion()
+	
+		throws PlatformManagerException;
+	
+	public void
+	startup(
+		AzureusCore		azureus_core )
 	
 		throws PlatformManagerException;
 	
@@ -71,6 +84,42 @@ PlatformManager
 		
 		throws PlatformManagerException;
 
+	public File
+	getVMOptionFile()
+	
+		throws PlatformManagerException;
+	
+	public String[]
+	getExplicitVMOptions()
+	
+		throws PlatformManagerException;
+	
+	public void
+	setExplicitVMOptions(
+		String[]		options )
+	
+		throws PlatformManagerException;
+
+	public boolean
+	getRunAtLogin()
+	          	
+	 	throws PlatformManagerException;
+
+	public void
+	setRunAtLogin(
+		boolean		run )
+	          	
+	 	throws PlatformManagerException;
+
+	public int
+	getShutdownTypes();
+	
+	public void
+	shutdown(
+		int			type )
+	
+		throws PlatformManagerException;
+	
 	public void
 	createProcess(
 		String	command_line,

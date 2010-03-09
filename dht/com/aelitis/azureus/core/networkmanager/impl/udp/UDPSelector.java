@@ -22,9 +22,7 @@
 
 package com.aelitis.azureus.core.networkmanager.impl.udp;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;

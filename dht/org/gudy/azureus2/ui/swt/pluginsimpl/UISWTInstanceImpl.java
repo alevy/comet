@@ -22,11 +22,7 @@
 
 package org.gudy.azureus2.ui.swt.pluginsimpl;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Frame;
-import java.awt.Panel;
+import java.awt.*;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -37,15 +33,12 @@ import java.util.WeakHashMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.awt.SWT_AWT;
-import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.internat.MessageText;
@@ -55,41 +48,23 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.plugins.ui.UIException;
-import org.gudy.azureus2.plugins.ui.UIInputReceiver;
-import org.gudy.azureus2.plugins.ui.UIInstance;
-import org.gudy.azureus2.plugins.ui.UIInstanceFactory;
-import org.gudy.azureus2.plugins.ui.UIManager;
-import org.gudy.azureus2.plugins.ui.UIManagerEvent;
-import org.gudy.azureus2.plugins.ui.UIManagerEventListener;
-import org.gudy.azureus2.plugins.ui.UIMessage;
-import org.gudy.azureus2.plugins.ui.UIRuntimeException;
+import org.gudy.azureus2.plugins.ui.*;
 import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
 import org.gudy.azureus2.plugins.ui.tables.TableColumn;
 import org.gudy.azureus2.plugins.ui.tables.TableColumnCreationListener;
 import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadImpl;
 import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
 import org.gudy.azureus2.ui.common.util.MenuItemManager;
-import org.gudy.azureus2.ui.swt.FileDownloadWindow;
-import org.gudy.azureus2.ui.swt.SimpleTextEntryWindow;
-import org.gudy.azureus2.ui.swt.TextViewerWindow;
-import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.mainwindow.ClipboardCopy;
-import org.gudy.azureus2.ui.swt.mainwindow.MainStatusBar;
-import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
-import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
+import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
+import org.gudy.azureus2.ui.swt.mainwindow.*;
 import org.gudy.azureus2.ui.swt.minibar.AllTransfersBar;
 import org.gudy.azureus2.ui.swt.minibar.DownloadBar;
-import org.gudy.azureus2.ui.swt.plugins.UISWTAWTPluginView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTGraphic;
-import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
-import org.gudy.azureus2.ui.swt.plugins.UISWTPluginView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntry;
-import org.gudy.azureus2.ui.swt.plugins.UISWTView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTViewEventListener;
+import org.gudy.azureus2.ui.swt.plugins.*;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.views.table.utils.TableColumnManager;
 import org.gudy.azureus2.ui.swt.views.table.utils.TableContextMenuManager;
@@ -132,7 +107,7 @@ UISWTInstanceImpl
 	}
 	
 	public void init(IUIIntializer init) {
-		UIManager ui_manager = core.getPluginManager().getDefaultPluginInterface().getUIManager();
+		UIManager ui_manager = PluginInitializer.getDefaultInterface().getUIManager();
 		ui_manager.addUIEventListener(this);
 		
 		bUIAttaching = true;
@@ -220,35 +195,32 @@ UISWTInstanceImpl
 							}
 							
 
-							Shell shell = uiFunctions.getMainShell();
+							MessageBoxShell mb = new MessageBoxShell(styles, 
+									MessageText.getString((String)params[0]), 
+									MessageText.getString((String)params[1]));
+							mb.open(null);
+							int _r = mb.waitUntilClosed();
 							
-							if ( shell != null ){
+							int	r = 0;
+							
+							if (( _r & SWT.YES ) != 0 ){
 								
-								int _r = Utils.openMessageBox(shell, styles, 
-										MessageText.getString((String)params[0]), 
-										MessageText.getString((String)params[1]));
-								
-								int	r = 0;
-								
-								if (( _r & SWT.YES ) != 0 ){
-									
-									r |= UIManagerEvent.MT_YES;
-								}
-								if (( _r & SWT.NO ) != 0 ){
-									
-									r |= UIManagerEvent.MT_NO;
-								}
-								if (( _r & SWT.OK ) != 0 ){
-									
-									r |= UIManagerEvent.MT_OK;
-								}
-								if (( _r & SWT.CANCEL ) != 0 ){
-									
-									r |= UIManagerEvent.MT_CANCEL;
-								}
-								
-								result[0] = r;
+								r |= UIManagerEvent.MT_YES;
 							}
+							if (( _r & SWT.NO ) != 0 ){
+								
+								r |= UIManagerEvent.MT_NO;
+							}
+							if (( _r & SWT.OK ) != 0 ){
+								
+								r |= UIManagerEvent.MT_OK;
+							}
+							if (( _r & SWT.CANCEL ) != 0 ){
+								
+								r |= UIManagerEvent.MT_CANCEL;
+							}
+							
+							result[0] = r;
 						}
 					}, false );
 				
@@ -302,7 +274,7 @@ UISWTInstanceImpl
 						if (auto_download) {
 							Shell shell = uiFunctions.getMainShell();
 							if (shell != null) {
-								new FileDownloadWindow(core, shell, target.toString(),
+								new FileDownloadWindow(shell, target.toString(),
 										referrer == null ? null : referrer.toString(),
 										request_properties );
 							}
@@ -412,7 +384,7 @@ UISWTInstanceImpl
 					
 					TableStructureEventDispatcher tsed = TableStructureEventDispatcher.getInstance(_col.getTableID());
 					
-					tsed.tableStructureChangedSWTThread(true);
+					tsed.tableStructureChanged(true, _col.getForDataSourceType());
 					
 				}else{
 					
@@ -442,7 +414,7 @@ UISWTInstanceImpl
 					
 					TableStructureEventDispatcher tsed = TableStructureEventDispatcher.getInstance( tid );
 							
-					tsed.tableStructureChangedSWTThread(true);
+					tsed.tableStructureChanged(true, dataSource);
 				}
 				
 				break;
@@ -562,6 +534,12 @@ UISWTInstanceImpl
 		Image img) 
 	{
 		return new UISWTGraphicImpl(img);
+	}
+	
+	public Shell createShell(int style) {
+		Shell shell = ShellFactory.createMainShell(style);
+		Utils.setShellIcon(shell);
+		return shell;
 	}
   
 
@@ -808,8 +786,12 @@ UISWTInstanceImpl
 	// @see org.gudy.azureus2.plugins.ui.UIInstance#promptUser(java.lang.String, java.lang.String, java.lang.String[], int)
 	public int promptUser(String title, String text, String[] options,
 			int defaultOption) {
-		return MessageBoxShell.open(uiFunctions.getMainShell(), title, text,
-				options, defaultOption);
+		
+		MessageBoxShell mb = new MessageBoxShell(title, text, options,
+				defaultOption);
+		mb.open(null);
+		// bah, no way to change this to use the UserPrompterResultListener trigger
+		return mb.waitUntilClosed();
 	}
 	
 	public void showDownloadBar(Download download, final boolean display) {
@@ -858,7 +840,7 @@ UISWTInstanceImpl
 	}
 	
 	public UIInputReceiver getInputReceiver() {
-		return new SimpleTextEntryWindow(getDisplay());
+		return new SimpleTextEntryWindow();
 	}
 	
 	public UIMessage createMessage() {
@@ -869,25 +851,16 @@ UISWTInstanceImpl
 		final UISWTStatusEntryImpl entry = new UISWTStatusEntryImpl();
 		UIFunctionsSWT functionsSWT = UIFunctionsManagerSWT.getUIFunctionsSWT();
 		if (functionsSWT == null) {
+			Debug.outNoStack("No UIFunctionsSWT on createStatusEntry");
 			return null;
 		}
 		
 		MainStatusBar mainStatusBar = functionsSWT.getMainStatusBar();
 		if (mainStatusBar == null) {
+			Debug.outNoStack("No MainStatusBar on createStatusEntry");
 			return null;
 		}
-		final CLabel label = mainStatusBar.createStatusEntry(entry);
-		final Listener click_listener = new Listener() {
-			public void handleEvent(Event e) {
-				entry.onClick();
-			}
-		};
-
-		Utils.execSWTThread(new AERunnable() {
-			public void runSupport() {
-				label.addListener(SWT.MouseDoubleClick, click_listener);
-			}
-		}, true);
+		mainStatusBar.createStatusEntry(entry);
 		
 		return entry;
 	}
@@ -1053,6 +1026,10 @@ UISWTInstanceImpl
 
 		public void openConfig(BasicPluginConfigModel model) {
 			delegate.openConfig(model);
+		}
+
+		public Shell createShell(int style) {
+			return delegate.createShell(style);
 		}
 		
 	}

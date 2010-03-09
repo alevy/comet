@@ -23,8 +23,7 @@
 
 package com.aelitis.azureus.core.content;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class 
 AzureusContentDirectoryManager 

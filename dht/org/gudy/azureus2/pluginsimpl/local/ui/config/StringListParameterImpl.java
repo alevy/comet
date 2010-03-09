@@ -22,8 +22,8 @@
 package org.gudy.azureus2.pluginsimpl.local.ui.config;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.plugins.ui.config.StringListParameter;
 import org.gudy.azureus2.pluginsimpl.local.PluginConfigImpl;
+import org.gudy.azureus2.plugins.ui.config.StringListParameter;
 
 public class StringListParameterImpl extends ParameterImpl implements StringListParameter
 {

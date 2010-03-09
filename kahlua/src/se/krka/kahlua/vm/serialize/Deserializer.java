@@ -83,9 +83,13 @@ public class Deserializer {
 	}
 
 	public static Object deserializeBytes(byte[] value, LuaTable env) {
+		try {
 		if (value.length == 0) {
 			return null;
 		}
 		return new Deserializer(new DataInputStream(new ByteArrayInputStream(value)), env).deserialize();
+		} catch (Exception e) {
+			return new String(value);
+		}
 	}
 }

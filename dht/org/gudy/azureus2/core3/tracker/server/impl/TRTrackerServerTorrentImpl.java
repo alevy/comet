@@ -26,40 +26,15 @@ package org.gudy.azureus2.core3.tracker.server.impl;
  *
  */
 
-import java.io.UnsupportedEncodingException;
+import java.util.*;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeerBase;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrent;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrentListener;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrentPeerListener;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrentStats;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.HostNameToIPResolver;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 
@@ -3125,13 +3100,13 @@ TRTrackerServerTorrentImpl
 			return( tcp_port & 0xffff );
 		}
 		
-		protected int
+		public int
 		getUDPPort()
 		{
 			return( udp_port & 0xffff );
 		}
 		
-		protected int
+		public int
 		getHTTPPort()
 		{
 			return( http_port & 0xffff );

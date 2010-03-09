@@ -25,7 +25,6 @@ package org.gudy.azureus2.pluginsimpl.local.network;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.spec.AlgorithmParameterSpec;
-
 import javax.crypto.spec.SecretKeySpec;
 
 import org.gudy.azureus2.plugins.messaging.MessageStreamDecoder;
@@ -44,11 +43,11 @@ import com.aelitis.azureus.core.networkmanager.ConnectionEndpoint;
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelper;
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilter;
+import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilterStreamCipher;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportHelper;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportImpl;
-import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPTransport;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPTransportHelper;
 

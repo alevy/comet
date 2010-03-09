@@ -28,16 +28,9 @@ package org.gudy.azureus2.pluginsimpl.local.ipfilter;
 
 import java.io.File;
 
-import org.gudy.azureus2.core3.ipfilter.BannedIp;
-import org.gudy.azureus2.core3.ipfilter.BlockedIp;
-import org.gudy.azureus2.core3.ipfilter.IpFilter;
-import org.gudy.azureus2.core3.ipfilter.IpFilterManagerFactory;
-import org.gudy.azureus2.core3.ipfilter.IpRange;
-import org.gudy.azureus2.plugins.ipfilter.IPBanned;
-import org.gudy.azureus2.plugins.ipfilter.IPBlocked;
-import org.gudy.azureus2.plugins.ipfilter.IPFilter;
-import org.gudy.azureus2.plugins.ipfilter.IPFilterException;
-import org.gudy.azureus2.plugins.ipfilter.IPRange;
+import org.gudy.azureus2.plugins.ipfilter.*;
+
+import org.gudy.azureus2.core3.ipfilter.*;
 
 public class 
 IPFilterImpl

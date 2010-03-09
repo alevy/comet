@@ -28,60 +28,30 @@ import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.ShellAdapter;
-import org.eclipse.swt.events.ShellEvent;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Item;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Monitor;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AERunnableBoolean;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
-import org.gudy.azureus2.plugins.PluginManager;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.sharing.ShareException;
 import org.gudy.azureus2.plugins.sharing.ShareManager;
 import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
-import org.gudy.azureus2.ui.swt.IconBar;
-import org.gudy.azureus2.ui.swt.IconBarEnabler;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.OpenTorrentWindow;
-import org.gudy.azureus2.ui.swt.PasswordWindow;
-import org.gudy.azureus2.ui.swt.Tab;
-import org.gudy.azureus2.ui.swt.TrayWindow;
-import org.gudy.azureus2.ui.swt.UIExitUtilsSWT;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.ui.swt.*;
 import org.gudy.azureus2.ui.swt.associations.AssociationChecker;
 import org.gudy.azureus2.ui.swt.components.shell.ShellManager;
 import org.gudy.azureus2.ui.swt.config.wizard.ConfigureWizard;
@@ -97,17 +67,8 @@ import org.gudy.azureus2.ui.swt.plugins.UISWTViewEventListener;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTInstanceImpl;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTViewImpl;
 import org.gudy.azureus2.ui.swt.sharing.progress.ProgressWindow;
-import org.gudy.azureus2.ui.swt.views.AbstractIView;
-import org.gudy.azureus2.ui.swt.views.ConfigView;
-import org.gudy.azureus2.ui.swt.views.DetailedListView;
-import org.gudy.azureus2.ui.swt.views.IView;
-import org.gudy.azureus2.ui.swt.views.LoggerView;
-import org.gudy.azureus2.ui.swt.views.ManagerView;
-import org.gudy.azureus2.ui.swt.views.MySharesView;
-import org.gudy.azureus2.ui.swt.views.MyTorrentsSuperView;
-import org.gudy.azureus2.ui.swt.views.MyTrackerView;
-import org.gudy.azureus2.ui.swt.views.PeerSuperView;
-import org.gudy.azureus2.ui.swt.views.TorrentOptionsView;
+import org.gudy.azureus2.ui.swt.views.*;
+import org.gudy.azureus2.ui.swt.views.clientstats.ClientStatsView;
 import org.gudy.azureus2.ui.swt.views.stats.StatsView;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
@@ -194,6 +155,8 @@ public class MainWindow
 
 	private Item config;
 
+	private Item viewClientStats;
+	
 	private ConfigView config_view;
 
 	protected AEMonitor this_mon = new AEMonitor("MainWindow");
@@ -327,8 +290,8 @@ public class MainWindow
 
 			globalManager.loadExistingTorrentsNow(true);
 
-			COConfigurationManager.addParameterListener("config.style.useSIUnits",
-					this);
+			COConfigurationManager.addParameterListener("config.style.useSIUnits", this);
+			COConfigurationManager.addParameterListener("config.style.forceSIValues", this);
 
 			mytorrents = null;
 			my_tracker_tab = null;
@@ -432,8 +395,7 @@ public class MainWindow
 				attachToTopOf = separator;
 
 				mainStatusBar = new MainStatusBar();
-				Composite statusBar = mainStatusBar.initStatusBar(azureus_core,
-						globalManager, display, shell);
+				Composite statusBar = mainStatusBar.initStatusBar(shell);
 
 				controlAboveFolder = attachToTopOf;
 				controlBelowFolder = statusBar;
@@ -508,7 +470,7 @@ public class MainWindow
 
 			if (!COConfigurationManager.getBooleanParameter("Wizard Completed")) {
 				// returns after the wizard is done
-				new ConfigureWizard(getAzureusCore(), true);
+				new ConfigureWizard(true);
 			}
 
 			plugin_manager.firePluginEvent(PluginEvent.PEV_CONFIGURATION_WIZARD_COMPLETES);
@@ -556,11 +518,9 @@ public class MainWindow
 			});
 		}
 
-		PluginManager plugin_manager = azureus_core.getPluginManager();
-
 		// share manager init is async so we need to deal with this
 
-		PluginInterface default_pi = plugin_manager.getDefaultPluginInterface();
+		PluginInterface default_pi = PluginInitializer.getDefaultInterface();
 
 		try {
 			final ShareManager share_manager = default_pi.getShareManager();
@@ -641,6 +601,14 @@ public class MainWindow
 			});
 		}
 
+		if (!Constants.isSafeMode && COConfigurationManager.getBooleanParameter("Open Client Stats")) {
+			Utils.execSWTThreadLater(delay += delayInc, new Runnable() {
+				public void run() {
+					showClientStatsView();
+				}
+			});
+		}
+
 		COConfigurationManager.addAndFireParameterListener("IconBar.enabled",
 				new ParameterListener() {
 					public void parameterChanged(String parameterName) {
@@ -716,9 +684,7 @@ public class MainWindow
 			return;
 		}
 
-		// No tray access on OSX yet
-		boolean bEnableTray = COConfigurationManager.getBooleanParameter("Enable System Tray")
-				&& (!Constants.isOSX || SWT.getVersion() > 3300);
+		boolean bEnableTray = COConfigurationManager.getBooleanParameter("Enable System Tray");
 		boolean bPassworded = COConfigurationManager.getBooleanParameter("Password enabled");
 		boolean bStartMinimize = bEnableTray
 				&& (bPassworded || COConfigurationManager.getBooleanParameter("Start Minimized"));
@@ -781,7 +747,7 @@ public class MainWindow
 
 	protected void showMyTracker() {
 		if (my_tracker_tab == null) {
-			my_tracker_tab = mainTabSet.createTabItem(new MyTrackerView(azureus_core), true);
+			my_tracker_tab = mainTabSet.createTabItem(new MyTrackerView(), true);
 			mainTabSet.getView(my_tracker_tab).getComposite().addDisposeListener(
 					new DisposeListener() {
 						public void widgetDisposed(DisposeEvent e) {
@@ -797,7 +763,7 @@ public class MainWindow
 
 	protected void showMyShares() {
 		if (my_shares_tab == null) {
-			my_shares_tab = mainTabSet.createTabItem(new MySharesView(azureus_core), true);
+			my_shares_tab = mainTabSet.createTabItem(new MySharesView(), true);
 			mainTabSet.getView(my_shares_tab).getComposite().addDisposeListener(
 					new DisposeListener() {
 						public void widgetDisposed(DisposeEvent e) {
@@ -813,7 +779,7 @@ public class MainWindow
 
 	protected void showMyTorrents() {
 		if (mytorrents == null) {
-			MyTorrentsSuperView view = new MyTorrentsSuperView(azureus_core);
+			MyTorrentsSuperView view = new MyTorrentsSuperView();
 			mytorrents = mainTabSet.createTabItem(view, true);
 			mainTabSet.getView(mytorrents).getComposite().addDisposeListener(
 					new DisposeListener() {
@@ -847,7 +813,7 @@ public class MainWindow
 
 	protected void showAllPeersView() {
 		if (all_peers == null) {
-			PeerSuperView view = new PeerSuperView(azureus_core.getGlobalManager());
+			PeerSuperView view = new PeerSuperView();
 			all_peers = mainTabSet.createTabItem(view, true);
 			mainTabSet.getView(all_peers).getComposite().addDisposeListener(
 					new DisposeListener() {
@@ -857,6 +823,23 @@ public class MainWindow
 					});
 		} else {
 			mainTabSet.setFocus(all_peers);
+		}
+		refreshIconBar();
+		refreshTorrentMenu();
+	}
+
+	protected void showClientStatsView() {
+		if (viewClientStats == null) {
+			ClientStatsView view = new ClientStatsView();
+			viewClientStats = mainTabSet.createTabItem(view, true);
+			mainTabSet.getView(viewClientStats).getComposite().addDisposeListener(
+					new DisposeListener() {
+						public void widgetDisposed(DisposeEvent e) {
+							viewClientStats = null;
+						}
+					});
+		} else {
+			mainTabSet.setFocus(viewClientStats);
 		}
 		refreshIconBar();
 		refreshTorrentMenu();
@@ -910,7 +893,8 @@ public class MainWindow
 		// only do donation check if swt instance is initialized, which means
 		// initial download managers are loaded and this main window is really
 		// the main window
-		if (uiSWTInstanceImpl != null) {
+		if (uiSWTInstanceImpl != null
+				&& !created.getDownloadState().getFlag(DownloadManagerState.FLAG_LOW_NOISE)) {
 			DonationWindow.checkForDonationPopup();
 		}
 	}
@@ -1017,7 +1001,9 @@ public class MainWindow
 					}
 
 					if (visible) {
-						shell.setMinimized(false);
+						if (shell.getMinimized()) {
+							shell.setMinimized(false);
+						}
 						if (!currentlyVisible
 								&& COConfigurationManager.getBooleanParameter("window.maximized")) {
 							shell.setMaximized(true);
@@ -1098,9 +1084,13 @@ public class MainWindow
 		 * We can't rely that the normal mechanism for doing this won't fail (which it usually does)
 		 * when the GUI is being disposed of.
 		 */
-		AllTransfersBar transfer_bar = AllTransfersBar.getBarIfOpen(AzureusCoreFactory.getSingleton().getGlobalManager());
-		if (transfer_bar != null) {
-			transfer_bar.forceSaveLocation();
+		try {
+  		AllTransfersBar transfer_bar = AllTransfersBar.getBarIfOpen(AzureusCoreFactory.getSingleton().getGlobalManager());
+  		if (transfer_bar != null) {
+  			transfer_bar.forceSaveLocation();
+  		}
+		} catch (Exception e) {
+			// ignore
 		}
 
 		// close all tabs
@@ -1121,8 +1111,9 @@ public class MainWindow
 			shell.dispose();
 		}
 
-		COConfigurationManager.removeParameterListener("config.style.useSIUnits",
-				this);
+		COConfigurationManager.removeParameterListener("config.style.useSIUnits", this);
+		COConfigurationManager.removeParameterListener("config.style.forceSIValues", this);
+		
 		COConfigurationManager.removeParameterListener("Show Download Basket", this);
 
 		UIExitUtilsSWT.uiShutdown();
@@ -1246,7 +1237,7 @@ public class MainWindow
 			}
 		}
 
-		if (parameterName.equals("config.style.useSIUnits")) {
+		if (parameterName.equals("config.style.useSIUnits") || parameterName.equals("config.style.forceSIValues")) {
 			updateComponents();
 		}
 	}
@@ -1281,7 +1272,7 @@ public class MainWindow
 			return;
 		}
 		if (itemKey.equals("new")) {
-			new NewTorrentWizard(getAzureusCore(), display);
+			new NewTorrentWizard(display);
 			return;
 		}
 		IView currentView = getCurrentView();
@@ -1389,7 +1380,7 @@ public class MainWindow
 
 	protected ConfigView showConfig() {
 		if (config == null) {
-			config_view = new ConfigView(azureus_core);
+			config_view = new ConfigView();
 			config = mainTabSet.createTabItem(config_view, true);
 			config_view.getComposite().addDisposeListener(new DisposeListener() {
 				public void widgetDisposed(DisposeEvent e) {
@@ -1441,7 +1432,7 @@ public class MainWindow
 
 	protected void showStats() {
 		if (stats_tab == null) {
-			stats_tab = mainTabSet.createTabItem(new StatsView(globalManager, azureus_core), true);
+			stats_tab = mainTabSet.createTabItem(new StatsView(), true);
 			mainTabSet.getView(stats_tab).getComposite().addDisposeListener(
 					new DisposeListener() {
 						public void widgetDisposed(DisposeEvent e) {

@@ -21,10 +21,8 @@
 package org.gudy.azureus2.ui.swt.views.tableitems.files;
 
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
+import org.gudy.azureus2.plugins.ui.tables.*;
+
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /** File's First Piece # 
@@ -50,14 +48,26 @@ public class FirstPieceItem
 
   public void refresh(TableCell cell) {
     DiskManagerFileInfo fileInfo = (DiskManagerFileInfo)cell.getDataSource();
-    long value = (fileInfo == null) ? 0 : fileInfo.getFirstPieceNumber();
+    long sort_value;
+    
+    if ( fileInfo == null ){
+    	sort_value = 0;
+    }else{
+    	sort_value = fileInfo.getFirstPieceNumber();
+    	
+    	if ( sort_value >= 0 ){
+    		
+    		sort_value = (sort_value << 32) + fileInfo.getIndex();
+    	}
+    }
 
-    if( !cell.setSortValue( value ) && cell.isValid() ) {
+    
+    if( !cell.setSortValue( sort_value ) && cell.isValid() ) {
       return;
     }
     
 		// < 0 -> unknown skeleton value 
 	
-    cell.setText( value<0?"":(""+value));
+    cell.setText( sort_value<0?"":(""+fileInfo.getFirstPieceNumber()));
   }
 }

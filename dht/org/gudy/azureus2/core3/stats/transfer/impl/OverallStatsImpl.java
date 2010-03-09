@@ -25,16 +25,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.gudy.azureus2.core3.global.GlobalManager;
-import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
-import org.gudy.azureus2.core3.global.GlobalManagerStats;
+import org.gudy.azureus2.core3.global.*;
 import org.gudy.azureus2.core3.stats.transfer.OverallStats;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreComponent;
@@ -57,7 +50,9 @@ OverallStatsImpl
   
   private static final long TEN_YEARS 		= 60*60*24*365*10L;
   
-  private static final long	STATS_PERIOD	= 60*1000;	// 1 min
+  private static final int	STATS_PERIOD	= 60*1000;		// 1 min
+  private static final int	SAVE_PERIOD		= 10*60*1000;	// 10 min
+  private static final int	SAVE_TICKS		= SAVE_PERIOD / STATS_PERIOD;
   
   private AzureusCore	core;
    
@@ -180,22 +175,42 @@ OverallStatsImpl
 				Set		types,
 				Map		values )
 			{	
-				if ( types.contains( AzureusCoreStats.ST_XFER_UPLOADED_PROTOCOL_BYTES )){
-					
-					values.put( AzureusCoreStats.ST_XFER_UPLOADED_PROTOCOL_BYTES, new Long( totalProtocolUploaded ));
-				}
-				if ( types.contains( AzureusCoreStats.ST_XFER_UPLOADED_DATA_BYTES )){
-					
-					values.put( AzureusCoreStats.ST_XFER_UPLOADED_DATA_BYTES, new Long( totalDataUploaded ));
-				}
-				if ( types.contains( AzureusCoreStats.ST_XFER_DOWNLOADED_PROTOCOL_BYTES )){
-					
-					values.put( AzureusCoreStats.ST_XFER_DOWNLOADED_PROTOCOL_BYTES, new Long( totalProtocolDownloaded ));
-				}
-				if ( types.contains( AzureusCoreStats.ST_XFER_DOWNLOADED_DATA_BYTES )){
-					
-					values.put( AzureusCoreStats.ST_XFER_DOWNLOADED_DATA_BYTES, new Long( totalDataDownloaded ));
-				}
+			  	try{
+			  		this_mon.enter();
+			  		
+			  		if ( core.isStarted()){
+			  			
+					    GlobalManagerStats stats = core.getGlobalManager().getStats();
+	
+						if ( types.contains( AzureusCoreStats.ST_XFER_UPLOADED_PROTOCOL_BYTES )){
+							
+							values.put( 
+								AzureusCoreStats.ST_XFER_UPLOADED_PROTOCOL_BYTES, 
+								new Long( totalProtocolUploaded + ( stats.getTotalProtocolBytesSent() - lastProtocolUploaded )));
+						}
+						if ( types.contains( AzureusCoreStats.ST_XFER_UPLOADED_DATA_BYTES )){
+							
+							values.put( 
+								AzureusCoreStats.ST_XFER_UPLOADED_DATA_BYTES, 
+								new Long( totalDataUploaded + ( stats.getTotalDataBytesSent() - lastDataUploaded )));
+						}
+						if ( types.contains( AzureusCoreStats.ST_XFER_DOWNLOADED_PROTOCOL_BYTES )){
+							
+							values.put( 
+								AzureusCoreStats.ST_XFER_DOWNLOADED_PROTOCOL_BYTES, 
+								new Long( totalProtocolDownloaded + ( stats.getTotalProtocolBytesReceived() - lastProtocolDownloaded )));
+						}
+						if ( types.contains( AzureusCoreStats.ST_XFER_DOWNLOADED_DATA_BYTES )){
+							
+							values.put( 
+								AzureusCoreStats.ST_XFER_DOWNLOADED_DATA_BYTES, 
+								new Long( totalDataDownloaded + ( stats.getTotalDataBytesReceived() - lastDataDownloaded )));
+						}
+			  		}
+			  	}finally{
+			  	  	
+			  		this_mon.exit();
+			  	}
 			}
 		});
 	
@@ -332,9 +347,7 @@ OverallStatsImpl
 	    
 	    totalUptime += delta;
 	    lastUptime = current_time;
-	    
-	    tick_count++;
-    
+	        
 	    HashMap	overallMap = new HashMap();
 	    
 	    overallMap.put("downloaded",new Long(totalDownloaded));
@@ -350,7 +363,12 @@ OverallStatsImpl
 	    
 	    map.put( "all", overallMap );
 	    
-	    save( map );
+	    tick_count++;
+
+	    if ( force || tick_count % SAVE_TICKS == 0 ){
+	    
+	    	save( map );
+	    }
   	}finally{
   	
   		this_mon.exit();

@@ -26,15 +26,14 @@ package org.gudy.azureus2.core3.security;
  *
  */
 
-import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.*;
 
-import org.gudy.azureus2.core3.security.impl.SESecurityManagerImpl;
+import org.gudy.azureus2.core3.security.impl.*;
 
 public class 
 SESecurityManager

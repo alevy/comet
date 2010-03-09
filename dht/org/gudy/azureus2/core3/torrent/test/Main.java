@@ -22,14 +22,11 @@
 package org.gudy.azureus2.core3.torrent.test;
 
 
-import java.io.File;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
 
 import org.gudy.azureus2.core3.security.SESecurityManager;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentCreator;
-import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
-import org.gudy.azureus2.core3.torrent.TOTorrentProgressListener;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.util.Debug;
 
 public class 

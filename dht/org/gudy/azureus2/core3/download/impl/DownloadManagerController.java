@@ -25,25 +25,10 @@ package org.gudy.azureus2.core3.download.impl;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerFactory;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfoListener;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfoSet;
-import org.gudy.azureus2.core3.disk.DiskManagerListener;
-import org.gudy.azureus2.core3.disk.DiskManagerPiece;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequestListener;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerDiskListener;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
@@ -55,32 +40,14 @@ import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.LogRelation;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.peer.PEPeerManager;
-import org.gudy.azureus2.core3.peer.PEPeerManagerAdapter;
-import org.gudy.azureus2.core3.peer.PEPeerManagerFactory;
-import org.gudy.azureus2.core3.peer.PEPeerSource;
-import org.gudy.azureus2.core3.peer.PEPiece;
+import org.gudy.azureus2.core3.peer.*;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerDataProvider;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.ListenerManager;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
-import org.gudy.azureus2.core3.util.NonDaemonTask;
-import org.gudy.azureus2.core3.util.NonDaemonTaskRunner;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.network.ConnectionManager;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
@@ -92,6 +59,7 @@ import com.aelitis.azureus.core.peermanager.PeerManagerRegistrationAdapter;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerItemFactory;
 import com.aelitis.azureus.core.util.bloom.BloomFilter;
 import com.aelitis.azureus.core.util.bloom.BloomFilterFactory;
+import com.aelitis.azureus.plugins.extseed.ExternalSeedPeer;
 import com.aelitis.azureus.plugins.extseed.ExternalSeedPlugin;
 
 public class 
@@ -107,7 +75,7 @@ DownloadManagerController
 	private static ExternalSeedPlugin	ext_seed_plugin;
 	private static boolean				ext_seed_plugin_tried;
 	
-	private static ExternalSeedPlugin
+	protected static ExternalSeedPlugin
 	getExternalSeedPlugin()
 	{
 		if ( !ext_seed_plugin_tried ){
@@ -224,6 +192,8 @@ DownloadManagerController
 	
 	private long		priority_connection_count;
 	
+	private static final int				HTTP_SEEDS_MAX	= 64;
+	private LinkedList<ExternalSeedPeer>	http_seeds = new LinkedList<ExternalSeedPeer>();
 	
 	protected
 	DownloadManagerController(
@@ -363,12 +333,12 @@ DownloadManagerController
 	    			public long
 	    			getTotalSent()
 	    			{
-	    				return(temp.getStats().getTotalDataBytesSent());
+	    				return(temp.getStats().getTotalDataBytesSentNoLan());
 	    			}
 	    			public long
 	    			getTotalReceived()
 	    			{
-	    				long received 	= temp.getStats().getTotalDataBytesReceived();
+	    				long received 	= temp.getStats().getTotalDataBytesReceivedNoLan();
 	    				long discarded 	= temp.getStats().getTotalDiscarded();
 	    				long failed		= temp.getStats().getTotalHashFailBytes();
 	    				
@@ -431,6 +401,18 @@ DownloadManagerController
 					getMaxNewConnectionsAllowed()
 					{
 						return( temp.getMaxNewConnectionsAllowed());
+					}
+					
+					public int 
+					getPendingConnectionCount() 
+					{
+						return( temp.getPendingPeerCount());
+					}
+					
+					public int
+					getConnectedConnectionCount()
+					{
+						return( temp.getNbPeers() + temp.getNbSeeds());
 					}
 					
 					public int 
@@ -982,6 +964,20 @@ DownloadManagerController
 					   download_manager.deleteTorrentFile();
 				   }
          
+				   List<ExternalSeedPeer> to_remove = new ArrayList<ExternalSeedPeer>();
+
+				   synchronized( http_seeds ){
+
+					   to_remove.addAll( http_seeds );
+					   
+					   http_seeds.clear();
+				   }
+					
+				   for ( ExternalSeedPeer peer: to_remove ){
+					   
+					   peer.remove();
+				   }
+				   
 				   		// only update the state if things haven't gone wrong
 				   
 				   if ( getState() == DownloadManager.STATE_STOPPING ){
@@ -2104,7 +2100,29 @@ DownloadManagerController
 	
 				config.put("httpseeds-params", params);
 	
-				plugin.addSeed( org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl.getDownloadStatic( download_manager ), config);
+				List<ExternalSeedPeer> new_seeds = plugin.addSeed( org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl.getDownloadStatic( download_manager ), config);
+				
+				if ( new_seeds.size() > 0 ){
+					
+					List<ExternalSeedPeer> to_remove = new ArrayList<ExternalSeedPeer>();
+					
+					synchronized( http_seeds ){
+						
+						http_seeds.addAll( new_seeds );
+						
+						while( http_seeds.size() > HTTP_SEEDS_MAX ){
+							
+							ExternalSeedPeer x = http_seeds.removeFirst();
+							
+							to_remove.add( x );
+						}
+					}
+					
+					for (ExternalSeedPeer peer: to_remove ){
+						
+						peer.remove();
+					}
+				}
 			}
 		}catch( Throwable e ){
 			
@@ -2214,7 +2232,7 @@ DownloadManagerController
 			// too early in initialisation sequence to action this - it'll get reinvoked later anyway
 			if (info.length == 0) return;
 			
-			final List delayed_prio_changes = new ArrayList();
+			final List delayed_prio_changes = new ArrayList(0);
 			
 			try {
 				this_mon.enter();

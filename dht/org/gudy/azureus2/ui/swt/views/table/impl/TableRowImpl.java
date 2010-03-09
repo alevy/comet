@@ -22,27 +22,14 @@
  */
 package org.gudy.azureus2.ui.swt.views.table.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Table;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellVisibilityListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableRowMouseEvent;
-import org.gudy.azureus2.plugins.ui.tables.TableRowMouseListener;
-import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
+
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.BufferedTableRow;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
@@ -50,10 +37,11 @@ import org.gudy.azureus2.ui.swt.views.table.TableCellSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableRowSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 
-import com.aelitis.azureus.ui.common.table.TableCellCore;
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableView;
+import com.aelitis.azureus.ui.common.table.*;
+
+import org.gudy.azureus2.plugins.ui.tables.*;
+
+import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 
 
 
@@ -607,5 +595,32 @@ public class TableRowImpl
 	// @see org.gudy.azureus2.ui.swt.views.table.TableRowSWT#getFontStyle()
 	public int getFontStyle() {
 		return fontStyle;
+	}
+	
+	// @see org.gudy.azureus2.ui.swt.components.BufferedTableRow#isVisible()
+	public boolean isVisible() {
+		return Utils.execSWTThreadWithBool("isVisible", new AERunnableBoolean() {
+			public boolean runSupport() {
+				return TableRowImpl.super.isVisible();
+			}
+		}, 1000);
+	}
+
+	// @see org.gudy.azureus2.ui.swt.components.BufferedTableRow#setSelected(boolean)
+	public void setSelected(boolean selected) {
+		super.setSelected(selected);
+
+		if (tableView instanceof TableViewSWTImpl) {
+			((TableViewSWTImpl)tableView).updateSelectedRowIndexes();
+		}
+	}	
+	
+	// @see org.gudy.azureus2.ui.swt.components.BufferedTableRow#isSelected()
+	public boolean isSelected() {
+		return Utils.execSWTThreadWithBool("isSelected", new AERunnableBoolean() {
+			public boolean runSupport() {
+				return TableRowImpl.super.isSelected();
+			}
+		}, 1000);
 	}
 }

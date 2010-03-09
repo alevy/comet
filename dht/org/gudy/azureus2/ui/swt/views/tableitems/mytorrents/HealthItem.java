@@ -27,21 +27,20 @@ package org.gudy.azureus2.ui.swt.views.tableitems.mytorrents;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.tracker.host.TRHost;
 import org.gudy.azureus2.core3.tracker.host.TRHostTorrent;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellAddedListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
 import org.gudy.azureus2.ui.swt.views.table.TableCellSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableCellSWTPaintListener;
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.ui.tables.*;
 
 /**
  *
@@ -62,7 +61,7 @@ public class HealthItem
 		info.addCategories(new String[] { CAT_ESSENTIAL });
 	}
 
-	static TRHost tracker_host = AzureusCoreFactory.getSingleton().getTrackerHost();
+	static TRHost tracker_host = null;
 
 	/** Default Constructor */
 	public HealthItem(String sTableID) {
@@ -77,6 +76,15 @@ public class HealthItem
 	}
 
 	public void refresh(TableCell cell) {
+		if (tracker_host == null) {
+			try {
+			 	tracker_host = AzureusCoreFactory.getSingleton().getTrackerHost();
+			} catch (Throwable t) {
+			}
+			if (tracker_host == null) {
+				return;
+			}
+		}
 
 		DownloadManager dm = (DownloadManager) cell.getDataSource();
 		int health;

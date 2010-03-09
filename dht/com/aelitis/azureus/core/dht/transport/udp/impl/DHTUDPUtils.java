@@ -22,20 +22,21 @@
 
 package com.aelitis.azureus.core.dht.transport.udp.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.core3.util.SystemTime;
 
-import com.aelitis.azureus.core.dht.DHTConstants;
+
+import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;
@@ -54,17 +55,20 @@ public class
 DHTUDPUtils 
 {
 	protected static final int	CT_UDP		= 1;
-	
-	private static ThreadLocal		tls	= 
-		new ThreadLocal()
+			
+	private static Map<String,byte[]>	node_id_history = 
+		new LinkedHashMap<String,byte[]>(128,0.75f,true)
 		{
-			public Object
-			initialValue()
+			protected boolean 
+			removeEldestEntry(
+		   		Map.Entry<String,byte[]> eldest) 
 			{
-				return( new SHA1Simple());
+				return size() > 128;
 			}
 		};
 		
+	private static SHA1Simple	hasher = new SHA1Simple();
+	
 	protected static byte[]
 	getNodeID(
 		InetSocketAddress	address,
@@ -82,26 +86,42 @@ DHTUDPUtils
 			
 		}else{
 			
-			SHA1Simple	hasher = (SHA1Simple)tls.get();
+			String	key;
 			
-			byte[]	res;
-			
-			if ( protocol_version >= DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS ){
-				
-					// limit range to around 2000 (1999 is prime)
-				
-				res = hasher.calculateHash(
-						(	ia.getHostAddress() + ":" + ( address.getPort() % 1999)).getBytes());
+			if ( protocol_version >= DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS2 ){
 
-			}else{
+					// more draconian limit, analysis shows that of 500,000 node addresses only
+					// 0.01% had >= 8 ports active. ( 1% had 2 ports, 0.1% 3)
+					// Having > 1 node with the same ID doesn't actually cause too much grief
+		
+				key = ia.getHostAddress() + ":" + ( address.getPort() % 8 );
 				
-				res = hasher.calculateHash(
-							(	ia.getHostAddress() + ":" + address.getPort()).getBytes());
+			}else if ( protocol_version >= DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS ){
+
+					// limit range to around 2000 (1999 is prime)
+
+				key = ia.getHostAddress() + ":" + ( address.getPort() % 1999 );
+				
+			}else{
+			
+				key = ia.getHostAddress() + ":" + address.getPort();
 			}
 			
-			//System.out.println( "NodeID: " + address + " -> " + DHTLog.getString( res ));
+			synchronized( node_id_history ){
+				
+				byte[]	res = node_id_history.get( key );
+				
+				if ( res == null ){
+									
+					res = hasher.calculateHash( key.getBytes());
 			
-			return( res );
+					node_id_history.put( key, res );
+				}
+				
+				// System.out.println( "NodeID: " + address + " -> " + DHTLog.getString( res ));
+			
+				return( res );
+			}
 		}
 	}
 	
@@ -450,11 +470,33 @@ DHTUDPUtils
 		
 		// System.out.println( "    Adjusted creation time by " + skew );
 		
-		final byte[]	value_bytes = deserialiseByteArray( is, DHTConstants.MAX_VALUE_SIZE );
+		final byte[]	value_bytes = deserialiseByteArray( is, DHT.MAX_VALUE_SIZE );
 		
 		final DHTTransportContact	originator		= deserialiseContact( packet.getTransport(), is );
 		
 		final int flags	= is.readByte()&0xff;
+		
+		final int life_hours;
+		
+		if ( packet.getProtocolVersion() >= DHTTransportUDP.PROTOCOL_VERSION_LONGER_LIFE ){
+
+			life_hours = is.readByte()&0xff;
+			
+		}else{
+			
+			life_hours = 0;
+		}
+		
+		final byte rep_control;
+		
+		if ( packet.getProtocolVersion() >= DHTTransportUDP.PROTOCOL_VERSION_REPLICATION_CONTROL ){
+
+			rep_control = is.readByte();
+			
+		}else{
+			
+			rep_control = DHT.REP_FACT_DEFAULT;
+		}
 		
 		DHTTransportValue value = 
 			new DHTTransportValue()
@@ -495,20 +537,44 @@ DHTUDPUtils
 					return( flags );
 				}
 				
+				public int
+				getLifeTimeHours()
+				{
+					return( life_hours );
+				}
+				
+				public byte
+				getReplicationControl()
+				{
+					return( rep_control );
+				}
+				
+				public byte 
+				getReplicationFactor() 
+				{
+					return( rep_control == DHT.REP_FACT_DEFAULT?DHT.REP_FACT_DEFAULT:(byte)(rep_control&0x0f));
+				}
+				
+				public byte 
+				getReplicationFrequencyHours() 
+				{
+					return( rep_control == DHT.REP_FACT_DEFAULT?DHT.REP_FACT_DEFAULT:(byte)(rep_control>>4));
+				}
+				
 				public String
 				getString()
 				{
 					long	now = SystemTime.getCurrentTime();
 					
 					return( DHTLog.getString( value_bytes ) + " - " + new String(value_bytes) + "{v=" + version + ",f=" + 
-							Integer.toHexString(flags) +",ca=" + (now - created ) + ",or=" + originator.getString() +"}" );
+							Integer.toHexString(flags) + ",l=" + life_hours + ",r=" + Integer.toHexString(getReplicationControl()) + ",ca=" + (now - created ) + ",or=" + originator.getString() +"}" );
 				}
 			};
 			
 		return( value );
 	}
 	
-	public static final int DHTTRANSPORTVALUE_SIZE_WITHOUT_VALUE	= 15 + DHTTRANSPORTCONTACT_SIZE;
+	public static final int DHTTRANSPORTVALUE_SIZE_WITHOUT_VALUE	= 17 + DHTTRANSPORTCONTACT_SIZE;
 		
 	protected static void
 	serialiseTransportValue(
@@ -537,11 +603,21 @@ DHTUDPUtils
 				
 		os.writeLong( value.getCreationTime() + skew );	// 12
 		
-		serialiseByteArray( os, value.getValue(), DHTConstants.MAX_VALUE_SIZE );	// 12+2+X
+		serialiseByteArray( os, value.getValue(), DHT.MAX_VALUE_SIZE );	// 12+2+X
 		
 		serialiseContact( os, value.getOriginator());	// 12 + 2+X + contact
 		
 		os.writeByte( value.getFlags());	// 13 + 2+ X + contact
+		
+		if ( packet.getProtocolVersion() >= DHTTransportUDP.PROTOCOL_VERSION_LONGER_LIFE ){
+
+			os.writeByte( value.getLifeTimeHours()); // 14 + 2+ X + contact
+		}
+		
+		if ( packet.getProtocolVersion() >= DHTTransportUDP.PROTOCOL_VERSION_REPLICATION_CONTROL ){
+			
+			os.writeByte( value.getReplicationControl()); // 15 + 2+ X + contact
+		}
 	}
 	
 	protected static void

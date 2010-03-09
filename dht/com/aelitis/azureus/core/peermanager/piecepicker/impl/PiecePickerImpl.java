@@ -22,56 +22,23 @@
 
 package com.aelitis.azureus.core.peermanager.piecepicker.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.disk.DiskManagerListener;
-import org.gudy.azureus2.core3.disk.DiskManagerPiece;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.disk.impl.DiskManagerFileInfoImpl;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.peer.PEPeerListener;
-import org.gudy.azureus2.core3.peer.PEPeerManager;
-import org.gudy.azureus2.core3.peer.PEPeerManagerListener;
-import org.gudy.azureus2.core3.peer.PEPeerStats;
-import org.gudy.azureus2.core3.peer.PEPiece;
-import org.gudy.azureus2.core3.peer.impl.PEPeerControl;
-import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
-import org.gudy.azureus2.core3.peer.impl.PEPieceImpl;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMap;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.impl.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.peermanager.control.PeerControlScheduler;
 import com.aelitis.azureus.core.peermanager.control.PeerControlSchedulerFactory;
 import com.aelitis.azureus.core.peermanager.control.SpeedTokenDispenser;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerItem;
-import com.aelitis.azureus.core.peermanager.piecepicker.EndGameModeChunk;
-import com.aelitis.azureus.core.peermanager.piecepicker.PiecePicker;
-import com.aelitis.azureus.core.peermanager.piecepicker.PiecePickerListener;
-import com.aelitis.azureus.core.peermanager.piecepicker.PiecePriorityProvider;
-import com.aelitis.azureus.core.peermanager.piecepicker.PieceRTAProvider;
+import com.aelitis.azureus.core.peermanager.piecepicker.*;
 import com.aelitis.azureus.core.peermanager.piecepicker.util.BitFlags;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 
@@ -129,7 +96,8 @@ implements PiecePicker
 	private static final int PRIORITY_REALTIME		= 9999999;
 
 	/** Min number of requests sent to a peer */
-	private static final int REQUESTS_MIN	=2;
+	private static final int REQUESTS_MIN_MIN	= 2;
+	private static final int REQUESTS_MIN_MAX	= 8;
 	/** Max number of request sent to a peer */
 	private static final int REQUESTS_MAX	=256;
 	/** Default number of requests sent to a peer, (for each X B/s another request will be used) */
@@ -676,17 +644,20 @@ implements PiecePicker
 
 		final int uploadersSize =bestUploaders.size();
 
-		if ( uploadersSize ==0 ){
+		if ( uploadersSize == 0 ){
 
 			// no usable peers, bail out early
 			return;
 		}
 
+		int REQUESTS_MIN;
+				
 		boolean	done_priorities = false;
 
 		if ( priorityRTAexists ){
 		
-		
+			REQUESTS_MIN = REQUESTS_MIN_MIN;
+			
 			final Map[] peer_randomiser = { null };
 
 				// to keep the ordering consistent we need to use a fixed metric unless
@@ -861,6 +832,16 @@ implements PiecePicker
 					((PEPeerTransport)it.next()).requestAllocationComplete();
 				}
 			}
+		}else{
+			
+			int	required_blocks = (int)( diskManager.getRemainingExcludingDND()/DiskManager.BLOCK_SIZE );
+
+			int	blocks_per_uploader = required_blocks / uploadersSize;
+			
+				// if we have plenty of blocks outstanding we can afford to be more generous in the
+				// minimum number of requests we allocate
+			
+			REQUESTS_MIN = Math.max( REQUESTS_MIN_MIN, Math.min( REQUESTS_MIN_MAX, blocks_per_uploader/2 ));
 		}
 
 		checkEndGameMode();
@@ -888,7 +869,19 @@ implements PiecePicker
 				}else{
 					if (!pt.isSnubbed()){
 						if (!endGameMode){
-							maxRequests =REQUESTS_MIN +(int) (pt.getStats().getDataReceiveRate() /SLOPE_REQUESTS);
+							
+							int	peer_requests_min;
+							
+							if ( pt.getUnchokedForMillis() < 10*1000 ){
+								
+								peer_requests_min = REQUESTS_MIN;
+								
+							}else{
+								
+								peer_requests_min = REQUESTS_MIN_MIN;
+							}
+							
+							maxRequests =peer_requests_min +(int) (pt.getStats().getDataReceiveRate() /SLOPE_REQUESTS);
 							if (maxRequests >REQUESTS_MAX ||maxRequests <0)
 								maxRequests =REQUESTS_MAX;
 						}else{
@@ -955,7 +948,7 @@ implements PiecePicker
 
 						if ( no_req_count < NO_REQUEST_BACKOFF_MAX_LOOPS ){
 
-							pt.setConsecutiveNoRequestCount( no_req_count + 2 );
+							pt.setConsecutiveNoRequestCount( no_req_count + 1 );
 						}
 
 						// System.out.println( pt.getIp() + ": nb=" + pt.getNbRequests() + ",max=" + maxRequests + ",nrc=" + no_req_count +",loop=" + allocate_request_loop_count); 
@@ -1065,6 +1058,7 @@ implements PiecePicker
 		final boolean firstPiecePriorityL =firstPiecePriority;
 		final boolean completionPriorityL =completionPriority;
 
+		final DMPieceMap	pieceMap = diskManager.getPieceMap();
 		try
 		{
 			final boolean rarestOverride = calcRarestAllowed() < 1;
@@ -1076,10 +1070,9 @@ implements PiecePicker
 				if (dmPiece.isDone())
 					continue;	// nothing to do for pieces not needing requesting
 
-				int priority =Integer.MIN_VALUE;
 				int startPriority =Integer.MIN_VALUE;
 
-				final DMPieceList pieceList =diskManager.getPieceList(dmPiece.getPieceNumber());
+				final DMPieceList pieceList =pieceMap.getPieceList(dmPiece.getPieceNumber());
 				final int pieceListSize =pieceList.size();
 				for (int j =0; j <pieceListSize; j++)
 				{
@@ -1088,7 +1081,7 @@ implements PiecePicker
 					final long length =fileInfo.getLength();
 					if (length >0 &&downloaded <length &&!fileInfo.isSkipped())
 					{
-						priority =0;
+						int priority =0;
 						// user option "prioritize first and last piece"
 						// TODO: should prioritize ~10% from edges of file
 						if (firstPiecePriorityL &&fileInfo.getNbPieces() >FIRST_PIECE_MIN_NB)
@@ -1197,7 +1190,7 @@ implements PiecePicker
 		return rarestOverride;
 	}
 	
-	private final SpeedTokenDispenser dispenser = PeerControlSchedulerFactory.getSingleton().getSpeedTokenDispenser();
+	private final SpeedTokenDispenser dispenser = PeerControlSchedulerFactory.getSingleton(0).getSpeedTokenDispenser();
 
 	/**
 	 * @param pt the PEPeerTransport we're working on
@@ -1205,7 +1198,7 @@ implements PiecePicker
 	 */
 	protected final int findPieceToDownload(PEPeerTransport pt, int nbWanted)
 	{
-		final int pieceNumber =getRequestCandidate(pt);
+		final int pieceNumber = getRequestCandidate(pt);
 		if (pieceNumber <0)
 		{
 			// probaly should have found something since chose to try; probably not interested anymore
@@ -1221,10 +1214,10 @@ implements PiecePicker
 			peerSpeed = 0;
 
 		final PEPiece pePiece;
-		if (pePieces[pieceNumber] != null)
+		if (pePieces[pieceNumber] != null){
 			pePiece = pePieces[pieceNumber];
-		else
-		{	//create piece manually
+		}else{
+				//create piece manually
 			int[]	peer_priority_offsets = pt.getPriorityOffsets();
 
 			int	this_offset = peer_priority_offsets==null?0:peer_priority_offsets[pieceNumber];
@@ -1694,22 +1687,33 @@ implements PiecePicker
         	request_hint_piece_number = -1;
         }
         
-		// Try to continue a piece already loaded, according to priority
-        for (i =startI; i <=endI; i++)
-        {
-        	// is the piece available from this peer?
-        	if (peerHavePieces.flags[i])
-        	{
-        		priority =startPriorities[i];
-        		final DiskManagerPiece dmPiece =dmPieces[i];
+			// Try to continue a piece already loaded, according to priority
+        
+        for (i =startI; i <=endI; i++){
+        
+        		// is the piece available from this peer?
+        	
+        	if ( peerHavePieces.flags[i]){
+        	
+        		priority = startPriorities[i];
+        		
+        		final DiskManagerPiece dmPiece = dmPieces[i];
 
-        		if ( priority >=0 && dmPiece.isDownloadable())
-        		{
-        			if ( peerPriorities != null )
-        				priority += peerPriorities[i];
-
-        			if ( enable_request_hints && i == request_hint_piece_number )
-        			{
+        		if ( priority >=0 && dmPiece.isDownloadable()){
+        		
+        			if ( peerPriorities != null ){
+        				
+           				int peer_priority = peerPriorities[i];
+           				
+           				if ( peer_priority < 0 ){
+           					
+           					continue;
+           				}
+           				
+           				priority += peer_priority;
+        			}
+        			
+        			if ( enable_request_hints && i == request_hint_piece_number ){
 
         				priority += PRIORITY_REQUEST_HINT;
 
@@ -1861,6 +1865,9 @@ implements PiecePicker
         						startCandidates.setOnly(i);
         					} else if (priority ==startMaxPriority)
         					{   // continuing same priority level
+        						if (startCandidates ==null)
+        							startCandidates =new BitFlags(nbPieces);
+
         						if (avail <startMinAvail)
         						{   // same priority, new availability level
         							startMinAvail =avail;

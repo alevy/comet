@@ -8,21 +8,14 @@ import java.util.Iterator;
 import org.gudy.azureus2.core3.util.Debug;
 
 import com.aelitis.azureus.core.util.CopyOnWriteList;
-import com.aelitis.azureus.ui.common.table.TableCountChangeListener;
-import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
-import com.aelitis.azureus.ui.common.table.TableGroupRowRunner;
-import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-import com.aelitis.azureus.ui.common.table.TableRefreshListener;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableSelectionListener;
-import com.aelitis.azureus.ui.common.table.TableView;
+import com.aelitis.azureus.ui.common.table.*;
 
 /**
  * @author TuxPaper
  * @created Feb 6, 2007
  */
-public abstract class TableViewImpl
-	implements TableView
+public abstract class TableViewImpl<DATASOURCETYPE>
+	implements TableView<DATASOURCETYPE>
 {
 	// List of DataSourceChangedListener
 	private CopyOnWriteList<TableDataSourceChangedListener> listenersDataSourceChanged = new CopyOnWriteList<TableDataSourceChangedListener>();
@@ -126,7 +119,11 @@ public abstract class TableViewImpl
 		Object[] listeners = listenersSelection.toArray();
 		for (int i = 0; i < listeners.length; i++) {
 			TableSelectionListener l = (TableSelectionListener) listeners[i];
-			l.deselected(rows);
+			try {
+				l.deselected(rows);
+			} catch (Exception e) {
+				Debug.out(e);
+			}
 		}
 	}
 

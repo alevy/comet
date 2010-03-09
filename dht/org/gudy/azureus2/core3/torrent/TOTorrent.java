@@ -21,13 +21,11 @@
 
 package org.gudy.azureus2.core3.torrent;
 
-import java.io.File;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.*;
 
 public interface 
 TOTorrent
@@ -46,7 +44,9 @@ TOTorrent
 		 */
 	
 	public static final String	AZUREUS_PRIVATE_PROPERTIES		= "azureus_private_properties";
-	
+
+	public static final String ENCODING_ACTUALLY_UTF8_KEYS = "utf8 keys";
+
 	/**
 	 * Get the name of the torrent
 	 * @return
@@ -90,6 +90,10 @@ TOTorrent
 	
 	public byte[]
 	getCreatedBy();
+	
+	public void
+	setCreatedBy(
+		byte[]		cb );
 	
 	public boolean
 	isCreated();
@@ -334,6 +338,14 @@ TOTorrent
 		  
 	   throws TOTorrentException;
 
+   public void
+   addListener(
+	  TOTorrentListener		l );
+   
+   public void
+   removeListener(
+	  TOTorrentListener		l );
+   
    public AEMonitor
    getMonitor();
 

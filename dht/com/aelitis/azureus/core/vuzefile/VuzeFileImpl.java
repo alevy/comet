@@ -21,13 +21,8 @@
 
 package com.aelitis.azureus.core.vuzefile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.BEncoder;
 
@@ -95,10 +90,10 @@ VuzeFileImpl
 		return( comp );
 	}
 	
-	public byte[] 
-	exportToBytes() 
+	public Map
+	exportToMap()
 	
-		throws IOException 
+		throws IOException
 	{
 		Map	map = new HashMap();
 		
@@ -123,7 +118,15 @@ VuzeFileImpl
 			list.add( entry );
 		}
 				
-		return( BEncoder.encode( map ));
+		return( map );
+	}
+	
+	public byte[] 
+	exportToBytes() 
+	
+		throws IOException 
+	{
+		return( BEncoder.encode( exportToMap()));
 	}
 	
 	public void 

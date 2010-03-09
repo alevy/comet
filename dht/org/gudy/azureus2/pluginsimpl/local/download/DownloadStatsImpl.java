@@ -26,10 +26,9 @@ package org.gudy.azureus2.pluginsimpl.local.download;
  *
  */
 
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerStats;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
+import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.util.*;
+
 import org.gudy.azureus2.plugins.download.DownloadStats;
 
 public class 
@@ -156,6 +155,12 @@ DownloadStatsImpl
 	getETA()
 	{
 		return(DisplayFormatters.formatETA(dm_stats.getETA()));
+	}
+	
+	public long
+	getETASecs()
+	{
+		return( dm_stats.getETA());
 	}
 	
 	public long

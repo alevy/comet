@@ -23,8 +23,8 @@
 package org.gudy.azureus2.pluginsimpl.local.messaging;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 import org.gudy.azureus2.plugins.messaging.MessageException;
@@ -257,11 +257,13 @@ GenericMessageConnectionDirect
 				ProtocolEndpoint.CONNECT_PRIORITY_MEDIUM,
 				new NetworkConnection.ConnectionListener()
 				{
-					public void 
-					connectStarted()
-					{
+					public int 
+					connectStarted(
+						int default_connect_timeout )
+					{	
+						return( default_connect_timeout );
 					}
-	
+					
 					public void 
 					connectSuccess(
 						ByteBuffer remaining_initial_data )
@@ -366,11 +368,13 @@ GenericMessageConnectionDirect
 				ProtocolEndpoint.CONNECT_PRIORITY_MEDIUM,
 				new NetworkConnection.ConnectionListener()
 				{
-					public void 
-					connectStarted()
-					{
+					public int 
+					connectStarted(
+						int default_connect_timeout )
+					{	
+						return( default_connect_timeout );
 					}
-	
+					
 					public void 
 					connectSuccess(
 						ByteBuffer remaining_initial_data )
@@ -504,7 +508,7 @@ GenericMessageConnectionDirect
 	    
 	    connection.startMessageProcessing();
 
-	    connection.enableEnhancedMessageProcessing( true );
+	    connection.enableEnhancedMessageProcessing( true, -1 );
 	    
 	    synchronized( this ){
 	    	

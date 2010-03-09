@@ -26,32 +26,20 @@ package org.gudy.azureus2.pluginsimpl.local.sharing;
  *
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
+
+import org.gudy.azureus2.plugins.sharing.*;
+import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.pluginsimpl.local.torrent.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.download.DownloadManagerStateFactory;
 import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentCreator;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareItem;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDeletionVetoException;
-import org.gudy.azureus2.plugins.sharing.ShareResourceWillBeDeletedListener;
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentImpl;
-import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
 
 public abstract class 
 ShareResourceFileOrDirImpl
@@ -322,11 +310,11 @@ ShareResourceFileOrDirImpl
 				}
 			}else{
 				
-				manager.addFileOrDir( null, file, getType(), true );
+				manager.addFileOrDir( null, file, getType());
 			}
 		}catch( Throwable e ){
-						
-			manager.delete( this );
+							
+			manager.delete( this, true );
 		}
 	}
 	

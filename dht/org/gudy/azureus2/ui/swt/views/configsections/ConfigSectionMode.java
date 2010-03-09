@@ -38,14 +38,15 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.internat.MessageText;
+
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.Cursors;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+import org.gudy.azureus2.ui.swt.Messages;
+import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.internat.MessageText;
 
 
 
@@ -80,10 +81,10 @@ public class ConfigSectionMode implements UISWTConfigSection {
     		"ConfigView.section.mode.advanced.wiki.main",
     		"ConfigView.section.mode.intermediate.wiki.publish"
     };
-    final String[] links = {"http://www.azureuswiki.com/index.php/This_funny_word",
-    		"http://www.azureuswiki.com/index.php/HostingFiles",
-    		"http://www.azureuswiki.com/index.php/Main_Page",
-    		"http://www.azureuswiki.com/index.php/PublishingFiles"
+    final String[] links = {"http://wiki.vuze.com/w/This_funny_word",
+    		"http://wiki.vuze.com/w/HostingFiles",
+    		"http://wiki.vuze.com/w/Main_Page",
+    		"http://wiki.vuze.com/w/PublishingFiles"
     };
     
     int userMode = COConfigurationManager.getIntParameter("User Mode");

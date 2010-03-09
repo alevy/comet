@@ -23,8 +23,8 @@
 
 package org.gudy.azureus2.ui.swt.plugins;
 
-import org.eclipse.swt.graphics.Image;
 import org.gudy.azureus2.plugins.ui.Graphic;
+import org.eclipse.swt.graphics.Image;
 
 /** An SWT image to be used in Azureus
  *

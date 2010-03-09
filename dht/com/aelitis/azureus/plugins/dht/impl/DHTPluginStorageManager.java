@@ -42,17 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.ByteArrayHashMap;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.SHA1Simple;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTLogger;
@@ -806,7 +796,7 @@ DHTPluginStorageManager
 		
 			byte[][]	res = followDivChain( wrapper, put_operation, exhaustive, max_depth );
 			
-			if ( !Arrays.equals( res[0], key )){
+			if ( res.length > 0 && !Arrays.equals( res[0], key )){
 				
 				String	trace = "";
 				
@@ -827,6 +817,7 @@ DHTPluginStorageManager
 	
 	public byte[][]
 	createNewDiversification(
+		String				description,
 		DHTTransportContact	cause,
 		byte[]				key,
 		boolean				put_operation,
@@ -842,7 +833,7 @@ DHTPluginStorageManager
 			}
 		}
 		
-		//System.out.println( "DHT create new diversification: put = " + put_operation +", type = " + diversification_type );
+		// System.out.println( "DHT create new diversification: desc=" + description + ", put=" + put_operation +", type=" + diversification_type );
 		
 		HashWrapper	wrapper = new HashWrapper( key );
 		
@@ -870,10 +861,11 @@ DHTPluginStorageManager
 			}
 			
 			log.log( "SM: create div: " + DHTLog.getString2(key) + 
-						", new = " + created + ", put = " + put_operation + 
-						", exh = " + exhaustive + 
-						", type = " + DHT.DT_STRINGS[diversification_type] + " -> " + trace +
-						", cause = " + (cause==null?"<unknown>":cause.getString()));
+						", new=" + created + ", put = " + put_operation + 
+						", exh=" + exhaustive + 
+						", type=" + DHT.DT_STRINGS[diversification_type] + " -> " + trace +
+						", cause=" + (cause==null?"<unknown>":cause.getString()) +
+						", desc=" + description );
 			
 
 			return( res );
@@ -980,7 +972,10 @@ DHTPluginStorageManager
 			// System.out.println( indent + "<-" );
 		}else{
 			
-			Debug.out( "Terminated div chain lookup (max depth=" + max_depth + ")" );
+			if ( Constants.isCVSVersion()){
+			
+				Debug.out( "Terminated div chain lookup (max depth=" + max_depth + ") - net=" + network );
+			}
 		}
 		
 		return( list_out );
@@ -2147,7 +2142,7 @@ DHTPluginStorageManager
 			manager.serialiseStats( this, dos );
 		}
 		
-		public HashWrapper
+		protected HashWrapper
 		getKey()
 		{
 			return( key );

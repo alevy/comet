@@ -26,9 +26,7 @@ package org.gudy.azureus2.core3.util.protocol.magnet;
  *
  */
 
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
+import java.net.*;
 
 
 public class 
@@ -37,7 +35,11 @@ Handler
 {
 	public URLConnection 
 	openConnection(URL u)
-	{			
-		return( new MagnetConnection( u ));
+	{		
+			// some anti-virus apps blocking loopback connection we initially used
+			// in MagnetConnection so created variant based on direct communication to
+			// the magnet handler
+		
+		return( new MagnetConnection2( u ));
 	}
 }

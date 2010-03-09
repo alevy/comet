@@ -23,35 +23,26 @@ package org.gudy.azureus2.ui.swt.views;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerPeerListener;
 import org.gudy.azureus2.core3.download.DownloadManagerPieceListener;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.peer.PEPiece;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.components.Legend;
 import org.gudy.azureus2.ui.swt.views.piece.MyPieceDistributionView;
 import org.gudy.azureus2.ui.swt.views.piece.PieceInfoView;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.AvailabilityItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.BlockCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.BlocksItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.CompletedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.PieceNumberItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.PriorityItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.RequestedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.ReservedByItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.SizeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.SpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.TypeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.pieces.WritersItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.pieces.*;
 
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
 import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
 import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
+
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
 
 /**
  * @author Olivier
@@ -86,7 +77,7 @@ public class PiecesView
 
 	DownloadManager manager;
   
-	private TableViewSWTImpl tv;
+	private TableViewSWTImpl<PEPiece> tv;
 
 	private Composite legendComposite;
 
@@ -98,10 +89,14 @@ public class PiecesView
 	 *
 	 */
 	public PiecesView() {
-		tv = new TableViewSWTImpl(TableManager.TABLE_TORRENT_PIECES, "PiecesView",
-				basicItems, basicItems[0].getName(), SWT.SINGLE | SWT.FULL_SELECTION
-						| SWT.VIRTUAL);
-		setTableView(tv);
+		super("PiecesView");
+	}
+
+	// @see org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab#initYourTableView()
+	public TableViewSWT initYourTableView() {
+		tv = new TableViewSWTImpl<PEPiece>(PEPiece.class,
+				TableManager.TABLE_TORRENT_PIECES, getPropertiesPrefix(), basicItems,
+				basicItems[0].getName(), SWT.SINGLE | SWT.FULL_SELECTION | SWT.VIRTUAL);
 		tv.setEnableTabViews(true);
 		pieceInfoView = new PieceInfoView();
 		pieceDistView = new MyPieceDistributionView();
@@ -110,6 +105,8 @@ public class PiecesView
 		});
 		tv.addTableDataSourceChangedListener(this, true);
 		tv.addLifeCycleListener(this);
+
+		return tv;
 	}
 
 	// @see com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener#tableDataSourceChanged(java.lang.Object)
@@ -200,7 +197,7 @@ public class PiecesView
 			return;
 		}
 
-		Object[] dataSources = manager.getCurrentPieces();
+		PEPiece[] dataSources = manager.getCurrentPieces();
 		if (dataSources == null || dataSources.length == 0)
 			return;
 

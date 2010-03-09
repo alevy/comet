@@ -22,16 +22,13 @@
 
 package com.aelitis.azureus.plugins.extseed.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.net.URL;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.impl.TransferSpeedValidator;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.HostNameToIPResolver;
 import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.clientid.ClientIDGenerator;
@@ -65,9 +62,13 @@ ExternalSeedReaderImpl
 	public static final int STALLED_DOWNLOAD_SPEED		= 20*1024;
 	public static final int STALLED_PEER_SPEED			= 5*1024;
 	
+	public static final int TOP_PIECE_PRIORITY			= 100*1000;
 
 	private ExternalSeedPlugin	plugin;
 	private Torrent				torrent;
+	
+	private String			host;
+	private String			ip_use_accessor;
 	
 	private String			status;
 	
@@ -83,7 +84,9 @@ ExternalSeedReaderImpl
 	
 	private volatile PeerManager		current_manager;
 		
-	private List			requests		= new LinkedList();
+	private List<PeerReadRequest>			requests			= new LinkedList<PeerReadRequest>();
+	private List<PeerReadRequest>			dangling_requests;
+
 	private Thread			request_thread;
 	private Semaphore		request_sem;
 	private Monitor			requests_mon;
@@ -92,8 +95,10 @@ ExternalSeedReaderImpl
 	
 	private int[]		priority_offsets;
 	
+	private boolean		fast_activate;
 	private int			min_availability;
-	private int			min_speed;
+	private int			min_download_speed;
+	private int			max_peer_speed;
 	private long		valid_until;
 	private boolean		transient_seed;
 	
@@ -113,13 +118,17 @@ ExternalSeedReaderImpl
 	ExternalSeedReaderImpl(
 		ExternalSeedPlugin 		_plugin,
 		Torrent					_torrent,
+		String					_host,
 		Map						_params )
 	{
 		plugin	= _plugin;
 		torrent	= _torrent;
+		host	= _host;
 		
+		fast_activate 		= getBooleanParam( _params, "fast_start", false );
 		min_availability 	= getIntParam( _params, "min_avail", 1 );	// default is avail based
-		min_speed			= getIntParam( _params, "min_speed", 0 );
+		min_download_speed	= getIntParam( _params, "min_speed", 0 );
+		max_peer_speed		= getIntParam( _params, "max_speed", 0 );
 		valid_until			= getIntParam( _params, "valid_ms", 0 );
 		
 		if ( valid_until > 0 ){
@@ -150,7 +159,29 @@ ExternalSeedReaderImpl
 		}catch( Throwable e ){
 		}
 			
-		setActive( false );
+		setActive( null, false );
+	}
+	
+	public String
+	getIP()
+	{
+		synchronized( host ){
+			
+			if ( ip_use_accessor == null ){
+				
+				try{
+					ip_use_accessor = HostNameToIPResolver.syncResolve( host ).getHostAddress();
+					
+				}catch( Throwable e ){
+					
+					ip_use_accessor = host;
+					
+					Debug.out( e );
+				}
+			}
+			
+			return( ip_use_accessor );
+		}
 	}
 	
 	public Torrent
@@ -371,7 +402,7 @@ ExternalSeedReaderImpl
 			
 				// availability and speed based stuff needs a little time before being applied
 			
-			if ( !early_days ){
+			if ( fast_activate || !early_days ){
 				
 				if ( min_availability > 0 ){
 										
@@ -385,9 +416,9 @@ ExternalSeedReaderImpl
 					}
 				}
 					
-				if ( min_speed > 0 ){
+				if ( min_download_speed > 0 ){
 										
-					if ( peer_manager.getStats().getDownloadAverage() < min_speed ){
+					if ( peer_manager.getStats().getDownloadAverage() < min_download_speed ){
 						
 						log( getName() + ": activating as speed is slow" );
 						
@@ -428,31 +459,44 @@ ExternalSeedReaderImpl
 				return( false );
 			}
 			
+			boolean	deactivate = false;
+			String	reason		= "";
+			
 			if ( min_availability > 0 ){
 
 				float availability = peer_manager.getDownload().getStats().getAvailability();
 			
 				if ( availability >= min_availability + 1 ){
 				
-					log( getName() + ": deactivating as availability is good" );
+					reason =  "availability is good";
 				
-					return( true );
+					deactivate = true;
 				}
 			}
 			
-			if ( min_speed > 0 ){
+			if ( min_download_speed > 0 ){
 				
 				long	my_speed 		= peer.getStats().getDownloadAverage();
 				
 				long	overall_speed 	= peer_manager.getStats().getDownloadAverage();
 				
-				if ( overall_speed - my_speed > 2 * min_speed ){
+				if ( overall_speed - my_speed > 2 * min_download_speed ){
 					
-					log( getName() + ": deactivating as speed is good" );
+					reason += (reason.length()==0?"":", ") + "speed is good";
 
-					return( true );
+					deactivate = true;
+					
+				}else{
+					
+					deactivate = false;
 				}
+			}
+			
+			if ( deactivate ){
 				
+				log( getName() + ": deactivating as " + reason );
+
+				return( true );
 			}
 		}catch( Throwable e ){
 			
@@ -485,7 +529,19 @@ ExternalSeedReaderImpl
 					
 					if ( now - peer_manager_change_time > INITIAL_DELAY && readyToDeactivate( peer_manager, peer )){
 													
-						setActive( false );			
+						setActive( peer_manager, false );
+						
+					}else{
+						
+						if ( max_peer_speed > 0 ){
+							
+							PeerStats ps = peer.getStats();
+							
+							if ( ps != null && ps.getDownloadRateLimit() != max_peer_speed ){
+								
+								ps.setDownloadRateLimit( max_peer_speed );
+							}
+						}
 					}
 				}else{
 					
@@ -493,7 +549,17 @@ ExternalSeedReaderImpl
 					
 						if ( readyToActivate( peer_manager, peer, time_since_started )){
 							
-							setActive( true );				
+							if ( max_peer_speed > 0 ){
+								
+								PeerStats ps = peer.getStats();
+								
+								if ( ps != null ){
+								
+									ps.setDownloadRateLimit( max_peer_speed );
+								}
+							}
+							
+							setActive( peer_manager, true );				
 						}
 					}
 				}
@@ -504,6 +570,8 @@ ExternalSeedReaderImpl
 				// download status to stabilise a bit
 			
 			peer_manager_change_time	= now;
+			
+			PeerManager existing_manager = current_manager;
 			
 			if ( current_manager != null ){
 				
@@ -517,7 +585,7 @@ ExternalSeedReaderImpl
 				current_manager.addListener( this );
 			}
 			
-			setActive( false );
+			setActive( existing_manager, false );
 		}
 		
 		return( active );
@@ -534,6 +602,7 @@ ExternalSeedReaderImpl
 	
 	protected void
 	setActive(
+		PeerManager	_peer_manager,
 		boolean		_active )
 	{
 		try{
@@ -543,10 +612,20 @@ ExternalSeedReaderImpl
 			
 			status = active?"Active":"Idle";
 			
+			setActiveSupport( _peer_manager, _active );
+			
 		}finally{
 			
 			requests_mon.exit();
 		}
+	}
+	
+	protected void
+	setActiveSupport(
+		PeerManager	_peer_manager,
+		boolean		_active )
+	{
+		// overridden if needed
 	}
 	
 	public boolean
@@ -583,6 +662,8 @@ ExternalSeedReaderImpl
 						
 						if ( requests.size() == 0 ){
 							
+							dangling_requests = null;
+							
 							request_thread	= null;
 							
 							break;
@@ -593,8 +674,8 @@ ExternalSeedReaderImpl
 					}
 				}else{
 					
-					List			selected_requests 	= new ArrayList();
-					PeerReadRequest	cancelled_request	= null;
+					List<PeerReadRequest>	selected_requests 	= new ArrayList<PeerReadRequest>();
+					PeerReadRequest			cancelled_request	= null;
 					
 					try{
 						requests_mon.enter();
@@ -612,7 +693,7 @@ ExternalSeedReaderImpl
 						
 						for (int i=0;i<count;i++){
 							
-							PeerReadRequest	request = (PeerReadRequest)requests.remove(0);
+							PeerReadRequest	request = requests.remove(0);
 							
 							if ( request.isCancelled()){
 								
@@ -642,6 +723,8 @@ ExternalSeedReaderImpl
 								}
 							}
 						}
+						
+						dangling_requests = new ArrayList<PeerReadRequest>( selected_requests );
 						
 					}finally{
 						
@@ -858,7 +941,7 @@ ExternalSeedReaderImpl
 					
 					priority_offsets	 = new int[ (int)getTorrent().getPieceCount()];
 
-					priority_offsets[max_free_reqs_piece] = 10000;
+					priority_offsets[max_free_reqs_piece] = TOP_PIECE_PRIORITY;
 					
 				}else{
 					
@@ -872,7 +955,7 @@ ExternalSeedReaderImpl
 				
 				for (int i=start_piece;i<start_piece+max_contiguous;i++){
 								
-					priority_offsets[i] = 10000 - (i-start_piece);
+					priority_offsets[i] = TOP_PIECE_PRIORITY - (i-start_piece);
 				}
 			}
 		}catch( Throwable e ){
@@ -897,7 +980,7 @@ ExternalSeedReaderImpl
 	
 	protected int
 	selectRequests(
-		List	requests )
+		List<PeerReadRequest>	requests )
 	{
 		long	next_start = -1;
 		
@@ -1008,6 +1091,12 @@ ExternalSeedReaderImpl
    	        	{        		
    	        	}
    	        	
+   	        	public boolean 
+   	        	isCancelled() 
+   	        	{
+   	        		return false;
+   	        	}
+   	        	
    	        	public void
    	        	done()
    	        	{        		
@@ -1039,7 +1128,7 @@ ExternalSeedReaderImpl
 	
 	protected void
 	processRequests(
-		List		requests )
+		List<PeerReadRequest>		requests )
 	{	
 		boolean	ok = false;
 				
@@ -1091,7 +1180,7 @@ ExternalSeedReaderImpl
 	
 	public void
 	addRequests(
-		List	new_requests )
+		List<PeerReadRequest>	new_requests )
 	{
 		try{
 			requests_mon.enter();
@@ -1140,6 +1229,11 @@ ExternalSeedReaderImpl
 				request.cancel();
 			}
 			
+			if ( dangling_requests != null && dangling_requests.contains( request ) && !request.isCancelled()){
+				
+				request.cancel();
+			}
+			
 		}finally{
 			
 			requests_mon.exit();
@@ -1152,13 +1246,22 @@ ExternalSeedReaderImpl
 		try{
 			requests_mon.enter();
 			
-			for (int i=0;i<requests.size();i++){
-				
-				PeerReadRequest	request = (PeerReadRequest)requests.get(i);
-			
+			for ( PeerReadRequest request: requests ){
+							
 				if ( !request.isCancelled()){
 	
 					request.cancel();
+				}
+			}	
+			
+			if ( dangling_requests != null ){
+			
+				for ( PeerReadRequest request: dangling_requests ){
+							
+					if ( !request.isCancelled()){
+	
+						request.cancel();
+					}
 				}
 			}	
 			
@@ -1186,10 +1289,10 @@ ExternalSeedReaderImpl
 		}	
 	}
 	
-	public List
+	public List<PeerReadRequest>
 	getExpiredRequests()
 	{
-		List	res = null;
+		List<PeerReadRequest>	res = null;
 		
 		try{
 			requests_mon.enter();
@@ -1202,7 +1305,7 @@ ExternalSeedReaderImpl
 					
 					if ( res == null ){
 						
-						res = new ArrayList();
+						res = new ArrayList<PeerReadRequest>();
 					}
 					
 					res.add( request );
@@ -1216,15 +1319,15 @@ ExternalSeedReaderImpl
 		return( res );
 	}
 	
-	public List
+	public List<PeerReadRequest>
 	getRequests()
 	{
-		List	res = null;
+		List<PeerReadRequest>	res = null;
 		
 		try{
 			requests_mon.enter();
 			
-			res = new ArrayList( requests );
+			res = new ArrayList<PeerReadRequest>( requests );
 			
 		}finally{
 			

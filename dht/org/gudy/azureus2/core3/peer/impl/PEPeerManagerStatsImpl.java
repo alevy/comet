@@ -21,12 +21,9 @@
 
 package org.gudy.azureus2.core3.peer.impl;
 
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.peer.PEPeerManagerAdapter;
-import org.gudy.azureus2.core3.peer.PEPeerManagerStats;
+import org.gudy.azureus2.core3.peer.*;
 import org.gudy.azureus2.core3.peer.impl.control.PEPeerControlImpl;
-import org.gudy.azureus2.core3.util.Average;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 
 public class 
 PEPeerManagerStatsImpl 
@@ -40,6 +37,12 @@ PEPeerManagerStatsImpl
 	private long total_data_bytes_sent = 0;
 	private long total_protocol_bytes_sent = 0;
 	  
+	private long total_data_bytes_received_lan = 0;
+	private long total_protocol_bytes_received_lan = 0;
+  
+	private long total_data_bytes_sent_lan = 0;
+	private long total_protocol_bytes_sent_lan = 0;
+
 	private long totalDiscarded;
 	private long hash_fail_bytes;
 
@@ -54,7 +57,8 @@ PEPeerManagerStatsImpl
   
 	private final Average overallSpeed = Average.getInstance(5000, 100); //average over 100s, update every 5s
 
-
+	private int	total_incoming;
+	private int total_outgoing;
 
 	public 
 	PEPeerManagerStatsImpl(
@@ -84,6 +88,9 @@ PEPeerManagerStatsImpl
 	
 	public void dataBytesReceived( PEPeer peer, int length) {
 	  total_data_bytes_received += length;
+	  if ( peer.isLANLocal()){
+		  total_data_bytes_received_lan += length;
+	  }
 	  data_receive_speed.addValue(length);
 	  
 	  if ( length > 0 ){
@@ -95,6 +102,9 @@ PEPeerManagerStatsImpl
 
   public void protocolBytesReceived(PEPeer peer, int length) {
     total_protocol_bytes_received += length;
+	  if ( peer.isLANLocal()){
+		  total_protocol_bytes_received_lan += length;
+	  }
     protocol_receive_speed.addValue(length);
     
     adapter.protocolBytesReceived( peer, length );
@@ -103,6 +113,9 @@ PEPeerManagerStatsImpl
   
 	public void dataBytesSent(PEPeer peer, int length ) {
 	  total_data_bytes_sent += length;
+	  if ( peer.isLANLocal()){
+		  total_data_bytes_sent_lan += length;
+	  }
 	  data_send_speed.addValue(length);  
 	  
 	  if ( length > 0 ){
@@ -114,6 +127,9 @@ PEPeerManagerStatsImpl
   
   public void protocolBytesSent(PEPeer peer, int length) {
     total_protocol_bytes_sent += length;
+	  if ( peer.isLANLocal()){
+		  total_protocol_bytes_sent_lan += length;
+	  }
     protocol_send_speed.addValue(length);
     
  	adapter.protocolBytesSent( peer, length );
@@ -128,19 +144,18 @@ PEPeerManagerStatsImpl
 	  return( data_receive_speed.getAverage());
 	}
 
-  public long getProtocolReceiveRate() {
-    return protocol_receive_speed.getAverage();
-  }
+	public long getProtocolReceiveRate() {
+		return protocol_receive_speed.getAverage();
+	}
   
   
 	public long getDataSendRate() {
 	  return( data_send_speed.getAverage());
 	}
   
-  public long getProtocolSendRate() {
-    return protocol_send_speed.getAverage();
-  }
-  
+	public long getProtocolSendRate() {
+		return protocol_send_speed.getAverage();
+	}
   
 	public long getTotalDiscarded() {
 	  return( totalDiscarded );
@@ -166,7 +181,24 @@ PEPeerManagerStatsImpl
     return total_protocol_bytes_received;
   }
   
-    
+	public long getTotalDataBytesSentNoLan()
+	{
+		return( Math.max( total_data_bytes_sent - total_data_bytes_sent_lan, 0 ));
+	}
+	public long getTotalProtocolBytesSentNoLan()
+	{
+		return( Math.max( total_protocol_bytes_sent - total_protocol_bytes_sent_lan, 0 ));
+	}
+  	public long getTotalDataBytesReceivedNoLan()
+	{
+  		return( Math.max( total_data_bytes_received - total_data_bytes_received_lan, 0 ));
+  	}
+  	public long getTotalProtocolBytesReceivedNoLan()
+	{
+  		return( Math.max( total_protocol_bytes_received - total_protocol_bytes_received_lan, 0 ));
+	}
+
+
 	public long 
 	getTotalAverage() 
 	{
@@ -207,5 +239,31 @@ PEPeerManagerStatsImpl
 		}
 		
 		return( now - last_data_sent_seconds );
+	}
+	
+ 	public void 
+ 	haveNewConnection( 
+ 		boolean incoming )
+ 	{
+ 		if ( incoming ){
+ 			
+ 			total_incoming++;
+ 			
+ 		}else{
+ 			
+ 			total_outgoing++;
+ 		}
+ 	}
+
+	public int 
+	getTotalIncomingConnections()
+	{
+		return( total_incoming );
+	}
+	
+	public int 
+	getTotalOutgoingConnections()
+	{
+		return( total_outgoing );
 	}
 }

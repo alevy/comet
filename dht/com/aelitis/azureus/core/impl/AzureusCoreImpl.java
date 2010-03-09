@@ -21,80 +21,59 @@
 
 package com.aelitis.azureus.core.impl;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.net.InetAddress;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.config.impl.TransferSpeedValidator;
+import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
 import org.gudy.azureus2.core3.global.GlobalManagerFactory;
 import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.global.GlobalMangerProgressListener;
-import org.gudy.azureus2.core3.internat.LocaleUtil;
-import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.internat.*;
 import org.gudy.azureus2.core3.ipfilter.IpFilterManager;
-import org.gudy.azureus2.core3.ipfilter.IpFilterManagerFactory;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.ipfilter.*;
+import org.gudy.azureus2.core3.peer.PEPeerManager;
+import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.security.SESecurityManager;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
-import org.gudy.azureus2.core3.tracker.host.TRHost;
-import org.gudy.azureus2.core3.tracker.host.TRHostFactory;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.ListenerManager;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
-import org.gudy.azureus2.core3.util.NonDaemonTaskRunner;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.tracker.host.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
 import org.gudy.azureus2.platform.PlatformManagerListener;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginEventListener;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.PluginManagerDefaults;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.utils.DelayedTask;
 import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreException;
-import com.aelitis.azureus.core.AzureusCoreLifecycleListener;
-import com.aelitis.azureus.core.AzureusCoreListener;
-import com.aelitis.azureus.core.AzureusCoreOperation;
-import com.aelitis.azureus.core.AzureusCoreOperationListener;
-import com.aelitis.azureus.core.AzureusCoreOperationTask;
+import com.aelitis.azureus.core.*;
 import com.aelitis.azureus.core.custom.CustomizationManagerFactory;
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManager;
+import com.aelitis.azureus.core.instancemanager.AZInstanceManagerAdapter;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManagerFactory;
+import com.aelitis.azureus.core.instancemanager.AZInstanceTracked;
 import com.aelitis.azureus.core.nat.NATTraverser;
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterface;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterfaceAddress;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminPropertyChangeListener;
+import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
+import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
+import com.aelitis.azureus.core.pairing.PairingManagerFactory;
 import com.aelitis.azureus.core.peermanager.PeerManager;
 import com.aelitis.azureus.core.peermanager.nat.PeerNATTraverser;
+import com.aelitis.azureus.plugins.clientid.ClientIDPlugin;
 import com.aelitis.azureus.core.security.CryptoManager;
 import com.aelitis.azureus.core.security.CryptoManagerFactory;
 import com.aelitis.azureus.core.speedmanager.SpeedManager;
@@ -102,10 +81,13 @@ import com.aelitis.azureus.core.speedmanager.SpeedManagerAdapter;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerFactory;
 import com.aelitis.azureus.core.update.AzureusRestarterFactory;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
+import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
 import com.aelitis.azureus.launcher.classloading.PrimaryClassloader;
-import com.aelitis.azureus.plugins.clientid.ClientIDPlugin;
 import com.aelitis.azureus.plugins.dht.DHTPlugin;
 import com.aelitis.azureus.plugins.tracker.dht.DHTTrackerPlugin;
+import com.aelitis.azureus.plugins.upnp.UPnPPlugin;
+import com.aelitis.azureus.ui.UIFunctions;
+import com.aelitis.azureus.ui.UIFunctionsManager;
 
 /**
  * @author parg
@@ -122,6 +104,13 @@ AzureusCoreImpl
 	
 	private static final String DM_ANNOUNCE_KEY	= "AzureusCore:announce_key";
 	private static final boolean LOAD_PLUGINS_IN_OTHER_THREAD = true;
+	
+	/** 
+	 * Listeners that will be fired after core has completed initialization
+	 */
+	static List<AzureusCoreRunningListener> coreRunningListeners = new ArrayList<AzureusCoreRunningListener>(1);
+	
+	static AEMonitor mon_coreRunningListeners = new AEMonitor("CoreCreationListeners");
 	
 	public static AzureusCore
 	create()
@@ -151,7 +140,13 @@ AzureusCoreImpl
 	{
 		return( singleton != null );
 	}
-	
+
+	public static boolean
+	isCoreRunning()
+	{
+		return( singleton != null && singleton.isStarted() );
+	}
+
 	public static AzureusCore
 	getSingleton()
 	
@@ -191,6 +186,10 @@ AzureusCoreImpl
 	
 	public static boolean SUPPRESS_CLASSLOADER_ERRORS = false;
 	
+	private boolean ca_shutdown_computer_after_stop	= false;
+	private long	ca_last_time_downloading 		= -1;
+	private long	ca_last_time_seeding 			= -1;
+	
 	protected
 	AzureusCoreImpl()
 	{
@@ -201,8 +200,10 @@ AzureusCoreImpl
 		
 		MessageText.loadBundle();
 		
-		AEDiagnostics.startup();
+		AEDiagnostics.startup( COConfigurationManager.getBooleanParameter( "diags.enable.pending.writes", false ));
 		
+		COConfigurationManager.setParameter( "diags.enable.pending.writes", false );
+				
 		AEDiagnostics.markDirty();
 		
 		AETemporaryFileHandler.startup();
@@ -228,7 +229,7 @@ AzureusCoreImpl
 							Logger.log(new LogEvent(LOGID, "Platform manager requested shutdown"));
 						}
 						
-						stop();
+						requestStop();
 						
 					}else if ( type == ET_SUSPEND ){
 						
@@ -250,18 +251,204 @@ AzureusCoreImpl
 			});
 		
 			//ensure early initialization
-		
+				
 		CustomizationManagerFactory.getSingleton();
 		
 		NetworkManager.getSingleton();
 		
 		PeerManager.getSingleton();
 		
-		// Used to be a plugin, but not any more...
+			// Used to be a plugin, but not any more...
+		
 		ClientIDPlugin.initialize();
+		
 		pi = PluginInitializer.getSingleton( this, initialisation_op );
 		
-		instance_manager = AZInstanceManagerFactory.getSingleton( this );
+		
+		instance_manager = 
+			AZInstanceManagerFactory.getSingleton( 
+				new AZInstanceManagerAdapter()
+				{
+					public String
+					getID()
+					{
+						return( COConfigurationManager.getStringParameter( "ID", "" ));
+					}
+					
+					public InetAddress 
+					getPublicAddress() 
+					{	
+						return( PluginInitializer.getDefaultInterface().getUtilities().getPublicAddress());
+					}
+					
+					public int[]
+					getPorts()
+					{
+						return( new int[]{
+							TCPNetworkManager.getSingleton().getTCPListeningPortNumber(),
+							UDPNetworkManager.getSingleton().getUDPListeningPortNumber(),
+							UDPNetworkManager.getSingleton().getUDPNonDataListeningPortNumber()});
+
+					}
+					public VCPublicAddress
+					getVCPublicAddress()
+					{
+						return(
+							new VCPublicAddress()
+							{
+								private VersionCheckClient vcc = VersionCheckClient.getSingleton();
+								
+								public String
+								getAddress()
+								{
+									return( vcc.getExternalIpAddress( true, false ));
+								}
+								
+								public long
+								getCacheTime()
+								{
+									return( vcc.getSingleton().getCacheTime( false ));
+								}
+							});
+					}
+
+					public AZInstanceTracked.TrackTarget
+					track(
+						byte[]		hash )
+					{
+						List	dms = getGlobalManager().getDownloadManagers();
+						
+						Iterator	it = dms.iterator();
+						
+						DownloadManager	matching_dm = null;
+						
+						try{
+							while( it.hasNext()){
+								
+								DownloadManager	dm = (DownloadManager)it.next();
+								
+								TOTorrent	torrent = dm.getTorrent();
+								
+								if ( torrent == null ){
+									
+									continue;
+								}
+								
+								byte[]	sha1_hash = (byte[])dm.getData( "AZInstanceManager::sha1_hash" );
+								
+								if ( sha1_hash == null ){			
+
+									sha1_hash	= new SHA1Simple().calculateHash( torrent.getHash());
+									
+									dm.setData( "AZInstanceManager::sha1_hash", sha1_hash );
+								}
+								
+								if ( Arrays.equals( hash, sha1_hash )){
+									
+									matching_dm	= dm;
+									
+									break;
+								}
+							}
+						}catch( Throwable e ){
+							
+							Debug.printStackTrace(e);
+						}
+						
+						if ( matching_dm == null ){
+							
+							return( null );
+						}
+						
+						if ( !matching_dm.getDownloadState().isPeerSourceEnabled( PEPeerSource.PS_PLUGIN )){
+							
+							return( null );
+						}
+						
+						int	dm_state = matching_dm.getState();
+						
+						if ( dm_state == DownloadManager.STATE_ERROR || dm_state == DownloadManager.STATE_STOPPED ){
+							
+							return( null );
+						}
+						
+						try{
+						
+							final Object target = DownloadManagerImpl.getDownloadStatic( matching_dm );
+						
+							final boolean	is_seed = matching_dm.isDownloadComplete(true);
+							
+							return(
+								new AZInstanceTracked.TrackTarget()
+								{
+									public Object
+									getTarget()
+									{
+										return( target );
+									}
+									
+									public boolean
+									isSeed()
+									{
+										return( is_seed );
+									}
+								});
+							
+						}catch( Throwable e ){
+							
+							return( null );
+						}
+					}
+					
+					public DHTPlugin 
+					getDHTPlugin()
+					{
+						PluginInterface pi = getPluginManager().getPluginInterfaceByClass( DHTPlugin.class );
+						
+						if ( pi != null ){
+							
+							return( (DHTPlugin)pi.getPlugin());
+						}
+						
+						return( null );
+					}
+					
+					public UPnPPlugin 
+					getUPnPPlugin() 
+					{
+						PluginInterface pi = getPluginManager().getPluginInterfaceByClass( UPnPPlugin.class );
+						
+						if ( pi != null ){
+							
+							return((UPnPPlugin)pi.getPlugin());
+						}
+						
+						return( null );
+					}
+					
+					public void 
+					addListener(
+						final StateListener listener) 
+					{
+						AzureusCoreImpl.this.addLifecycleListener(
+							new AzureusCoreLifecycleAdapter()
+							{
+								public void 
+								started(
+									AzureusCore core) 
+								{
+									listener.started();
+								}
+								
+								public void
+								stopping(
+									AzureusCore		core )
+								{
+									listener.stopped();
+								}
+							});
+					}
+				});
 		
 		speed_manager	= 
 			SpeedManagerFactory.createSpeedManager( 
@@ -576,6 +763,19 @@ AzureusCoreImpl
 			));
 		}
 		
+	   /**
+	    * test to see if UI plays nicely with a really slow initialization
+	    */
+	   String sDelayCore = System.getProperty("delay.core", null);
+	   if (sDelayCore != null) {
+	  	 try {
+	  		 long delayCore = Long.parseLong(sDelayCore);
+	  		 Thread.sleep(delayCore);
+	  	 } catch (Exception e) {
+	  		 e.printStackTrace();
+	  	 }
+	   }
+
 
 		// run plugin loading in parallel to the global manager loading
 		AEThread2 pluginload = new AEThread2("PluginLoader",true)
@@ -626,16 +826,31 @@ AzureusCoreImpl
 						initialisation_op.reportPercent( percent );
 					}
 				}, 0);
+		
+		if (stopped) {
+			System.err.println("Core stopped while starting");
+			return;
+		}
 
 		// wait until plugin loading is done
 		if (LOAD_PLUGINS_IN_OTHER_THREAD) {
 			pluginload.join();
+		}
+
+		if (stopped) {
+			System.err.println("Core stopped while starting");
+			return;
 		}
 		
 		triggerLifeCycleComponentCreated(global_manager);
 
 		pi.initialisePlugins();
 
+		if (stopped) {
+			System.err.println("Core stopped while starting");
+			return;
+		}
+		
 		if (Logger.isEnabled())
 			Logger.log(new LogEvent(LOGID, "Initializing Plugins complete"));
 
@@ -695,9 +910,8 @@ AzureusCoreImpl
 						protected void
 						checkConfig()
 						{
-							String	key = TransferSpeedValidator.getActiveAutoUploadParameter( global_manager );
-							
-							speed_manager.setEnabled( COConfigurationManager.getBooleanParameter( key ));
+
+							speed_manager.setEnabled( TransferSpeedValidator.isAutoSpeedActive(global_manager) );
 						}
 						
 					});
@@ -705,57 +919,16 @@ AzureusCoreImpl
 		}catch( Throwable e ){
 		}
 		
-	    new AEThread2("Plugin Init Complete", false )
-	       {
-	        	public void
-	        	run()
-	        	{
-	        		Iterator	it = lifecycle_listeners.iterator();
-	        		
-	        		while( it.hasNext()){
-	        			
-	        			try{
-	        				AzureusCoreLifecycleListener listener = (AzureusCoreLifecycleListener)it.next();
-	        				
-	        				if ( !listener.requiresPluginInitCompleteBeforeStartedEvent()){
-	        				
-	        					listener.started( AzureusCoreImpl.this );
-	        				}
-	        			}catch( Throwable e ){
-	        				
-	        				Debug.printStackTrace(e);
-	        			}
-	        		}
-	        		
-	        		pi.initialisationComplete();
-	        		
-	        		it = lifecycle_listeners.iterator();
-	        		
-	        		while( it.hasNext()){
-	        			
-	        			try{
-	        				AzureusCoreLifecycleListener listener = (AzureusCoreLifecycleListener)it.next();
-	        				
-	        				if ( listener.requiresPluginInitCompleteBeforeStartedEvent()){
-	        				
-	        					listener.started( AzureusCoreImpl.this );
-	        				}				
-	        			}catch( Throwable e ){
-	        				
-	        				Debug.printStackTrace(e);
-	        			}
-	        		}
-	        	}
-	       }.start();
-       
 	   if ( COConfigurationManager.getBooleanParameter( "Resume Downloads On Start" )){
 	   
 		   global_manager.resumeDownloads();
 	   }
 	    
+	   VersionCheckClient.getSingleton().initialise();
+
 	   instance_manager.initialize();
 
-	   NetworkManager.getSingleton().initialize(); 
+	   NetworkManager.getSingleton().initialize(this); 
          
 	   Runtime.getRuntime().addShutdownHook( new AEThread("Shutdown Hook") {
 	     public void runSupport() {
@@ -773,82 +946,183 @@ AzureusCoreImpl
 	   				public void
 	   				run()
 	   				{
-	   					AEDiagnostics.checkDumpsAndNatives();
-
-	   					NetworkAdmin na = NetworkAdmin.getSingleton();
-
-	   					na.runInitialChecks();
-
-	   					na.addPropertyChangeListener(
-	   							new NetworkAdminPropertyChangeListener()
-	   							{
-	   								private String	last_as;
-
-	   								public void
-	   								propertyChanged(
-	   										String		property )
-	   								{
-	   									NetworkAdmin na = NetworkAdmin.getSingleton();
-
-	   									if ( property.equals( NetworkAdmin.PR_NETWORK_INTERFACES )){
-
-	   										boolean	found_usable = false;
-
-	   										NetworkAdminNetworkInterface[] intf = na.getInterfaces();
-
-	   										for (int i=0;i<intf.length;i++){
-
-	   											NetworkAdminNetworkInterfaceAddress[] addresses = intf[i].getAddresses();
-
-	   											for (int j=0;j<addresses.length;j++){
-
-	   												if ( !addresses[j].isLoopback()){
-
-	   													found_usable = true;
-	   												}
-	   											}
-	   										}
-
-	   										// ignore event if nothing usable
-
-	   										if ( !found_usable ){
-
-	   											return;
-	   										}
-
-	   										Logger.log(	new LogEvent(LOGID, "Network interfaces have changed (new=" + na.getNetworkInterfacesAsString() + ")"));
-
-	   										announceAll( false );
-
-	   									}else if ( property.equals( NetworkAdmin.PR_AS )){
-
-	   										String	as = na.getCurrentASN().getAS();
-
-	   										if ( last_as == null ){
-
-	   											last_as = as;
-
-	   										}else if ( !as.equals( last_as )){
-
-	   											Logger.log(	new LogEvent(LOGID, "AS has changed (new=" + as + ")" ));
-
-	   											last_as = as;
-
-	   											announceAll( false );
-	   										}
-	   									}
-	   								}
-	   							});
+	   					new AEThread2( "core:delayTask", true )
+	   					{
+	   						public void
+	   						run()
+	   						{				
+			   					AEDiagnostics.checkDumpsAndNatives();
+		
+			   					COConfigurationManager.setParameter( "diags.enable.pending.writes", true );
+			   					
+			   					AEDiagnostics.flushPendingLogs();
+			   					
+			   					NetworkAdmin na = NetworkAdmin.getSingleton();
+		
+			   					na.runInitialChecks(AzureusCoreImpl.this);
+		
+			   					na.addPropertyChangeListener(
+			   							new NetworkAdminPropertyChangeListener()
+			   							{
+			   								private String	last_as;
+		
+			   								public void
+			   								propertyChanged(
+			   										String		property )
+			   								{
+			   									NetworkAdmin na = NetworkAdmin.getSingleton();
+		
+			   									if ( property.equals( NetworkAdmin.PR_NETWORK_INTERFACES )){
+		
+			   										boolean	found_usable = false;
+		
+			   										NetworkAdminNetworkInterface[] intf = na.getInterfaces();
+		
+			   										for (int i=0;i<intf.length;i++){
+		
+			   											NetworkAdminNetworkInterfaceAddress[] addresses = intf[i].getAddresses();
+		
+			   											for (int j=0;j<addresses.length;j++){
+		
+			   												if ( !addresses[j].isLoopback()){
+		
+			   													found_usable = true;
+			   												}
+			   											}
+			   										}
+		
+			   										// ignore event if nothing usable
+		
+			   										if ( !found_usable ){
+		
+			   											return;
+			   										}
+		
+			   										Logger.log(	new LogEvent(LOGID, "Network interfaces have changed (new=" + na.getNetworkInterfacesAsString() + ")"));
+		
+			   										announceAll( false );
+		
+			   									}else if ( property.equals( NetworkAdmin.PR_AS )){
+		
+			   										String	as = na.getCurrentASN().getAS();
+		
+			   										if ( last_as == null ){
+		
+			   											last_as = as;
+		
+			   										}else if ( !as.equals( last_as )){
+		
+			   											Logger.log(	new LogEvent(LOGID, "AS has changed (new=" + as + ")" ));
+		
+			   											last_as = as;
+		
+			   											announceAll( false );
+			   										}
+			   									}
+			   								}
+			   							});
+			   					
+			   					setupCloseActions();
+	   						}
+	   					}.start();
 	   				}
 	   			});
 
 	   delayed_task.queue();
+
+			if (stopped) {
+				System.err.println("Core stopped while starting");
+				return;
+			}
+
+	   PairingManagerFactory.getSingleton();
+	   
+	   Object[] runningListeners;
+	   mon_coreRunningListeners.enter();
+	   try {
+	  	 if (coreRunningListeners == null) {
+	  		 runningListeners = new Object[0];
+	  	 } else {
+	  		 runningListeners = coreRunningListeners.toArray();
+	  		 coreRunningListeners = null;
+	  	 }
+	  	 
+	   } finally {
+	  	 mon_coreRunningListeners.exit();
+	   }
+
+		// Trigger Listeners now that core is started
+		new AEThread2("Plugin Init Complete", false )
+		{
+			public void
+			run()
+			{
+				try{
+					PlatformManagerFactory.getPlatformManager().startup( AzureusCoreImpl.this );
+					
+				}catch( Throwable e ){
+					
+					Debug.out( "PlatformManager: init failed", e );
+				}
+				
+				Iterator	it = lifecycle_listeners.iterator();
+				
+				while( it.hasNext()){
+					
+					try{
+						AzureusCoreLifecycleListener listener = (AzureusCoreLifecycleListener)it.next();
+						
+						if ( !listener.requiresPluginInitCompleteBeforeStartedEvent()){
+						
+							listener.started( AzureusCoreImpl.this );
+						}
+					}catch( Throwable e ){
+						
+						Debug.printStackTrace(e);
+					}
+				}
+				
+				pi.initialisationComplete();
+				
+				it = lifecycle_listeners.iterator();
+				
+				while( it.hasNext()){
+					
+					try{
+						AzureusCoreLifecycleListener listener = (AzureusCoreLifecycleListener)it.next();
+						
+						if ( listener.requiresPluginInitCompleteBeforeStartedEvent()){
+						
+							listener.started( AzureusCoreImpl.this );
+						}				
+					}catch( Throwable e ){
+						
+						Debug.printStackTrace(e);
+					}
+				}
+			}
+		}.start();
+		
+		for (Object l : runningListeners) {
+			try {
+				((AzureusCoreRunningListener) l).azureusCoreRunning(this);
+			} catch (Throwable t) {
+				Debug.out(t);
+			}
+		}
+		
+		// Debug.out("Core Start Complete");
 	}
-	
+
 	public boolean
 	isStarted()
 	{
-		return( started );
+	   mon_coreRunningListeners.enter();
+	   try {
+	  	 return( started && coreRunningListeners == null );
+	   } finally {
+	  	 mon_coreRunningListeners.exit();
+	   }
 	}
 	
 	public void 
@@ -942,6 +1216,10 @@ AzureusCoreImpl
 	
 		throws AzureusCoreException
 	{
+		AEDiagnostics.flushPendingLogs();
+		
+		boolean	wait_and_return = false;
+		
 		try{
 			this_mon.enter();
 		
@@ -952,36 +1230,68 @@ AzureusCoreImpl
 									
 				COConfigurationManager.save();
 				
-				Logger.log(new LogEvent(LOGID, "Waiting for stop to complete"));
+				wait_and_return = true;
 				
-				stopping_sem.reserve();
-				
-				return;
-			}
+			}else{
 			
-			stopped	= true;
-			
-			if ( !started ){
+				stopped	= true;
 				
-				Logger.log(new LogEvent(LOGID, "Core not started"));
-				
-					// might have been marked dirty due to core being created to allow functions to be used but never started...
-				
-				if ( AEDiagnostics.isDirty()){
+				if ( !started ){
 					
-					AEDiagnostics.markClean();
-				}
-				
-				stopping_sem.releaseForever();
-				
-				return;
-			}		
-			
+					Logger.log(new LogEvent(LOGID, "Core not started"));
+					
+						// might have been marked dirty due to core being created to allow functions to be used but never started...
+					
+					if ( AEDiagnostics.isDirty()){
+						
+						AEDiagnostics.markClean();
+					}
+					
+					stopping_sem.releaseForever();
+					
+					return;
+				}		
+			}
 		}finally{
 			
 			this_mon.exit();
 		}
 		
+		if ( wait_and_return ){
+			
+			Logger.log(new LogEvent(LOGID, "Waiting for stop to complete"));
+			
+			stopping_sem.reserve();
+			
+			return;
+		}
+		
+		SimpleTimer.addEvent(
+			"ShutFail",
+			SystemTime.getOffsetTime( 30*1000 ),
+			new TimerEventPerformer()
+			{
+				boolean	die_die_die;
+				
+				public void 
+				perform(
+					TimerEvent event )
+				{
+					AEDiagnostics.dumpThreads();
+					
+					if ( die_die_die ){
+					
+						Debug.out( "Shutdown blocked, force exiting" );
+						
+						SESecurityManager.exitVM(0);
+					}
+					
+					die_die_die = true;
+					
+					SimpleTimer.addEvent( "ShutFail", SystemTime.getOffsetTime( 30*1000 ), this );
+				}
+			});
+				
 		List	sync_listeners 	= new ArrayList();
 		List	async_listeners	= new ArrayList();
 		
@@ -1037,7 +1347,9 @@ AzureusCoreImpl
 			if (Logger.isEnabled())
 				Logger.log(new LogEvent(LOGID, "Stopping global manager"));
 
-			global_manager.stopGlobalManager();
+			if (global_manager != null) {
+				global_manager.stopGlobalManager();
+			}
 			
 			if (Logger.isEnabled())
 				Logger.log(new LogEvent(LOGID, "Invoking synchronous 'stopped' listeners"));
@@ -1069,7 +1381,7 @@ AzureusCoreImpl
 						}
 					},
 					10*1000 );
-				
+			
 			if (Logger.isEnabled())
 				Logger.log(new LogEvent(LOGID, "Waiting for quiescence"));
 
@@ -1090,6 +1402,37 @@ AzureusCoreImpl
 				AzureusRestarterFactory.create( this ).restart( true );
 			}
 			
+			try {
+				Class c = Class.forName( "sun.awt.AWTAutoShutdown" );
+	      
+				if (c != null) {
+					c.getMethod( "notifyToolkitThreadFree", new Class[]{} ).invoke( null, new Object[]{} );
+				}
+			} catch (Throwable t) {
+			}
+			
+			if ( ca_shutdown_computer_after_stop ){
+				
+				if ( apply_updates ){
+					
+						// best we can do here is wait a while for updates to be applied
+					try{
+						Thread.sleep( 10*1000 );
+						
+					}catch( Throwable e ){
+						
+					}
+				}
+				
+				try{
+					PlatformManagerFactory.getPlatformManager().shutdown( PlatformManager.SD_SHUTDOWN );
+					
+				}catch( Throwable e ){
+					
+					Debug.out( "PlatformManager: shutdown failed", e );
+				}
+			}
+		
 			try{
 				ThreadGroup	tg = Thread.currentThread().getThreadGroup();
 				
@@ -1101,7 +1444,7 @@ AzureusCoreImpl
 					
 					final Thread	t = threads[i];
 					
-					if ( t != null && t != Thread.currentThread() && !t.isDaemon() && !AEThread2.isOurThread( t )){
+					if ( t != null && t.isAlive() && t != Thread.currentThread() && !t.isDaemon() && !AEThread2.isOurThread( t )){
 						
 						new AEThread2( "VMKiller", true )
 						{
@@ -1110,7 +1453,7 @@ AzureusCoreImpl
 							{
 								try{
 									Thread.sleep(10*1000);
-								
+									
 									Debug.out( "Non-daemon thread found '" + t.getName() + "', force closing VM" );
 									
 									SESecurityManager.exitVM(0);
@@ -1126,6 +1469,8 @@ AzureusCoreImpl
 				}
 			}catch( Throwable e ){
 			}
+			
+	
 		}finally{
 			
 			stopping_sem.releaseForever();
@@ -1306,6 +1651,255 @@ AzureusCoreImpl
 	getNATTraverser()
 	{
 		return( nat_traverser );
+	}
+	
+	private void
+	setupCloseActions()
+	{
+		COConfigurationManager.addAndFireParameterListeners(
+			new String[]{
+					"On Downloading Complete Do",
+					"On Seeding Complete Do"
+			},
+			new ParameterListener()
+			{
+				private TimerEventPeriodic timer_event;
+				
+				public void 
+				parameterChanged(
+					String parameterName )
+				{
+					String	dl_act = COConfigurationManager.getStringParameter( "On Downloading Complete Do" );
+					String	se_act = COConfigurationManager.getStringParameter( "On Seeding Complete Do" );
+					
+					synchronized( this ){
+						
+						boolean	dl_nothing 	= dl_act.equals( "Nothing" );
+						boolean se_nothing	= se_act.equals( "Nothing" );
+						
+						if ( dl_nothing ){
+							
+							ca_last_time_downloading	= -1;
+						}
+						
+						if ( se_nothing ){
+							
+							ca_last_time_seeding	= -1;
+						}
+				
+						if ( dl_nothing && se_nothing ){
+							
+							if ( timer_event != null ){
+								
+								timer_event.cancel();
+								
+								timer_event = null;
+							}
+						}else{
+						
+							if ( timer_event == null ){
+								
+								timer_event = 
+									SimpleTimer.addPeriodicEvent(
+											"core:closeAct",
+											30*1000,
+											new TimerEventPerformer()
+											{
+												public void 
+												perform(
+													TimerEvent event )
+												{
+													checkCloseActions();
+												}
+											});
+							}
+							
+							checkCloseActions();
+						}
+					}
+				}
+			});
+	}
+
+	protected void
+	checkCloseActions()
+	{
+		List<DownloadManager> managers = getGlobalManager().getDownloadManagers();
+		
+		boolean	is_downloading 	= false;
+		boolean is_seeding		= false;
+		
+		for ( DownloadManager manager: managers ){
+			
+			int state = manager.getState();
+			
+			if ( state == DownloadManager.STATE_FINISHING ){
+
+				is_downloading = true;
+				
+			}else{
+			
+				if ( state == DownloadManager.STATE_DOWNLOADING ){
+					
+					PEPeerManager pm = manager.getPeerManager();
+					
+					if ( pm != null ){
+						
+						if ( pm.hasDownloadablePiece()){
+							
+							is_downloading = true;
+							
+						}else{
+				
+								// its effectively seeding, change so logic about recheck obeyed below
+							
+							state = DownloadManager.STATE_SEEDING;
+						}
+					}
+				}
+				
+				if ( state == DownloadManager.STATE_SEEDING ){
+				
+					DiskManager disk_manager = manager.getDiskManager();
+	
+					if ( disk_manager != null && disk_manager.getCompleteRecheckStatus() != -1 ){
+					
+							// wait until recheck is complete before we mark as downloading-complete
+						
+						is_downloading	= true;
+						
+					}else{
+						
+						is_seeding		= true;
+					}
+				}
+			}
+		}
+		
+		long	now = SystemTime.getMonotonousTime();
+		
+		if ( is_downloading ){
+			
+			ca_last_time_downloading 	= now;
+			ca_last_time_seeding		= -1;
+			
+		}else if ( is_seeding ){
+			
+			ca_last_time_seeding = now;
+		}
+		
+		String	dl_act = COConfigurationManager.getStringParameter( "On Downloading Complete Do" );
+		
+		if ( !dl_act.equals( "Nothing" )){
+		
+			if ( ca_last_time_downloading >= 0 && !is_downloading && now - ca_last_time_downloading >= 30*1000 ){
+				
+				executeCloseAction( true, dl_act );
+			}
+		}
+		
+		String	se_act = COConfigurationManager.getStringParameter( "On Seeding Complete Do" );
+
+		if ( !se_act.equals( "Nothing" )){
+			
+			if ( ca_last_time_seeding >= 0 && !is_seeding && now - ca_last_time_seeding >= 30*1000 ){
+				
+				executeCloseAction( false, se_act );
+			}
+		}
+	}
+	
+	private void
+	executeCloseAction(
+		final boolean	download_trigger,
+		final String	action )
+	{
+			// prevent retriggering on resume from standby
+		
+		ca_last_time_downloading	= -1;
+		ca_last_time_seeding		= -1;
+		
+		boolean reset = COConfigurationManager.getBooleanParameter( "Stop Triggers Auto Reset" );
+		
+		if ( reset ){
+			
+			if ( download_trigger ){
+			
+				COConfigurationManager.setParameter( "On Downloading Complete Do", "Nothing" );
+				
+			}else{
+				
+				COConfigurationManager.setParameter( "On Seeding Complete Do", "Nothing" );
+			}
+		}
+		
+		String type_str		= MessageText.getString( "core.shutdown." + (download_trigger?"dl":"se"));
+		String action_str 	= MessageText.getString( "ConfigView.label.stop." + action );
+				
+		String message = 
+			MessageText.getString( 
+				"core.shutdown.alert",
+				new String[]{
+					action_str,
+					type_str,
+				});
+		
+		UIFunctions ui_functions = UIFunctionsManager.getUIFunctions();
+		
+		if ( ui_functions != null ){
+		
+			ui_functions.forceNotify( UIFunctions.STATUSICON_NONE, null, message, null, new Object[0], -1 );
+		}
+		
+		Logger.log( 
+			new LogAlert( 
+				LogAlert.UNREPEATABLE, 
+				LogEvent.LT_INFORMATION,
+				message ));
+
+		new DelayedEvent(
+			"CoreShutdown",
+			10*1000,
+			new AERunnable()
+			{
+				public void
+				runSupport()
+				{
+					Logger.log( new LogEvent(LOGID, "Executing close action '" + action + "' due to " + (download_trigger?"downloading":"seeding") + " completion" ));					
+					
+						// quit vuze -> quit
+						// shutdown computer -> quit vuze + shutdown
+						// sleep/hibernate = announceAll and then sleep/hibernate with Vuze still running
+					
+					if ( action.equals( "QuitVuze" )){
+						
+						requestStop();
+					
+					}else if ( action.equals( "Sleep" ) || action.equals( "Hibernate" )){
+
+						announceAll( true );
+						
+						try{
+							PlatformManagerFactory.getPlatformManager().shutdown( 
+									action.equals( "Sleep" )?PlatformManager.SD_SLEEP:PlatformManager.SD_HIBERNATE );
+							
+						}catch( Throwable e ){
+							
+							Debug.out( "PlatformManager: shutdown failed", e );
+						}
+						
+					}else if ( action.equals( "Shutdown" )){
+
+						ca_shutdown_computer_after_stop = true;
+						
+						requestStop();
+						
+					}else{
+						
+						Debug.out( "Unknown close action '" + action + "'" );
+					}
+				}
+			});
 	}
 	
 	public AzureusCoreOperation
@@ -1501,5 +2095,20 @@ AzureusCoreImpl
 		AzureusCoreOperationListener	l )
 	{
 		operation_listeners.remove(l);
+	}
+
+	public static void addCoreRunningListener(AzureusCoreRunningListener l) {
+	   mon_coreRunningListeners.enter();
+	   try {
+    		if (AzureusCoreImpl.coreRunningListeners != null) {
+    			coreRunningListeners.add(l);
+    			
+    			return;
+    		}
+	   } finally {
+	  	 mon_coreRunningListeners.exit();
+	   }
+	   
+	   l.azureusCoreRunning(AzureusCoreImpl.getSingleton());
 	}
 }

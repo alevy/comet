@@ -26,6 +26,9 @@
 package org.gudy.azureus2.core3.peer;
 
 
+import java.net.InetAddress;
+
+import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
 import org.gudy.azureus2.plugins.network.Connection;
 
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
@@ -88,6 +91,11 @@ PEPeer
 	public byte[] getId();
 
 	public String getIp();
+	
+	/**
+	 * @return an ipv6 address under which the peer should be connectable if it announced one, null otherwise
+	 */
+	public InetAddress getAlternativeIPv6();
   
   /**
    * Get the peer's local TCP connection port.
@@ -138,6 +146,8 @@ PEPeer
    * @return true if I am choked by the peer, false if not
    */
 	public boolean isChokingMe();
+	
+	public boolean isUnchokeOverride();
 
   /**
    * Am I choking the peer.
@@ -145,6 +155,12 @@ PEPeer
    */
 	public boolean isChokedByMe();
 
+	public void
+	sendChoke();
+	
+	public void
+	sendUnChoke();
+	
   /**
    * Am I Interested in the peer.
    * @return true if peer is interesting, false if not
@@ -350,6 +366,10 @@ PEPeer
 	        		 
 	public void
 	clearRequestHint();
+	
+	public void
+	sendRejectRequest(
+		DiskManagerReadRequest	request );
 	
 	public void
 	setHaveAggregationEnabled(

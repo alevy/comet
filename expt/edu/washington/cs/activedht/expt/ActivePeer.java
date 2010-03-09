@@ -18,8 +18,6 @@ import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -30,6 +28,7 @@ import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
+import edu.washington.cs.activedht.db.DHTDBValueFactory;
 import edu.washington.cs.activedht.db.NonActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
@@ -64,52 +63,51 @@ class DHTParams {
 }
 
 public class ActivePeer implements DHTNATPuncherAdapter {
-	
+
 	private static final int DEFAULT_LOOKUP_CONCURRENCY = 200;
 
 	public enum ValueFactory {
 		NA(NA_VALUE_FACTORY_INTERFACE), KAHLUA(KAHLUA_VALUE_FACTORY_INTERFACE);
-		
-		public final FactoryInterface fi;
 
-		ValueFactory(FactoryInterface fi) {
+		public final DHTDBValueFactory fi;
+
+		ValueFactory(DHTDBValueFactory fi) {
 			this.fi = fi;
 		}
 	}
-	
-	public static final FactoryInterface KAHLUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
+
+	public static final DHTDBValueFactory KAHLUA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory() {
 		public DHTDBValue create(long _creation_time, byte[] _value,
 				int _version, DHTTransportContact _originator,
 				DHTTransportContact _sender, boolean _local, int _flags) {
 			return new KahluaActiveDHTDBValue(_creation_time, _value, _version,
-					_originator, _sender, _local, _flags);
+					_originator, _local, _flags);
 		}
-		
+
 		public DHTDBValue create(DHTTransportContact sender,
 				DHTTransportValue other, boolean local) {
-			return new KahluaActiveDHTDBValue(other
-					.getCreationTime(), other.getValue(), other.getVersion(), other
-					.getOriginator(), sender, local, other.getFlags());
+			return new KahluaActiveDHTDBValue(other.getCreationTime(), other
+					.getValue(), other.getVersion(), other.getOriginator(),
+					local, other.getFlags());
 		}
 	};
-	
-	public static final FactoryInterface NA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory.FactoryInterface() {
+
+	public static final DHTDBValueFactory NA_VALUE_FACTORY_INTERFACE = new DHTDBValueFactory() {
 		public DHTDBValue create(long _creation_time, byte[] _value,
 				int _version, DHTTransportContact _originator,
 				DHTTransportContact _sender, boolean _local, int _flags) {
 			return new NonActiveDHTDBValue(_creation_time, _value, _version,
 					_originator, _sender, _local, _flags);
 		}
-		
+
 		public DHTDBValue create(DHTTransportContact sender,
 				DHTTransportValue other, boolean local) {
-			return new NonActiveDHTDBValue(other
-					.getCreationTime(), other.getValue(), other.getVersion(), other
-					.getOriginator(), sender, local, other.getFlags());
+			return new NonActiveDHTDBValue(other.getCreationTime(), other
+					.getValue(), other.getVersion(), other.getOriginator(),
+					sender, local, other.getFlags());
 		}
 	};
 
-	
 	private static final AzureusCore azureusCore = AzureusCoreFactory.create();
 	// DHT-related params (these are fixed forever, as we give them to DHT):
 	private final boolean kDhtLoggingOn;
@@ -144,10 +142,12 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private final int current_udp_timeout;
 
 	public ActivePeer(int port, String bootstrap) throws Exception {
-		this(port, bootstrap, false, KAHLUA_VALUE_FACTORY_INTERFACE, DEFAULT_LOOKUP_CONCURRENCY);
+		this(port, bootstrap, false, KAHLUA_VALUE_FACTORY_INTERFACE,
+				DEFAULT_LOOKUP_CONCURRENCY);
 	}
 
-	public ActivePeer(int port, String bootstrap, boolean logging, FactoryInterface factoryInterface, int lookupConurrency)
+	public ActivePeer(int port, String bootstrap, boolean logging,
+			DHTDBValueFactory factoryInterface, int lookupConurrency)
 			throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
 
@@ -162,8 +162,8 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		kDhtBootstrapAddress = getHostname(full_addr);
 		kDhtBootstrapPort = getPort(full_addr);
 
-		kDhtNetwork = DHT.NW_CVS;
-		kDhtProtocolVersion = (kDhtNetwork == DHT.NW_MAIN ? DHTTransportUDP.PROTOCOL_VERSION_MAIN
+		kDhtNetwork = DHT.NW_MAIN;
+		kDhtProtocolVersion = (kDhtNetwork == DHT.NW_MAIN ? 32//DHTTransportUDP.PROTOCOL_VERSION_MAIN
 				: DHTTransportUDP.PROTOCOL_VERSION_CVS);
 
 		kDhtDirectory = "/tmp/activedht";
@@ -176,9 +176,9 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 		params = this.getRenewedParamsFromConfig();
 
-		current_udp_timeout = 500;
+		current_udp_timeout = 10000;
 	}
-	
+
 	/**
 	 * @param full_address
 	 *            machine:port format.
@@ -197,7 +197,8 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	/**
 	 * Thread-safe.
-	 * @param default_ip_address 
+	 * 
+	 * @param default_ip_address
 	 */
 	// @Override
 	public void init(String default_ip_address) throws RuntimeException {
@@ -266,16 +267,18 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	/**
 	 * Must be called while holding the writelock on dht_lock.
-	 * @param defaultIpAddress 
+	 * 
+	 * @param defaultIpAddress
 	 * 
 	 * @param bootstrapAddress
 	 */
-	private void startDHTNode(int udp_timeout, String defaultIpAddress) throws RuntimeException {
+	private void startDHTNode(int udp_timeout, String defaultIpAddress)
+			throws RuntimeException {
 		try {
 			transport = new ConfigurableTimeoutDHTTransport(
-					kDhtProtocolVersion, kDhtNetwork, false, defaultIpAddress, defaultIpAddress,
-					kDhtPort, 3, 1, udp_timeout, 0, 0, false, false,
-					kDhtLogger);
+					kDhtProtocolVersion, kDhtNetwork, false, defaultIpAddress,
+					defaultIpAddress, kDhtPort, 3, 1, udp_timeout, 0, 0, false,
+					false, kDhtLogger);
 			dht = DHTFactory.create(transport, kDhtProperties, kStorageManager,
 					this, kDhtLogger);
 			Throwable exception = null;
@@ -344,7 +347,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	protected DHTTransportValue getLocal(byte[] key) {
 		return dht.getLocalValue(key);
 	}
-	
+
 	// Protected to enable testing.
 	protected void get(byte[] key, int timeout, DHTOperationAdapter adapter) {
 		dht.get(key, "", (byte) 0, 32, timeout, true, false, adapter);
@@ -394,7 +397,8 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		int port = 4321;
 		String hostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
+		boolean logging = false;
+		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-v")) {
@@ -405,12 +409,15 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				hostname = args[++i];
 			} else if (args[i].equals("-b")) {
 				bootstrapLoc = args[++i];
+			} else if (args[i].equals("-l")) {
+				logging = true;
 			}
 		}
-		ActivePeer peer = new ActivePeer(port, bootstrapLoc, false,
+		ActivePeer peer = new ActivePeer(port, bootstrapLoc, logging,
 				valueFactory, DEFAULT_LOOKUP_CONCURRENCY);
 		peer.init(hostname);
-		while(true)
+		while (true) {
 			Thread.sleep(60000);
+		}
 	}
 }

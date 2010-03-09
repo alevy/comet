@@ -32,8 +32,7 @@ import java.io.File;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
-import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFileManagerException;
+import com.aelitis.azureus.core.diskmanager.cache.*;
 import com.aelitis.azureus.core.diskmanager.file.FMFile;
 import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
 
@@ -85,6 +84,21 @@ CacheFileWithoutCache
 	}
 	
 	public void
+	renameFile(
+		String		new_file )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			file.renameFile( new_file );
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+		}	
+	}
+	
+	public void
 	setAccessMode(
 		int		mode )
 	
@@ -114,7 +128,7 @@ CacheFileWithoutCache
 	{
 		try{
 			
-			file.setStorageType( type==CT_COMPACT?FMFile.FT_COMPACT:FMFile.FT_LINEAR );
+			file.setStorageType( CacheFileManagerImpl.convertCacheToFileType( type ));
 			
 		}catch( FMFileManagerException e ){
 			
@@ -125,7 +139,7 @@ CacheFileWithoutCache
 	public int
 	getStorageType()
 	{
-		return( file.getStorageType()==FMFile.FT_COMPACT?CT_COMPACT:CT_LINEAR );
+		return( CacheFileManagerImpl.convertFileToCacheType( file.getStorageType()));
 	}
 
 	public long
@@ -163,6 +177,22 @@ CacheFileWithoutCache
 		try{
 						
 			file.setLength( length );
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+		}
+	}
+	
+	public void
+	setPieceComplete(
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			file.setPieceComplete( piece_number, piece_data );
 			
 		}catch( FMFileManagerException e ){
 			

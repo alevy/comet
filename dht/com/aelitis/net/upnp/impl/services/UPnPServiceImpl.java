@@ -27,19 +27,13 @@ package com.aelitis.net.upnp.impl.services;
  *
  */
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
 
-import com.aelitis.net.upnp.UPnPAction;
-import com.aelitis.net.upnp.UPnPDevice;
-import com.aelitis.net.upnp.UPnPException;
-import com.aelitis.net.upnp.UPnPService;
-import com.aelitis.net.upnp.UPnPStateVariable;
+import com.aelitis.net.upnp.*;
 import com.aelitis.net.upnp.impl.device.UPnPDeviceImpl;
 import com.aelitis.net.upnp.services.UPnPSpecificService;
 
@@ -85,6 +79,41 @@ UPnPServiceImpl
 	getServiceType()
 	{
 		return( service_type );
+	}
+	
+	public boolean 
+	isConnectable() 
+	{
+		try{
+			URL url = getControlURL();
+			
+			Socket socket = new Socket();
+			
+			try{
+				int	port = url.getPort();
+				
+				if ( port <= 0 ){
+					
+					port = url.getDefaultPort();
+				}
+				
+				socket.connect( new InetSocketAddress( url.getHost(), port ), 5000 );
+				
+				return( true );
+				
+			}finally{
+				
+				try{
+					socket.close();
+					
+				}catch( Throwable e ){
+					
+				}
+			}
+		}catch( Throwable e ){
+						
+			return( false );
+		}
 	}
 	
 	public UPnPAction[]
@@ -267,6 +296,10 @@ UPnPServiceImpl
 		}else if ( service_type.equalsIgnoreCase("urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1")){
 			
 			return( new UPnPSSWANCommonInterfaceConfigImpl( this ));
+			
+		}else if ( service_type.equalsIgnoreCase("urn:schemas-upnp-org:service:VuzeOfflineDownloaderService:1")){
+			
+			return( new UPnPSSOfflineDownloaderImpl( this ));
 			
 		}else{
 			

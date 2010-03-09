@@ -21,21 +21,23 @@
 
 package org.gudy.azureus2.pluginsimpl.local.logging;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-
 import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.LogRelation;
+
+/**
+ * @author parg
+ *
+ */
+
+import java.util.*;
+
+import org.gudy.azureus2.plugins.logging.*;
+import org.gudy.azureus2.plugins.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.AEDiagnostics;
 import org.gudy.azureus2.core3.util.AEDiagnosticsLogger;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.logging.Logger;
-import org.gudy.azureus2.plugins.logging.LoggerChannel;
-import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
 
 public class 
 LoggerChannelImpl 
@@ -84,9 +86,24 @@ LoggerChannelImpl
 	public void
 	setDiagnostic()
 	{
+		setDiagnostic( 0, true );
+	}
+	
+	public void
+	setDiagnostic(
+		long	max_file_size,
+		boolean	timestamp )
+	{
 		if ( diagnostic_logger == null ){
 			
 			diagnostic_logger = AEDiagnostics.getLogger( FileUtil.convertOSSpecificChars( name, false ));
+			
+			if ( max_file_size > 0 ){
+				
+				diagnostic_logger.setMaxFileSize((int)max_file_size );
+			}
+			
+			diagnostic_logger.enableTimeStamp( timestamp );
 			
 			addListener(
 				new LoggerChannelListener()
@@ -164,8 +181,32 @@ LoggerChannelImpl
 	}
 	
 	public void log(Object[] relatedTo, int log_type, String data) {
+
+		String listenerData = data;
+		if (relatedTo != null) {
+			StringBuffer text = new StringBuffer();
+			for (int i = 0; i < relatedTo.length; i++) {
+				Object obj = relatedTo[i];
+
+				if (obj == null)
+					continue;
+
+				if (i > 0)
+					text.append("; ");
+
+				if (obj instanceof LogRelation) {
+					text.append(((LogRelation) obj).getRelationText());
+				} else {
+					text.append("RelatedTo[")
+					    .append(obj.toString())
+					    .append("]");
+				}
+			}
+			
+			listenerData += "\t" +  text.toString() + "] " + data;
+		}
 		
-		notifyListeners(log_type, addTimeStamp(data));
+		notifyListeners(log_type, addTimeStamp(listenerData));
 		
 		if (isEnabled() && !no_output) {
 			data = "[" + name + "] " + data;

@@ -25,19 +25,10 @@ package com.aelitis.azureus.plugins.tracker.dht;
 
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.StringTokenizer;
-import java.util.WeakHashMap;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.tracker.protocol.PRHelpers;
@@ -45,7 +36,6 @@ import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AENetworkClassifier;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.core3.util.TorrentUtils;
@@ -83,10 +73,9 @@ import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminASN;
-import com.aelitis.azureus.plugins.dht.DHTPlugin;
-import com.aelitis.azureus.plugins.dht.DHTPluginContact;
-import com.aelitis.azureus.plugins.dht.DHTPluginOperationListener;
-import com.aelitis.azureus.plugins.dht.DHTPluginValue;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
+import com.aelitis.azureus.plugins.dht.*;
 
 /**
  * @author parg
@@ -115,6 +104,11 @@ DHTTrackerPlugin
 	private static final int	INTERESTING_INIT_RAND_OTHERS	=   30*60*1000;
 	private static final int	INTERESTING_INIT_MIN_OTHERS		=    5*60*1000;
 
+	private static final int	INTERESTING_DHT_CHECK_PERIOD	= 1*60*60*1000;
+	private static final int	INTERESTING_DHT_INIT_RAND		=    5*60*1000;
+	private static final int	INTERESTING_DHT_INIT_MIN		=    2*60*1000;
+	
+	
 	private static final int	INTERESTING_AVAIL_MAX		= 8;	// won't pub if more
 	private static final int	INTERESTING_PUB_MAX_DEFAULT	= 30;	// limit on pubs
 	
@@ -136,6 +130,9 @@ DHTTrackerPlugin
 	private static final int	DL_DERIVED_MAX_TRACK		= 20;
 	private static final int	DIRECT_INJECT_PEER_MAX		= 5;
 	
+	private static boolean ADD_ASN_DERIVED_TARGET			= true;
+	private static boolean ADD_NETPOS_DERIVED_TARGETS		= false;
+	
 	private static URL	DEFAULT_URL;
 	
 	static{
@@ -148,9 +145,9 @@ DHTTrackerPlugin
 		}
 	}
 	
-	private PluginInterface		plugin_interface;
-	
-	private DHTPlugin			dht;
+	private PluginInterface			plugin_interface;
+	private BasicPluginViewModel 	model;
+	private DHTPlugin				dht;
 	
 	private TorrentAttribute 	ta_networks;
 	private TorrentAttribute 	ta_peer_sources;
@@ -158,7 +155,7 @@ DHTTrackerPlugin
 	private Map<Download,Long>		interesting_downloads 	= new HashMap<Download,Long>();
 	private int						interesting_published	= 0;
 	private int						interesting_pub_max		= INTERESTING_PUB_MAX_DEFAULT;
-	private Map<Download,Integer>	running_downloads 		= new HashMap<Download,Integer>();
+	private Map<Download,int[]>		running_downloads 		= new HashMap<Download,int[]>();
 	private Map<Download,RegistrationDetails>	registered_downloads 	= new HashMap<Download,RegistrationDetails>();
 	
 	private Map<Download,Boolean>	limited_online_tracking	= new HashMap<Download,Boolean>();
@@ -172,6 +169,8 @@ DHTTrackerPlugin
 	
 	private BooleanParameter	track_normal_when_offline;
 	private BooleanParameter	track_limited_when_online;
+	
+	private long				current_announce_interval = ANNOUNCE_MIN_DEFAULT;
 	
 	private LoggerChannel		log;
 	
@@ -208,7 +207,7 @@ DHTTrackerPlugin
 
 		UIManager	ui_manager = plugin_interface.getUIManager();
 
-		final BasicPluginViewModel model = 
+		model = 
 			ui_manager.createBasicPluginViewModel( PLUGIN_RESOURCE_ID );
 		
 		model.setConfigSectionID(PLUGIN_CONFIGSECTION_ID);
@@ -284,7 +283,7 @@ DHTTrackerPlugin
 					}
 				});
 
-		model.getStatus().setText( "Initialising" );
+		model.getStatus().setText( MessageText.getString( "ManagerItem.initializing" ));
 		
 		log.log( "Waiting for Distributed Database initialisation" );
 		
@@ -325,7 +324,7 @@ DHTTrackerPlugin
 															
 																log.log( "DDB Available" );
 																	
-																model.getStatus().setText( "Running" );
+																model.getStatus().setText( MessageText.getString( "DHTView.activity.status.false" ));
 																
 																initialise();
 																	
@@ -333,7 +332,7 @@ DHTTrackerPlugin
 																
 																log.log( "DDB Disabled" );
 																
-																model.getStatus().setText( "Disabled, Distributed database not available" );
+																model.getStatus().setText( MessageText.getString( "dht.status.disabled" ));
 																	
 																notRunning();
 															}
@@ -341,7 +340,7 @@ DHTTrackerPlugin
 																
 															log.log( "DDB Failed", e );
 																
-															model.getStatus().setText( "Failed" );
+															model.getStatus().setText( MessageText.getString( "DHTView.operations.failed" ));
 																
 															notRunning();
 															
@@ -364,7 +363,7 @@ DHTTrackerPlugin
 							
 							log.log( "DDB Plugin missing" );
 							
-							model.getStatus().setText( "Failed" );
+							model.getStatus().setText( MessageText.getString( "DHTView.operations.failed" ) );
 							
 							notRunning();
 						}
@@ -474,6 +473,14 @@ DHTTrackerPlugin
 	addDownload(
 		final Download	download )
 	{
+		
+		// bail on our low noise ones, these don't require decentralised tracking
+	
+		if ( download.getFlag( Download.FLAG_LOW_NOISE )){
+		
+			return;
+		}
+		
 		if ( track_only_decentralsed ){
 		
 			Torrent	torrent = download.getTorrent();
@@ -486,7 +493,7 @@ DHTTrackerPlugin
 				}
 			}
 		}
-		
+	
 		if ( is_running ){
 			
 			String[]	networks = download.getListAttribute( ta_networks );
@@ -528,9 +535,22 @@ DHTTrackerPlugin
 						}
 					}else{
 						
+						int	min;
+						int	rand;
+						
+						if ( TorrentUtils.isDecentralised( torrent.getAnnounceURL())){
+							
+							min		= INTERESTING_DHT_INIT_MIN;	
+							rand	= INTERESTING_DHT_INIT_RAND;
+
+						}else{
+							
+							min		= INTERESTING_INIT_MIN_OTHERS;	
+							rand	= INTERESTING_INIT_RAND_OTHERS;
+						}
+						
 						delay = plugin_interface.getUtilities().getCurrentSystemTime() + 
-									INTERESTING_INIT_MIN_OTHERS + 
-									random.nextInt( INTERESTING_INIT_RAND_OTHERS );
+									min + random.nextInt( rand );
 					}
 					
 					try{
@@ -988,28 +1008,32 @@ DHTTrackerPlugin
 			try{
 				this_mon.enter();
 	
-				Integer	existing_type = (Integer)running_downloads.get( download );
+				int[] run_data = running_downloads.get( download );
 			
 				if ( register_type != REG_TYPE_NONE ){
 				
-					if ( existing_type == null ){
+					if ( run_data == null ){
 						
 						log.log(download.getTorrent(), LoggerChannel.LT_INFORMATION,
 								"Monitoring '" + download.getName() + "': " + register_reason);
 						
-						running_downloads.put( download, new Integer( register_type ));
+						running_downloads.put( download, new int[]{ register_type, 0, 0, 0 });
 						
-					}else if ( 	existing_type.intValue() == REG_TYPE_DERIVED &&
+					}else{
+						
+						Integer	existing_type = run_data[0];
+
+						if ( 	existing_type.intValue() == REG_TYPE_DERIVED &&
 								register_type == REG_TYPE_FULL ){
 						
-							// upgrade
+								// upgrade
 						
-						running_downloads.put( download, new Integer( register_type ));
-
+							run_data[0] = register_type;
+						}
 					}
 				}else{
 					
-					if ( existing_type  != null ){
+					if ( run_data  != null ){
 						
 						log.log(download.getTorrent(), LoggerChannel.LT_INFORMATION,
 								"Not monitoring '" + download.getName() + "': "	+ register_reason);
@@ -1156,11 +1180,11 @@ DHTTrackerPlugin
 				try{ 
 					this_mon.enter();
 				
-					Integer x = (Integer)running_downloads.get( dl );
+					int[] run_data = running_downloads.get( dl );
 					
-					if ( x != null ){
+					if ( run_data != null ){
 						
-						reg_type = x.intValue();
+						reg_type = run_data[0];
 					}
 				}finally{
 					
@@ -1258,11 +1282,11 @@ DHTTrackerPlugin
 			try{ 
 				this_mon.enter();
 			
-				Integer x = (Integer)running_downloads.get( dl );
+				int[] run_data = running_downloads.get( dl );
 				
-				if ( x != null ){
+				if ( run_data != null ){
 					
-					reg_type = x.intValue();
+					reg_type = run_data[0];
 				}
 			}finally{
 				
@@ -1399,11 +1423,11 @@ DHTTrackerPlugin
 		
 					query_map.remove( dl );
 					
-					Integer x = (Integer)running_downloads.get( dl );
+					int[] run_data = running_downloads.get( dl );
 					
-					if ( x != null ){
+					if ( run_data != null ){
 						
-						reg_type = x.intValue();
+						reg_type = run_data[0];
 					}
 				}finally{
 					
@@ -1822,14 +1846,30 @@ DHTTrackerPlugin
 							int	announce_max = derived_only?ANNOUNCE_MAX_DERIVED_ONLY:ANNOUNCE_MAX;
 							
 							announce_min = Math.min( announce_min, announce_max );
-							
+								
+							current_announce_interval = announce_min;
+
 							final long	retry = announce_min + peers_found*(announce_max-announce_min)/NUM_WANT;
-																
+							
+							int download_state = download.getState();
+							
+							boolean	we_are_seeding = download_state == Download.ST_SEEDING;
+
 							try{
 								this_mon.enter();
 							
-								if ( running_downloads.containsKey( download )){
+								int[] run_data = running_downloads.get( download );
+								
+								if ( run_data != null ){
 
+									boolean full = target.getType() == REG_TYPE_FULL;
+									
+									int peer_count = we_are_seeding?leecher_count:(seed_count+leecher_count);
+									
+									run_data[1] = full?seed_count:Math.max( run_data[1], seed_count);
+									run_data[2]	= full?leecher_count:Math.max( run_data[2], leecher_count);
+									run_data[3] = full?peer_count:Math.max( run_data[3], peer_count);
+										
 									long	absolute_retry = SystemTime.getCurrentTime() + retry;
 								
 									if ( absolute_retry > max_retry[0] ){
@@ -1854,11 +1894,7 @@ DHTTrackerPlugin
 								
 								this_mon.exit();
 							}
-							
-							int download_state = download.getState();
-							
-							boolean	we_are_seeding = download_state == Download.ST_SEEDING;
-							
+														
 							putDetails put_details = details.getPutDetails();
 							
 							String	ext_address = put_details.getIPOverride();
@@ -2335,8 +2371,9 @@ DHTTrackerPlugin
 	protected void
 	processNonRegistrations()
 	{
-		Download	ready_download = null;
-	
+		Download	ready_download 				= null;
+		long		ready_download_next_check	= -1;
+		
 		long	now = plugin_interface.getUtilities().getCurrentSystemTime();
 		
 			// unfortunately getting scrape results can acquire locks and there is a vague
@@ -2360,9 +2397,9 @@ DHTTrackerPlugin
 					continue;
 				}
 				
-				Integer state = running_downloads.get( download );
+				int[] run_data = running_downloads.get( download );
 
-				if ( state == null || state.intValue() == REG_TYPE_DERIVED ){
+				if ( run_data == null || run_data[0] == REG_TYPE_DERIVED ){
 					
 						// looks like we'll need the scrape below
 					
@@ -2399,15 +2436,15 @@ DHTTrackerPlugin
 					continue;
 				}
 				
-				Integer state = running_downloads.get( download );
+				int[] run_data = running_downloads.get( download );
 				
-				if ( state == null || state.intValue() == REG_TYPE_DERIVED ){
+				if ( run_data == null || run_data[0] == REG_TYPE_DERIVED ){
 					
 					boolean	force =  torrent.wasCreatedByUs();
 					
 					if ( !force ){
 						
-						if ( !dht.isReachable()){
+						if ( false && !dht.isReachable()){
 							
 							continue;
 						}
@@ -2434,15 +2471,18 @@ DHTTrackerPlugin
 					
 					long	target = ((Long)interesting_downloads.get( download )).longValue();
 					
+					long check_period = TorrentUtils.isDecentralised( torrent.getAnnounceURL())?INTERESTING_DHT_CHECK_PERIOD:INTERESTING_CHECK_PERIOD;
+					
 					if ( target <= now ){
 						
-						ready_download	= download;
+						ready_download				= download;
+						ready_download_next_check 	= now + check_period;
 						
-						interesting_downloads.put( download, new Long( now + INTERESTING_CHECK_PERIOD ));
+						interesting_downloads.put( download, new Long( ready_download_next_check ));
 						
-					}else if ( target - now > INTERESTING_CHECK_PERIOD ){
+					}else if ( target - now > check_period ){
 						
-						interesting_downloads.put( download, new Long( now + (target%INTERESTING_CHECK_PERIOD)));
+						interesting_downloads.put( download, new Long( now + (target%check_period)));
 					}
 				}
 			}
@@ -2473,7 +2513,8 @@ DHTTrackerPlugin
 			
 				//System.out.println( "presence query for " + ready_download.getName());
 				
-				final long start = now;
+				final long start 		= now;
+				final long f_next_check = ready_download_next_check;
 				
 				dht.get(	ready_download.getTorrent().getHash(), 
 							"Presence query for '" + ready_download.getName() + "'",
@@ -2484,7 +2525,8 @@ DHTTrackerPlugin
 							new DHTPluginOperationListener()
 							{
 								private boolean diversified;
-								private int total = 0;
+								private int 	leechers = 0;
+								private int 	seeds	 = 0;
 								
 								public void
 								diversified()
@@ -2503,7 +2545,14 @@ DHTTrackerPlugin
 									DHTPluginContact	originator,
 									DHTPluginValue		value )
 								{
-									total++;
+									if (( value.getFlags() & DHTPlugin.FLAG_DOWNLOADING ) == 1 ){
+
+										leechers++;
+										
+									}else{
+										
+										seeds++;
+									}
 								}
 								
 								public void
@@ -2520,6 +2569,8 @@ DHTTrackerPlugin
 								{
 									// System.out.println( "    presence query for " + f_ready_download.getName() + "->" + total + "/div = " + diversified );
 	
+									int	total = leechers + seeds;
+									
 									log.log( f_ready_download.getTorrent(), LoggerChannel.LT_INFORMATION,
 											"Presence query for '" + f_ready_download.getName() + "': availability="+
 											(total==INTERESTING_AVAIL_MAX?(INTERESTING_AVAIL_MAX+"+"):(total+"")) + ",div=" + diversified +
@@ -2595,6 +2646,80 @@ DHTTrackerPlugin
 												});
 	
 									}
+									
+									
+									try{
+										this_mon.enter();
+									
+										int[] run_data = running_downloads.get( f_ready_download );
+										
+										if ( run_data != null ){
+
+											run_data[1] = seeds;
+											run_data[2]	= leechers;
+										}
+									}finally{
+										
+										this_mon.exit();
+									}
+									
+									f_ready_download.setScrapeResult(
+										new DownloadScrapeResult()
+										{
+											public Download
+											getDownload()
+											{
+												return( null );
+											}
+											
+											public int
+											getResponseType()
+											{
+												return( RT_SUCCESS );
+											}
+											
+											public int
+											getSeedCount()
+											{
+												return( seeds );
+											}
+											
+											public int
+											getNonSeedCount()
+											{
+												return( leechers );
+											}
+	
+											public long
+											getScrapeStartTime()
+											{
+												return( SystemTime.getCurrentTime());
+											}
+												
+											public void 
+											setNextScrapeStartTime(
+												long nextScrapeStartTime)
+											{
+											}
+											
+											public long
+											getNextScrapeStartTime()
+											{
+												return( f_next_check );
+											}
+											
+											public String
+											getStatus()
+											{
+												return( "OK" );
+											}
+	
+											public URL
+											getURL()
+											{
+												return( f_ready_download.getTorrent().getAnnounceURL());
+											}
+										});
 								}
 							});
 	
@@ -2630,7 +2755,12 @@ DHTTrackerPlugin
 			this_mon.exit();
 		}
 		
-		checkDownloadForRegistration( download, false );
+			// don't do anything if paused as we want things to just continue as they are (we would force an announce here otherwise)
+		
+		if ( !download.isPaused()){
+		
+			checkDownloadForRegistration( download, false );
+		}
 	}
  
 	public void
@@ -2676,6 +2806,7 @@ DHTTrackerPlugin
 		}
 	}
 	
+	/*
 	public DownloadScrapeResult
 	scrape(
 		byte[]		hash )
@@ -2795,6 +2926,7 @@ DHTTrackerPlugin
 					}
 				});
 	}
+	*/
 	
 	protected void
 	increaseActive(
@@ -2998,7 +3130,7 @@ DHTTrackerPlugin
 			}
 		}
 		
-		protected boolean
+		protected void
     	getTrackerTargets(
     		Download		download,
     		int				type )
@@ -3012,129 +3144,134 @@ DHTTrackerPlugin
     			result.add( new trackerTarget( torrent_hash, REG_TYPE_FULL, "" ));
     		}
     		
-    	    NetworkAdminASN net_asn = NetworkAdmin.getSingleton().getCurrentASN();
-    	      
-    	    String	as 	= net_asn.getAS();
-    	    String	asn = net_asn.getASName();
-
-    		if ( as.length() > 0 && asn.length() > 0 ){
-    			 
-    			String	key = "azderived:asn:" + as;
+    		if ( ADD_ASN_DERIVED_TARGET ){
     			
-    			try{
-    				byte[] asn_bytes = key.getBytes( "UTF-8" );
-    			
-    				byte[] key_bytes = new byte[torrent_hash.length + asn_bytes.length];
-    				
-    				System.arraycopy( torrent_hash, 0, key_bytes, 0, torrent_hash.length );
-    				
-    				System.arraycopy( asn_bytes, 0, key_bytes, torrent_hash.length, asn_bytes.length );
-    				
-    				result.add( new trackerTarget( key_bytes, REG_TYPE_DERIVED, asn + "/" + as ));
-    				
-    			}catch( Throwable e ){
-    				
-    				Debug.printStackTrace(e);
-    			}
-    		}
-    		
-    		long	now = SystemTime.getMonotonousTime();
-    		
-    		boolean	do_it;
-    		
-       		Long	metric = (Long)download.getUserData( DL_DERIVED_METRIC_KEY );
-       	 
-       		boolean	do_it_now = metric != null;
-       		
-    		if ( derived_active_start >= 0 && now - derived_active_start <= DERIVED_ACTIVE_MIN_MILLIS ){
-    			
-    			do_it = true;
-    			
-    			if ( metric == null ){
-    				
-    				metric = new Long( previous_metric );
-    			}
-    		}else{
-    			
-    			if ( do_it_now ){
-    				
-    				do_it = true;
-    				
-    			}else{
-    				
-    				derived_active_start = -1;
-    				
-    				do_it = false;
-    			}
-    		}
-    		
-    		boolean	newly_active = false;
-    		
-    		if ( do_it_now ){
-    			
-    			newly_active = derived_active_start == -1;
-    			
-    			derived_active_start = now;
-    		}
-     		  
-    		List<trackerTarget>	skipped_targets = null;
-    		
-    		if ( do_it ){
-    			
-    			previous_metric = metric.longValue();
-    			
-	    		try{
-	    			DHTNetworkPosition[] positions = getNetworkPositions();
-	    		
-	    			for (int i=0;i<positions.length;i++){
-	    				
-	    				DHTNetworkPosition pos = positions[i];
-	    				
-	    				if ( pos.getPositionType() == DHTNetworkPosition.POSITION_TYPE_VIVALDI_V2 ){
-	    					
-	    					if ( pos.isValid()){
-	    						
-	    						List<Object[]>	derived_results = getVivaldiTargets( torrent_hash, pos.getLocation());
-	    						
-	    		    			int	num_to_add = metric.intValue() * derived_results.size() / 100;
-    				 			
-	    		    			// System.out.println( download.getName() + ": metric=" + metric + ", adding=" + num_to_add );
-	    		    			
-	    						for (int j=0;j<derived_results.size();j++){
-	    							
-	    							Object[] entry = derived_results.get(j);
-	    							
-	    							// int	distance = ((Integer)entry[0]).intValue();
-	    							
-	    							trackerTarget	target= (trackerTarget)entry[1];
-	    								    						
-	    							if ( j < num_to_add ){
-	    							
-	    								result.add( target );
-	    								
-	    							}else{
-	    								
-	    								if ( skipped_targets == null ){
-	    									
-	    									skipped_targets = new ArrayList<trackerTarget>();
-	    								}
-	    								
-	    								skipped_targets.add( target );
-	    							}
-	    						}
-	    					}
-	    				}
-	    			}
-	    		}catch( Throwable e ){
+	    	    NetworkAdminASN net_asn = NetworkAdmin.getSingleton().getCurrentASN();
+	    	      
+	    	    String	as 	= net_asn.getAS();
+	    	    String	asn = net_asn.getASName();
+	
+	    		if ( as.length() > 0 && asn.length() > 0 ){
+	    			 
+	    			String	key = "azderived:asn:" + as;
 	    			
-	    			Debug.printStackTrace(e);
+	    			try{
+	    				byte[] asn_bytes = key.getBytes( "UTF-8" );
+	    			
+	    				byte[] key_bytes = new byte[torrent_hash.length + asn_bytes.length];
+	    				
+	    				System.arraycopy( torrent_hash, 0, key_bytes, 0, torrent_hash.length );
+	    				
+	    				System.arraycopy( asn_bytes, 0, key_bytes, torrent_hash.length, asn_bytes.length );
+	    				
+	    				result.add( new trackerTarget( key_bytes, REG_TYPE_DERIVED, asn + "/" + as ));
+	    				
+	    			}catch( Throwable e ){
+	    				
+	    				Debug.printStackTrace(e);
+	    			}
 	    		}
     		}
     		
-    		put_targets 	= result.toArray( new trackerTarget[result.size()]);
-    		not_put_targets = skipped_targets;
+    		if ( ADD_NETPOS_DERIVED_TARGETS ){
+	    			
+	    		long	now = SystemTime.getMonotonousTime();
+	    		
+	    		boolean	do_it;
+	    		
+	       		Long	metric = (Long)download.getUserData( DL_DERIVED_METRIC_KEY );
+	       	 
+	       		boolean	do_it_now = metric != null;
+	       		
+	    		if ( derived_active_start >= 0 && now - derived_active_start <= DERIVED_ACTIVE_MIN_MILLIS ){
+	    			
+	    			do_it = true;
+	    			
+	    			if ( metric == null ){
+	    				
+	    				metric = new Long( previous_metric );
+	    			}
+	    		}else{
+	    			
+	    			if ( do_it_now ){
+	    				
+	    				do_it = true;
+	    				
+	    			}else{
+	    				
+	    				derived_active_start = -1;
+	    				
+	    				do_it = false;
+	    			}
+	    		}
+	    		
+	    		boolean	newly_active = false;
+	    		
+	    		if ( do_it_now ){
+	    			
+	    			newly_active = derived_active_start == -1;
+	    			
+	    			derived_active_start = now;
+	    		}
+	     		  
+	    		List<trackerTarget>	skipped_targets = null;
+	    		
+	    		if ( do_it ){
+	    			
+	    			previous_metric = metric.longValue();
+	    			
+		    		try{
+		    			DHTNetworkPosition[] positions = getNetworkPositions();
+		    		
+		    			for (int i=0;i<positions.length;i++){
+		    				
+		    				DHTNetworkPosition pos = positions[i];
+		    				
+		    				if ( pos.getPositionType() == DHTNetworkPosition.POSITION_TYPE_VIVALDI_V2 ){
+		    					
+		    					if ( pos.isValid()){
+		    						
+		    						List<Object[]>	derived_results = getVivaldiTargets( torrent_hash, pos.getLocation());
+		    						
+		    		    			int	num_to_add = metric.intValue() * derived_results.size() / 100;
+	    				 			
+		    		    			// System.out.println( download.getName() + ": metric=" + metric + ", adding=" + num_to_add );
+		    		    			
+		    						for (int j=0;j<derived_results.size();j++){
+		    							
+		    							Object[] entry = derived_results.get(j);
+		    							
+		    							// int	distance = ((Integer)entry[0]).intValue();
+		    							
+		    							trackerTarget	target= (trackerTarget)entry[1];
+		    								    						
+		    							if ( j < num_to_add ){
+		    							
+		    								result.add( target );
+		    								
+		    							}else{
+		    								
+		    								if ( skipped_targets == null ){
+		    									
+		    									skipped_targets = new ArrayList<trackerTarget>();
+		    								}
+		    								
+		    								skipped_targets.add( target );
+		    							}
+		    						}
+		    					}
+		    				}
+		    			}
+		    		}catch( Throwable e ){
+		    			
+		    			Debug.printStackTrace(e);
+		    		}
+	    		}
     		
-    		return( newly_active );
+	    		not_put_targets = skipped_targets;
+    		}
+    		
+	    	put_targets 	= result.toArray( new trackerTarget[result.size()]);
     	}
 	}
 	
@@ -3154,6 +3291,191 @@ DHTTrackerPlugin
 		}
 		
 		return( res );
+	}
+	
+	public TrackerPeerSource
+	getTrackerPeerSource(
+		final Download		download )
+	{
+		return(
+			new TrackerPeerSourceAdapter()
+			{
+				private long	last_fixup;
+				private boolean	updating;
+				private int		status		= ST_UNKNOWN;
+				private long	next_time	= -1;
+				private int[]	run_data;
+				
+				private void
+				fixup()
+				{
+					long now = SystemTime.getMonotonousTime();
+					
+					if ( now - last_fixup > 5*1000 ){
+				
+						try{
+							this_mon.enter();
+							
+							updating 	= false;
+							next_time	= -1;
+							
+							run_data = running_downloads.get( download );
+							
+							if ( run_data != null ){
+								
+								if ( in_progress.containsKey( download )){
+									
+									updating = true;
+								}
+								
+								status = initialised_sem.isReleasedForever()?ST_ONLINE:ST_STOPPED;
+								
+								Long l_next_time = query_map.get( download );
+								
+								if ( l_next_time != null ){
+									
+									next_time = l_next_time.longValue();
+								}
+							}else if ( interesting_downloads.containsKey( download )){
+								
+								status = ST_STOPPED;
+								
+							}else{
+								
+								status = ST_DISABLED;
+							}
+						}finally{
+							
+							this_mon.exit();
+						}
+											
+						String[]	sources = download.getListAttribute( ta_peer_sources );
+
+						boolean	ok = false;
+						
+						for (int i=0;i<sources.length;i++){
+							
+							if ( sources[i].equalsIgnoreCase( "DHT")){
+								
+								ok	= true;
+								
+								break;
+							}
+						}
+						
+						if ( !ok ){
+							
+							status = ST_DISABLED;
+						}
+						
+						last_fixup = now;
+					}
+				}
+				
+				public int
+				getType()
+				{
+					return( TP_DHT );
+				}
+				
+				public String
+				getName()
+				{
+					return( "DHT: " + model.getStatus().getText());
+				}
+				
+				public int
+				getStatus()
+				{
+					fixup();
+					
+					return( status );
+				}
+				
+				public int
+				getSeedCount()
+				{
+					fixup();
+					
+					if ( run_data == null ){
+						
+						return( -1 );
+					}
+					
+					return( run_data[1] );
+				}
+				
+				public int
+				getLeecherCount()
+				{
+					fixup();
+					
+					if ( run_data == null ){
+						
+						return( -1 );
+					}
+					
+					return( run_data[2] );
+				}
+				
+				public int
+				getPeers()
+				{
+					fixup();
+					
+					if ( run_data == null ){
+						
+						return( -1 );
+					}
+					
+					return( run_data[3] );
+				}
+				
+				public int
+				getSecondsToUpdate()
+				{
+					fixup();
+					
+					if ( next_time < 0 ){
+						
+						return( -1 );
+					}
+					
+					return((int)(( next_time - SystemTime.getCurrentTime())/1000 ));
+				}
+				
+				public int
+				getInterval()
+				{
+					fixup();
+					
+					if ( run_data == null ){
+						
+						return( -1 );
+					}
+					
+					return((int)(current_announce_interval/1000));
+				}
+				
+				public int
+				getMinInterval()
+				{
+					fixup();
+					
+					if ( run_data == null ){
+						
+						return( -1 );
+					}
+					
+					return( ANNOUNCE_MIN_DEFAULT/1000 );
+				}
+				
+				public boolean
+				isUpdating()
+				{
+					return( updating );
+				}
+			});
 	}
 	
 	public static List<Object[]>

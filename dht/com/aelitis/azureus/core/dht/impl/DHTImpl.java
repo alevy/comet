@@ -22,9 +22,7 @@
 
 package com.aelitis.azureus.core.dht.impl;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Properties;
 
 import org.gudy.azureus2.core3.util.Debug;
@@ -33,9 +31,7 @@ import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
-import com.aelitis.azureus.core.dht.control.DHTControl;
-import com.aelitis.azureus.core.dht.control.DHTControlAdapter;
-import com.aelitis.azureus.core.dht.control.DHTControlFactory;
+import com.aelitis.azureus.core.dht.control.*;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncher;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
@@ -44,9 +40,7 @@ import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;
 import com.aelitis.azureus.core.dht.router.DHTRouter;
 import com.aelitis.azureus.core.dht.speed.DHTSpeedTester;
 import com.aelitis.azureus.core.dht.speed.DHTSpeedTesterFactory;
-import com.aelitis.azureus.core.dht.transport.DHTTransport;
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+import com.aelitis.azureus.core.dht.transport.*;
 
 /**
  * @author parg
@@ -114,6 +108,7 @@ DHTImpl
 					
 					public byte[][]
 					diversify(
+						String				description,
 						DHTTransportContact	cause,
 						boolean				put_operation,
 						boolean				existing,
@@ -143,7 +138,7 @@ DHTImpl
 								
 							}else{
 								
-								return( storage_adapter.createNewDiversification( cause, key, put_operation, type, exhaustive, max_depth ));
+								return( storage_adapter.createNewDiversification( description, cause, key, put_operation, type, exhaustive, max_depth ));
 							}
 						}else{
 							
@@ -216,7 +211,7 @@ DHTImpl
 		byte					flags,
 		DHTOperationListener	listener )
 	{
-		control.put( key, description, value, flags, true, listener );
+		control.put( key, description, value, flags, (byte)0, DHT.REP_FACT_DEFAULT, true, listener );
 	}
 	
 	public void
@@ -228,14 +223,41 @@ DHTImpl
 		boolean					high_priority,
 		DHTOperationListener	listener )
 	{
-		control.put( key, description, value, flags, high_priority, listener );
+		control.put( key, description, value, flags, (byte)0, DHT.REP_FACT_DEFAULT, high_priority, listener );
+	}
+	
+	public void
+	put(
+		byte[]					key,
+		String					description,
+		byte[]					value,
+		byte					flags,
+		byte					life_hours,
+		boolean					high_priority,
+		DHTOperationListener	listener )
+	{
+		control.put( key, description, value, flags, life_hours, DHT.REP_FACT_DEFAULT, high_priority, listener );
+	}
+	
+	public void
+	put(
+		byte[]					key,
+		String					description,
+		byte[]					value,
+		byte					flags,
+		byte					life_hours,
+		byte					replication_control,
+		boolean					high_priority,
+		DHTOperationListener	listener )
+	{
+		control.put( key, description, value, flags, life_hours, replication_control, high_priority, listener );
 	}
 	
 	public DHTTransportValue
 	getLocalValue(
 		byte[]		key )
 	{
-		return( control.getLocalValue( key, new byte[] {} ));
+		return( control.getLocalValue( key ));
 	}
 		
 	public void
@@ -249,7 +271,7 @@ DHTImpl
 		boolean					high_priority,
 		DHTOperationListener	listener )
 	{
-		control.get( key, getTransport().getLocalContact().getID(), new byte[] {}, description, flags, max_values, timeout, exhaustive, high_priority, listener );
+		control.get( key, description, flags, max_values, timeout, exhaustive, high_priority, listener );
 	}
 		
 	public byte[]

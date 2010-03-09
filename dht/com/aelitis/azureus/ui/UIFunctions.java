@@ -19,6 +19,7 @@
  */
 package com.aelitis.azureus.ui;
 
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 
 import com.aelitis.azureus.core.AzureusCoreComponent;
@@ -51,6 +52,10 @@ public interface UIFunctions
 	public static final int VIEW_MYTRACKER = 9;
 	public static final int VIEW_ALLPEERS = 10;
 	public static final int VIEW_DETAILED_LISTVIEW = 11;
+	public static final int VIEW_PEERS_STATS = 12;
+	
+	public static final int ACTION_FULL_UPDATE				= 1;	// arg: String - url; response Boolean - ok
+	public static final int ACTION_UPDATE_RESTART_REQUEST	= 2;	// arg: Boolean - true->no auto-select response Boolean - ok
 	
 
 	/**
@@ -110,9 +115,9 @@ public interface UIFunctions
 	public UIFunctionsUserPrompter getUserPrompter(String title, String text,
 			String[] buttons, int defaultOption);
 
-	public int promptUser(String title, String text, String[] buttons,
+	public void promptUser(String title, String text, String[] buttons,
 			int defaultOption, String rememberID, String rememberText,
-			boolean bRememberByDefault, int autoCloseInMS);
+			boolean bRememberByDefault, int autoCloseInMS, UserPrompterResultListener l);
 	
 	/**
 	 * Retrieves the class that handles periodically updating the UI
@@ -130,4 +135,30 @@ public interface UIFunctions
 	 * @since 3.1.1.1
 	 */
 	void openView(int viewID, Object datasource);
+	
+	void doSearch(String searchText);
+	
+	
+	/**
+	 * 
+	 * @param action_id
+	 * @param args
+	 * @param listener
+	 */
+	public void
+	performAction(
+		int				action_id,
+		Object			args,
+		actionListener	listener );
+	
+	interface 
+	actionListener
+	{
+		public void
+		actionComplete(
+			Object		result );
+	}
+
+	void forceNotify(int iconID, String title, String text, String details,
+			Object[] relatedObjects, int timeoutSecs);		
 }

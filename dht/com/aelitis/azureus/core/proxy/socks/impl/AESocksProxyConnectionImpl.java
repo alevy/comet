@@ -27,21 +27,13 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.HostNameToIPResolver;
 import org.gudy.azureus2.core3.util.HostNameToIPResolverListener;
 
-import com.aelitis.azureus.core.proxy.AEProxyConnection;
-import com.aelitis.azureus.core.proxy.AEProxyConnectionListener;
-import com.aelitis.azureus.core.proxy.AEProxyException;
-import com.aelitis.azureus.core.proxy.AEProxyState;
-import com.aelitis.azureus.core.proxy.socks.AESocksProxy;
-import com.aelitis.azureus.core.proxy.socks.AESocksProxyConnection;
-import com.aelitis.azureus.core.proxy.socks.AESocksProxyPlugableConnection;
-import com.aelitis.azureus.core.proxy.socks.AESocksProxyPlugableConnectionFactory;
+import com.aelitis.azureus.core.proxy.*;
+import com.aelitis.azureus.core.proxy.socks.*;
 
 /**
  * @author parg

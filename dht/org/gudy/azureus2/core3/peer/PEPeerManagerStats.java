@@ -37,6 +37,8 @@ PEPeerManagerStats
   
   	public void haveNewPiece(int pieceLength);
   
+  	public void haveNewConnection( boolean incoming );
+  	
 	public long getDataReceiveRate();
 	public long getProtocolReceiveRate();
   
@@ -49,6 +51,12 @@ PEPeerManagerStats
   	public long getTotalDataBytesReceived();
   	public long getTotalProtocolBytesReceived();
   
+	public long getTotalDataBytesSentNoLan();
+	public long getTotalProtocolBytesSentNoLan();
+  
+  	public long getTotalDataBytesReceivedNoLan();
+  	public long getTotalProtocolBytesReceivedNoLan();
+
 	public long getTotalAverage();
 
 	public long getTotalHashFailBytes();
@@ -56,4 +64,7 @@ PEPeerManagerStats
 	
 	public int getTimeSinceLastDataReceivedInSeconds();
 	public int getTimeSinceLastDataSentInSeconds();
+	
+	public int getTotalIncomingConnections();
+	public int getTotalOutgoingConnections();
 }

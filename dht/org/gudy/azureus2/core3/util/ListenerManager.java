@@ -44,45 +44,45 @@ import org.gudy.azureus2.core3.logging.Logger;
 
 
 public class 
-ListenerManager
+ListenerManager<T>
 {
 	private static final boolean TIME_LISTENERS = false;
 	
-	public static ListenerManager
+	public static <T>ListenerManager<T>
 	createManager(
-		String							name,
-		ListenerManagerDispatcher		target )
+		String										name,
+		ListenerManagerDispatcher<T>				target )
 	{
-		return( new ListenerManager( name, target, false ));
+		return( new ListenerManager<T>( name, target, false ));
 	}
 	
-	public static ListenerManager
+	public static <T>ListenerManager<T>
 	createAsyncManager(
 		String							name,
-		ListenerManagerDispatcher		target )
+		ListenerManagerDispatcher<T>	target )
 	{
-		return( new ListenerManager( name, target, true ));
+		return( new ListenerManager<T>( name, target, true ));
 	}
 	
 	
 	protected String	name;
 	
-	protected ListenerManagerDispatcher					target;
+	protected ListenerManagerDispatcher<T>				target;
 	protected ListenerManagerDispatcherWithException	target_with_exception;
 	
 	protected boolean	async;
 	protected AEThread2	async_thread;
 	
-	protected List		listeners		= new ArrayList();
+	protected List<T>			listeners		= new ArrayList<T>(0);
 	
-	protected List			dispatch_queue;
-	protected AESemaphore	dispatch_sem;
+	protected List<Object[]>	dispatch_queue;
+	protected AESemaphore		dispatch_sem;
 	
 	protected
 	ListenerManager(
-		String							_name,
-		ListenerManagerDispatcher		_target,
-		boolean							_async )
+		String								_name,
+		ListenerManagerDispatcher<T>		_target,
+		boolean								_async )
 	{
 		name	= _name;
 		target	= _target;
@@ -96,7 +96,7 @@ ListenerManager
 		if ( async ){
 			
 			dispatch_sem	= new AESemaphore("ListenerManager::"+name);
-			dispatch_queue 	= new LinkedList();
+			dispatch_queue 	= new LinkedList<Object[]>();
 			
 			if ( target_with_exception != null ){
 				
@@ -107,11 +107,11 @@ ListenerManager
 	
 	public void
 	addListener(
-		Object		listener )
+		T		listener )
 	{
 		synchronized( this ){
 			
-			ArrayList	new_listeners	= new ArrayList( listeners );
+			ArrayList<T>	new_listeners	= new ArrayList<T>( listeners );
 			
 			if (new_listeners.contains(listener)) {
 				Logger.log(new LogEvent(LogIDs.CORE, LogEvent.LT_WARNING,
@@ -150,7 +150,7 @@ ListenerManager
 	{
 		synchronized( this ){
 			
-			ArrayList	new_listeners = new ArrayList( listeners );
+			ArrayList<T>	new_listeners = new ArrayList<T>( listeners );
 			
 			new_listeners.remove( listener );
 			
@@ -169,7 +169,7 @@ ListenerManager
 	
 	public boolean
 	hasListener(
-		Object		listener )
+		T		listener )
 	{
 		synchronized( this ){
 
@@ -182,7 +182,7 @@ ListenerManager
 	{
 		synchronized( this ){
 									
-			listeners	= new ArrayList();
+			listeners	= new ArrayList<T>();
 			
 			if ( async ){
 				
@@ -195,7 +195,7 @@ ListenerManager
 		}
 	}
 	
-	public List
+	public List<T>
 	getListenersCopy()
 	{
 			// we can just return the listeners as we copy on update
@@ -254,7 +254,7 @@ ListenerManager
 				throw( new RuntimeException( "call dispatchWithException, not dispatch"));
 			}
 			
-			List	listeners_ref;
+			List<T>	listeners_ref;
 			
 			synchronized( this ){
 				
@@ -278,7 +278,7 @@ ListenerManager
 	
 		throws Throwable
 	{
-		List	listeners_ref;
+		List<T>	listeners_ref;
 		
 		synchronized( this ){
 			
@@ -290,7 +290,7 @@ ListenerManager
 	
 	public void
 	dispatch(
-		Object	listener,
+		T		listener,
 		int		type,
 		Object	value )
 	{
@@ -299,7 +299,7 @@ ListenerManager
 	
 	public void
 	dispatch(
-		Object	listener,
+		T		listener,
 		int		type,
 		Object	value,
 		boolean	blocking )
@@ -353,7 +353,7 @@ ListenerManager
 
 	protected String
 	getListenerName( 
-		Object	 listener )
+		T	 listener )
 	{
 		Class listener_class = listener.getClass();
 		
@@ -377,7 +377,7 @@ ListenerManager
 	
 	protected void
 	doDispatch(
-		Object		listener,
+		T			listener,
 		int			type,
 		Object		value )
 	{
@@ -409,7 +409,7 @@ ListenerManager
 	
 	protected void
 	doDispatchWithException(
-		Object		listener,
+		T			listener,
 		int			type,
 		Object		value )
 	
@@ -436,7 +436,7 @@ ListenerManager
 	
 	protected void
 	dispatchInternal(
-		List		listeners_ref,
+		List<T>		listeners_ref,
 		int			type,
 		Object		value )
 	
@@ -463,7 +463,7 @@ ListenerManager
 	
 	protected void
 	dispatchInternal(
-		Object		listener,
+		T			listener,
 		int			type,
 		Object		value )
 	
@@ -519,11 +519,11 @@ ListenerManager
 				try{						
 					if ( data.length == 4 ){
 					
-						dispatchInternal((List)data[0], ((Integer)data[1]).intValue(), data[2] );
+						dispatchInternal((List<T>)data[0], ((Integer)data[1]).intValue(), data[2] );
 						
 					}else{
 						
-						dispatchInternal( data[0], ((Integer)data[1]).intValue(), data[2] );
+						dispatchInternal((T)data[0], ((Integer)data[1]).intValue(), data[2] );
 					}
 					
 				}catch( Throwable e ){
@@ -543,13 +543,13 @@ ListenerManager
 		// System.out.println( "ListenerManager::dispatch thread '" + Thread.currentThread() + "' ends");
 	}
 	
-	public static void
+	public static <T>void
 	dispatchWithTimeout(
-		List							_listeners,
-		final ListenerManagerDispatcher	_dispatcher,
-		long							_timeout )
+		List<T>								_listeners,
+		final ListenerManagerDispatcher<T>	_dispatcher,
+		long								_timeout )
 	{
-		final List	listeners = new ArrayList( _listeners );
+		final List<T>	listeners = new ArrayList<T>( _listeners );
 		
 		final boolean[]	completed = new boolean[listeners.size()];
 		

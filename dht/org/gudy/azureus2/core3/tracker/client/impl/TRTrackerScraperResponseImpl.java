@@ -27,7 +27,7 @@ package org.gudy.azureus2.core3.tracker.client.impl;
  */
 
 
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
+import org.gudy.azureus2.core3.tracker.client.*;
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.StringInterner;

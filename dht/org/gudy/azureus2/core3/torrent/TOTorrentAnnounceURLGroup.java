@@ -21,7 +21,7 @@
 
 package org.gudy.azureus2.core3.torrent;
 
-import java.net.URL;
+import java.net.*;
 
 public interface 
 TOTorrentAnnounceURLGroup 

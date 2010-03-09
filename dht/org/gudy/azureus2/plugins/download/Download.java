@@ -24,14 +24,14 @@ package org.gudy.azureus2.plugins.download;
 import java.io.File;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.disk.DiskManager;
-import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.plugins.download.savelocation.DefaultSaveLocationManager;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationChange;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationManager;
-import org.gudy.azureus2.plugins.peers.PeerManager;
 import org.gudy.azureus2.plugins.torrent.Torrent;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.plugins.disk.DiskManager;
+import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
+import org.gudy.azureus2.plugins.peers.PeerManager;
 
 /**
  * Management of a Torrent's activity.
@@ -199,6 +199,14 @@ Download extends DownloadEventNotifier
 	 */
 	public void setFlag(long flag, boolean set);
 
+	/**
+	 * get all the flags as a bitmap
+	 * @since 4209
+	 * @return
+	 */
+	
+	public long
+	getFlags();
 	
 	/**
 	 * Index of download. {@link #getPosition()}

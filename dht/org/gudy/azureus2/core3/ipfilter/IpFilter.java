@@ -28,9 +28,9 @@ package org.gudy.azureus2.core3.ipfilter;
  * 
  */
 
+import java.util.List;
 import java.io.File;
 import java.net.InetAddress;
-import java.util.List;
 
 
 public interface 

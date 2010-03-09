@@ -27,24 +27,15 @@ package org.gudy.azureus2.ui.swt.views.configsections;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.UISwitcherUtil;
 import org.gudy.azureus2.ui.swt.config.BooleanParameter;
 import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
-import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
-
-import com.aelitis.azureus.ui.UIFunctions;
-import com.aelitis.azureus.ui.UIFunctionsManager;
 
 public class ConfigSectionInterfaceStart implements UISWTConfigSection {
   public String configSectionGetParentSection() {
@@ -77,6 +68,12 @@ public class ConfigSectionInterfaceStart implements UISWTConfigSection {
     layout.numColumns = 1;
     cStart.setLayout(layout);
 
+		int userMode = COConfigurationManager.getIntParameter("User Mode");
+		boolean isAZ3 = COConfigurationManager.getStringParameter("ui").equals("az3");
+
+		if (userMode >= 2) {
+			new BooleanParameter(cStart, "ui.startfirst", "ConfigView.label.StartUIBeforeCore");
+		}
     new BooleanParameter(cStart, "Show Splash", "ConfigView.label.showsplash");
     new BooleanParameter(cStart, "update.start", "ConfigView.label.checkonstart");
     new BooleanParameter(cStart, "update.periodic", "ConfigView.label.periodiccheck");
@@ -87,18 +84,15 @@ public class ConfigSectionInterfaceStart implements UISWTConfigSection {
 				new Control[] { openDialog.getControl() }, true ));
     
     new Label(cStart,SWT.NULL);
-    new BooleanParameter(cStart, "Open MyTorrents", "ConfigView.label.openmytorrents");
-    new BooleanParameter(cStart, "Open Console", "ConfigView.label.openconsole");
-    new BooleanParameter(cStart, "Open Stats On Start", "ConfigView.label.openstatsonstart");
-    new BooleanParameter(cStart, "Open Config", "ConfigView.label.openconfig");
+    if (!isAZ3) {
+      new BooleanParameter(cStart, "Open MyTorrents", "ConfigView.label.openmytorrents");
+      new BooleanParameter(cStart, "Open Console", "ConfigView.label.openconsole");
+      new BooleanParameter(cStart, "Open Stats On Start", "ConfigView.label.openstatsonstart");
+      new BooleanParameter(cStart, "Open Config", "ConfigView.label.openconfig");
+    }
     new BooleanParameter(cStart, "Open Transfer Bar On Start", "ConfigView.label.open_transfer_bar_on_start");
     new BooleanParameter(cStart, "Start Minimized", "ConfigView.label.startminimized");
     
-    if (COConfigurationManager.getStringParameter("ui").equals("az3")) {
-			new BooleanParameter(cStart, "v3.Start Advanced",
-					"ConfigView.interface.start.library");
-		}
-  
 	// UI switcher window.
     Composite cUISwitcher = new Composite(cStart, SWT.NONE);
     layout = new GridLayout(2, false);
@@ -115,23 +109,7 @@ public class ConfigSectionInterfaceStart implements UISWTConfigSection {
 
 		ui_switcher_button.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
-				String uiOld = COConfigurationManager.getStringParameter("ui");
-				String uiNew = UISwitcherUtil.openSwitcherWindow(true);
-				if (!uiOld.equals(uiNew)) {
-  				int result = MessageBoxShell.open(parent.getShell(),
-  						MessageText.getString("dialog.uiswitcher.restart.title"),
-  						MessageText.getString("dialog.uiswitcher.restart.text"),
-  						new String[] {
-  							MessageText.getString("UpdateWindow.restart"),
-  							MessageText.getString("UpdateWindow.restartLater"),
-  						}, 0);
-  				if (result == 0) {
-  					UIFunctions uif = UIFunctionsManager.getUIFunctions();
-  					if (uif != null) {
-  						uif.dispose(true, false);
-  					}
-  				}
-				}
+				UISwitcherUtil.openSwitcherWindow();
 			}
 		});
     

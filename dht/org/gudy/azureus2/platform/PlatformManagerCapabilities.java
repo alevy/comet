@@ -52,8 +52,12 @@ public final class PlatformManagerCapabilities
     
     public static final PlatformManagerCapabilities ComputerIDAvailability = new PlatformManagerCapabilities("CID");
 
-    public static final PlatformManagerCapabilities RequestUserAttention = new PlatformManagerCapabilities("RequestUserAttention");
+    public static final PlatformManagerCapabilities RequestUserAttention 	= new PlatformManagerCapabilities("RequestUserAttention");
     
+    public static final PlatformManagerCapabilities AccessExplicitVMOptions = new PlatformManagerCapabilities("AccessExplicitVMOptions");
+    
+    public static final PlatformManagerCapabilities RunAtLogin				= new PlatformManagerCapabilities("RunAtLogin");
+
     private final String myName; // for debug only
 
     private PlatformManagerCapabilities(String name)

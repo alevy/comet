@@ -22,10 +22,9 @@
 
 package com.aelitis.azureus.core.util.bloom;
 
-import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddOnly;
-import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddRemove4Bit;
-import com.aelitis.azureus.core.util.bloom.impl.BloomFilterAddRemove8Bit;
-import com.aelitis.azureus.core.util.bloom.impl.BloomFilterRotator;
+import java.util.Map;
+
+import com.aelitis.azureus.core.util.bloom.impl.*;
 
 public class 
 BloomFilterFactory 
@@ -71,5 +70,12 @@ BloomFilterFactory
 		{
 			return( new BloomFilterRotator( basis, number ));
 		}
+	}
+	
+	public static BloomFilter
+	deserialiseFromMap(
+		Map<String,Object>	map )
+	{
+		return( BloomFilterImpl.deserialiseFromMap(map));
 	}
 }

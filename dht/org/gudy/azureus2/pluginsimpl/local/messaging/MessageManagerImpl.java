@@ -24,28 +24,18 @@ package org.gudy.azureus2.pluginsimpl.local.messaging;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadManagerListener;
-import org.gudy.azureus2.plugins.download.DownloadPeerListener;
-import org.gudy.azureus2.plugins.messaging.Message;
-import org.gudy.azureus2.plugins.messaging.MessageException;
-import org.gudy.azureus2.plugins.messaging.MessageManager;
-import org.gudy.azureus2.plugins.messaging.MessageManagerListener;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.messaging.*;
 import org.gudy.azureus2.plugins.messaging.generic.GenericMessageConnection;
 import org.gudy.azureus2.plugins.messaging.generic.GenericMessageEndpoint;
 import org.gudy.azureus2.plugins.messaging.generic.GenericMessageHandler;
 import org.gudy.azureus2.plugins.messaging.generic.GenericMessageRegistration;
-import org.gudy.azureus2.plugins.peers.Peer;
-import org.gudy.azureus2.plugins.peers.PeerListener;
-import org.gudy.azureus2.plugins.peers.PeerManager;
-import org.gudy.azureus2.plugins.peers.PeerManagerListener;
+import org.gudy.azureus2.plugins.peers.*;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.nat.NATTraversalHandler;

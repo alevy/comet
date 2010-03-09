@@ -35,9 +35,10 @@ import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
 
 public class
 CacheFileWithoutCacheMT
-implements CacheFile
+	implements CacheFile
 {
 	private static final int MAX_CLONES	= 20;
+	
 	private static int	num_clones;
 	private static int	max_clone_depth;
 	
@@ -46,7 +47,8 @@ implements CacheFile
 	private FMFile[]					files;
 	private int[]						files_use_count;
 	private TOTorrentFile				torrent_file;
-
+	private boolean						moving;
+	
 	protected
 	CacheFileWithoutCacheMT(
 		CacheFileManagerImpl	_manager,
@@ -80,8 +82,161 @@ implements CacheFile
 	
 		throws CacheFileManagerException
 	{
-		throw( new CacheFileManagerException( this, "Not Implemented" ));
+		try{
+			synchronized( this ){
+
+				moving = true;
+			}
+			
+			while( true ){
+								
+				synchronized( this ){
+				
+					boolean	surviving = false;
+
+					for (int i=1;i<files_use_count.length;i++){
+						
+						if ( files_use_count[i] > 0 ){
+							
+							surviving = true;
+							
+							break;
+						}
+					}
+				
+					if ( !surviving ){
+						
+						for (int i=1;i<files_use_count.length;i++){
+							
+							FMFile file = files[i];
+							
+							if ( file.isClone()){
+								
+								// System.out.println( "Destroyed clone " + file.getName());
+								
+								synchronized( CacheFileWithoutCacheMT.class ){
+									
+									num_clones--;
+								}
+							}
+							
+							file.close();
+						}
+						
+						files = new FMFile[]{ base_file };
+						
+						files_use_count = new int[]{ files_use_count[0] };
+						
+						base_file.moveFile( new_file );
+	
+						break;
+					}
+				}
+				
+				try{
+					System.out.println( "CacheFileWithoutCacheMT: waiting for clones to die" );
+					
+					Thread.sleep(250);
+					
+				}catch( Throwable e ){
+					
+				}
+			}
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+			
+		}finally{
+			
+			synchronized( this ){
+
+				moving = false;
+			}
+		}
 	}
+	
+	public void
+	renameFile(
+		String		new_file )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			synchronized( this ){
+
+				moving = true;
+			}
+			
+			while( true ){
+								
+				synchronized( this ){
+				
+					boolean	surviving = false;
+
+					for (int i=1;i<files_use_count.length;i++){
+						
+						if ( files_use_count[i] > 0 ){
+							
+							surviving = true;
+							
+							break;
+						}
+					}
+				
+					if ( !surviving ){
+						
+						for (int i=1;i<files_use_count.length;i++){
+							
+							FMFile file = files[i];
+							
+							if ( file.isClone()){
+								
+								// System.out.println( "Destroyed clone " + file.getName());
+								
+								synchronized( CacheFileWithoutCacheMT.class ){
+									
+									num_clones--;
+								}
+							}
+							
+							file.close();
+						}
+						
+						files = new FMFile[]{ base_file };
+						
+						files_use_count = new int[]{ files_use_count[0] };
+						
+						base_file.renameFile( new_file );
+	
+						break;
+					}
+				}
+				
+				try{
+					System.out.println( "CacheFileWithoutCacheMT: waiting for clones to die" );
+					
+					Thread.sleep(250);
+					
+				}catch( Throwable e ){
+					
+				}
+			}
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+			
+		}finally{
+			
+			synchronized( this ){
+
+				moving = false;
+			}
+		}
+	}
+	
+	
 	
 	public void
 	setAccessMode(
@@ -121,7 +276,7 @@ implements CacheFile
 	public int
 	getStorageType()
 	{
-		return( base_file.getStorageType()==FMFile.FT_COMPACT?CT_COMPACT:CT_LINEAR );
+		return( CacheFileManagerImpl.convertFileToCacheType( base_file.getStorageType()));
 	}
 
 	public long
@@ -165,12 +320,35 @@ implements CacheFile
 		}
 	}
 	
+	public void
+	setPieceComplete(
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			base_file.setPieceComplete( piece_number, piece_data );
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+		}
+	}
+	
 	protected FMFile
 	getFile()
 	
 		throws CacheFileManagerException
 	{
 		synchronized( this ){
+			
+			if ( moving ){
+				
+				files_use_count[0]++;
+				
+				return( files[0] );
+			}
 			
 			int	min_index	= -1;
 			int	min			= Integer.MAX_VALUE;
@@ -209,14 +387,14 @@ implements CacheFile
 					
 					if ( num_clones % 100 == 0 ){
 						
-						System.out.println( "File clones=" + num_clones );
+						//System.out.println( "File clones=" + num_clones );
 					}
 					
 					if ( new_num == MAX_CLONES || new_num > max_clone_depth ){
 						
 						max_clone_depth = new_num;
 						
-						System.out.println( "Clone depth of " + new_num + " for " + clone.getName());
+						//System.out.println( "Clone depth of " + new_num + " for " + clone.getName());
 					}
 				}
 

@@ -27,7 +27,7 @@ package com.aelitis.net.upnp.impl;
  *
  */
 
-import com.aelitis.net.upnp.UPnPException;
+import com.aelitis.net.upnp.*;
 
 public interface 
 SSDPIGD 

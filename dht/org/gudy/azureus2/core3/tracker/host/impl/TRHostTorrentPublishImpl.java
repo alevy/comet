@@ -26,22 +26,12 @@ package org.gudy.azureus2.core3.tracker.host.impl;
  *
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperFactory;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.tracker.host.TRHostException;
-import org.gudy.azureus2.core3.tracker.host.TRHostPeer;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrent;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrentListener;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrentRemovalVetoException;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrentRequest;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrentWillBeRemovedListener;
+import org.gudy.azureus2.core3.tracker.host.*;
 import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrent;
+import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
 

@@ -20,7 +20,10 @@
  */
 package org.gudy.azureus2.core3.util;
 
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -34,23 +37,24 @@ Constants
 {
   public static final String EMPTY_STRING = "";
   public static final String SF_WEB_SITE			= "http://azureus.sourceforge.net/";
-  //public static final String AELITIS_WEB_SITE   	= "http://azureus.aelitis.com/";  
-  //public static final String GETAZUREUS_WEB_SITE	= "http://www.getazureus.com/";
+ 
+  public static final String AELITIS_TORRENTS		= "http://torrent.vuze.com/torrents/";
+  public static final String AELITIS_FILES			= "http://torrent.vuze.com/files/";
+  public static final String AZUREUS_WIKI 			= "http://wiki.vuze.com/w/";
   
-  public static final String AELITIS_TORRENTS		= "http://torrents.aelitis.com:88/torrents/";
-  public static final String AELITIS_FILES			= "http://torrents.aelitis.com:88/files/";
-  public static final String AZUREUS_WIKI 			= "http://www.azureuswiki.com/index.php/";
-  
-  public static final String  VERSION_SERVER_V4 	= "version.azureusplatform.com";
-  public static final String  VERSION_SERVER_V6 	= "version6.azureusplatform.com";
+  public static final String  VERSION_SERVER_V4 	= "version.vuze.com";
+  public static final String  VERSION_SERVER_V6 	= "version6.vuze.com";
 
-  public static final String DHT_SEED_ADDRESS_V4	= "dht.aelitis.com";
-  public static final String DHT_SEED_ADDRESS_V6	= "dht6.azureusplatform.com";
+  public static final String DHT_SEED_ADDRESS_V4	= "dht.vuze.com";
+  public static final String DHT_SEED_ADDRESS_V6	= "dht6.vuze.com";
   
-  public static final String NAT_TEST_SERVER		= "nettest.azureusplatform.com";
-  public static final String NAT_TEST_SERVER_HTTP	= "http://nettest.azureusplatform.com/";
+  public static final String NAT_TEST_SERVER		= "nettest.vuze.com";
+  public static final String NAT_TEST_SERVER_HTTP	= "http://nettest.vuze.com/";
    
-  public static final String SPEED_TEST_SERVER		= "speed.azureusplatform.com";
+  public static final String SPEED_TEST_SERVER		= "speedtest.vuze.com";
+  
+  public static final String PAIRING_URL			= "http://pair.vuze.com/pairing";
+
   
   public static final String[] AZUREUS_DOMAINS = { "azureusplatform.com", "azureus.com", "aelitis.com", "vuze.com" };
   
@@ -70,9 +74,11 @@ Constants
 	}
   }
   
+  public static final Locale LOCALE_ENGLISH = new Locale("en", "");
+  
   public static final String INFINITY_STRING	= "\u221E"; // "oo";pa  
-  public static final int    INFINITY_AS_INT = 365*24*3600; // seconds (365days)
-  public static final long   INFINITE_AS_LONG = 10000*365*24*3600; // seconds (10k years)
+  public static final int    CRAPPY_INFINITY_AS_INT  = 365*24*3600; // seconds (365days)
+  public static final long   CRAPPY_INFINITE_AS_LONG = 10000*365*24*3600; // seconds (10k years)
   
   	// keep the CVS style constant coz version checkers depend on it!
   	// e.g. 2.0.8.3
@@ -81,9 +87,13 @@ Constants
   
   public static String APP_NAME = "Vuze";
   public static final String AZUREUS_NAME	  = "Azureus";
-  public static final String AZUREUS_VERSION  = "4.1.0.5_CVS";  //4.1.0.5_CVS
-  public static final byte[] VERSION_ID       = ("-" + "AZ" + "4105" + "-").getBytes();  //MUST be 8 chars long!
+  public static final String AZUREUS_VERSION  = "4.3.1.4";  //4.3.1.4
+  public static final String AZUREUS_SUBVER	  = "";
+  public static final byte[] VERSION_ID       = ("-" + "AZ" + "4314" + "-").getBytes();  //MUST be 8 chars long!
+
+  private static final boolean FORCE_NON_CVS = System.getProperty( "az.force.noncvs", "0" ).equals( "1" );
   
+  public static final boolean IS_CVS_VERSION = isCVSVersion( AZUREUS_VERSION ) && !FORCE_NON_CVS;
   
   public static final String  OSName = System.getProperty("os.name");
   
@@ -92,9 +102,9 @@ Constants
   public static final boolean isSolaris			= OSName.equalsIgnoreCase("SunOS");
   public static final boolean isFreeBSD			= OSName.equalsIgnoreCase("FreeBSD");
   public static final boolean isWindowsXP		= OSName.equalsIgnoreCase("Windows XP");
-  public static final boolean isWindowsVista 	= OSName.equalsIgnoreCase("Windows Vista");
   public static final boolean isWindows95		= OSName.equalsIgnoreCase("Windows 95");
   public static final boolean isWindows98		= OSName.equalsIgnoreCase("Windows 98");
+  public static final boolean isWindows2000		= OSName.equalsIgnoreCase("Windows 2000");
   public static final boolean isWindowsME		= OSName.equalsIgnoreCase("Windows ME");
   public static final boolean isWindows9598ME	= isWindows95 || isWindows98 || isWindowsME;
   
@@ -104,6 +114,131 @@ Constants
   // If it isn't windows or osx, it's most likely an unix flavor
   public static final boolean isUnix = !isWindows && !isOSX;
  
+  public static final boolean isWindowsVista;
+  public static final boolean isWindowsVistaSP2OrHigher;
+  public static final boolean isWindowsVistaOrHigher;
+  public static final boolean isWindows7OrHigher;
+  
+  
+  static{
+
+	  if ( isWindows ){
+
+		  Float ver = null;
+
+		  try{
+			  ver = new Float( System.getProperty( "os.version" ));
+
+		  }catch (Throwable e){
+		  }
+
+		  boolean vista_sp2_or_higher	= false;
+
+		  if ( ver == null ){
+			  
+			  isWindowsVista			= false;
+			  isWindowsVistaOrHigher 	= false;
+			  isWindows7OrHigher		= false;
+			  
+		  }else{
+			  float f_ver = ver.floatValue();
+			  	
+			  isWindowsVista			= f_ver == 6;
+			  isWindowsVistaOrHigher 	= f_ver >= 6;
+			  isWindows7OrHigher	 	= f_ver >= 6.1f;
+		  
+			  if ( isWindowsVista ){
+			  
+		            LineNumberReader lnr = null;
+		            
+		    	    try{
+		    	        Process p = 
+		    	        	Runtime.getRuntime().exec( 
+		    	        		new String[]{
+		    	        				"reg",
+		    	        				"query",
+		    	        				"HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion",
+		    	        				"/v",
+		    	        				"CSDVersion" });
+		              
+		    	        lnr = new LineNumberReader( new InputStreamReader( p.getInputStream()));
+		    	        		    	        
+		    	        while( true ){
+		    	        	
+		    	        	String	line = lnr.readLine();
+		    	        	
+		    	        	if ( line == null ){
+		    	        		
+		    	        		break;
+		    	        	}
+		    	        	
+		    	            if ( line.matches( ".*CSDVersion.*" )){
+		    	            	
+		    	            	vista_sp2_or_higher = line.matches( ".*Service Pack [2-9]" );
+		    	            	
+		    	                break;
+		    	            }
+		    	        }
+		    	    }catch( Throwable e ){
+		    	    	
+		    	    }finally{
+		    	    	
+		                if ( lnr != null ){
+		                	
+		                    try{
+		                    	lnr.close();
+		                        
+		                    }catch( Throwable e ){
+		                    }
+		                }
+		            }
+		    	}
+		  }
+		  
+		  isWindowsVistaSP2OrHigher = vista_sp2_or_higher;
+	  }else{
+		  
+		  isWindowsVista			= false;
+		  isWindowsVistaSP2OrHigher	= false;
+		  isWindowsVistaOrHigher 	= false;
+		  isWindows7OrHigher 		= false;
+	  }
+  }
+  
+  public static final boolean isOSX_10_5_OrHigher;
+  public static final boolean isOSX_10_6_OrHigher;
+  
+  static{
+	  if ( isOSX ){
+		 
+		  int	first_digit 	= 0;
+		  int	second_digit	= 0;
+		  
+		  try{
+			  String os_version = System.getProperty( "os.version" );
+
+			  String[] bits = os_version.split( "\\." );
+			
+			  first_digit = Integer.parseInt( bits[0] );
+			  
+			  if ( bits.length > 1 ){
+			  
+				  second_digit = Integer.parseInt( bits[1] );
+			  }
+		  }catch( Throwable e ){
+			  
+		  }
+		  
+		  isOSX_10_5_OrHigher = first_digit > 10 || ( first_digit == 10 && second_digit >= 5 );
+		  isOSX_10_6_OrHigher = first_digit > 10 || ( first_digit == 10 && second_digit >= 6 );
+		  
+	  }else{
+		  
+		  isOSX_10_5_OrHigher = false;
+		  isOSX_10_6_OrHigher = false;
+	  }
+  }
+  
   public static final String	JAVA_VERSION = System.getProperty("java.version");
   
   public static final String	FILE_WILDCARD = isWindows?"*.*":"*";
@@ -141,7 +276,7 @@ Constants
   public static boolean
   isCVSVersion()
   {
-  	return( isCVSVersion( AZUREUS_VERSION )); 
+  	return IS_CVS_VERSION; 
   }
   
   public static boolean

@@ -26,8 +26,7 @@ package org.gudy.azureus2.core3.stats;
  *
  */
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 
 public interface 
 StatsWriterStreamer 

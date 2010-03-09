@@ -22,45 +22,16 @@
 package org.gudy.azureus2.core3.tracker.server.impl.tcp;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 import java.util.zip.GZIPOutputStream;
 
+import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.tracker.server.impl.*;
+import org.gudy.azureus2.core3.util.*;
+
 import org.bouncycastle.util.encoders.Base64;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerImpl;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerPeerImpl;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerProcessor;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerTorrentImpl;
-import org.gudy.azureus2.core3.util.AsyncController;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.HostNameToIPResolver;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.UrlUtils;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPositionManager;
@@ -129,13 +100,15 @@ TRTrackerServerProcessorTCP
 		return( server );
 	}
 	
-	protected void
+	protected boolean
 	processRequest(
 		String				input_header,
 		String				lowercase_input_header,
 		String				url_path,
-		InetSocketAddress	client_address,
+		InetSocketAddress	local_address,
+		InetSocketAddress	remote_address,
 		boolean				announce_and_scrape_only,
+		boolean				keep_alive,
 		InputStream			is,
 		OutputStream		os,
 		AsyncController		async )
@@ -199,40 +172,42 @@ TRTrackerServerProcessorTCP
 						
 							// check non-tracker authentication
 							
-						String user = doAuthentication( url_path, input_header, os, false );
+						String user = doAuthentication( remote_address, url_path, input_header, os, false );
 						
 						if ( user == null ){
 							
-							return;
+							return( false );
 						}
 						
-						if ( handleExternalRequest( client_address, user, str, input_header, is, os, async )){
+						boolean[] ka = new boolean[]{ keep_alive };
 						
-							return;
+						if ( handleExternalRequest( local_address, remote_address, user, str, input_header, is, os, async, ka )){
+						
+							return( ka[0] );
 						}
 					}
 					
 					if ( redirect.length() > 0 ){
 						
-						os.write( ("HTTP/1.1 301 Moved Permanently" + NL + "Location: " + redirect + NL + NL).getBytes() );
+						os.write( ("HTTP/1.1 301 Moved Permanently" + NL + "Location: " + redirect + NL + "Connection: close" + NL +  "Content-Length: 0" + NL + NL).getBytes() );
 						
 					}else{
 						
-						os.write( ("HTTP/1.1 404 Not Found" + NL + NL + "Page not found." + NL).getBytes() );
+						os.write( ("HTTP/1.1 404 Not Found" + NL + "Connection: close" + NL + "Content-Length: 0" + NL + NL ).getBytes() );
 					}
 					
 					os.flush();
 
-					return; // throw( new Exception( "Unsupported Request Type"));
+					return( false ); // throw( new Exception( "Unsupported Request Type"));
 				}
 				
 					// OK, here its an announce, scrape or full scrape
 				
 					// check tracker authentication
 					
-				if ( doAuthentication( url_path, input_header, os, true ) == null ){
+				if ( doAuthentication( remote_address, url_path, input_header, os, true ) == null ){
 					
-					return;
+					return ( false );
 				}
 				
 				
@@ -296,7 +271,7 @@ TRTrackerServerProcessorTCP
 				
 				DHTNetworkPosition	network_position = null;
 				
-				String		real_ip_address		= client_address.getAddress().getHostAddress();
+				String		real_ip_address		= remote_address.getAddress().getHostAddress();
 				String		client_ip_address	= real_ip_address;
 				
 				while(pos < str.length()){
@@ -482,7 +457,7 @@ TRTrackerServerProcessorTCP
 						if ( lhs.equals( "aznp" )){
 
 							try{
-								network_position = DHTNetworkPositionManager.deserialisePosition( client_address.getAddress(), Base32.decode( rhs ));
+								network_position = DHTNetworkPositionManager.deserialisePosition( remote_address.getAddress(), Base32.decode( rhs ));
 																
 							}catch( Throwable e ){
 								
@@ -621,8 +596,19 @@ TRTrackerServerProcessorTCP
 							String	key 	= (String)entry.getKey();
 							String	value 	= (String)entry.getValue();
 							
+							if ( key.equalsIgnoreCase( "connection" )){
+								
+								if ( !value.equalsIgnoreCase( "close" )){
+									
+									Debug.out( "Ignoring 'Connection' header" );
+									
+									continue;
+								}
+							}
 							resp += key + ": " + value + NL;
 						}
+
+						resp += "Connection: close" + NL;
 
 						byte[]	payload = null;
 						
@@ -631,8 +617,11 @@ TRTrackerServerProcessorTCP
 							payload = BEncoder.encode( error_entries );
 							
 							resp += "Content-Length: " + payload.length + NL;
+						}else{
+							
+							resp += "Content-Length: 0" + NL;
 						}
-						
+												
 						resp += NL;
 
 						os.write( resp.getBytes());
@@ -644,7 +633,7 @@ TRTrackerServerProcessorTCP
 						
 						os.flush();
 
-						return;
+						return( false );
 					}
 					
 					if ( tr_excep.isUserMessage()){
@@ -804,14 +793,17 @@ TRTrackerServerProcessorTCP
 
 			os.flush();
 		}
+		
+		return( false );
 	}
 	
 	protected String
 	doAuthentication(
-		String			url_path,
-		String			header,
-		OutputStream	os,
-		boolean			tracker )
+		InetSocketAddress	remote_ip,
+		String				url_path,
+		String				header,
+		OutputStream		os,
+		boolean				tracker )
 		
 		throws IOException
 	{
@@ -849,7 +841,7 @@ TRTrackerServerProcessorTCP
 						
 						URL	resource = new URL( resource_str );
 					
-						if ( server.performExternalAuthorisation( resource, "", "" )){
+						if ( server.performExternalAuthorisation( remote_ip, header, resource, "", "" )){
 							
 							return( "" );
 						}
@@ -887,7 +879,7 @@ TRTrackerServerProcessorTCP
 						
 						URL	resource = new URL( resource_str );
 					
-						if ( server.performExternalAuthorisation( resource, user, pw )){
+						if ( server.performExternalAuthorisation( remote_ip, header, resource, user, pw )){
 							
 							return( user );
 						}
@@ -952,18 +944,20 @@ TRTrackerServerProcessorTCP
 		
 	protected boolean
 	handleExternalRequest(
-		InetSocketAddress	client_address,
+		InetSocketAddress	local_address,
+		InetSocketAddress	remote_address,
 		String				user,
 		String				url,
 		String				header,
 		InputStream			is,
 		OutputStream		os,
-		AsyncController		async )
+		AsyncController		async,
+		boolean[]			keep_alive )
 		
 		throws IOException
 	{
 		URL	absolute_url = new URL( server_url + (url.startsWith("/")?url:("/"+url)));
 			
-		return( server.handleExternalRequest(client_address,user,url,absolute_url,header, is, os, async));
+		return( server.handleExternalRequest( local_address, remote_address, user,url,absolute_url,header, is, os, async, keep_alive ));
 	}
 }

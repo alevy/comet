@@ -1,12 +1,12 @@
 package com.aelitis.azureus.core.speedmanager.impl.v2;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.gudy.azureus2.core3.util.SystemTime;
-
 import com.aelitis.azureus.core.speedmanager.SpeedManagerPingSource;
 import com.aelitis.azureus.core.util.average.Average;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import org.gudy.azureus2.core3.util.SystemTime;
 
 /**
  * Created on May 31, 2007
@@ -222,6 +222,10 @@ public class PingSourceManager
         int len = sources.length;
         for(int i=0; i<len; i++){
             PingSourceStats pss = (PingSourceStats) pingAverages.get(sources[i]);
+            
+            if ( pss == null ){
+            	continue;
+            }
             Average a = pss.getLongTermAve();
             double avePingTime = a.getAverage();
 

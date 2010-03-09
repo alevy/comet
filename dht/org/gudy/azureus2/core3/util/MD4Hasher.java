@@ -22,7 +22,7 @@
 
 package org.gudy.azureus2.core3.util;
 
-import java.security.MessageDigest;
+import java.security.*;
 
 
 public class 

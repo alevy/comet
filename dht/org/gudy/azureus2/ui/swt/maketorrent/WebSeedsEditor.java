@@ -20,43 +20,24 @@
  */
 package org.gudy.azureus2.ui.swt.maketorrent;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TreeEditor;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
+
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 
 /**
@@ -109,7 +90,7 @@ public class WebSeedsEditor {
   private void createWindow() {
     this.display = Display.getCurrent();
     this.shell = org.gudy.azureus2.ui.swt.components.shell.ShellFactory.createShell(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
-    Messages.setLanguageText(this.shell,"wizard.multitracker.edit.title");
+    Messages.setLanguageText(this.shell,"wizard.webseedseditor.edit.title");
     Utils.setShellIcon(shell);
     GridLayout layout = new GridLayout();
     layout.numColumns = 3;
@@ -171,7 +152,7 @@ public class WebSeedsEditor {
     
     Composite cButtons = new Composite(shell, SWT.NULL);
     gridData = new GridData(GridData.FILL_HORIZONTAL);
-    gridData.horizontalSpan = 2;
+    gridData.horizontalSpan = 3;
     cButtons.setLayoutData(gridData);
     GridLayout layoutButtons = new GridLayout();
     layoutButtons.numColumns = 3;
@@ -229,9 +210,11 @@ public class WebSeedsEditor {
 	    }
     });
     
+    shell.pack();
+
     Point size = shell.computeSize(400,SWT.DEFAULT);
     shell.setSize(size);
-    
+        
     Utils.centreWindow( shell );
     
     shell.open();
@@ -335,7 +318,7 @@ public class WebSeedsEditor {
           //The Group menu
            
           MenuItem item = new MenuItem(menu,SWT.NULL);
-          Messages.setLanguageText(item,"wizard.multitracker.edit.newtracker");
+          Messages.setLanguageText(item,"wizard.webseedseditor.edit.newseed");
           item.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event arg0) {
               TreeItem itemTracker = newTracker(treeItem,"http://");

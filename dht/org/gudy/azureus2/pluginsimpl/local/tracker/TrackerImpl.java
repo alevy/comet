@@ -28,30 +28,21 @@ package org.gudy.azureus2.pluginsimpl.local.tracker;
 
 import java.net.InetAddress;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.tracker.host.TRHost;
-import org.gudy.azureus2.core3.tracker.host.TRHostAuthenticationListener;
-import org.gudy.azureus2.core3.tracker.host.TRHostFactory;
-import org.gudy.azureus2.core3.tracker.host.TRHostListener;
-import org.gudy.azureus2.core3.tracker.host.TRHostTorrent;
+import org.gudy.azureus2.plugins.tracker.*;
+import org.gudy.azureus2.plugins.tracker.web.*;
+import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.pluginsimpl.local.torrent.*;
+import org.gudy.azureus2.core3.tracker.host.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.plugins.tracker.Tracker;
-import org.gudy.azureus2.plugins.tracker.TrackerException;
-import org.gudy.azureus2.plugins.tracker.TrackerListener;
-import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
-import org.gudy.azureus2.plugins.tracker.web.TrackerAuthenticationListener;
-import org.gudy.azureus2.plugins.tracker.web.TrackerWebContext;
-import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentImpl;
 
 public class 
 TrackerImpl
 	extends		TrackerWCHelper
-	implements 	Tracker, TRHostListener, TRHostAuthenticationListener
+	implements 	Tracker, TRHostListener2, TRHostAuthenticationListener
 {
 	private static TrackerImpl	singleton;
 	private static AEMonitor 		class_mon 	= new AEMonitor( "Tracker" );
@@ -60,7 +51,7 @@ TrackerImpl
 	
 	private TRHost		host;
 	
-	private List	auth_listeners	= new ArrayList();
+	private List<TrackerAuthenticationListener>	auth_listeners	= new ArrayList<TrackerAuthenticationListener>();
 	
 	
 	public static Tracker
@@ -90,13 +81,20 @@ TrackerImpl
 		
 		host		= _host;
 				
-		host.addListener( this );
+		host.addListener2( this );
 	}
 	
 	public String
 	getName()
 	{
 		return( host.getName());
+	}
+	
+	public void
+	setEnableKeepAlive(
+		boolean		enable )
+	{
+		Debug.out( "Keep alive setting ignored for tracker" );
 	}
 	
 	public URL[]
@@ -114,6 +112,12 @@ TrackerImpl
 		return( res );
 	}
 
+	public InetAddress
+	getBindIP()
+	{
+		return( host.getBindIP());
+	}
+	
 	public TrackerTorrent
 	host(
 		Torrent		_torrent,
@@ -306,6 +310,7 @@ TrackerImpl
 	
 	public boolean
 	authenticate(
+		String		headers,
 		URL			resource,
 		String		user,
 		String		password )
@@ -313,7 +318,18 @@ TrackerImpl
 		for (int i=0;i<auth_listeners.size();i++){
 			
 			try{
-				boolean res = ((TrackerAuthenticationListener)auth_listeners.get(i)).authenticate( resource, user, password );
+				TrackerAuthenticationListener listener = auth_listeners.get(i);
+				
+				boolean res;
+				
+				if ( listener instanceof TrackerAuthenticationAdapter ){
+					
+					res = ((TrackerAuthenticationAdapter)listener).authenticate( headers, resource, user, password );
+					
+				}else{
+					
+					res = listener.authenticate( resource, user, password );
+				}
 				
 				if ( res ){
 					

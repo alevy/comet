@@ -28,16 +28,14 @@ package com.aelitis.azureus.plugins.upnp;
  */
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.internat.*;
 import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.plugins.logging.LoggerChannel;
+import org.gudy.azureus2.plugins.logging.*;
 import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
 
-import com.aelitis.net.upnp.services.UPnPWANConnection;
-import com.aelitis.net.upnp.services.UPnPWANConnectionPortMapping;
+import com.aelitis.net.upnp.services.*;
 
 public class 
 UPnPPluginService 

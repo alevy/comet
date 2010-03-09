@@ -25,11 +25,9 @@ package org.gudy.azureus2.pluginsimpl.remote.download;
  * @author parg
  *
  */
-import org.gudy.azureus2.plugins.download.DownloadStats;
-import org.gudy.azureus2.pluginsimpl.remote.RPException;
-import org.gudy.azureus2.pluginsimpl.remote.RPObject;
-import org.gudy.azureus2.pluginsimpl.remote.RPReply;
-import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
+import org.gudy.azureus2.plugins.download.*;
+
+import org.gudy.azureus2.pluginsimpl.remote.*;
 
 
 public class 
@@ -234,6 +232,13 @@ RPDownloadStats
 	getETA()
 	{
 		return( eta );
+	}
+	
+	public long
+	getETASecs()
+	{
+		notSupported();
+		return(0);
 	}
 	
 	public long

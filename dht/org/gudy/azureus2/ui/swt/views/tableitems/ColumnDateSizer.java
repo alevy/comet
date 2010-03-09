@@ -22,19 +22,18 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.TimeFormatter;
+import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
+
 import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.plugins.ui.menus.MenuItemListener;
 import org.gudy.azureus2.plugins.ui.tables.TableCell;
 import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
 import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
-import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /**
  * @author TuxPaper
@@ -88,7 +87,8 @@ public abstract class ColumnDateSizer
 			Number nShowTime = (Number) oShowTime;
 			showTime = nShowTime.byteValue() == 1;
 		} else {
-			showTime = COConfigurationManager.getBooleanParameter("v3.Start Advanced");
+	    int userMode = COConfigurationManager.getIntParameter("User Mode");
+			showTime = userMode > 1;
 		}
 	}
 
@@ -151,7 +151,7 @@ public abstract class ColumnDateSizer
 		}
 	}
 
-	public void recalcWidth(Date date) {
+	private void recalcWidth(Date date) {
 		String suffix = showTime && !multiline ? " hh:mm a" : "";
 
 		int width = getWidth();
@@ -209,7 +209,7 @@ public abstract class ColumnDateSizer
 		}
 	}
 
-	public int calcWidth(Date date, String format) {
+	private int calcWidth(Date date, String format) {
 		GC gc = new GC(Display.getDefault());
 		if (fontBold == null) {
 			FontData[] fontData = gc.getFont().getFontData();

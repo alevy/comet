@@ -25,19 +25,18 @@
 package org.gudy.azureus2.ui.swt.views.tableitems.mytorrents;
 
 import org.eclipse.swt.graphics.Color;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
+
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.ui.tables.*;
 
 
 /**
@@ -82,23 +81,23 @@ public class ShareRatioItem
     DownloadManager dm = (DownloadManager)cell.getDataSource();
                        
     int sr = (dm == null) ? 0 : dm.getStats().getShareRatio();
-    if (sr == -1)
-      sr = Constants.INFINITY_AS_INT;
-      
+    
+    if ( sr == Integer.MAX_VALUE ){
+    	sr = Integer.MAX_VALUE-1;
+    }
+    if ( sr == -1 ){
+      sr = Integer.MAX_VALUE;
+    }
+    
     if (!cell.setSortValue(sr) && cell.isValid())
       return;
     
     String shareRatio = "";
     
-    if (sr == Constants.INFINITY_AS_INT) {
+    if (sr == Integer.MAX_VALUE ) {
       shareRatio = Constants.INFINITY_STRING;
     } else {
-      String partial = String.valueOf(sr % 1000);
-      while (partial.length() < 3) {
-        partial = "0" + partial;
-      }
-      shareRatio = "" + (sr / 1000) + DisplayFormatters.getDecimalSeparator()
-					+ partial;
+      shareRatio = DisplayFormatters.formatDecimal((double) sr / 1000, 3);
     }
     
     if( cell.setText(shareRatio) && changeFG ) {

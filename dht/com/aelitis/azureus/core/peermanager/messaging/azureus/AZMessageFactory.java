@@ -33,13 +33,7 @@ import com.aelitis.azureus.core.networkmanager.impl.RawMessageImpl;
 import com.aelitis.azureus.core.peermanager.messaging.Message;
 import com.aelitis.azureus.core.peermanager.messaging.MessageException;
 import com.aelitis.azureus.core.peermanager.messaging.MessageManager;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTChoke;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTInterested;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessage;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessageFactory;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTPiece;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTUnchoke;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTUninterested;
+import com.aelitis.azureus.core.peermanager.messaging.bittorrent.*;
 
 
 
@@ -60,20 +54,25 @@ public class AZMessageFactory {
   
   
   
-  private static final Map legacy_data = new HashMap();
+  private static final Map<String,LegacyData> legacy_data = new HashMap<String,LegacyData>();
   static {
-    legacy_data.put( BTMessage.ID_BT_CHOKE, new LegacyData( RawMessage.PRIORITY_HIGH, true, new Message[]{new BTUnchoke((byte)0), new BTPiece(-1, -1, null,(byte)0 )} ) );
+    legacy_data.put( BTMessage.ID_BT_CHOKE, new LegacyData( RawMessage.PRIORITY_HIGH, true, new Message[]{new BTUnchoke((byte)0)})); // with support for fast extension we don't cancel outstanding piece data, new BTPiece(-1, -1, null,(byte)0 )} ) );
     legacy_data.put( BTMessage.ID_BT_UNCHOKE, new LegacyData( RawMessage.PRIORITY_NORMAL, true, new Message[]{new BTChoke((byte)0)} ) );
     legacy_data.put( BTMessage.ID_BT_INTERESTED, new LegacyData( RawMessage.PRIORITY_HIGH, true, new Message[]{new BTUninterested((byte)0)} ) );
     legacy_data.put( BTMessage.ID_BT_UNINTERESTED, new LegacyData( RawMessage.PRIORITY_NORMAL, false, new Message[]{new BTInterested((byte)0)} ) );
     legacy_data.put( BTMessage.ID_BT_HAVE, new LegacyData( RawMessage.PRIORITY_LOW, false, null ) );
     legacy_data.put( BTMessage.ID_BT_BITFIELD, new LegacyData( RawMessage.PRIORITY_HIGH, true, null ) );
+    legacy_data.put( BTMessage.ID_BT_HAVE_ALL, new LegacyData( RawMessage.PRIORITY_HIGH, true, null ) );
+    legacy_data.put( BTMessage.ID_BT_HAVE_NONE, new LegacyData( RawMessage.PRIORITY_HIGH, true, null ) );
     legacy_data.put( BTMessage.ID_BT_REQUEST, new LegacyData( RawMessage.PRIORITY_NORMAL, true, null ) );
+    legacy_data.put( BTMessage.ID_BT_REJECT_REQUEST, new LegacyData( RawMessage.PRIORITY_NORMAL, true, null ) );
     legacy_data.put( BTMessage.ID_BT_PIECE, new LegacyData( RawMessage.PRIORITY_LOW, false, null ) );
     legacy_data.put( BTMessage.ID_BT_CANCEL, new LegacyData( RawMessage.PRIORITY_HIGH, true, null ) );
     legacy_data.put( BTMessage.ID_BT_HANDSHAKE, new LegacyData( RawMessage.PRIORITY_HIGH, true, null ) );
     legacy_data.put( BTMessage.ID_BT_KEEP_ALIVE, new LegacyData( RawMessage.PRIORITY_LOW, false, null ) );
     legacy_data.put( BTMessage.ID_BT_DHT_PORT, new LegacyData( RawMessage.PRIORITY_LOW, false, null ) );
+    legacy_data.put( BTMessage.ID_BT_SUGGEST_PIECE, new LegacyData( RawMessage.PRIORITY_NORMAL, true, null ) );
+    legacy_data.put( BTMessage.ID_BT_ALLOWED_FAST, new LegacyData( RawMessage.PRIORITY_LOW, false, null ) );
   }
   
   
@@ -83,7 +82,7 @@ public class AZMessageFactory {
    */
   public static void init() {
     try {
-      MessageManager.getSingleton().registerMessageType( new AZHandshake( new byte[20], null, null, "", "", 0, 0, 0, new String[0], new byte[0], 0, MESSAGE_VERSION_SUPPORTS_PADDING,false ) );
+      MessageManager.getSingleton().registerMessageType( new AZHandshake( new byte[20], null, null, "", "", 0, 0, 0, null, new String[0], new byte[0], 0, MESSAGE_VERSION_SUPPORTS_PADDING,false ) );
       MessageManager.getSingleton().registerMessageType( new AZPeerExchange( new byte[20], null, null, MESSAGE_VERSION_SUPPORTS_PADDING ));
       MessageManager.getSingleton().registerMessageType( new AZRequestHint( -1, -1, -1, -1, MESSAGE_VERSION_SUPPORTS_PADDING ));
       MessageManager.getSingleton().registerMessageType( new AZHave( new int[0], MESSAGE_VERSION_SUPPORTS_PADDING ));

@@ -22,8 +22,7 @@
 
 package com.aelitis.azureus.core.dht.db;
 
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+import com.aelitis.azureus.core.dht.transport.*;
 
 /**
  * @author parg
@@ -34,27 +33,11 @@ public interface
 DHTDBValue 
 	extends DHTTransportValue
 {
-	public static final byte[] ZERO_LENGTH_BYTE_ARRAY = new byte[] {};
+	public void
+	setFlags(
+		byte	flags );
 	
-	public DHTTransportValue
+	public DHTDBValue
 	getValueForRelay(
 		DHTTransportContact	new_originator );
-
-	public DHTTransportContact getSender();
-
-	long getCreationTime();
-
-	void setCreationTime();
-
-	void setStoreTime(long l);
-
-	long getStoreTime();
-
-	public DHTTransportValue getValueForDeletion(int nextValueVersion);
-
-	public void reset();
-
-	public void setSender(DHTTransportContact contact);
-
-	public void setOriginator(DHTTransportContact contact);
 }

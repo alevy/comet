@@ -30,25 +30,19 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerListener;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.download.DownloadException;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadImpl;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
 import org.gudy.azureus2.ui.swt.IconBarEnabler;
@@ -56,10 +50,7 @@ import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.debug.ObfusticateImage;
 import org.gudy.azureus2.ui.swt.debug.ObfusticateTab;
-import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
-import org.gudy.azureus2.ui.swt.plugins.UISWTView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTViewEvent;
-import org.gudy.azureus2.ui.swt.plugins.UISWTViewEventListener;
+import org.gudy.azureus2.ui.swt.plugins.*;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTInstanceImpl;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTViewCoreEventListener;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTViewImpl;
@@ -73,6 +64,8 @@ import com.aelitis.azureus.ui.common.viewtitleinfo.ViewTitleInfo;
 import com.aelitis.azureus.ui.common.viewtitleinfo.ViewTitleInfoManager;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
+
+import org.gudy.azureus2.plugins.download.DownloadException;
 
 /**
  * Torrent download view, consisting of several information tabs
@@ -99,6 +92,8 @@ public class ManagerView
 	 * 
 	 */
 	public ManagerView() {
+		// assumed if we are opening a Download Manager View that we
+		// have a DownloadManager and thus an AzureusCore
 		GlobalManager gm = AzureusCoreFactory.getSingleton().getGlobalManager();
 		gmListener = new GlobalManagerAdapter() {
 			public void downloadManagerRemoved(DownloadManager dm) {
@@ -178,7 +173,7 @@ public class ManagerView
     //Don't ask me why, but without this an exception is thrown further
     // (in folder.dispose() )
     //TODO : Investigate to see if it's a platform (OSX-Carbon) BUG, and report to SWT team.
-    if(Constants.isOSX) {
+    if(Utils.isCarbon) {
       if(folder != null && !folder.isDisposed()) {
         CTabItem[] items = folder.getItems();
         for(int i=0 ; i < items.length ; i++) {
@@ -230,6 +225,7 @@ public class ManagerView
   	
   	ArrayList iviews_to_use = new ArrayList();
   	iviews_to_use.add(new GeneralView());
+  	iviews_to_use.add(new TrackerView());
   	iviews_to_use.add(new PeersView());
   	iviews_to_use.add(new PeersGraphicView());
   	iviews_to_use.add(new PiecesView());
@@ -240,10 +236,11 @@ public class ManagerView
   		iviews_to_use.add(new LoggerView(true));
   	}
   	
-  	IView[] views = (IView[])iviews_to_use.toArray(new IView[iviews_to_use.size()]);
+  	final IView[] views = (IView[])iviews_to_use.toArray(new IView[iviews_to_use.size()]);
 
   	for (int i = 0; i < views.length; i++)
 		addSection(views[i], manager);
+
 
     // Call plugin listeners
 		UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
@@ -268,35 +265,48 @@ public class ManagerView
 			}
 		}
 		
-    
+
     // Initialize view when user selects it
     folder.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        CTabItem item = (CTabItem)e.item;
-        if (item != null) {
-        	IView view = (IView)item.getData("IView");
-          activeView = view;
-        	
-        	if (item.getControl() == null) {
-          	view.initialize(folder);
-          	item.setControl(view.getComposite());
-        	}
-        	
-        	item.getControl().setFocus();
-        }
-        refresh();
-    		ViewTitleInfoManager.refreshTitleInfo(ManagerView.this);
+      	folder.getShell().setCursor(e.display.getSystemCursor(SWT.CURSOR_WAIT));
+      	try {
+        	// Send one last refresh to previous tab, just in case it
+        	// wants to do something when view goes invisible
+          refresh();
+  
+          CTabItem item = (CTabItem)e.item;
+          if (item != null) {
+          	IView view = (IView)item.getData("IView");
+            activeView = view;
+          	
+          	if (item.getControl() == null) {
+            	view.initialize(folder);
+            	item.setControl(view.getComposite());
+          	}
+          	
+          	item.getControl().setFocus();
+          }
+          refresh();
+      		ViewTitleInfoManager.refreshTitleInfo(ManagerView.this);
+      	} finally {
+      		folder.getShell().setCursor(null);
+      	}
       }
     });
     
-    
-    views[0].initialize(folder);
-    folder.getItem(0).setControl(views[0].getComposite());
-    views[0].refresh();
-    views[0].getComposite().layout(true);
-    views[0].getComposite().setFocus();
-    activeView = views[0];
-		ViewTitleInfoManager.refreshTitleInfo(this);
+    Utils.execSWTThreadLater(0, new AERunnable() {
+			public void runSupport() {
+				views[0].initialize(folder);
+				folder.getItem(0).setControl(views[0].getComposite());
+				views[0].refresh();
+				views[0].getComposite().layout(true);
+				views[0].getComposite().setFocus();
+				folder.setSelection(0);
+				activeView = views[0];
+				ViewTitleInfoManager.refreshTitleInfo(ManagerView.this);
+			}
+		});
   }
   
   private IView getActiveView() {

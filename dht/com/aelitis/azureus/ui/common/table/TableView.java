@@ -20,6 +20,8 @@
 
 package com.aelitis.azureus.ui.common.table;
 
+import java.util.List;
+
 import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
 import org.gudy.azureus2.plugins.ui.tables.TableColumn;
 
@@ -28,7 +30,7 @@ import org.gudy.azureus2.plugins.ui.tables.TableColumn;
  * @created Feb 2, 2007
  *
  */
-public interface TableView
+public interface TableView<DATASOURCETYPE>
 	extends AEDiagnosticsEvidenceGenerator
 {
 	/**
@@ -44,9 +46,8 @@ public interface TableView
 	 * You can't add datasources until the table is initialized
 	 * 
 	 * @param dataSource data source to add to the table
-	 * @param bImmediate Add immediately, or queue and add at next refresh
 	 */
-	void addDataSource(Object dataSource);
+	void addDataSource(DATASOURCETYPE dataSource);
 
 	/**
 	 * Add a list of dataSources to the table.  The array passed in may be 
@@ -55,9 +56,8 @@ public interface TableView
 	 * You can't add datasources until the table is initialized
 	 * 
 	 * @param dataSources
-	 * @param bImmediate Add immediately, or queue and add at next refresh
 	 */
-	void addDataSources(Object[] dataSources);
+	void addDataSources(DATASOURCETYPE[] dataSources);
 
 	void addLifeCycleListener(TableLifeCycleListener l);
 
@@ -116,12 +116,12 @@ public interface TableView
 	/**
 	 * @return not sorted
 	 */
-	Object[] getDataSources();
+	List<DATASOURCETYPE> getDataSources();
 
 	/**
 	 * @return
 	 */
-	Object getFirstSelectedDataSource();
+	DATASOURCETYPE getFirstSelectedDataSource();
 
 	/**
 	 * @return
@@ -134,7 +134,7 @@ public interface TableView
 	 * 										(not a plugin datasource object)
 	 * @return The row, or null
 	 */
-	TableRowCore getRow(Object dataSource);
+	TableRowCore getRow(DATASOURCETYPE dataSource);
 
 	/** Get all the rows for this table, in the order they are displayed
 	 *
@@ -147,7 +147,7 @@ public interface TableView
 	 *
 	 * @return an array containing the selected data sources
 	 */
-	Object[] getSelectedDataSources();
+	List<DATASOURCETYPE> getSelectedDataSources();
 
 	/** 
 	 * Returns an array of all selected Data Sources.  Null data sources are
@@ -197,7 +197,7 @@ public interface TableView
 	/**
 	 * @param dataSource
 	 */
-	void removeDataSource(Object dataSource);
+	void removeDataSource(DATASOURCETYPE dataSource);
 
 	/**
 	 * @param l
@@ -273,22 +273,10 @@ public interface TableView
 	TableRowCore getRow(int x, int y);
 
 	/**
-	 * @param datasource
-	 * @param immediate
-	 */
-	void addDataSource(Object datasource, boolean immediate);
-
-	/**
 	 * @param dataSource
 	 * @return
 	 */
-	boolean dataSourceExists(Object dataSource);
-
-	/**
-	 * @param datasource
-	 * @param immediate
-	 */
-	void removeDataSource(Object datasource, boolean immediate);
+	boolean dataSourceExists(DATASOURCETYPE dataSource);
 
 	/**
 	 * @return
@@ -307,7 +295,7 @@ public interface TableView
 	/**
 	 * @param dataSources
 	 */
-	void removeDataSources(Object[] dataSources);
+	void removeDataSources(DATASOURCETYPE[] dataSources);
 
 	/**
 	 * @return
@@ -371,13 +359,6 @@ public interface TableView
 	 * @since 3.1.1.1
 	 */
 	Class getDataSourceType();
-
-	/**
-	 * @param dataSourceType
-	 *
-	 * @since 3.1.1.1
-	 */
-	void setDataSourceType(Class dataSourceType);
 
 	/**
 	 * @param columnName

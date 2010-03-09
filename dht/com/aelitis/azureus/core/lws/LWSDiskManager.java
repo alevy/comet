@@ -22,6 +22,7 @@
 package com.aelitis.azureus.core.lws;
 
 import java.io.File;
+import java.util.List;
 
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerCheckRequest;
@@ -51,12 +52,14 @@ import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapperFile;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
+import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 import org.gudy.azureus2.core3.util.IndentWriter;
+import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessController;
 import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
@@ -118,6 +121,17 @@ LWSDiskManager
 	getCacheMode()
 	{
 		return( CacheFileOwner.CACHE_MODE_NORMAL );
+	}
+	
+	public long[]
+	getReadStats()
+	{
+		if ( reader == null ){
+	
+			return( new long[]{ 0, 0 });
+		}
+				
+		return( reader.getStats());
 	}
 	
 	public void
@@ -571,9 +585,8 @@ LWSDiskManager
 		return( disk_access_controller );
 	}
 	
-	public DMPieceList
-	getPieceList(
-		int	piece_number )
+	public DMPieceMap  
+	getPieceMap()
 	{
 		DMPieceMap	map = piece_map_use_accessor;
 		
@@ -582,9 +595,19 @@ LWSDiskManager
 			piece_map_use_accessor = map = piece_mapper.getPieceMap();			
 		}
 		
+		return( map );
+	}
+	
+	public DMPieceList
+	getPieceList(
+		int	piece_number )
+	{
+		DMPieceMap	map = getPieceMap();
+		
 		return( map.getPieceList( piece_number ));
 	}
 		
+	
 	protected DMChecker
 	getChecker()
 	{

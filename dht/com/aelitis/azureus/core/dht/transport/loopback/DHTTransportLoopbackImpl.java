@@ -22,36 +22,13 @@
 
 package com.aelitis.azureus.core.dht.transport.loopback;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.io.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.SHA1Simple;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.transport.DHTTransport;
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportException;
-import com.aelitis.azureus.core.dht.transport.DHTTransportFindValueReply;
-import com.aelitis.azureus.core.dht.transport.DHTTransportFullStats;
-import com.aelitis.azureus.core.dht.transport.DHTTransportListener;
-import com.aelitis.azureus.core.dht.transport.DHTTransportProgressListener;
-import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandler;
-import com.aelitis.azureus.core.dht.transport.DHTTransportRequestHandler;
-import com.aelitis.azureus.core.dht.transport.DHTTransportStats;
-import com.aelitis.azureus.core.dht.transport.DHTTransportStoreReply;
-import com.aelitis.azureus.core.dht.transport.DHTTransportTransferHandler;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+import com.aelitis.azureus.core.dht.transport.*;
 import com.aelitis.azureus.core.dht.transport.util.DHTTransportRequestCounter;
 import com.aelitis.azureus.core.dht.transport.util.DHTTransportStatsImpl;
 
@@ -220,6 +197,19 @@ DHTTransportLoopbackImpl
 		return( 0 );
 	}
 	
+	
+	public long 
+	getTimeout() 
+	{
+		return( 0 );
+	}
+	
+	public void 
+	setTimeout(
+		long 	millis ) 
+	{
+	}
+	
 	public boolean
 	isReachable()
 	{
@@ -228,6 +218,12 @@ DHTTransportLoopbackImpl
 	
 	public DHTTransportContact[]
 	getReachableContacts()
+	{
+		return( new DHTTransportContact[0] );
+	}
+	
+	public DHTTransportContact[]
+	getRecentContacts()
 	{
 		return( new DHTTransportContact[0] );
 	}
@@ -540,6 +536,18 @@ DHTTransportLoopbackImpl
 		}
 	}
 	
+		// QUERY STORE
+	
+	public void 
+	sendQueryStore(
+		DHTTransportContact			contact,
+		DHTTransportReplyHandler 	handler,
+		int							header_length,
+		List<Object[]>				key_details ) 
+	{
+		handler.failed( contact, new Throwable( "not implemented" ));
+	}
+	
 		// FIND NODE
 	
 	public void
@@ -631,10 +639,10 @@ DHTTransportLoopbackImpl
 		DHTTransportContact			contact,
 		DHTTransportReplyHandler	handler,
 		byte[]						key,
-		byte[] 						readerId,
-		byte[]						payload,
+		final byte[]				readerId,
+		final byte[]				payload,
 		int							max,
-		byte						flags)
+		byte						flags )
 	{
 		DHTTransportLoopbackImpl	target = findTarget( contact.getID());
 		

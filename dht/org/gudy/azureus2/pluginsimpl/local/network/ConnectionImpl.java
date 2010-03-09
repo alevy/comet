@@ -24,11 +24,7 @@ package org.gudy.azureus2.pluginsimpl.local.network;
 
 import java.nio.ByteBuffer;
 
-import org.gudy.azureus2.plugins.network.Connection;
-import org.gudy.azureus2.plugins.network.ConnectionListener;
-import org.gudy.azureus2.plugins.network.IncomingMessageQueue;
-import org.gudy.azureus2.plugins.network.OutgoingMessageQueue;
-import org.gudy.azureus2.plugins.network.Transport;
+import org.gudy.azureus2.plugins.network.*;
 
 import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
 
@@ -57,7 +53,7 @@ public class ConnectionImpl implements Connection {
   
   public void connect( final ConnectionListener listener ) {
     core_connection.connect( ProtocolEndpoint.CONNECT_PRIORITY_MEDIUM, new com.aelitis.azureus.core.networkmanager.NetworkConnection.ConnectionListener() {
-      public void connectStarted() { listener.connectStarted();  }
+      public int connectStarted( int ct ) { listener.connectStarted(); return( ct ); }
       
       public void connectSuccess( ByteBuffer remaining_initial_data) { listener.connectSuccess();  }
       
@@ -87,7 +83,7 @@ public class ConnectionImpl implements Connection {
 	
     core_connection.startMessageProcessing();
     
-    core_connection.enableEnhancedMessageProcessing( true );  //auto-upgrade connection
+    core_connection.enableEnhancedMessageProcessing( true, -1 );  //auto-upgrade connection
   }
   
   

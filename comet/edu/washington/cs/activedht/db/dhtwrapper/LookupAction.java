@@ -20,6 +20,7 @@ public class LookupAction implements Runnable {
 	}
 
 	public void run() {
-		control.lookupEncodedKey(key.getBytes(), 60000, operationAdapter);
+		control.lookupEncoded(key.getBytes(), "", 60000, false, operationAdapter);
+		//control.lookupEncodedKey(key.getBytes(), 60000, operationAdapter);
 	}
 }

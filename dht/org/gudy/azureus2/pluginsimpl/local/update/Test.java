@@ -22,10 +22,8 @@
 
 package org.gudy.azureus2.pluginsimpl.local.update;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.Properties;
+import java.io.*;
 
 import org.gudy.azureus2.core3.util.AEThread;
 import org.gudy.azureus2.plugins.Plugin;
@@ -33,6 +31,7 @@ import org.gudy.azureus2.plugins.PluginException;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.PluginListener;
 import org.gudy.azureus2.plugins.PluginManager;
+
 import org.gudy.azureus2.plugins.update.UpdateInstaller;
 import org.gudy.azureus2.plugins.update.UpdateManager;
 

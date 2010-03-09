@@ -24,39 +24,20 @@ package com.aelitis.azureus.plugins.dht;
 
 
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfigListener;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
 import org.gudy.azureus2.plugins.ui.UIManager;
 import org.gudy.azureus2.plugins.ui.components.UITextField;
-import org.gudy.azureus2.plugins.ui.config.ActionParameter;
-import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.plugins.ui.config.IntParameter;
-import org.gudy.azureus2.plugins.ui.config.LabelParameter;
-import org.gudy.azureus2.plugins.ui.config.Parameter;
-import org.gudy.azureus2.plugins.ui.config.ParameterListener;
-import org.gudy.azureus2.plugins.ui.config.StringParameter;
+import org.gudy.azureus2.plugins.ui.config.*;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
 import org.gudy.azureus2.plugins.utils.DelayedTask;
@@ -65,10 +46,11 @@ import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.DHTConstants;
 import com.aelitis.azureus.core.dht.DHTLogger;
 import com.aelitis.azureus.core.dht.control.DHTControlActivity;
+import com.aelitis.azureus.core.dht.control.DHTControlContact;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncher;
+import com.aelitis.azureus.core.dht.router.DHTRouterContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportFullStats;
 import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
@@ -113,16 +95,16 @@ DHTPlugin
 	public static final byte		DT_FREQUENCY		= DHT.DT_FREQUENCY;
 	public static final byte		DT_SIZE				= DHT.DT_SIZE;
 	
-	public static final int			MAX_VALUE_SIZE		= DHTConstants.MAX_VALUE_SIZE;
+	public static final int			MAX_VALUE_SIZE		= DHT.MAX_VALUE_SIZE;
 
 	private static final String	PLUGIN_VERSION			= "1.0";
 	private static final String	PLUGIN_NAME				= "Distributed DB";
 	private static final String	PLUGIN_CONFIGSECTION_ID	= "plugins.dht";
 	private static final String PLUGIN_RESOURCE_ID		= "ConfigView.section.plugins.dht";
 	
-	private static final boolean	MAIN_DHT_ENABLE		= true;
-	private static final boolean	CVS_DHT_ENABLE		= true;
-	private static final boolean	MAIN_DHT_V6_ENABLE	= true;
+	private static final boolean	MAIN_DHT_ENABLE		= COConfigurationManager.getBooleanParameter( "dht.net.main_v4.enable", true );
+	private static final boolean	CVS_DHT_ENABLE		= COConfigurationManager.getBooleanParameter( "dht.net.cvs_v4.enable", true );
+	private static final boolean	MAIN_DHT_V6_ENABLE	= COConfigurationManager.getBooleanParameter( "dht.net.main_v6.enable", true );
 	
 		
 	private PluginInterface		plugin_interface;
@@ -354,6 +336,49 @@ DHTPlugin
 											dht.getControl().pingAll();
 										}
 										
+									}else if ( lc.equals( "versions" )){
+										
+										List<DHTRouterContact> contacts = dht.getRouter().getAllContacts();
+										
+										Map<Byte,Integer>	counts = new TreeMap<Byte, Integer>();
+										
+										for ( DHTRouterContact r: contacts ){
+											
+											DHTControlContact contact = (DHTControlContact)r.getAttachment();
+											
+											byte v = contact.getTransportContact().getProtocolVersion();
+											
+											Integer count = counts.get( v );
+											
+											if ( count == null ){
+												
+												counts.put( v, 1 );
+												
+											}else{
+												
+												counts.put( v, count+1 );
+											}
+										}
+										
+										log.log( "Net " + dht.getTransport().getNetwork());
+										
+										int	total = contacts.size();
+										
+										if ( total == 0 ){
+											
+											log.log( "   no contacts" );
+											
+										}else{
+											
+											String ver = "";
+											
+											for ( Map.Entry<Byte, Integer> entry: counts.entrySet()){
+											
+												ver += (ver.length()==0?"":", " ) + entry.getKey() + "=" + 100*entry.getValue()/total + "%";
+											}
+											
+											log.log( "    contacts=" + total + ": " + ver );
+										}
 									}else if ( lc.equals( "testca" )){
 																
 										((DHTTransportUDPImpl)transport).testExternalAddressChange();
@@ -846,8 +871,8 @@ DHTPlugin
 												
 												if ( MAIN_DHT_V6_ENABLE ){
 													
-													if ( NetworkAdmin.getSingleton().hasIPV6Potential(false)){
-														
+													if ( NetworkAdmin.getSingleton().hasDHTIPV6()){
+															
 														main_v6_dht = 
 															new DHTPluginImpl(
 																plugin_interface,
@@ -1196,7 +1221,12 @@ DHTPlugin
 	getLocalValue(
 		byte[]		key )
 	{
-		return( main_dht.getLocalValue( key ));
+		if ( main_dht != null ){
+			
+			return( main_dht.getLocalValue( key ));
+		}
+		
+		return( cvs_dht.getLocalValue( key ));
 	}
 	
 	public void
@@ -1222,6 +1252,15 @@ DHTPlugin
 			main_listener = original_listener;
 			
 		}else{
+			
+			if ( main_dht == null && main_v6_dht == null ){
+				
+					// just the cvs dht
+				
+				cvs_dht.get( original_key, description, flags, max_values, timeout, exhaustive, high_priority, original_listener );
+
+				return;
+			}
 			
 				// hook into CVS completion to prevent runaway CVS dht operations
 			
@@ -1664,6 +1703,32 @@ DHTPlugin
 			// first DHT will do here
 		
 		return( dhts[0].importContact( address ));
+	}
+	
+	public DHTPluginContact
+	importContact(
+		InetSocketAddress				address,
+		byte							version )
+	{
+		if ( !isEnabled()){
+			
+			throw( new RuntimeException( "DHT isn't enabled" ));
+		}
+
+		InetAddress contact_address = address.getAddress();
+		
+		for ( DHTPluginImpl dht: dhts ){
+			
+			InetAddress dht_address = dht.getLocalAddress().getAddress().getAddress();
+			
+			if ( 	( contact_address instanceof Inet4Address && dht_address instanceof Inet4Address ) ||
+					( contact_address instanceof Inet6Address && dht_address instanceof Inet6Address )){
+				
+				return( dht.importContact( address, version ));
+			}
+		}
+		
+		return( null );
 	}
 	
 	public DHTPluginContact

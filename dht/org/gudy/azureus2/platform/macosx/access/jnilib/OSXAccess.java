@@ -19,38 +19,110 @@
  */
 package org.gudy.azureus2.platform.macosx.access.jnilib;
 
-import org.eclipse.swt.internal.carbon.AEDesc;
-import org.gudy.azureus2.core3.util.Debug;
+import java.io.File;
+import java.util.Map;
+
+import org.gudy.azureus2.core3.util.*;
+
+import com.aelitis.azureus.core.drivedetector.DriveDetectorFactory;
+import com.aelitis.azureus.util.MapUtils;
 
 /**
  * @author TuxPaper
  * @created Jul 21, 2006
  *
+ * javah -d . -classpath ../../../../../../../../bin org.gudy.azureus2.platform.macosx.access.jnilib.OSXAccess
  */
 public class OSXAccess
 {
 	private static boolean bLoaded = false;
 
+	private static boolean DEBUG = false;
+
 	static {
-		try {
-			System.loadLibrary ("OSXAccess");
-			System.out.println("OSXAccess v" + getVersion() + " Load complete!");
-			bLoaded = true;
-		} catch (UnsatisfiedLinkError e1) {
-			Debug.out("Could not find libOSXAccess.jnilib");
+		if (!Constants.isOSX_10_5_OrHigher || !loadLibrary("OSXAccess_10.5")) {
+			loadLibrary("OSXAccess");
 		}
 	}
 
-	public static final native int AEGetParamDesc(int theAppleEvent, int theAEKeyword, int desiredType, AEDesc result);
+
+	private static boolean loadLibrary(String lib) {
+		try {
+			SystemLoadLibrary(lib);
+			System.out.println(lib + " v" + getVersion() + " Load complete!");
+			bLoaded = true;
+			initDriveDetection();
+		} catch (Throwable e1) {
+			Debug.out("Could not find lib" + lib + ".jnilib", e1);
+		}
+		
+		return bLoaded;
+	}
+	
+	private static  void SystemLoadLibrary(String lib) throws Throwable {
+		try {
+			System.loadLibrary(lib);
+		} catch (Throwable t) {
+			// if launched from eclipse, updates will put it into ./Azureus.app/Contents/Resources/Java/dll
+			try {
+				File f = new File("Azureus.app/Contents/Resources/Java/dll/lib" + lib + ".jnilib");
+				System.load(f.getAbsolutePath());
+			} catch (Throwable t2) {
+				throw t;
+			}
+		}
+	}
+
+	private static void initDriveDetection() {
+		try {
+			initializeDriveDetection(new OSXDriveDetectListener() {
+				public void driveRemoved(File mount, Map driveInfo) {
+					if (DEBUG) {
+						System.out.println("UNMounted " + mount);
+						for (Object key : driveInfo.keySet()) {
+							Object val = driveInfo.get(key);
+							System.out.println("\t" + key + "\t:\t" + val);
+						}
+					}
+					DriveDetectorFactory.getDeviceDetector().driveRemoved(mount);
+				}
+
+				public void driveDetected(File mount, Map driveInfo) {
+					if (DEBUG) {
+						System.out.println("Mounted " + mount);
+						for (Object key : driveInfo.keySet()) {
+							Object val = driveInfo.get(key);
+							System.out.println("\t" + key + "\t:\t" + val);
+						}
+					}
+
+					boolean isOptical = MapUtils.getMapLong(driveInfo, "isOptical", 0) != 0;
+					boolean isRemovable = MapUtils.getMapLong(driveInfo, "Removable", 0) != 0;
+					boolean isWritable = MapUtils.getMapLong(driveInfo, "Writable", 0) != 0;
+					if (isRemovable && isWritable && !isOptical) {
+						DriveDetectorFactory.getDeviceDetector().driveDetected(mount);
+					}
+				}
+			});
+		} catch (Throwable t) {
+		}
+	}
+
+	public static final native int AEGetParamDesc(int theAppleEvent,
+			int theAEKeyword, int desiredType, Object result); //AEDesc result
 
 	public static final native String getVersion();
 
 	// 1.02
 	public static final native String getDocDir();
-	
+
 	// 1.03
 	public static final native void memmove(byte[] dest, int src, int size);
-	
+
+	// 1.04
+	public static final native void initializeDriveDetection(
+			OSXDriveDetectListener d);
+
 	public static boolean isLoaded() {
 		return bLoaded;
 	}

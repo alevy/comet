@@ -24,15 +24,12 @@ package com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.tests;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.gudy.azureus2.ui.swt.views.stats.VivaldiPanel;
-
-import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.VivaldiPosition;
-import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.HeightCoordinatesImpl;
-import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.VivaldiPositionImpl;
+import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.*;
+import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl.*;
 
 
 public class VivaldiVisualTest {

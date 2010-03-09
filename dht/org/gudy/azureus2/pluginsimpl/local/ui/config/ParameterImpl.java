@@ -21,17 +21,16 @@
  
 package org.gudy.azureus2.pluginsimpl.local.ui.config;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
+import org.gudy.azureus2.pluginsimpl.local.PluginConfigImpl;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.config.ConfigParameterListener;
+import org.gudy.azureus2.plugins.config.*;
 import org.gudy.azureus2.plugins.ui.config.EnablerParameter;
 import org.gudy.azureus2.plugins.ui.config.Parameter;
 import org.gudy.azureus2.plugins.ui.config.ParameterListener;
-import org.gudy.azureus2.pluginsimpl.local.PluginConfigImpl;
 
 /**
  * @author epall
@@ -100,6 +99,12 @@ ParameterImpl
 	public void
 	parameterChanged(
 		String		key )
+	{
+		fireParameterChanged();
+	}
+	
+	protected void
+	fireParameterChanged()
 	{
 		// toArray() since listener trigger may remove listeners
 		Object[] listenerArray = listeners.toArray();

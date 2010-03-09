@@ -42,6 +42,7 @@ import org.bouncycastle.jce.spec.IEKeySpec;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Base32;
+import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.RandomUtils;
 import org.gudy.azureus2.core3.util.SystemTime;
 
@@ -57,6 +58,10 @@ public class
 CryptoHandlerECC
 	implements CryptoHandler
 {	
+	private static final String	DEFAULT_PASSWORD	= "";
+	private static final Long	DEFAULT_TIMEOUT		= Long.MAX_VALUE;
+	
+
 	private static final int	TIMEOUT_DEFAULT_SECS		= 60*60;
 
 	
@@ -77,6 +82,32 @@ CryptoHandlerECC
 		manager	= _manager;
 		
 		CONFIG_PREFIX += _instance_id + ".";
+		
+			// migration away from system managed keys
+				
+		if ( getDefaultPasswordHandlerType() != CryptoManagerPasswordHandler.HANDLER_TYPE_USER ){
+		
+			COConfigurationManager.setParameter( CONFIG_PREFIX + "default_pwtype", CryptoManagerPasswordHandler.HANDLER_TYPE_USER );
+		}
+		
+		if ( 	getCurrentPasswordType() == CryptoManagerPasswordHandler.HANDLER_TYPE_SYSTEM || 
+				COConfigurationManager.getByteParameter( CONFIG_PREFIX + "publickey", null ) == null ){
+			
+			try{
+				createAndStoreKeys(
+					manager.setPassword(
+						CryptoManager.HANDLER_ECC,
+						CryptoManagerPasswordHandler.HANDLER_TYPE_USER,
+						DEFAULT_PASSWORD.toCharArray(),
+						DEFAULT_TIMEOUT ));
+				
+				Debug.outNoStack( "Successfully migrated key management" );
+				
+			}catch( Throwable e ){
+				
+				Debug.out( "Failed to migrate key management", e );
+			}
+		}
 	}
 	
 	public int
@@ -387,15 +418,8 @@ CryptoHandlerECC
 		}catch( CryptoManagerException e ){
 			
 			manager.keyChanged( this );
-
-			if ( e instanceof CryptoManagerPasswordException ){
 				
-				// they'll be created next time they are required if we're not logged in at the moment
-				
-			}else{
-				
-				throw( e );
-			}
+			throw( e );
 		}
 	}
 	
@@ -586,11 +610,6 @@ CryptoHandlerECC
 	
 		throws CryptoManagerException
 	{
-		if ( new_type == getCurrentPasswordType()){
-			
-			return;
-		}
-		
 		String reason = "Changing password handler";
 		
 		boolean	have_existing_keys = COConfigurationManager.getByteParameter( CONFIG_PREFIX + "privatekey", null ) != null;
@@ -598,6 +617,11 @@ CryptoHandlerECC
 			// ensure we unlock the private key so we can then re-persist it with new password
 
 		if ( have_existing_keys ){
+			
+			if ( new_type == getCurrentPasswordType()){
+				
+				return;
+			}
 			
 			getMyPrivateKey( reason );
 		
@@ -646,19 +670,28 @@ CryptoHandlerECC
 	}
 	
 	protected Key[]
+  	createAndStoreKeys(
+  		String		reason )
+  	
+  		throws CryptoManagerException
+  	{	
+		CryptoManagerImpl.passwordDetails password_details = 
+				manager.getPassword( 
+  							CryptoManager.HANDLER_ECC,
+  							CryptoManagerPasswordHandler.ACTION_ENCRYPT,
+  							reason,
+  							null,
+  							getDefaultPasswordHandlerType());
+		
+		return( createAndStoreKeys( password_details ));
+  	}
+	
+	protected Key[]
 	createAndStoreKeys(
-		String		reason )
+		CryptoManagerImpl.passwordDetails	password_details )
 	
 		throws CryptoManagerException
 	{		
-		CryptoManagerImpl.passwordDetails password_details = 
-			manager.getPassword( 
-							CryptoManager.HANDLER_ECC,
-							CryptoManagerPasswordHandler.ACTION_ENCRYPT,
-							reason,
-							null,
-							getDefaultPasswordHandlerType());
-		
 		try{
 			synchronized( this ){
 				

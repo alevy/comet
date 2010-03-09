@@ -23,17 +23,9 @@
 package org.gudy.azureus2.ui.swt.config.generic;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Spinner;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Utils;
 
 public class GenericIntParameter
@@ -54,13 +46,15 @@ public class GenericIntParameter
 
 	// OSX doesn't send selection events while typing, so we need to trigger save
 	// on focus out
-	private boolean bTriggerOnFocusOut = Constants.isOSX;
+	private boolean bTriggerOnFocusOut = Utils.isCarbon;
 
 	private Spinner spinner;
 
 	private TimerEvent timedSaveEvent = null;
 
 	private TimerEventPerformer timerEventSave;
+
+	private final boolean delayIntialSet = Utils.isCarbon && System.getProperty("os.version", "").startsWith("10.6");
 
 	public GenericIntParameter(GenericParameterAdapter adapter,
 			Composite composite, final String name) {
@@ -111,6 +105,14 @@ public class GenericIntParameter
 		setMinimumValue(iMinValue);
 		setMaximumValue(iMaxValue);
 		spinner.setSelection(value);
+		
+		if (delayIntialSet) {
+  		Utils.execSWTThreadLater(0, new AERunnable() {
+  			public void runSupport() {
+  				spinner.setSelection(adapter.getIntValue(sParamName, iDefaultValue));
+  			}
+  		});
+		}
 
 		spinner.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {

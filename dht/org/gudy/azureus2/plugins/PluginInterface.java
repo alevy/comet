@@ -23,27 +23,27 @@ package org.gudy.azureus2.plugins;
 
 import java.util.Properties;
 
-import org.gudy.azureus2.plugins.clientid.ClientIDManager;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
-import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTManager;
-import org.gudy.azureus2.plugins.download.DownloadManager;
-import org.gudy.azureus2.plugins.ipc.IPCInterface;
-import org.gudy.azureus2.plugins.ipfilter.IPFilter;
+import org.gudy.azureus2.plugins.sharing.ShareManager;
+import org.gudy.azureus2.plugins.sharing.ShareException;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.utils.Utilities;
 import org.gudy.azureus2.plugins.logging.Logger;
 import org.gudy.azureus2.plugins.messaging.MessageManager;
 import org.gudy.azureus2.plugins.network.ConnectionManager;
-import org.gudy.azureus2.plugins.platform.PlatformManager;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareManager;
+import org.gudy.azureus2.plugins.ipc.IPCInterface;
+import org.gudy.azureus2.plugins.ipfilter.IPFilter;
+import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
+import org.gudy.azureus2.plugins.download.DownloadManager;
 import org.gudy.azureus2.plugins.torrent.TorrentManager;
-import org.gudy.azureus2.plugins.tracker.Tracker;
-import org.gudy.azureus2.plugins.ui.UIManager;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.plugins.platform.PlatformManager;
+import org.gudy.azureus2.plugins.ui.*;
 import org.gudy.azureus2.plugins.ui.config.Parameter;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.config.PluginConfigUIFactory;
 import org.gudy.azureus2.plugins.update.UpdateManager;
 import org.gudy.azureus2.plugins.utils.ShortCuts;
-import org.gudy.azureus2.plugins.utils.Utilities;
+import org.gudy.azureus2.plugins.clientid.*;
+import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTManager;
 
 
 /**

@@ -27,13 +27,8 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.ui.swt.Messages;
@@ -68,10 +63,10 @@ public class WelcomePanel extends AbstractWizardPanel {
     		"ConfigView.section.mode.advanced.wiki.main",
     		"ConfigView.section.mode.intermediate.wiki.publish"
     };
-    final String[] links = {"http://www.azureuswiki.com/index.php/This_funny_word",
-    		"http://www.azureuswiki.com/index.php/HostingFiles",
-    		"http://www.azureuswiki.com/index.php/Main_Page",
-    		"http://www.azureuswiki.com/index.php/PublishingFiles"
+    final String[] links = {"http://wiki.vuze.com/w/This_funny_word",
+    		"http://wiki.vuze.com/w/HostingFiles",
+    		"http://wiki.vuze.com/w/Main_Page",
+    		"http://wiki.vuze.com/w/PublishingFiles"
     };
     
     Composite rootPanel = wizard.getPanel();

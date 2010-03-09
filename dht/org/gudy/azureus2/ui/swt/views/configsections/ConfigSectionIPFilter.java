@@ -32,51 +32,31 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.ipfilter.BannedIp;
-import org.gudy.azureus2.core3.ipfilter.IPFilterListener;
-import org.gudy.azureus2.core3.ipfilter.IpFilter;
-import org.gudy.azureus2.core3.ipfilter.IpFilterManager;
-import org.gudy.azureus2.core3.ipfilter.IpRange;
+import org.gudy.azureus2.core3.ipfilter.*;
 import org.gudy.azureus2.core3.ipfilter.impl.IpFilterAutoLoaderImpl;
 import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.FloatParameter;
-import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.IpFilterEditor;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+
 public class ConfigSectionIPFilter implements UISWTConfigSection {
-  AzureusCore	azureus_core;
-  
   IpFilter filter;
   Table table;
   boolean noChange;
@@ -125,10 +105,8 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
 	private IPFilterListener filterListener;
   
   public
-  ConfigSectionIPFilter(
-  	AzureusCore		_azureus_core )
+  ConfigSectionIPFilter()
   {
-  	azureus_core	= _azureus_core;
   	comparator = new FilterComparator();
   }
   
@@ -157,7 +135,7 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
 
   public void configSectionDelete() {
   	if (bIsCachingDescriptions) {
-	    IpFilterManager ipFilterManager = azureus_core.getIpFilterManager();
+	    IpFilterManager ipFilterManager = AzureusCoreFactory.getSingleton().getIpFilterManager();
 	  	ipFilterManager.clearDescriptionCache();
 	  	bIsCachingDescriptions = false;
   	}
@@ -171,6 +149,15 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
   }
 
   public Composite configSectionCreate(final Composite parent) {
+
+  	if (!AzureusCoreFactory.isCoreRunning()) {
+      Composite cSection = new Composite(parent, SWT.NULL);
+    	cSection.setLayout(new FillLayout());
+    	Label lblNotAvail = new Label(cSection, SWT.WRAP);
+    	Messages.setLanguageText(lblNotAvail, "core.not.available");
+    	return cSection;
+    }
+
 		ImageLoader imageLoader = ImageLoader.getInstance();
 		Image imgOpenFolder = imageLoader.getImage("openFolderButton");			
 
@@ -180,7 +167,7 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
 
     int userMode = COConfigurationManager.getIntParameter("User Mode");
 
-    final IpFilterManager ipFilterManager = azureus_core.getIpFilterManager();
+    final IpFilterManager ipFilterManager = AzureusCoreFactory.getSingleton().getIpFilterManager();
     filter = ipFilterManager.getIPFilter();
 
     Composite gFilter = new Composite(parent, SWT.NULL);
@@ -250,7 +237,6 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
 
     FloatParameter discard_ratio = new FloatParameter(gBlockBanning, "Ip Filter Ban Discard Ratio");
     gridData = new GridData();
-    gridData.widthHint = 30;
     discard_ratio.setLayoutData(gridData);
 
 
@@ -277,7 +263,6 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
 
     IntParameter discard_min = new IntParameter(cIndent, "Ip Filter Ban Discard Min KB");
     gridData = new GridData();
-    gridData.widthHint = 30;
     discard_min.setLayoutData(gridData);
     
    	// block banning
@@ -287,9 +272,8 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
     "ConfigView.section.ipfilter.blockbanning");
 
     IntParameter block_banning = new IntParameter(gBlockBanning,
-    "Ip Filter Ban Block Limit");
+    "Ip Filter Ban Block Limit", 0, 256);
     gridData = new GridData();
-    gridData.widthHint = 30;
     block_banning.setLayoutData(gridData);
 
     // triggers
@@ -592,13 +576,13 @@ public class ConfigSectionIPFilter implements UISWTConfigSection {
   }
 
   public void editRange(IpRange range) {
-    new IpFilterEditor(azureus_core,table.getShell(), range);
+    new IpFilterEditor(AzureusCoreFactory.getSingleton(),table.getShell(), range);
     noChange = false;
     //refresh();
   }
 
   public void addRange() {
-    new IpFilterEditor(azureus_core,table.getShell(), null);
+    new IpFilterEditor(AzureusCoreFactory.getSingleton(),table.getShell(), null);
     //noChange = false;
     //refresh();
   }

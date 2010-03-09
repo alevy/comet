@@ -26,9 +26,7 @@ package com.aelitis.net.udp.uc;
  *
  */
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
+import java.net.*;
 
 public interface 
 PRUDPPacketHandler 

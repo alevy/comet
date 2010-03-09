@@ -32,26 +32,17 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerFactory;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerFactoryListener;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerStats;
+import org.gudy.azureus2.core3.tracker.server.*;
 import org.gudy.azureus2.core3.tracker.server.impl.dht.TRTrackerServerDHT;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.TRTrackerServerTCP;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.blocking.TRBlockingServer;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.nonblocking.TRNonBlockingServer;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.nonblocking.TRNonBlockingServerProcessor;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.nonblocking.TRNonBlockingServerProcessorFactory;
-import org.gudy.azureus2.core3.tracker.server.impl.udp.TRTrackerServerUDP;
+import org.gudy.azureus2.core3.tracker.server.impl.udp.*;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AsyncController;
 
@@ -284,7 +275,7 @@ TRTrackerServerFactoryImpl
 			String 				input_header, 
 			String 				lowercase_input_header, 
 			String 				url_path, 
-			InetSocketAddress 	client_address, 
+			InetSocketAddress 	remote_address, 
 			boolean 			announce_and_scrape_only, 
 			InputStream 		is,
 			AsyncController		async )
@@ -293,7 +284,9 @@ TRTrackerServerFactoryImpl
 		{
 			ByteArrayOutputStream	os = new ByteArrayOutputStream( 1024 );
 			
-			processRequest(input_header, lowercase_input_header, url_path, client_address, announce_and_scrape_only, is, os, async );
+			InetSocketAddress	local_address = null;	// TODO
+			
+			processRequest(input_header, lowercase_input_header, url_path, local_address, remote_address, announce_and_scrape_only, false, is, os, async );
 			
 			return( os );
 		}

@@ -41,19 +41,8 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManager;
@@ -66,13 +55,7 @@ import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimeFormatter;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.TorrentUtil;
 import org.gudy.azureus2.ui.swt.Utils;
@@ -190,7 +173,11 @@ public class GeneralView extends AbstractIView implements ParameterListener,
     genLayout.numColumns = 1;
     genComposite.setLayout(genLayout);
 
-    refreshInfo();
+    Utils.execSWTThreadLater(0, new AERunnable() {
+			public void runSupport() {
+				refreshInfo();
+			}
+		});
     COConfigurationManager.addParameterListener("Graphics Update", this);
   }
   
@@ -713,13 +700,6 @@ public class GeneralView extends AbstractIView implements ParameterListener,
       }
     });
 
-    if( Constants.isOSX ) {
-      Shell shell = genComposite.getShell();
-      Point size = shell.getSize();
-      shell.setSize(size.x-1,size.y-1);
-      shell.setSize(size);
-    }
-    
     genComposite.addDisposeListener(new DisposeListener() {
     	public void widgetDisposed(DisposeEvent e) {
     		menuTracker.dispose();
@@ -741,7 +721,7 @@ public class GeneralView extends AbstractIView implements ParameterListener,
    * @see org.gudy.azureus2.ui.swt.IView#refresh()
    */
   public void refresh() {
-    if(getComposite() == null || getComposite().isDisposed() || manager == null)
+    if(gFile == null || gFile.isDisposed() || manager == null)
       return;
 
     loopFactor++;
@@ -1275,7 +1255,7 @@ public class GeneralView extends AbstractIView implements ParameterListener,
     
     if ( trackerClient != null ){
     	
-    	URL	temp = trackerClient.getTrackerUrl();
+    	URL	temp = trackerClient.getTrackerURL();
     	
     	if ( temp != null ){
     		
@@ -1343,6 +1323,12 @@ public class GeneralView extends AbstractIView implements ParameterListener,
 				fileName.setText(_fileName);
 				fileSize.setText(_fileSize);
 				torrentStatus.setText(_torrentStatus);
+				int pos = _torrentStatus.indexOf( "http://" );
+				if ( pos > 0 ){
+					torrentStatus.setLink( UrlUtils.getURL( _torrentStatus ));
+				}else{
+					torrentStatus.setLink( null );
+				}
 				saveIn.setText(_path);
 				hash.setText(_hash);
 				pieceNumber.setText(_pieceData); //$NON-NLS-1$

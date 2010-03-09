@@ -30,32 +30,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.category.Category;
 import org.gudy.azureus2.core3.category.CategoryManager;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerFactory;
-import org.gudy.azureus2.core3.download.DownloadManagerInitialisationAdapter;
-import org.gudy.azureus2.core3.download.DownloadManagerState;
-import org.gudy.azureus2.core3.download.DownloadManagerStateFactory;
-import org.gudy.azureus2.core3.download.DownloadManagerStats;
+import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
+import org.gudy.azureus2.core3.download.*;
 import org.gudy.azureus2.core3.download.impl.DownloadManagerAdapter;
-import org.gudy.azureus2.core3.global.GlobalManager;
-import org.gudy.azureus2.core3.global.GlobalManagerDownloadRemovalVetoException;
-import org.gudy.azureus2.core3.global.GlobalManagerDownloadWillBeRemovedListener;
-import org.gudy.azureus2.core3.global.GlobalManagerListener;
-import org.gudy.azureus2.core3.global.GlobalManagerStats;
-import org.gudy.azureus2.core3.global.GlobalMangerProgressListener;
+import org.gudy.azureus2.core3.global.*;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
@@ -63,42 +46,18 @@ import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraper;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperClientResolver;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperFactory;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperListener;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
+import org.gudy.azureus2.core3.tracker.client.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtilsListener;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DelayedEvent;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.FrequencyLimitedDispatcher;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.ListenerManager;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcherWithException;
-import org.gudy.azureus2.core3.util.NonDaemonTask;
-import org.gudy.azureus2.core3.util.NonDaemonTaskRunner;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
-import org.gudy.azureus2.plugins.network.ConnectionManager;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.helpers.TorrentFolderWatcher;
 import com.aelitis.azureus.core.peermanager.control.PeerControlSchedulerFactory;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
+
+import org.gudy.azureus2.plugins.network.ConnectionManager;
+import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
 
 
 /**
@@ -186,7 +145,7 @@ public class GlobalManagerImpl
 				}
 			});
 	
-	private List 		managers_cow	= new ArrayList();
+	private List<DownloadManager> 		managers_cow	= new ArrayList<DownloadManager>();
 	private AEMonitor	managers_mon	= new AEMonitor( "GM:Managers" );
 	
 	private Map		manager_map			= new HashMap();
@@ -448,6 +407,32 @@ public class GlobalManagerImpl
     			}
     			
     			return( false );
+    		}
+    		
+    		public int[] 
+    		getCachedScrape(
+    			HashWrapper hash )
+    		{
+    			DownloadManager	dm = getDownloadManager(hash);
+    			
+    			if ( dm == null ){
+    				
+    				return( null );
+    			}
+    						
+				long cache = dm.getDownloadState().getLongAttribute( DownloadManagerState.AT_SCRAPE_CACHE );
+				
+				if ( cache == -1 ){
+					
+					return( null );
+					
+				}else{
+					
+					int seeds 		= (int)((cache>>32)&0x00ffffff);
+					int leechers 	= (int)(cache&0x00ffffff);
+					
+					return( new int[]{ seeds, leechers });
+				}
     		}
     		
     		public Object[]
@@ -1345,7 +1330,7 @@ public class GlobalManagerImpl
 	
 	long	lastListenerUpdate = 0;
 	
-	List	managers = managers_cow;
+	List<DownloadManager> managers = sortForStop();
 	
 	int nbDownloads = managers.size();
 	
@@ -1449,8 +1434,9 @@ public class GlobalManagerImpl
   pauseDownloads(
 	boolean	tag_only )
   {
-    for( Iterator i = managers_cow.iterator(); i.hasNext(); ) {
-      DownloadManager manager = (DownloadManager)i.next();
+	List<DownloadManager> managers = sortForStop();
+	
+    for( DownloadManager manager: managers ){
       
       if ( manager.getTorrent() == null ) {
         continue;
@@ -1655,7 +1641,38 @@ public class GlobalManagerImpl
     return false;
   }
   
-  
+  	private List<DownloadManager>
+  	sortForStop()
+	{
+  		List<DownloadManager>	managers = new ArrayList<DownloadManager>( managers_cow );
+  		
+  		Collections.sort(
+  			managers,
+  			new Comparator<DownloadManager>()
+  			{
+  				public int 
+  				compare(
+  					DownloadManager o1, 
+  					DownloadManager o2) 
+  				{
+  					int s1 = o1.getState();
+  					int s2 = o2.getState();
+  					
+  					if ( s2 == DownloadManager.STATE_QUEUED ){
+  						
+  						return( 1 );
+  						
+  					}else if ( s1 == DownloadManager.STATE_QUEUED ){
+
+  						return( -1 );
+  					}
+  					
+  					return( 0 );
+  				}
+  			});
+  		
+  		return( managers );
+	}
   
   private void loadDownloads() 
   {
@@ -2421,7 +2438,7 @@ public class GlobalManagerImpl
 		  
 		  //System.out.println( "force_start_exists->" + force_start_non_seed_exists );
 		  
-		  PeerControlSchedulerFactory.getSingleton().overrideWeightedPriorities( force_start_non_seed_exists  );
+		  PeerControlSchedulerFactory.overrideWeightedPriorities( force_start_non_seed_exists  );
 	  }
   }
   
@@ -2729,6 +2746,56 @@ public class GlobalManagerImpl
 							}catch( Throwable e ){
 								
 								Debug.printStackTrace(e);
+							}
+						}
+						
+						if ( COConfigurationManager.getBooleanParameter( "Rename Incomplete Files")){
+							
+							String	ext = COConfigurationManager.getStringParameter( "Rename Incomplete Files Extension" ).trim();
+							
+							DownloadManagerState state = manager.getDownloadState();
+							
+							String existing_ext = state.getAttribute( DownloadManagerState.AT_INCOMP_FILE_SUFFIX );
+
+							if ( ext.length() > 0 && existing_ext == null ){
+									
+								ext = FileUtil.convertOSSpecificChars( ext, false );
+								
+								DiskManagerFileInfo[] fileInfos = manager.getDiskManagerFileInfo();
+								
+								try{
+									state.suppressStateSave(true);
+																	
+									for ( int i=0; i<fileInfos.length; i++ ){
+										
+										DiskManagerFileInfo fileInfo = fileInfos[i];
+										
+										File base_file = fileInfo.getFile( false );
+										
+										File existing_link = state.getFileLink( base_file );
+										
+										if ( existing_link == null || !existing_link.exists()){
+											
+											File	new_link;
+											
+											if ( existing_link == null ){
+												
+												new_link = new File( base_file.getParentFile(), base_file.getName() + ext );
+												
+											}else{
+												
+												new_link = new File( existing_link.getParentFile(), existing_link.getName() + ext );
+											}
+											
+											state.setFileLink( base_file,new_link );
+										}
+									}
+								}finally{
+									
+									state.setAttribute( DownloadManagerState.AT_INCOMP_FILE_SUFFIX, ext );
+									
+									state.suppressStateSave(false);
+								}
 							}
 						}
 					}

@@ -28,9 +28,10 @@ package org.gudy.azureus2.pluginsimpl.local.download;
 
 import java.net.URL;
 
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
+
+import org.gudy.azureus2.core3.tracker.client.*;
 
 public class 
 DownloadScrapeResultImpl

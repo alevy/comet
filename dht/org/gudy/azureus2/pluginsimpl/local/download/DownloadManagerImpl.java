@@ -28,14 +28,7 @@ package org.gudy.azureus2.pluginsimpl.local.download;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.disk.DiskManager;
@@ -52,13 +45,7 @@ import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadEventNotifier;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadManagerListener;
-import org.gudy.azureus2.plugins.download.DownloadManagerStats;
-import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
-import org.gudy.azureus2.plugins.download.DownloadWillBeAddedListener;
+import org.gudy.azureus2.plugins.download.*;
 import org.gudy.azureus2.plugins.download.savelocation.DefaultSaveLocationManager;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationManager;
 import org.gudy.azureus2.plugins.torrent.Torrent;
@@ -770,6 +757,8 @@ DownloadManagerImpl
 			listeners = new_listeners;
 			if (notify_of_current_downloads) {
 				downloads_copy = new ArrayList(downloads);
+				// randomize list so that plugins triggering dlm-state fixups don't lock each other by doing everything in the same order
+				Collections.shuffle(downloads_copy);
 			}
 		}
 		finally {

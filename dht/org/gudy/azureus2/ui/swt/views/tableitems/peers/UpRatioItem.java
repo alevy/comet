@@ -20,12 +20,12 @@
  
 package org.gudy.azureus2.ui.swt.views.tableitems.peers;
 
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.core3.util.Constants;
+
+import org.gudy.azureus2.core3.peer.PEPeer;
+import org.gudy.azureus2.plugins.ui.tables.*;
+
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /**
@@ -62,16 +62,16 @@ public class UpRatioItem
         if (value == 0)
           value = -1;
       } else if (lDivident > 0)
-        value = Constants.INFINITY_AS_INT;
+        value = Float.MAX_VALUE;
     }
 
-    if (!cell.setSortValue((long)(value * 1000)) && cell.isValid())
+    if (!cell.setSortValue((long)(value * 1000.0d)) && cell.isValid())
       return;
 
     String s;
     if (lDivisor <= 0) 
       s = "";
-    else if (value == Constants.INFINITY_AS_INT)
+    else if (value == Float.MAX_VALUE )
       s = Constants.INFINITY_STRING + ":1";
     else if (value == -1)
       s = "1:" + Constants.INFINITY_STRING;

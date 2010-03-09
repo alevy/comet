@@ -22,6 +22,11 @@
 
 package com.aelitis.net.magneturi;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+
 import com.aelitis.net.magneturi.impl.MagnetURIHandlerImpl;
 
 /**
@@ -42,6 +47,14 @@ MagnetURIHandler
 	getPort();
 	
 	public abstract void
+	process(
+		String			get,
+		InputStream		is,
+		OutputStream	os )
+	
+		throws IOException;
+	
+	public abstract void
 	addListener(
 		MagnetURIHandlerListener l );
 	
@@ -53,4 +66,21 @@ MagnetURIHandler
 	addInfo(
 		String		name,
 		int			info );
+	
+	public abstract URL
+	registerResource(
+		ResourceProvider		provider );
+	
+	public interface
+	ResourceProvider
+	{
+		public String
+		getUID();
+		
+		public String
+		getFileType();
+				
+		public byte[]
+		getData();
+	}
 }

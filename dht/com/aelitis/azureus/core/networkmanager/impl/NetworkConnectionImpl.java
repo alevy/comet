@@ -29,17 +29,8 @@ import java.nio.ByteBuffer;
 import org.gudy.azureus2.core3.util.AddressUtils;
 import org.gudy.azureus2.core3.util.Debug;
 
-import com.aelitis.azureus.core.networkmanager.ConnectionAttempt;
-import com.aelitis.azureus.core.networkmanager.ConnectionEndpoint;
-import com.aelitis.azureus.core.networkmanager.EventWaiter;
-import com.aelitis.azureus.core.networkmanager.IncomingMessageQueue;
-import com.aelitis.azureus.core.networkmanager.NetworkConnection;
-import com.aelitis.azureus.core.networkmanager.NetworkConnectionHelper;
-import com.aelitis.azureus.core.networkmanager.NetworkManager;
-import com.aelitis.azureus.core.networkmanager.OutgoingMessageQueue;
-import com.aelitis.azureus.core.networkmanager.Transport;
-import com.aelitis.azureus.core.networkmanager.TransportBase;
-import com.aelitis.azureus.core.networkmanager.TransportEndpoint;
+
+import com.aelitis.azureus.core.networkmanager.*;
 import com.aelitis.azureus.core.peermanager.messaging.MessageStreamDecoder;
 import com.aelitis.azureus.core.peermanager.messaging.MessageStreamEncoder;
 
@@ -129,7 +120,7 @@ NetworkConnectionImpl
     
     if( is_connected ){
     	
-      connection_listener.connectStarted();
+      connection_listener.connectStarted( -1 );
       
       connection_listener.connectSuccess( initial_outbound_data );
       
@@ -153,8 +144,8 @@ NetworkConnectionImpl
     			initial_outbound_data,
     			priority,
     			new Transport.ConnectListener() {
-			      public void connectAttemptStarted() {
-			        connection_listener.connectStarted();
+			      public int connectAttemptStarted( int default_connect_timeout ){
+			        return( connection_listener.connectStarted( default_connect_timeout ));
 			      }
 			      
 			      public void connectSuccess( Transport	_transport, ByteBuffer remaining_initial_data ) {
@@ -231,11 +222,10 @@ NetworkConnectionImpl
   }
   
   
-  public void enableEnhancedMessageProcessing( boolean enable ) {
+  public void enableEnhancedMessageProcessing( boolean enable, int partition_id ) {
     if( enable ) {
-    	NetworkManager.getSingleton().upgradeTransferProcessing( this );
-    }
-    else {
+    	NetworkManager.getSingleton().upgradeTransferProcessing( this, partition_id );
+    }else{
       NetworkManager.getSingleton().downgradeTransferProcessing( this );
     }
   }

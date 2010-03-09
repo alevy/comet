@@ -24,7 +24,6 @@ package org.gudy.azureus2.pluginsimpl.local.torrent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
 import org.gudy.azureus2.plugins.torrent.TorrentAttributeEvent;

@@ -32,26 +32,15 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerPiece;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.util.AERunnable;
@@ -60,12 +49,17 @@ import org.gudy.azureus2.core3.util.DisplayFormatters;
 import org.gudy.azureus2.plugins.Plugin;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.Legend;
 import org.gudy.azureus2.ui.swt.debug.ObfusticateImage;
 import org.gudy.azureus2.ui.swt.debug.UIDebugGenerator;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;
+import org.gudy.azureus2.ui.swt.views.IViewExtension;
 
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.core.peermanager.piecepicker.util.BitFlags;
 
 /**
@@ -77,7 +71,10 @@ import com.aelitis.azureus.core.peermanager.piecepicker.util.BitFlags;
  * 
  * @todo on paint, paint cached image instead of recalc
  */
-public class PeerInfoView extends AbstractIView implements ObfusticateImage {
+public class PeerInfoView
+	extends AbstractIView
+	implements ObfusticateImage, IViewExtension
+{
 	private final static int BLOCK_FILLSIZE = 14;
 
 	private final static int BLOCK_SPACING = 2;
@@ -126,6 +123,8 @@ public class PeerInfoView extends AbstractIView implements ObfusticateImage {
 
 	Image img = null;
 
+	protected boolean refreshInfoCanvasQueued;
+
 	/**
 	 * Initialize
 	 *
@@ -135,6 +134,14 @@ public class PeerInfoView extends AbstractIView implements ObfusticateImage {
 				Colors.blues[Colors.BLUES_MIDLIGHT], Colors.fadedGreen, Colors.white,
 				Colors.red, Colors.fadedRed, Colors.black };
 
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				initCountryPlugin();
+			}
+		});
+	}
+	
+	private void initCountryPlugin() {
 		// Pull in Country Information if the plugin exists
 		/**
 		 * If this view was a real plugin view, we could attach the CountryLocator.jar
@@ -272,10 +279,19 @@ public class PeerInfoView extends AbstractIView implements ObfusticateImage {
 
 		peerInfoCanvas.addListener(SWT.Resize, new Listener() {
 			public void handleEvent(Event e) {
+				if (refreshInfoCanvasQueued || !peerInfoCanvas.isVisible()) {
+					return;
+				}
+				
 				// wrap in asyncexec because sc.setMinWidth (called later) doesn't work
 				// too well inside a resize (the canvas won't size isn't always updated)
-				e.widget.getDisplay().asyncExec(new AERunnable() {
+				Utils.execSWTThreadLater(100, new AERunnable() {
 					public void runSupport() {
+						if (refreshInfoCanvasQueued) {
+							return;
+						}
+						refreshInfoCanvasQueued = true;
+
 						if (img != null) {
 							int iOldColCount = img.getBounds().width / BLOCK_SIZE;
 							int iNewColCount = peerInfoCanvas.getClientArea().width / BLOCK_SIZE;
@@ -369,7 +385,9 @@ public class PeerInfoView extends AbstractIView implements ObfusticateImage {
 		}
 	}
 
-	protected void refreshInfoCanvas() {
+	private void refreshInfoCanvas() {
+		refreshInfoCanvasQueued = false;
+
 		peerInfoCanvas.layout(true);
 		Rectangle bounds = peerInfoCanvas.getClientArea();
 		if (bounds.width <= 0 || bounds.height <= 0)
@@ -600,5 +618,16 @@ public class PeerInfoView extends AbstractIView implements ObfusticateImage {
 	public Image obfusticatedImage(Image image, Point shellOffset) {
 		UIDebugGenerator.obfusticateArea(image, topLabel, shellOffset, "");
 		return image;
+	}
+
+	public Menu getPrivateMenu() {
+		return null;
+	}
+
+	public void viewActivated() {
+		refreshInfoCanvas();
+	}
+
+	public void viewDeactivated() {
 	}
 }

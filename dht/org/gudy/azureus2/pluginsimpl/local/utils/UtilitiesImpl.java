@@ -26,15 +26,43 @@ package org.gudy.azureus2.pluginsimpl.local.utils;
  *
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.gudy.azureus2.platform.PlatformManager;
+import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.plugins.utils.Utilities.FeatureEnabler;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
+import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploaderFactory;
+import org.gudy.azureus2.plugins.utils.search.Search;
+import org.gudy.azureus2.plugins.utils.search.SearchException;
+import org.gudy.azureus2.plugins.utils.search.SearchInitiator;
+import org.gudy.azureus2.plugins.utils.search.SearchListener;
+import org.gudy.azureus2.plugins.utils.search.SearchProvider;
+import org.gudy.azureus2.plugins.utils.security.SESecurityManager;
+import org.gudy.azureus2.plugins.utils.subscriptions.Subscription;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionException;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionManager;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionResult;
+import org.gudy.azureus2.plugins.utils.xml.rss.RSSFeed;
+import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
+import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentFactory;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader.*;
+import org.gudy.azureus2.pluginsimpl.local.utils.resourceuploader.ResourceUploaderFactoryImpl;
+import org.gudy.azureus2.pluginsimpl.local.utils.security.*;
+import org.gudy.azureus2.pluginsimpl.local.utils.xml.rss.RSSFeedImpl;
+import org.gudy.azureus2.pluginsimpl.local.utils.xml.simpleparser.*;
 
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPChecker;
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerFactory;
@@ -43,6 +71,7 @@ import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerServiceLi
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.util.AEDiagnostics;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;
@@ -50,50 +79,20 @@ import org.gudy.azureus2.core3.util.BEncoder;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.IPToHostNameResolver;
 import org.gudy.azureus2.core3.util.IPToHostNameResolverListener;
 import org.gudy.azureus2.core3.util.SystemProperties;
+import org.gudy.azureus2.core3.util.DirectByteBufferPool;
 import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.TimeFormatter;
 import org.gudy.azureus2.core3.util.Timer;
 import org.gudy.azureus2.core3.util.TimerEvent;
 import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.utils.AggregatedDispatcher;
-import org.gudy.azureus2.plugins.utils.AggregatedList;
-import org.gudy.azureus2.plugins.utils.AggregatedListAcceptor;
-import org.gudy.azureus2.plugins.utils.ByteArrayWrapper;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.utils.Formatters;
-import org.gudy.azureus2.plugins.utils.LocaleUtilities;
-import org.gudy.azureus2.plugins.utils.Monitor;
-import org.gudy.azureus2.plugins.utils.PooledByteBuffer;
-import org.gudy.azureus2.plugins.utils.Semaphore;
-import org.gudy.azureus2.plugins.utils.UTTimer;
-import org.gudy.azureus2.plugins.utils.Utilities;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
-import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploaderFactory;
-import org.gudy.azureus2.plugins.utils.search.SearchException;
-import org.gudy.azureus2.plugins.utils.search.SearchProvider;
-import org.gudy.azureus2.plugins.utils.security.SESecurityManager;
-import org.gudy.azureus2.plugins.utils.xml.rss.RSSFeed;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentFactory;
-import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
-import org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader.ResourceDownloaderFactoryImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.resourceuploader.ResourceUploaderFactoryImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.security.SESecurityManagerImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.xml.rss.RSSFeedImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.xml.simpleparser.SimpleXMLParserDocumentFactoryImpl;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.util.CopyOnWriteList;
 import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
 
 public class 
@@ -117,8 +116,10 @@ UtilitiesImpl
 		};
 		
 		
-	private static List		search_managers 	= new ArrayList();
-	private static List		search_providers	= new ArrayList();
+	private static List<searchManager>		search_managers 	= new ArrayList<searchManager>();
+	private static List<Object[]>			search_providers	= new ArrayList<Object[]>();
+	
+	private static CopyOnWriteList<FeatureEnabler>	feature_enablers = new CopyOnWriteList<FeatureEnabler>();
 	
 	public
 	UtilitiesImpl(
@@ -898,6 +899,15 @@ UtilitiesImpl
 		FileUtil.writeResilientFile( parent_dir, file_name, data, use_backup );
 	}
 
+	public void
+ 	deleteResilientBEncodedFile(
+ 		File	parent_dir,
+ 		String	file_name,
+ 		boolean	use_backup )
+	{
+		FileUtil.deleteResilientFile( new File( parent_dir, file_name ));
+	}
+	
 	public int compareVersions(String v1, String v2) {
 		return Constants.compareVersions( v1, v2 );
 	}
@@ -914,7 +924,7 @@ UtilitiesImpl
 	private static AESemaphore	delayed_tasks_sem	= new AESemaphore( "Utilities:delayedTask" );
 	private static AEThread2	delayed_task_thread;
 	
-	public static DelayedTaskImpl addDelayedTask(String	name, Runnable r) {
+	public static DelayedTask addDelayedTask(String	name, Runnable r) {
 		DelayedTaskImpl res = new DelayedTaskImpl(name);
 		res.setTask(r);
 		return res;
@@ -922,11 +932,12 @@ UtilitiesImpl
 	
 	private static void
 	queueTask(
-		DelayedTaskImpl		task )
+		DelayedTaskImpl		task,
+		int pos)
 	{
 		synchronized( delayed_tasks ){
 			
-			delayed_tasks.add( task );
+			delayed_tasks.add( pos == -1 ? delayed_tasks.size() : pos, task );
 			
 			delayed_tasks_sem.release();
 			
@@ -963,7 +974,7 @@ UtilitiesImpl
 											task = (DelayedTaskImpl)delayed_tasks.remove(0);
 										}
 										
-										// System.out.println( TimeFormatter.milliStamp() + ": Running delayed task: " + task.getName());
+										//System.out.println( TimeFormatter.milliStamp() + ": Running delayed task: " + task.getName());
 										
 										task.run();
 									}
@@ -988,19 +999,39 @@ UtilitiesImpl
 	
 		throws SearchException
 	{
-		List	managers;
+		List<searchManager>	managers;
 		
 		synchronized( UtilitiesImpl.class ){
 			
 			search_providers.add( new Object[]{ pi, provider  });
 			
-			managers = new ArrayList( search_managers );
+			managers = new ArrayList<searchManager>( search_managers );
 		}
 		
 		for (int i=0;i<managers.size();i++){
 				
 			((searchManager)managers.get(i)).addProvider( pi, provider );
 		}
+	}
+	
+	public SearchInitiator 
+	getSearchInitiator() 
+	
+		throws SearchException 
+	{
+		List<searchManager>	managers;
+		
+		synchronized( UtilitiesImpl.class ){
+						
+			managers = new ArrayList<searchManager>( search_managers );
+		}
+		
+		if ( managers.size() == 0 ){
+			
+			throw( new SearchException( "No search managers registered - try later" ));
+		}
+		
+		return( managers.get(0));
 	}
 	
 	public static void
@@ -1024,13 +1055,185 @@ UtilitiesImpl
 		}
 	}
 	
+	public boolean 
+	isFeatureEnabled(
+		String 					feature_id,
+		Map<String, Object> 	feature_properties) 
+	{
+		String pid = pi.getPluginID();
+		
+		if ( !pid.endsWith( "_v" )){
+			
+			return( false );
+		}
+		
+		for ( FeatureEnabler fe: feature_enablers ){
+			
+			if ( fe.isFeatureEnabled( pid, feature_id, feature_properties)){
+				
+				return( true );
+			}
+		}
+		
+		return false;
+	}
+	
+	public void
+	registerFeatureEnabler(
+		FeatureEnabler	enabler )
+	{
+		if ( !pi.getPluginID().endsWith( "_v" )){
+						
+			return;
+		}
+		
+		feature_enablers.add( enabler );
+	}
+	
+	public void
+	unregisterFeatureEnabler(
+		FeatureEnabler	enabler )
+	{
+		feature_enablers.remove( enabler );
+	}
+	
 	public interface
 	searchManager
+		extends SearchInitiator
 	{
 		public void
 		addProvider( 
 			PluginInterface		pi,
 			SearchProvider		provider );
+	}
+		
+	
+	public SubscriptionManager 
+	getSubscriptionManager() 
+	
+		throws SubscriptionException
+	{
+		try{
+			Method m = Class.forName( "com.aelitis.azureus.core.subs.SubscriptionManagerFactory" ).getMethod( "getSingleton" );
+			
+			final PluginSubscriptionManager sm = (PluginSubscriptionManager)m.invoke( null );
+			
+			return( 
+				new SubscriptionManager()
+				{
+					public Subscription[] 
+					getSubscriptions() 
+					{
+						PluginSubscription[] p_subs = sm.getSubscriptions( true );
+						
+						Subscription[]	subs = new Subscription[ p_subs.length ];
+						
+						for ( int i=0;i<subs.length;i++ ){
+							
+							final PluginSubscription p_sub = p_subs[i];
+							
+							subs[i] = 
+								new Subscription()
+								{
+									public String 
+									getID() 
+									{
+										return( p_sub.getID());
+									}
+									
+									public String 
+									getName() 
+									{
+										return( p_sub.getName());
+									}
+									
+									public SubscriptionResult[] 
+									getResults() 
+									{
+										PluginSubscriptionResult[] p_results = p_sub.getResults( false );
+										
+										SubscriptionResult[] results = new SubscriptionResult[p_results.length];
+										
+										for (int i=0;i<results.length;i++){
+											
+											final PluginSubscriptionResult p_res = p_results[i];
+											
+											results[i] = 
+												new SubscriptionResult()
+												{
+													private Map<Integer,Object> map = p_res.toPropertyMap();
+													
+													public Object
+													getProperty(
+														int		property_name )
+													{
+														return( map.get( property_name ));
+													}
+													
+													public boolean
+													isRead()
+													{
+														return( p_res.getRead());
+													}
+													
+													public void
+													setRead(
+														boolean	read )
+													{
+														p_res.setRead( read );
+													}
+												};
+										}
+										
+										return( results );
+									}
+								};
+						}
+					
+						return( subs );
+					}
+				});
+			
+		}catch( Throwable e ){
+			
+			throw( new SubscriptionException( "Subscriptions unavailable", e ));
+		}
+	}
+	
+	public interface
+	PluginSubscriptionManager
+	{
+		public PluginSubscription[]
+		getSubscriptions(
+			boolean	subscribed_only );
+	}
+	
+	public interface
+	PluginSubscription
+	{
+		public String
+		getID();
+		
+		public String
+		getName();
+		
+		public PluginSubscriptionResult[]
+		getResults(
+			boolean		include_deleted );
+	}
+	
+	public interface
+	PluginSubscriptionResult
+	{
+		public Map<Integer,Object>
+		toPropertyMap();
+		
+		public void
+		setRead(
+			boolean		read );
+		
+		public boolean
+		getRead();
 	}
 	
 	public interface
@@ -1090,9 +1293,20 @@ UtilitiesImpl
 				throw( new RuntimeException( "Target must be set before queueing" ));
 			}	
 			
-			queueTask( this );
+			queueTask( this, -1 );
 		}
-		
+
+		public void
+		queueFirst()
+		{
+			if ( target == null ){
+				
+				throw( new RuntimeException( "Target must be set before queueing" ));
+			}	
+			
+			queueTask( this, 0 );
+		}
+
 		protected void
 		run()
 		{

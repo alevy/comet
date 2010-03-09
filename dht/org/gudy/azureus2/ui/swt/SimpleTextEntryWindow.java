@@ -23,21 +23,9 @@ package org.gudy.azureus2.ui.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Scrollable;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
@@ -52,20 +40,50 @@ import org.gudy.azureus2.ui.swt.pluginsimpl.AbstractUISWTInputReceiver;
 public class SimpleTextEntryWindow extends AbstractUISWTInputReceiver {
 	
 	private Display display;
+	private Shell shell;
 	
-	public SimpleTextEntryWindow(final Display display) {
-		this.display = display;
+	public SimpleTextEntryWindow() {
+	}
+
+	public SimpleTextEntryWindow(String sTitleKey, String sLabelKey) {
+		setTitle(sTitleKey);
+		setMessage(sLabelKey);
+	}
+
+	public SimpleTextEntryWindow(String sTitleKey, String sLabelKey, boolean bMultiLine) {
+		setTitle(sTitleKey);
+		setMessage(sLabelKey);
+		setMultiLine(bMultiLine);
+	}
+
+	public void initTexts(String sTitleKey, String[] p0, String sLabelKey,
+			String[] p1) {
+		setLocalisedTitle(MessageText.getString(sTitleKey, p0));
+		setLocalisedMessage(MessageText.getString(sLabelKey, p1));
 	}
 	
 	protected void promptForInput() {
 		Utils.execSWTThread(new Runnable() {
-			public void run() {promptForInput0();}
-		}, false);
+			public void run() {
+				promptForInput0();
+				if (receiver_listener == null) {
+					while (shell != null && !shell.isDisposed())
+						if (!display.readAndDispatch()) display.sleep();
+				}
+			}
+		}, receiver_listener != null);
 	}
 	
 	private void promptForInput0() {
-		final Shell shell = org.gudy.azureus2.ui.swt.components.shell.ShellFactory.createShell(Utils.findAnyShell(), SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+		//shell = org.gudy.azureus2.ui.swt.components.shell.ShellFactory.createShell(Utils.findAnyShell(), SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+		// link to active shell, so that when it closes, the input box closes (good for config windows)
+		Shell parent = Display.getDefault().getActiveShell();
+		if (parent == null) {
+			parent = Utils.findAnyShell();
+		}
+		shell = org.gudy.azureus2.ui.swt.components.shell.ShellFactory.createShell(parent, SWT.DIALOG_TRIM);
 
+		display = shell.getDisplay();
 		if (this.title != null) {
 			shell.setText(this.title);
 		}
@@ -82,7 +100,7 @@ public class SimpleTextEntryWindow extends AbstractUISWTInputReceiver {
 	    Label label = null;
 	    GridData gridData = null;
 	    for (int i=0; i<this.messages.length; i++) {
-	    	label = new Label(shell, SWT.NONE);
+	    	label = new Label(shell, SWT.WRAP);
 	    	label.setText(this.messages[i]);
 	    	
 	    	// 330 is the current default width.
@@ -251,13 +269,17 @@ public class SimpleTextEntryWindow extends AbstractUISWTInputReceiver {
 			}
 		});
 		
+		shell.addListener(SWT.Dispose, new Listener() {
+			public void handleEvent(Event event) {
+				triggerReceiverListener();
+			}
+		});
+		
 	    shell.pack();
 	    if (text_entry_text != null)
 	    	Utils.createURLDropTarget(shell, text_entry_text);
 	    Utils.centreWindow(shell);
 	    shell.open();
-	    while (!shell.isDisposed())
-	      if (!display.readAndDispatch()) display.sleep();
 	  }
 
   private static Button createAlertButton(final Composite panel, String localizationKey)

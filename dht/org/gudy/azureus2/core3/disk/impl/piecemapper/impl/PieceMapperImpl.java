@@ -22,8 +22,7 @@
 
 package org.gudy.azureus2.core3.disk.impl.piecemapper.impl;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,9 +31,9 @@ import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMap;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapper;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceMapperFile;
+
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.StringInterner;
 
@@ -52,7 +51,7 @@ PieceMapperImpl
 	
 	private int				last_piece_length;
 	
-	protected ArrayList btFileList = new ArrayList();
+	protected ArrayList<fileInfo> btFileList = new ArrayList<fileInfo>();
 
 	
 	public
@@ -93,15 +92,18 @@ PieceMapperImpl
 	
 	// method for simple torrents
 	
-	protected void 
+	private void 
 	buildFileLookupTables(
 		TOTorrentFile			torrent_file, 
 		String					fileName )
 	{
+		// not needed as fileName already normalised
+		// fileName = FileUtil.convertOSSpecificChars( fileName,  false );
+		
 		btFileList.add(new PieceMapperImpl.fileInfo(torrent_file,"", fileName ));
 	}
 	
-	protected void 
+	private void 
 	buildFileLookupTables(
 		TOTorrentFile[]			torrent_files, 
 		LocaleUtilDecoder 		locale_decoder ) 
@@ -213,7 +215,7 @@ PieceMapperImpl
 			long fileOffset = 0;
 			int currentFile = 0;
 			for (int i = 0;(1 == piece_count && i < piece_count) || i < piece_count - 1; i++) {
-				ArrayList pieceToFileList = new ArrayList();
+				ArrayList<PieceMapEntryImpl> pieceToFileList = new ArrayList<PieceMapEntryImpl>();
 				int usedSpace = 0;
 				while (modified_piece_length > usedSpace) {
 					fileInfo tempFile = (fileInfo)btFileList.get(currentFile);
@@ -269,54 +271,29 @@ PieceMapperImpl
 			return( new DMPieceMapImpl( pieceMap ));
 		}
 	}
-
 	
-
-	private List 
+	private List<PieceMapEntryImpl> 
 	buildLastPieceToFileList(
-		List file_list, 
-		int currentFile, 
-		long fileOffset )
+		List<fileInfo> 	file_list, 
+		int 			current_file, 
+		long 			file_offset )
 	{
-		int piece_length	= (int)torrent.getPieceLength();
-	
-		ArrayList pieceToFileList = new ArrayList();
-		int usedSpace = 0;
-		while (last_piece_length > usedSpace) {
-			fileInfo tempFile = (fileInfo)file_list.get(currentFile);
-			long length = tempFile.getLength();
+		ArrayList<PieceMapEntryImpl> piece_to_file_list = new ArrayList<PieceMapEntryImpl>();
 
-			//get the available space
-			long availableSpace = length - fileOffset;
+		for ( int i=current_file;i<file_list.size();i++){
+			
+			fileInfo file = file_list.get( i );
+						
+			long space_in_file = file.getLength() - file_offset;
+			
+			PieceMapEntryImpl piece_entry = new PieceMapEntryImpl( file.getFileInfo(), file_offset, (int)space_in_file);
 
-			PieceMapEntryImpl tempPieceEntry = null;
-
-			//how much space do we need to use?                               
-			if (availableSpace <= (piece_length - usedSpace)) {
-				//use the rest of the file's space
-				tempPieceEntry = new PieceMapEntryImpl(tempFile.getFileInfo(), fileOffset, (int)availableSpace);
-
-				//update the used space
-				usedSpace += availableSpace;
-				//update the file offset
-				fileOffset = 0;
-				//move the the next file
-				currentFile++;
-			} else //we don't need to use the whole file
-				{
-				tempPieceEntry = new PieceMapEntryImpl(tempFile.getFileInfo(), fileOffset, last_piece_length - usedSpace);
-
-				//update the file offset
-				fileOffset += piece_length - usedSpace;
-				//udate the used space
-				usedSpace += piece_length - usedSpace;
-			}
-
-			//add the temp pieceEntry to the piece list
-			pieceToFileList.add(tempPieceEntry);
+			piece_to_file_list.add( piece_entry );
+			
+			file_offset = 0;
 		}
-
-		return pieceToFileList;
+		
+		return( piece_to_file_list );
 	}
 
 	public long

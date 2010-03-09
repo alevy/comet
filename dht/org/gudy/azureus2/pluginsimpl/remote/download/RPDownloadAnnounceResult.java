@@ -28,13 +28,9 @@ package org.gudy.azureus2.pluginsimpl.remote.download;
 import java.net.URL;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
-import org.gudy.azureus2.plugins.download.DownloadAnnounceResultPeer;
-import org.gudy.azureus2.pluginsimpl.remote.RPException;
-import org.gudy.azureus2.pluginsimpl.remote.RPObject;
-import org.gudy.azureus2.pluginsimpl.remote.RPReply;
-import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
+import org.gudy.azureus2.plugins.download.*;
+
+import org.gudy.azureus2.pluginsimpl.remote.*;
 
 
 public class 

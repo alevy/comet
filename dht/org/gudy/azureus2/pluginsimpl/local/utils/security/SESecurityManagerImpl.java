@@ -33,10 +33,14 @@ import java.util.Map;
 
 import javax.net.ssl.SSLSocketFactory;
 
-import org.gudy.azureus2.core3.security.SECertificateListener;
-import org.gudy.azureus2.core3.security.SEPasswordListener;
-import org.gudy.azureus2.core3.security.SESecurityManager;
 import org.gudy.azureus2.core3.util.SHA1Hasher;
+
+/**
+ * @author parg
+ *
+ */
+
+import org.gudy.azureus2.core3.security.*;
 import org.gudy.azureus2.plugins.messaging.generic.GenericMessageConnection;
 import org.gudy.azureus2.plugins.utils.security.CertificateListener;
 import org.gudy.azureus2.plugins.utils.security.PasswordListener;

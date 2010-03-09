@@ -22,9 +22,7 @@
 
 package org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;

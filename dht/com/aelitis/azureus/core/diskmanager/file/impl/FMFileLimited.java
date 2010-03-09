@@ -31,9 +31,7 @@ import java.io.File;
 
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
-import com.aelitis.azureus.core.diskmanager.file.FMFile;
-import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
-import com.aelitis.azureus.core.diskmanager.file.FMFileOwner;
+import com.aelitis.azureus.core.diskmanager.file.*;
 
 public class 
 FMFileLimited
@@ -178,6 +176,26 @@ FMFileLimited
 			
 			this_mon.exit();
 		}
+	}
+	
+	public void
+	setPieceComplete(
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws FMFileManagerException
+	{
+		try{
+			this_mon.enter();
+		
+			ensureOpen( "FMFileLimited:setPieceComplete" );
+			
+			setPieceCompleteSupport( piece_number, piece_data );
+			
+		}finally{
+			
+			this_mon.exit();
+		}	
 	}
 	
 	public void

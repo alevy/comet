@@ -6,7 +6,8 @@ package edu.washington.cs.activedht.db.dhtwrapper;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.control.DHTControl;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
+
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 public class PutAction implements Runnable {
 	public final byte[] value;

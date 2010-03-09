@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.tracker.*;
 
 public interface 
 TrackerWebPageRequest
@@ -44,6 +44,9 @@ TrackerWebPageRequest
 	
 	public InetSocketAddress
 	getClientAddress2();
+	
+	public InetSocketAddress
+	getLocalAddress();
 	
 	public String
 	getUser();

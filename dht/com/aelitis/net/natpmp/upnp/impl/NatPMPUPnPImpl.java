@@ -22,8 +22,7 @@
 
 package com.aelitis.net.natpmp.upnp.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SimpleTimer;

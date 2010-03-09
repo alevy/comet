@@ -6,20 +6,28 @@ package org.gudy.azureus2.ui.swt.pluginsimpl;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
+import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
+
 import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.plugins.ui.menus.MenuContext;
-import org.gudy.azureus2.plugins.ui.menus.MenuItem;
+import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.pluginsimpl.local.ui.menus.MenuContextImpl;
 import org.gudy.azureus2.ui.common.util.MenuItemManager;
 import org.gudy.azureus2.ui.swt.MenuBuildUtils;
+import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.MainStatusBar;
 import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntry;
 import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntryListener;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.ui.menus.MenuContext;
+import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 
 /**
  * @author Allan Crooks
@@ -116,7 +124,7 @@ public class UISWTStatusEntryImpl implements UISWTStatusEntry, MainStatusBar.CLa
 				
 			MenuBuildUtils.addMaintenanceListenerForMenu(menu,
 			    new MenuBuildUtils.MenuBuilder() {
-					public void buildMenu(Menu menu) {
+					public void buildMenu(Menu menu, MenuEvent menuEvent) {
 						MenuItem[] items = MenuItemManager.getInstance().getAllAsArray(menu_context.context);
 						MenuBuildUtils.addPluginMenuItems(label, items, menu, true, true, 
 							MenuBuildUtils.BASIC_MENU_ITEM_CONTROLLER);
@@ -226,4 +234,17 @@ public class UISWTStatusEntryImpl implements UISWTStatusEntry, MainStatusBar.CLa
 		this_mon.exit();
 	}
 
+	public void created(final CLabel label) {
+		final Listener click_listener = new Listener() {
+			public void handleEvent(Event e) {
+				onClick();
+			}
+		};
+
+		Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				label.addListener(SWT.MouseDoubleClick, click_listener);
+			}
+		}, true);
+	}
 }

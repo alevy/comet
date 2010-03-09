@@ -27,21 +27,12 @@ import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
@@ -76,7 +67,9 @@ public class PasswordWindow {
 			public void runSupport() {
 				if (window == null) {
 					window = new PasswordWindow(display);
+					window.open();
 				} else {
+					window.shell.setVisible(true);
 					window.shell.forceActive();
 				}
 
@@ -94,9 +87,12 @@ public class PasswordWindow {
 		return bOk;
 	}
   protected PasswordWindow(Display display) {
+  }
+  
+  private void open() {
   	bOk = false;
 
-    shell = new Shell(display,SWT.APPLICATION_MODAL | SWT.TITLE | SWT.CLOSE);
+    shell = ShellFactory.createMainShell(SWT.APPLICATION_MODAL | SWT.TITLE | SWT.CLOSE);
     shell.setText(MessageText.getString("PasswordWindow.title"));
     Utils.setShellIcon(shell);
     GridLayout layout = new GridLayout();
@@ -186,23 +182,24 @@ public class PasswordWindow {
     });
 
     shell.pack();
-    
+        
     Utils.centreWindow(shell);
-    
+
     shell.open();
   }
   
   protected void run() {
     while (!shell.isDisposed()) {
-    	if (!shell.getDisplay().readAndDispatch()) {
-    		shell.getDisplay().sleep();
+    	Display d = shell.getDisplay();
+    	if (!d.readAndDispatch() && !shell.isDisposed()) {
+    		d.sleep();
     	}
     }
   }
   
   private void close() {
     shell.dispose();
-    if(Constants.isOSX) {
+    if(Utils.isCarbon) {
     	UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
     	if (uiFunctions != null) {
 				Shell mainShell = uiFunctions.getMainShell();

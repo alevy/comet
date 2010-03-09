@@ -61,7 +61,7 @@ NetworkConnection
    * Upgrade the connection to high-speed transfer processing.
    * @param enable true for high-speed processing, false for normal processing
    */
-  public void enableEnhancedMessageProcessing( boolean enable );
+  public void enableEnhancedMessageProcessing( boolean enable, int partition_id );
   
   /**
    * Decouples the transport from this network connection so it can be reused
@@ -87,8 +87,9 @@ NetworkConnection
     /**
      * The connection establishment process has started,
      * i.e. the connection is actively being attempted.
+     * @return modified connect timeout
      */
-    public void connectStarted();    
+    public int connectStarted( int default_connect_timeout );    
     
     /**
      * The connection attempt succeeded.

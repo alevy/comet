@@ -25,19 +25,16 @@ package com.aelitis.azureus.plugins.tracker.local;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
 
+
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AsyncDispatcher;
+import org.gudy.azureus2.core3.util.SHA1Simple;
+import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfigListener;
-import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadListener;
 import org.gudy.azureus2.plugins.download.DownloadManagerListener;
@@ -52,10 +49,7 @@ import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.config.StringParameter;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.utils.Monitor;
-import org.gudy.azureus2.plugins.utils.UTTimerEvent;
-import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
+import org.gudy.azureus2.plugins.utils.*;
 import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
@@ -63,6 +57,8 @@ import com.aelitis.azureus.core.instancemanager.AZInstance;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManager;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManagerListener;
 import com.aelitis.azureus.core.instancemanager.AZInstanceTracked;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
 
 public class 
 LocalTrackerPlugin
@@ -80,8 +76,9 @@ LocalTrackerPlugin
 	private TorrentAttribute 	ta_networks;
 	private TorrentAttribute 	ta_peer_sources;
 
-	private Map 				downloads 	= new HashMap();
-	private Map					track_times	= new HashMap();
+	private Map<Download,long[]>	downloads 	= new HashMap<Download, long[]>();
+	
+	private Map<String,Map<String,Long>>	track_times	= new HashMap<String, Map<String,Long>>();
 	
 	private String				last_autoadd	= "";
 	private String				last_subnets	= "";
@@ -187,6 +184,7 @@ LocalTrackerPlugin
 		
 		plugin_start_time = plugin_interface.getUtilities().getCurrentSystemTime();
 
+		// Assume we have a core, since this is a plugin
 		instance_manager	= AzureusCoreFactory.getSingleton().getInstanceManager();
 		
 		instance_manager.addListener( this );
@@ -232,7 +230,7 @@ LocalTrackerPlugin
 		try{
 			mon.enter();
 			
-			track_times.put( instance.getID(), new HashMap());
+			track_times.put( instance.getID(), new HashMap<String, Long>());
 			
 		}finally{
 			
@@ -345,19 +343,19 @@ LocalTrackerPlugin
 
 						try{
 							
-							List	todo = new ArrayList();
+							List<Download>	todo = new ArrayList<Download>();
 							
 							try{
 								mon.enter();
 								
-								Iterator	it = downloads.entrySet().iterator();
+								Iterator<Map.Entry<Download,long[]>>	it = downloads.entrySet().iterator();
 								
 								while( it.hasNext()){
 									
-									Map.Entry	entry = (Map.Entry)it.next();
+									Map.Entry<Download,long[]>	entry = it.next();
 									
-									Download	dl 		= (Download)entry.getKey();
-									long		when	= ((Long)entry.getValue()).longValue();
+									Download	dl 		= entry.getKey();
+									long		when	= entry.getValue()[0];
 									
 									if ( when > current_time || current_time - when > ANNOUNCE_PERIOD ){
 										
@@ -372,7 +370,7 @@ LocalTrackerPlugin
 							
 							for (int i=0;i<todo.size();i++){
 							
-								track((Download)todo.get(i));
+								track(todo.get(i));
 							}
 							
 						}catch( Throwable e ){
@@ -399,20 +397,20 @@ LocalTrackerPlugin
 		try{
 			mon.enter();
 			
-			Long		l_last_track	= (Long)downloads.get( download );
+			long[]	data = downloads.get( download );
 			
-			if ( l_last_track == null ){
+			if ( data == null ){
 				
 				return;
 			}
 			
-			long	last_track = l_last_track.longValue();
+			long	last_track = data[0];
 			
 			if ( last_track > now || now - last_track > RE_ANNOUNCE_PERIOD ){
 					
 				ok	= true;
 	
-				downloads.put( download, new Long( now ));
+				data[0] = now;
 			}
 			
 		}finally{
@@ -428,7 +426,7 @@ LocalTrackerPlugin
 	
 	protected void
 	trackSupport(
-		Download	download )
+		final Download	download )
 	{
 		if ( !enabled.getValue()){
 			
@@ -461,11 +459,67 @@ LocalTrackerPlugin
 			return;
 		}
 		
-		AZInstanceTracked[]	peers = instance_manager.track( download );
+		if ( download.getTorrent() == null ){
+			
+			return;
+		}
+		
+		byte[] hash = new SHA1Simple().calculateHash(download.getTorrent().getHash());
+
+		
+		AZInstanceTracked[]	peers = 
+			instance_manager.track( 
+				hash,
+				new AZInstanceTracked.TrackTarget()
+				{
+					public Object
+					getTarget()
+					{
+						return( download );
+					}
+					
+					public boolean
+					isSeed()
+					{
+						return( download.isComplete());
+					}
+				});
+		
+		int	total_seeds 	= 0;
+		int	total_leechers	= 0;
+		int	total_peers		= 0;
 		
 		for (int i=0;i<peers.length;i++){
 			
-			handleTrackResult( peers[i] );
+			int res = handleTrackResult( peers[i] );
+			
+			if ( res == 1 ){
+				total_seeds++;
+			}else if ( res == 2 ){
+				total_leechers++;
+			}else if ( res == 3 ){
+				total_seeds++;
+				total_peers++;
+			}else if ( res == 4 ){
+				total_leechers++;
+				total_peers++;
+			}
+		}
+		
+		try{
+			mon.enter();
+
+			long[] data = downloads.get( download );
+			
+			if ( data != null ){
+				
+				data[1] = total_seeds;
+				data[2] = total_leechers;
+				data[3] = total_peers;
+			}
+		}finally{
+			
+			mon.exit();
 		}
 	}
 	
@@ -476,15 +530,26 @@ LocalTrackerPlugin
 		try{
 			mon.enter();
 
-			downloads.put( download, new Long(0));
+			long[] data = downloads.get( download );
+			
+			if ( data == null ){
+				
+				data = new long[4];
+				
+				downloads.put( download, data );
+				
+			}else{
+			
+				data[0] = 0;
+			}
 			
 			String	dl_key = plugin_interface.getUtilities().getFormatters().encodeBytesToString(download.getTorrent().getHash());
 
-			Iterator	it = track_times.values().iterator();
+			Iterator<Map<String,Long>>	it = track_times.values().iterator();
 			
 			while( it.hasNext()){
 				
-				((Map)it.next()).remove( dl_key );
+				it.next().remove( dl_key );
 			}
 		}finally{
 			
@@ -502,13 +567,13 @@ LocalTrackerPlugin
 			});
 	}
 	
-	protected void
+	protected int
 	handleTrackResult(
 		AZInstanceTracked		tracked_inst )
 	{
 		AZInstance	inst	= tracked_inst.getInstance();
 		
-		Download	download = tracked_inst.getDownload();
+		Download	download = (Download)tracked_inst.getTarget().getTarget();
 				
 		boolean	is_seed = tracked_inst.isSeed();
 		
@@ -521,18 +586,18 @@ LocalTrackerPlugin
 		try{
 			mon.enter();
 			
-			Map	map = (Map)track_times.get( inst.getID() );
+			Map<String,Long>	map = track_times.get( inst.getID() );
 			
 			if ( map == null ){
 				
-				map	= new HashMap();
+				map	= new HashMap<String, Long>();
 				
 				track_times.put( inst.getID(), map );
 			}
 			
 			String	dl_key = plugin_interface.getUtilities().getFormatters().encodeBytesToString(download.getTorrent().getHash());
 			
-			Long	last_track = (Long)map.get( dl_key );
+			Long	last_track = map.get( dl_key );
 			
 			if ( last_track != null ){
 				
@@ -553,14 +618,14 @@ LocalTrackerPlugin
 		
 		if ( skip ){
 		
-			return;
+			return( -1 );
 		}
 		
 		log.log( "Tracked: " + inst.getString() + ": " + download.getName() + ", seed = " + is_seed );
 
 		if ( download.isComplete() && is_seed ){
 			
-			return;
+			return( is_seed?1:0 );
 		}
 		
 		PeerManager	peer_manager = download.getPeerManager();
@@ -575,6 +640,8 @@ LocalTrackerPlugin
 			
 			peer_manager.addPeer( peer_ip, peer_tcp_port, peer_udp_port, false );
 		}
+		
+		return( is_seed?3:2 );
 	}
 	
 	public void
@@ -624,7 +691,18 @@ LocalTrackerPlugin
 				log.log( "Tracking " + download.getName());
 			}
 
-			downloads.put( download, new Long(0));
+			long[] data = downloads.get( download );
+			
+			if ( data == null ){
+				
+				data = new long[4];
+				
+				downloads.put( download, data );
+				
+			}else{
+			
+				data[0] = 0;
+			}
 			
 			download.addListener( this );
 			
@@ -649,6 +727,173 @@ LocalTrackerPlugin
 			
 			mon.exit();
 		}
+	}
+	
+	public TrackerPeerSource
+	getTrackerPeerSource(
+		final Download		download )
+	{
+		return(
+			new TrackerPeerSourceAdapter()
+			{
+				private long[] 		_last_data;
+				private boolean		enabled;
+				private boolean		running;
+				private long		fixup_time;
+				
+				private long[]
+				fixup()
+				{
+					long now = SystemTime.getMonotonousTime();
+					
+					if ( now - fixup_time > 1000 ){
+						
+						try{
+							mon.enter();
+	
+							_last_data = downloads.get( download );
+							
+						}finally{
+							
+							mon.exit();
+						}
+						
+						enabled = LocalTrackerPlugin.this.enabled.getValue();
+						
+						if ( enabled ){
+							
+							int ds = download.getState();
+							
+							running = ds == Download.ST_DOWNLOADING || ds == Download.ST_SEEDING;
+							
+						}else{
+							
+							running = false;
+						}
+						
+						fixup_time = now;
+					}
+					
+					return( _last_data );
+				}
+				
+				public int
+				getType()
+				{
+					return( TP_LAN );
+				}
+				
+				public String
+				getName()
+				{
+					return( MessageText.getString( "tps.lan.details", new String[]{ String.valueOf( instance_manager.getOtherInstanceCount())}));
+				}
+				
+				public int
+				getStatus()
+				{
+					long[] last_data = fixup();
+					
+					if ( last_data == null || !enabled ){
+						
+						return( ST_DISABLED );
+					}
+					
+					if ( running ){
+						
+						return( ST_ONLINE );
+					}
+					
+					return( ST_STOPPED );
+				}
+				
+				public int
+				getSeedCount()
+				{
+					long[] last_data = fixup();
+					
+					if ( last_data == null || !running ){
+						
+						return( -1 );
+					}
+					
+					return((int)last_data[1] );
+				}
+				
+				public int
+				getLeecherCount()
+				{
+					long[] last_data = fixup();
+					
+					if ( last_data == null || !running ){
+						
+						return( -1 );
+					}
+					
+					return((int)last_data[2] );
+				}
+				
+				public int
+				getPeers()
+				{
+					long[] last_data = fixup();
+					
+					if ( last_data == null || !running ){
+						
+						return( -1 );
+					}
+					
+					return((int)last_data[3] );
+				}
+				
+				public int 
+				getSecondsToUpdate() 
+				{
+					long[] last_data = fixup();
+					
+					if ( last_data == null || !running ){
+						
+						return( Integer.MIN_VALUE );
+					}
+					
+					return((int)(( ANNOUNCE_PERIOD - ( SystemTime.getCurrentTime() - last_data[0] ))/1000 ));
+				}
+				
+				public int 
+				getInterval() 
+				{
+					if ( running ){
+					
+						return((int)( ANNOUNCE_PERIOD/1000 ));
+					}
+					
+					return( -1 );
+				}
+				
+				public int 
+				getMinInterval() 
+				{
+					if ( running ){
+					
+						return((int)( RE_ANNOUNCE_PERIOD/1000 ));
+					}
+					
+					return( -1 );
+				}
+				
+				public boolean
+				isUpdating()
+				{
+					int	su = getSecondsToUpdate();
+					
+					if ( su == Integer.MIN_VALUE || su >= 0 ){
+						
+						return( false );
+					}
+					
+					return( true );
+				}
+			});
 	}
 	
 	public void

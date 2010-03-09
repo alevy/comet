@@ -22,17 +22,8 @@
 
 package com.aelitis.net.upnp.impl.ssdp;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.net.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Constants;
@@ -43,13 +34,11 @@ import org.gudy.azureus2.plugins.utils.UTTimer;
 import org.gudy.azureus2.plugins.utils.UTTimerEvent;
 import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
 
+
 import com.aelitis.net.udp.mc.MCGroup;
 import com.aelitis.net.udp.mc.MCGroupAdapter;
 import com.aelitis.net.udp.mc.MCGroupFactory;
-import com.aelitis.net.upnp.UPnPException;
-import com.aelitis.net.upnp.UPnPSSDP;
-import com.aelitis.net.upnp.UPnPSSDPAdapter;
-import com.aelitis.net.upnp.UPnPSSDPListener;
+import com.aelitis.net.upnp.*;
 
 /**
  * @author parg
@@ -80,7 +69,7 @@ SSDPCore
 		try{
 			class_mon.enter();
 		
-			String	key = group_address + ":" + group_port;// + ":" + control_port;
+			String	key = group_address + ":" + group_port + ":" + control_port;
 			
 			SSDPCore	singleton = (SSDPCore)singletons.get( key );
 			
@@ -117,7 +106,7 @@ SSDPCore
 
 	private Set<String>		ignore_mx	= new HashSet();
 	
-	public
+	private
 	SSDPCore(
 		UPnPSSDPAdapter		_adapter,
 		String				_group_address,

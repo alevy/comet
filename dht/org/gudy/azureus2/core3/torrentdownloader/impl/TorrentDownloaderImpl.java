@@ -24,37 +24,26 @@
 
 package org.gudy.azureus2.core3.torrentdownloader.impl;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.security.SESecurityManager;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloader;
 import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloaderCallBackInterface;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.AddressUtils;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloader;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.core3.util.protocol.magnet.MagnetConnection;
+import org.gudy.azureus2.core3.util.protocol.magnet.MagnetConnection2;
+import org.gudy.azureus2.core3.torrent.*;
 
 
 /**
@@ -142,6 +131,8 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
   	}finally{
   		
   		this_mon.exit();
+  		
+  		closeConnection();
   	}
   }
 
@@ -152,14 +143,14 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
   		new URL( url_str );  //determine if this is already a proper URL
   	}
   	catch( Throwable t ) {  //it's not
-  		//check if the string is just a hex-encoded torrent infohash
-  		if( url_str.length() == 40 ) {
-  			try{
-  				//if so, convert to magnet:?xt=urn:btih:ZFQ7PUPQ2QMPFSD6AP4JASDDACA5MZU7 format		
-  				byte[] infohash = ByteFormatter.decodeString( url_str.toUpperCase() );  //convert from HEX to raw bytes
-  				url_str = "magnet:?xt=urn:btih:" +Base32.encode( infohash );  //convert to BASE32
-  			}
-  			catch( Throwable e ) {  /*e.printStackTrace();*/		}
+  		
+  			//check if the string is just a base32/hex-encoded torrent infohash
+  		
+  		String magnet_uri = UrlUtils.normaliseMagnetURI( url_str );
+  		
+  		if ( magnet_uri != null ){
+  			
+  			url_str = magnet_uri;
   		}
   	}
  
@@ -251,6 +242,22 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
       		}
 
       		throw( e );
+      		
+      	}catch( IOException e ){
+      		
+      		if ( i == 0 ){
+      			
+      			URL retry_url = UrlUtils.getIPV4Fallback( url );
+      			
+      			if ( retry_url != null ){
+      				
+      				url = retry_url;
+      				
+      			}else{
+      				
+      				throw( e );
+      			}
+      		}
       	}
       }
       
@@ -319,18 +326,32 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
     		filename += ".tmp";
     		
         }else{
-	        if (tmp.lastIndexOf('/') != -1)
-	          tmp = tmp.substring(tmp.lastIndexOf('/') + 1);
+        		// might be /sdsdssd/ffgfgffgfg/ so remove trailing /
+        	
+        	while( tmp.endsWith( "/" )){
+        		
+        		tmp = tmp.substring(0,tmp.length()-1);
+        	}
+        	
+	        if (tmp.lastIndexOf('/') != -1){
+	         
+	        	tmp = tmp.substring(tmp.lastIndexOf('/') + 1);
+	        }
 	        
-	        // remove any params in the url
+	        	// remove any params in the url
 	        
 	        int	param_pos = tmp.indexOf('?');
 	        
 	        if ( param_pos != -1 ){
-	          tmp = tmp.substring(0,param_pos);
+	        	tmp = tmp.substring(0,param_pos);
 	        }
 	        
 	        filename = URLDecoder.decode(tmp, Constants.DEFAULT_ENCODING );
+	        
+	        if ( filename.length() == 0 ){
+	        	
+	        	filename = "Torrent" + (long)(Math.random()*Long.MAX_VALUE);
+	        }
         }
       } else {
         filename = filename.substring(filename.indexOf('=') + 1);
@@ -411,11 +432,19 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
 				runSupport()
         		{
         			boolean changed_status	= false;
+        			String	last_status		= "";
+        			
+        			boolean	sleep = false;
         			
         			while( true ){
         				
         				try{
-        					Thread.sleep(250);
+        					if ( sleep ){
+        					
+        						Thread.sleep(50);
+        						
+        						sleep = false;
+        					}
         					
         					try{
         						this_mon.enter();
@@ -430,11 +459,51 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
         					}
         					
         					String	s = con.getResponseMessage();
-        					        					
-        					if ( !s.equals( getStatus())){
+        					  
+        					if ( s.equals( last_status )){
+        						
+        						sleep = true;
+        						
+        					}else{
+        						
+        						last_status = s;
         						
         						if ( !s.toLowerCase().startsWith("error:")){
         							
+        							if ( s.toLowerCase().indexOf( "alive" ) != -1 ){
+        								
+        								if ( percentDone < 10 ){
+        									
+        									percentDone++;
+        								}
+        							}
+        							
+        	     					int	pos = s.indexOf( '%' );
+                					
+                					if ( pos != -1 ){
+                						
+                						int	 i;
+                						
+                						for ( i=pos-1;i>=0;i--){
+                							
+                							char	c = s.charAt(i);
+                							
+                							if ( !Character.isDigit( c ) && c != ' ' ){
+                								
+                								i++;
+                								
+                								break;
+                							}
+                						}
+                						
+                						try{
+                							percentDone = Integer.parseInt( s.substring( i, pos ).trim());
+                							
+                						}catch( Throwable e ){
+                							
+                						}
+                					}
+                					
         							setStatus(s);
         							
         						}else{
@@ -443,7 +512,7 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
         						}
         						
         						changed_status	= true;
-        					}
+        					} 
         				}catch( Throwable e ){
         					
         					break;
@@ -488,6 +557,22 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
 			}
 		}
 			
+			// handle some servers that return gzip'd torrents even though we don't request it!
+		
+		String encoding = con.getHeaderField( "content-encoding");
+			
+		if ( encoding != null ){
+
+			if ( encoding.equalsIgnoreCase( "gzip" )){
+
+				in = new GZIPInputStream( in );
+
+			}else if ( encoding.equalsIgnoreCase( "deflate" )){
+
+				in = new InflaterInputStream( in );
+			}
+		}
+		
 	    if ( this.state != STATE_ERROR ){
 		    	
 	    	this.file = new File(this.directoryname, filename);
@@ -510,7 +595,7 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
 	        
 	        bufBytes = 0;
 	        
-	        int size = this.con.getContentLength();
+	        int size = (int) UrlUtils.getContentLength(con);
 	        
 			this.percentDone = -1;
 			
@@ -524,7 +609,7 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
 	            
 	            this.readTotal += bufBytes;
 	            
-	            if (size != 0){
+	            if (size > 0){
 	              this.percentDone = (100 * this.readTotal) / size;
 	            }
 	            
@@ -690,11 +775,17 @@ public class TorrentDownloaderImpl extends AEThread implements TorrentDownloader
 
   public void cancel() {
     this.cancel = true;
-    if ( con instanceof MagnetConnection ){
-    	con.disconnect();
-    }
+    closeConnection();
   }
 
+  protected void
+  closeConnection()
+  {
+	if ( con instanceof MagnetConnection || con instanceof MagnetConnection2 ){
+	  	con.disconnect();
+	}
+  }
+  
   public void setDownloadPath(String path, String file) {
     if (!this.isAlive()) {
       if (path != null)

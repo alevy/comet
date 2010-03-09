@@ -26,7 +26,7 @@ package org.gudy.azureus2.plugins.torrent;
  *
  */
 
-import java.net.URL;
+import java.net.*;
 
 public interface 
 TorrentAnnounceURLList 

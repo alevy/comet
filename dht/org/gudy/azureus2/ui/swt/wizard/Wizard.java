@@ -27,28 +27,16 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
-
-import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author Olivier
@@ -57,9 +45,8 @@ import com.aelitis.azureus.core.AzureusCore;
 public class Wizard {
 
 	private final static int DEFAULT_WIDTH = 500;
-  List		listeners = new ArrayList();
+  List<WizardListener>		listeners = new ArrayList<WizardListener>(1);
   
-  AzureusCore	azureus_core;
   Display display;
   Shell wizardWindow;
   Label title;
@@ -76,25 +63,21 @@ public class Wizard {
   
   public 
   Wizard(
-  	AzureusCore		azureus_core,
   	String 			keyTitle,
   	boolean modal) 
   {
-    this(azureus_core, modal);
+    this(modal);
     setTitleKey(keyTitle);
   }
 
-	public Wizard(AzureusCore azureus_core, String keyTitle) {
-		this(azureus_core, keyTitle, false);
+	public Wizard(String keyTitle) {
+		this(keyTitle, false);
 	}
 
   public 
   Wizard(
-  	AzureusCore		_azureus_core,
   	boolean modal) 
   {
-  	azureus_core	= _azureus_core;
-    
   	int style = SWT.DIALOG_TRIM | SWT.RESIZE;
   	if (modal) {
   		style |= SWT.APPLICATION_MODAL;
@@ -389,16 +372,6 @@ public class Wizard {
     insureSize();
     Utils.centreWindow( wizardWindow );
     wizardWindow.open();
-    
-    while (!wizardWindow.isDisposed()) {
-    	try {
-  			if (!display.readAndDispatch()) {
-  				display.sleep();
-  			}
-    	} catch (Exception e) {
-    		Debug.out(e);
-    	}
-		}
   }
 
   public Shell getWizardWindow() {
@@ -436,7 +409,7 @@ public class Wizard {
   	
   	for (int i=0;i<listeners.size();i++){
   		
-  		((WizardListener)listeners.get(i)).closed();
+  		listeners.get(i).closed();
   	}
   }  
   /**
@@ -454,12 +427,6 @@ public class Wizard {
   		wizardWindow.setSize(p.x,height);
   }
   
-  public AzureusCore
-  getAzureusCore()
-  {
-  	return( azureus_core );
-  }
-
   public void
   addListener(
   	WizardListener	l )

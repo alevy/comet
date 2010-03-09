@@ -10,11 +10,11 @@ import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.serialize.Serializer;
 
 import com.aelitis.azureus.core.dht.db.DHTDB;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
 import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
 import edu.washington.cs.activedht.db.ActiveDB;
 import edu.washington.cs.activedht.db.ActiveDHTInitializer;
+import edu.washington.cs.activedht.db.DHTDBValueFactory;
 
 /**
  * @author levya
@@ -44,7 +44,7 @@ public class LuaDBBenchmark extends DBBenchmark {
 		int observations = 100;
 		int startupTime = 5000;
 		int gap = 10000;
-		FactoryInterface valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
+		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
 		for (int i = 0; i < args.length; ++i) {

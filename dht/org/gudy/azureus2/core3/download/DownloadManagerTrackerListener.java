@@ -26,8 +26,7 @@ package org.gudy.azureus2.core3.download;
  *
  */
 
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
+import org.gudy.azureus2.core3.tracker.client.*;
 
 public interface 
 DownloadManagerTrackerListener 

@@ -24,17 +24,12 @@ package com.aelitis.azureus.core.peermanager.messaging.bittorrent;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.Transport;
-import com.aelitis.azureus.core.peermanager.messaging.Message;
-import com.aelitis.azureus.core.peermanager.messaging.MessageException;
-import com.aelitis.azureus.core.peermanager.messaging.MessageManager;
-import com.aelitis.azureus.core.peermanager.messaging.MessageStreamDecoder;
+import com.aelitis.azureus.core.peermanager.messaging.*;
 
 
 /**
@@ -42,7 +37,7 @@ import com.aelitis.azureus.core.peermanager.messaging.MessageStreamDecoder;
  */
 public class BTMessageDecoder implements MessageStreamDecoder {
   private static final int MIN_MESSAGE_LENGTH = 1;  //for type id
-  private static final int MAX_MESSAGE_LENGTH = 16393;  //should never be > 16KB+9B, as we never request chunks > 16KB
+  private static final int MAX_MESSAGE_LENGTH = 16*1024+128;  //should never be > 16KB+9B, as we never request chunks > 16KB - update, some LT extensions can be bigger
   private static final int HANDSHAKE_FAKE_LENGTH = 323119476;  //(byte)19 + "Bit" readInt() value of header
 
   private static final byte SS = DirectByteBuffer.SS_MSG;

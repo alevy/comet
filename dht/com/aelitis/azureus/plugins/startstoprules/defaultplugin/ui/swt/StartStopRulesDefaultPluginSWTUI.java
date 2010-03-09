@@ -33,16 +33,11 @@ import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.gudy.azureus2.plugins.PluginInterface;
+import org.eclipse.swt.widgets.*;
 
 import com.aelitis.azureus.plugins.startstoprules.defaultplugin.DefaultRankCalculator;
+
+import org.gudy.azureus2.plugins.PluginInterface;
 
 public class StartStopRulesDefaultPluginSWTUI {
 	public StartStopRulesDefaultPluginSWTUI(PluginInterface plugin_interface) {

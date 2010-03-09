@@ -23,12 +23,10 @@
 package com.aelitis.azureus.core.networkmanager.impl.tcp;
 
 import java.io.IOException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.VirtualChannelSelector;
 

@@ -30,51 +30,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.TreeMap;
+import java.net.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.download.impl.DownloadManagerStateImpl;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.stats.transfer.OverallStats;
-import org.gudy.azureus2.core3.stats.transfer.StatsFactory;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.stats.transfer.*;
+import org.gudy.azureus2.core3.util.*;
+
 import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.utils.DelayedTask;
+import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.clientmessageservice.ClientMessageService;
-import com.aelitis.azureus.core.clientmessageservice.ClientMessageServiceClient;
 import com.aelitis.azureus.core.impl.AzureusCoreImpl;
+import com.aelitis.azureus.core.clientmessageservice.*;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminASN;
+import com.aelitis.azureus.core.security.CryptoManagerFactory;
+import com.aelitis.azureus.core.util.DNSUtils;
 import com.aelitis.net.udp.uc.PRUDPPacketHandler;
 import com.aelitis.net.udp.uc.PRUDPPacketHandlerFactory;
 import com.aelitis.net.udp.uc.PRUDPReleasablePacketHandler;
@@ -146,6 +124,7 @@ public class VersionCheckClient {
 	  return( instance );
   }
   
+  private boolean	enable_v6;
   private boolean	prefer_v6;
 
   private Map last_check_data_v4 = null;
@@ -163,17 +142,56 @@ public class VersionCheckClient {
   private 
   VersionCheckClient()
   {
-	  COConfigurationManager.addAndFireParameterListener(
-			  "IPV6 Prefer Addresses",
+	  COConfigurationManager.addAndFireParameterListeners(
+			  new String[]{ "IPV6 Prefer Addresses", "IPV6 Enable Support" },
 			  new ParameterListener()
 			  {
 				 public void 
 				 parameterChanged(
 					String 	name )
 				 {
-					 prefer_v6 = COConfigurationManager.getBooleanParameter( name );
+					 enable_v6	= COConfigurationManager.getBooleanParameter( "IPV6 Enable Support" );
+					 prefer_v6 	= COConfigurationManager.getBooleanParameter( "IPV6 Prefer Addresses" );
 				 } 
 			  });
+  }
+  
+  public void
+  initialise()
+  {
+	  DelayedTask delayed_task = 
+		  UtilitiesImpl.addDelayedTask(
+	   		"VersionCheck", 
+	   		new Runnable()
+	   		{
+	   			public void
+	   			run()
+	   			{
+	   				final AESemaphore sem = new AESemaphore( "VCC:init" );
+	   				
+	   				new AEThread2( "VCC:init", true )
+	   				{
+	   					public void 
+	   					run()
+	   					{
+	   						try{
+	   							getVersionCheckInfo( REASON_UPDATE_CHECK_START );
+	   							
+	   						}finally{
+	   							
+	   							sem.release();
+	   						}
+	   					}
+	   				}.start();
+	   				
+	   				if ( !sem.reserve( 5000 )){
+	   					
+	   					Debug.out( "Timeout waiting for version check to complete" );
+	   				}
+	   			}
+	   		});
+	  
+	  delayed_task.queue();
   }
   
   
@@ -229,47 +247,50 @@ public class VersionCheckClient {
   {
   	if ( v6 ){
 
-	    try {  check_mon.enter();
-	    
-	      long time_diff = SystemTime.getCurrentTime() - last_check_time_v6;
-	     
-	      force = force || time_diff > CACHE_PERIOD || time_diff < 0;
-	      
-	      if( last_check_data_v6 == null || last_check_data_v6.size() == 0 || force ) {
-	    	  // if we've never checked before then we go ahead even if the "only_if_cached"
-	    	  // flag is set as its had not chance of being cached yet!
-	    	if ( only_if_cached && last_check_data_v6 != null ){
-	    		return( new HashMap() );
-	    	}
-	        try {
-	          last_check_data_v6 = performVersionCheck( constructVersionCheckMessage( reason ), true, true, true );
-	          
-	          if ( last_check_data_v6 != null && last_check_data_v6.size() > 0 ){
-	       
-	        	  COConfigurationManager.setParameter( "versioncheck.cache.v6", last_check_data_v6 );
-	          }
-	        }
-	        catch(SocketException t) {
-	        	// internet is broken
-	        	Debug.out(t.getClass().getName() + ": " + t.getMessage());
-	        }
-	        catch(UnknownHostException t) {
-	        	// dns is broken
-	        	Debug.out(t.getClass().getName() + ": " + t.getMessage());
-	        }
-	        catch( Throwable t ) {
-	        	Debug.out(t);
-	          last_check_data_v6 = new HashMap();
-	        }
-	      }
-	      else {
-	      	Logger.log(new LogEvent(LOGID, "VersionCheckClient is using "
-							+ "cached version check info. Using " + last_check_data_v6.size()
-							+ " reply keys.")); 
-	      }
-	    }
-	    finally {  check_mon.exit();  }
-	    
+  		if ( enable_v6 ){
+  			
+	 	    try {  check_mon.enter();
+		    
+		      long time_diff = SystemTime.getCurrentTime() - last_check_time_v6;
+		     
+		      force = force || time_diff > CACHE_PERIOD || time_diff < 0;
+		      
+		      if( last_check_data_v6 == null || last_check_data_v6.size() == 0 || force ) {
+		    	  // if we've never checked before then we go ahead even if the "only_if_cached"
+		    	  // flag is set as its had not chance of being cached yet!
+		    	if ( only_if_cached && last_check_data_v6 != null ){
+		    		return( new HashMap() );
+		    	}
+		        try {
+		          last_check_data_v6 = performVersionCheck( constructVersionCheckMessage( reason ), true, true, true );
+		          
+		          if ( last_check_data_v6 != null && last_check_data_v6.size() > 0 ){
+		       
+		        	  COConfigurationManager.setParameter( "versioncheck.cache.v6", last_check_data_v6 );
+		          }
+		        }
+		        catch(SocketException t) {
+		        	// internet is broken
+		        	// Debug.out(t.getClass().getName() + ": " + t.getMessage());
+		        }
+		        catch(UnknownHostException t) {
+		        	// dns is broken
+		        	// Debug.out(t.getClass().getName() + ": " + t.getMessage());
+		        }
+		        catch( Throwable t ) {
+		        	Debug.out(t);
+		          last_check_data_v6 = new HashMap();
+		        }
+		      }
+		      else {
+		      	Logger.log(new LogEvent(LOGID, "VersionCheckClient is using "
+								+ "cached version check info. Using " + last_check_data_v6.size()
+								+ " reply keys.")); 
+		      }
+		    }
+		    finally {  check_mon.exit();  }
+  		}
+  		
 	    if( last_check_data_v6 == null )  last_check_data_v6 = new HashMap();
 	    
 	    return last_check_data_v6;
@@ -342,6 +363,8 @@ public class VersionCheckClient {
 	    finally {  check_mon.exit();  }
 	    
 	    if( last_check_data_v4 == null )  last_check_data_v4 = new HashMap();
+	    
+	    last_feature_flag_cache_time = 0;
 	    
 	    return last_check_data_v4;
   	}
@@ -558,23 +581,8 @@ public class VersionCheckClient {
 	Exception 	error 	= null;
 	Map			reply	= null;
 	
-	if ( use_az_message ){
 	
-		try{
-			reply = executeAZMessage( data_to_send, v6 );
-			
-			reply.put( "protocol_used", "AZMSG" );
-		}
-		catch (IOException e) {
-			error = e;
-		}
-		catch (Exception e) {
-			Debug.printStackTrace( e );
-			error = e;
-		}
-	}
-	
-	if ( reply == null && use_http ){
+	if ( use_http ){
 		
 		try{
 			reply = executeHTTP( data_to_send, v6 );
@@ -590,6 +598,22 @@ public class VersionCheckClient {
 			Debug.printStackTrace(e);
 			error = e;
 			
+		}
+	}
+	
+	if ( reply == null && use_az_message ){
+		
+		try{
+			reply = executeAZMessage( data_to_send, v6 );
+			
+			reply.put( "protocol_used", "AZMSG" );
+		}
+		catch (IOException e) {
+			error = e;
+		}
+		catch (Exception e) {
+			Debug.printStackTrace( e );
+			error = e;
 		}
 	}
 	if ( error != null ){
@@ -621,7 +645,12 @@ public class VersionCheckClient {
   
   	throws Exception
   {
-	  String	host = v6?AZ_MSG_SERVER_ADDRESS_V6:AZ_MSG_SERVER_ADDRESS_V4;
+	  if ( v6 && !enable_v6 ){
+		  
+		  throw( new Exception( "IPv6 is disabled" ));
+	  }
+
+	  String	host = getHost( v6, AZ_MSG_SERVER_ADDRESS_V6, AZ_MSG_SERVER_ADDRESS_V4 );
 	  
 	  if (Logger.isEnabled())
 		  Logger.log(new LogEvent(LOGID, "VersionCheckClient retrieving "
@@ -657,13 +686,18 @@ public class VersionCheckClient {
   
   	throws Exception
   {
-	  String	host = v6?HTTP_SERVER_ADDRESS_V6:HTTP_SERVER_ADDRESS_V4;
+	  if ( v6 && !enable_v6 ){
+		  
+		  throw( new Exception( "IPv6 is disabled" ));
+	  }
+	  
+	  String	host = getHost(v6, HTTP_SERVER_ADDRESS_V6, HTTP_SERVER_ADDRESS_V4 );
 
 	  if (Logger.isEnabled())
 		  Logger.log(new LogEvent(LOGID, "VersionCheckClient retrieving "
 				  + "version information from " + host + ":" + HTTP_SERVER_PORT + " via HTTP" )); 
 
-	  String	url_str = "http://" + host + (HTTP_SERVER_PORT==80?"":(":" + HTTP_SERVER_PORT)) + "/version?";
+	  String	url_str = "http://" + (v6?UrlUtils.convertIPV6Host(host):host) + (HTTP_SERVER_PORT==80?"":(":" + HTTP_SERVER_PORT)) + "/version?";
 
 	  url_str += URLEncoder.encode( new String( BEncoder.encode( data_to_send ), "ISO-8859-1" ), "ISO-8859-1" );
 	  
@@ -702,9 +736,9 @@ public class VersionCheckClient {
 	boolean	for_proxy,
 	boolean	v6 )
   {
-	  String	host = v6?HTTP_SERVER_ADDRESS_V6:HTTP_SERVER_ADDRESS_V4;
+	  String	host = getHost( v6, HTTP_SERVER_ADDRESS_V6, HTTP_SERVER_ADDRESS_V4 );
 
-	  String	get_str = "GET " + (for_proxy?("http://" + host + ":" + HTTP_SERVER_PORT ):"") +"/version?";
+	  String	get_str = "GET " + (for_proxy?("http://" + (v6?UrlUtils.convertIPV6Host( host ):host ) + ":" + HTTP_SERVER_PORT ):"") +"/version?";
 
 	  try{
 		  get_str += URLEncoder.encode( new String( BEncoder.encode( content ), "ISO-8859-1" ), "ISO-8859-1" );
@@ -726,7 +760,12 @@ public class VersionCheckClient {
   
   	throws Exception
   {
-	  String	host = v6?TCP_SERVER_ADDRESS_V6:TCP_SERVER_ADDRESS_V4;
+	  if ( v6 && !enable_v6 ){
+		  
+		  throw( new Exception( "IPv6 is disabled" ));
+	  }
+
+	  String	host = getHost(v6, TCP_SERVER_ADDRESS_V6, TCP_SERVER_ADDRESS_V4 );
 
 	  if (Logger.isEnabled())
 		  Logger.log(new LogEvent(LOGID, "VersionCheckClient retrieving "
@@ -779,7 +818,7 @@ public class VersionCheckClient {
 			  			  
 			  if ( header.endsWith( "\r\n\r\n" )){
 				  
-				  header = header.toLowerCase();
+				  header = header.toLowerCase( MessageText.LOCALE_ENGLISH );
 				  
 				  int	pos = header.indexOf( "content-length:" );
 				  
@@ -864,7 +903,12 @@ public class VersionCheckClient {
   
   	throws Exception
   {
-	  String	host = v6?UDP_SERVER_ADDRESS_V6:UDP_SERVER_ADDRESS_V4;
+	  if ( v6 && !enable_v6 ){
+		  
+		  throw( new Exception( "IPv6 is disabled" ));
+	  }
+
+	  String	host = getHost( v6, UDP_SERVER_ADDRESS_V6, UDP_SERVER_ADDRESS_V4 );
 
 	  PRUDPReleasablePacketHandler handler = PRUDPPacketHandlerFactory.getReleasableHandler( bind_port );
 	  	  
@@ -1063,37 +1107,108 @@ public class VersionCheckClient {
 	  return( InetAddress.getByName( new String( address )));
   }
   
+  protected String
+  getHost(
+	boolean		v6,
+	String		v6_address,
+	String		v4_address )
+  {
+	 if ( v6 ){
+		 
+		 try{
+			 return( InetAddress.getByName( v6_address ).getHostAddress());
+			 
+		 }catch( UnknownHostException e ){
+			 
+			 try{
+				 return( DNSUtils.getIPV6ByName(v6_address ).getHostAddress());
+				 
+			 }catch( UnknownHostException f ){
+				 
+				 return( v6_address );
+			 }
+		 }
+	 }else{
+		 
+		 return( v4_address );
+	 }
+  }
+  
   /**
    * Construct the default version check message.
    * @return message to send
    */
   private static Map constructVersionCheckMessage( String reason ) {
+	  
+	  //only send if anonymous-check flag is not set
+	  
+	boolean send_info = COConfigurationManager.getBooleanParameter( "Send Version Info" );
+
     Map message = new HashMap();
-    
-    message.put( "appid", SystemProperties.getApplicationIdentifier());
+
+    //always send
+    message.put( "appid",   SystemProperties.getApplicationIdentifier());
+    message.put( "appname", SystemProperties.getApplicationName());
     message.put( "version", Constants.AZUREUS_VERSION );
     
-    String id = COConfigurationManager.getStringParameter( "ID", null );
-    boolean send_info = COConfigurationManager.getBooleanParameter( "Send Version Info" );
+    String	sub_ver = Constants.AZUREUS_SUBVER;
     
-    int last_send_time = COConfigurationManager.getIntParameter( "Send Version Info Last Time", -1 );
+    if ( sub_ver.length() > 0 ){
+        message.put( "subver", sub_ver );
+    }
+    
+    message.put( "ui",      COConfigurationManager.getStringParameter( "ui", "unknown" ) );
+    message.put( "os",      Constants.OSName );
+    message.put( "os_version", System.getProperty( "os.version" ) );
+    message.put( "os_arch", System.getProperty( "os.arch" ) );   //see http://lopica.sourceforge.net/os.html
 
-    int current_send_time = (int)(SystemTime.getCurrentTime()/1000);
-    
-    COConfigurationManager.setParameter( "Send Version Info Last Time", current_send_time );
-    
-    if( id != null && send_info ) {
-    	
-      message.put( "id", id );
-      message.put( "os", Constants.OSName );
+    boolean using_phe = COConfigurationManager.getBooleanParameter( "network.transport.encrypted.require" );
+    message.put( "using_phe", using_phe ? new Long(1) : new Long(0) );
+
+    //swt stuff
+    try {
+      Class c = Class.forName( "org.eclipse.swt.SWT" );
       
-      message.put( "os_version", System.getProperty( "os.version" ) );
-      message.put( "os_arch", System.getProperty( "os.arch" ) );   //see http://lopica.sourceforge.net/os.html
+      String swt_platform = (String)c.getMethod( "getPlatform", new Class[]{} ).invoke( null, new Object[]{} );
+      message.put( "swt_platform", swt_platform );
+      
+      Integer swt_version = (Integer)c.getMethod( "getVersion", new Class[]{} ).invoke( null, new Object[]{} );
+      message.put( "swt_version", new Long( swt_version.longValue() ) );
+
+      if ( send_info ){
+	      c = Class.forName("org.gudy.azureus2.ui.swt.mainwindow.MainWindow");
+	      if (c != null) {
+	    	  c.getMethod("addToVersionCheckMessage", new Class[] { Map.class }).invoke(
+	    			  null, new Object[] { message });
+	      }   
+      }
+    }
+    catch( ClassNotFoundException e ) {  /* ignore */ }
+    catch( NoClassDefFoundError er ) {  /* ignore */ }
+    catch( InvocationTargetException err ) {  /* ignore */ }
+    catch( Throwable t ) {  t.printStackTrace();  }
     
-      if ( last_send_time != -1 && last_send_time < current_send_time ){
+  
+    int last_send_time = COConfigurationManager.getIntParameter( "Send Version Info Last Time", -1 );
+    int current_send_time = (int)(SystemTime.getCurrentTime()/1000);    
+    COConfigurationManager.setParameter( "Send Version Info Last Time", current_send_time );
+
+    
+    String id = COConfigurationManager.getStringParameter( "ID", null );
+
+    if( id != null && send_info ) {    	
+      message.put( "id", id );    
+      
+      try{
+    	  byte[] id2 = CryptoManagerFactory.getSingleton().getSecureID();
+    
+    	  message.put( "id2", id2 );
     	  
-    	  	// tims since last
-    	  
+      }catch( Throwable e ){
+      }
+      
+      if ( last_send_time != -1 && last_send_time < current_send_time ){    	  
+    	  // time since last    	  
     	  message.put( "tsl", new Long(current_send_time-last_send_time));
       }
       
@@ -1156,11 +1271,6 @@ public class VersionCheckClient {
       }catch( Throwable e ){
     	  
     	  Debug.out( e );
-      }
-      
-      String ui = COConfigurationManager.getStringParameter("ui");
-      if (ui.length() > 0) {
-      	message.put("ui", ui);
       }
 
       // send locale, so we can determine which languages need attention
@@ -1252,32 +1362,6 @@ public class VersionCheckClient {
       }
     }
         
-    //swt stuff
-    try {
-      Class c = Class.forName( "org.eclipse.swt.SWT" );
-      
-      String swt_platform = (String)c.getMethod( "getPlatform", new Class[]{} ).invoke( null, new Object[]{} );
-      message.put( "swt_platform", swt_platform );
-      
-      if( send_info ) {
-        Integer swt_version = (Integer)c.getMethod( "getVersion", new Class[]{} ).invoke( null, new Object[]{} );
-        message.put( "swt_version", new Long( swt_version.longValue() ) );
-
-        c = Class.forName("org.gudy.azureus2.ui.swt.mainwindow.MainWindow");
-				if (c != null) {
-					c.getMethod("addToVersionCheckMessage", new Class[] { Map.class }).invoke(
-							null, new Object[] { message });
-				}
-      }
-    }
-    catch( ClassNotFoundException e ) {  /* ignore */ }
-    catch( NoClassDefFoundError er ) {  /* ignore */ }
-    catch( InvocationTargetException err ) {  /* ignore */ }
-    catch( Throwable t ) {  t.printStackTrace();  }
-    
-    
-    boolean using_phe = COConfigurationManager.getBooleanParameter( "network.transport.encrypted.require" );
-    message.put( "using_phe", using_phe ? new Long(1) : new Long(0) );
     
     return message;
   }
@@ -1289,13 +1373,13 @@ public class VersionCheckClient {
 	  try{
 		  COConfigurationManager.initialise();
 		  
-		  boolean v6= false;
+		  boolean v6= true;
 		  
 		  // Test connectivity.
 		  if (true) {
-			//  System.out.println( "UDP:  " + getSingleton().getExternalIpAddressUDP(null,0,v6));
-			  System.out.println( "TCP:  " + getSingleton().getExternalIpAddressTCP(null,0,v6));
-			//  System.out.println( "HTTP: " + getSingleton().getExternalIpAddressHTTP(v6));
+			 // System.out.println( "UDP:  " + getSingleton().getExternalIpAddressUDP(null,0,v6));
+			 // System.out.println( "TCP:  " + getSingleton().getExternalIpAddressTCP(null,0,v6));
+			  System.out.println( "HTTP: " + getSingleton().getExternalIpAddressHTTP(v6));
 		  }
 		  
 		  Map data = constructVersionCheckMessage(VersionCheckClient.REASON_UPDATE_CHECK_START);

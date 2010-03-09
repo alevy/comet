@@ -27,35 +27,20 @@ package com.aelitis.net.upnp.impl;
  *
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.Socket;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.net.*;
+import java.io.*;
+
+import com.aelitis.azureus.core.util.Java15Utils;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
+import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.core3.util.ThreadPool;
 import org.gudy.azureus2.core3.util.TorrentUtils;
+
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
@@ -64,16 +49,8 @@ import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
 
 import com.aelitis.azureus.core.util.HTTPUtils;
-import com.aelitis.azureus.core.util.Java15Utils;
-import com.aelitis.net.upnp.UPnP;
-import com.aelitis.net.upnp.UPnPAdapter;
-import com.aelitis.net.upnp.UPnPException;
-import com.aelitis.net.upnp.UPnPListener;
-import com.aelitis.net.upnp.UPnPLogListener;
-import com.aelitis.net.upnp.UPnPRootDevice;
-import com.aelitis.net.upnp.UPnPService;
-import com.aelitis.net.upnp.impl.device.UPnPDeviceImpl;
-import com.aelitis.net.upnp.impl.device.UPnPRootDeviceImpl;
+import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.impl.device.*;
 
 public class 
 UPnPImpl
@@ -128,6 +105,8 @@ UPnPImpl
 	private ThreadPool	device_dispatcher	 = new ThreadPool("UPnPDispatcher", 1, true );
 	private Set			device_dispatcher_pending	= new HashSet();
 	
+	private Map<String,long[]>	failed_urls = new HashMap<String,long[]>();
+	
 	protected AEMonitor	this_mon 	= new AEMonitor( "UPnP" );
 
 	protected
@@ -144,6 +123,35 @@ UPnPImpl
 		ssdp.addListener(this);
 		
 		ssdp.start();
+	}
+	
+	public void 
+	injectDiscoveryCache(
+		Map 		cache )
+	{
+		try{
+			String	ni_s	= new String((byte[])cache.get( "ni" ), "UTF-8" );
+			String	la_s 	= new String((byte[])cache.get( "la" ), "UTF-8" );
+			String	usn 	= new String((byte[])cache.get( "usn" ), "UTF-8" );
+			String	loc_s 	= new String((byte[])cache.get( "loc" ), "UTF-8" );
+			
+			NetworkInterface	network_interface = NetworkInterface.getByName( ni_s );
+			
+			if ( network_interface == null ){
+				
+				return;
+			}
+			
+			InetAddress	local_address = InetAddress.getByName( la_s );
+			
+			URL location = new URL( loc_s );
+			
+			rootDiscovered( network_interface, local_address, usn, location );
+			
+		}catch( Throwable e ){
+			
+			Debug.out( e );
+		}
 	}
 	
 	public void
@@ -563,28 +571,105 @@ UPnPImpl
 	
 		throws UPnPException
 	{
-		try{
+		String url_str = url.toExternalForm();
+
+		boolean	record_failure = true;
+		
+		try{			
 			TorrentUtils.setTLSDescription( "UPnP Device" + ( friendly_name==null?"":( ": " + friendly_name )));
 			
 			ResourceDownloaderFactory rdf = adapter.getResourceDownloaderFactory();
 				
-			ResourceDownloader rd = rdf.getRetryDownloader( rdf.create( url, true ), 3 );
+			int	retries;
+			
+			synchronized( failed_urls ){
+
+				long[] fails = failed_urls.get( url_str );
+				
+				if ( fails == null ){
+					
+					retries = 3;
+					
+				}else{
+					
+					long	consec_fails 	= fails[0];
+					long	last_fail		= fails[1];
+					
+					long	max_period	= 10*60*1000;
+					long	period 		= 60*1000;
+					
+					for (int i=0;i<consec_fails;i++){
+						
+						period <<= 1;
+						
+						if ( period >= max_period ){
+							
+							period = max_period;
+							
+							break;
+						}
+					}
+					
+					if ( SystemTime.getMonotonousTime() - last_fail < period ){
+						
+						record_failure = false;
+						
+						throw( new UPnPException( "Download failed too recently, ignoring" ));
+					}
+					
+					retries = 1;
+				}
+			}
+			
+			ResourceDownloader rd = rdf.getRetryDownloader( rdf.create( url, true ), retries );
 				
 			rd.addListener( this );
 				
 			InputStream	data = rd.download();
-					
+						
 			try{
-				return( parseXML( data ));
+				
+				SimpleXMLParserDocument res = parseXML( data );
+			
+				synchronized( failed_urls ){
 					
+					failed_urls.remove( url_str );
+				}
+				
+				return( res );
+				
 			}finally{
 					
 				data.close();
-			}
+			}	
 		}catch( Throwable e ){
 				
-			adapter.log( Debug.getNestedExceptionMessageAndStack(e));
-
+			if ( record_failure ){
+				
+				synchronized( failed_urls ){
+					
+					if ( failed_urls.size() >= 64 ){
+						
+						failed_urls.clear();
+					}
+					
+					long[] fails = failed_urls.get( url_str );
+					
+					if ( fails == null ){
+						
+						fails = new long[2];
+						
+						failed_urls.put( url_str, fails );
+					}
+					
+					fails[0]++;
+					
+					fails[1] = SystemTime.getMonotonousTime();
+				}
+			
+				adapter.log( Debug.getNestedExceptionMessageAndStack(e));
+			}
+			
 			if (e instanceof UPnPException ){
 				
 				throw((UPnPException)e);
@@ -664,140 +749,154 @@ UPnPImpl
 	
 		throws SimpleXMLParserDocumentException, UPnPException, IOException
 	{
+		//long	start = SystemTime.getMonotonousTime();
+
 		URL	control = service.getControlURL();
-		
-		adapter.trace( "UPnP:Request: -> " + control + "," + request );
 
-		if ( use_http_connection ){
-			
-			try{
-				TorrentUtils.setTLSDescription( "UPnP Device: " + service.getDevice().getFriendlyName());
-			
-				HttpURLConnection	con1 = (HttpURLConnection)Java15Utils.openConnectionForceNoProxy(control);
-					
-				con1.setRequestProperty( "SOAPAction", "\""+ soap_action + "\"");
-					
-				con1.setRequestProperty( "Content-Type", "text/xml; charset=\"utf-8\"" );
-					
-				con1.setRequestProperty( "User-Agent", "Azureus (UPnP/1.0)" );
-					
-				con1.setRequestMethod( "POST" );
-					
-				con1.setDoInput( true );
-				con1.setDoOutput( true );
-					
-				OutputStream	os = con1.getOutputStream();
-					
-				PrintWriter	pw = new PrintWriter( new OutputStreamWriter(os, "UTF-8" ));
-								
-				pw.println( request );
-					
-				pw.flush();
-			
-				con1.connect();
-					
-				if ( con1.getResponseCode() == 405 || con1.getResponseCode() == 500 ){
-						
-						// gotta retry with M-POST method
-						
-					try{
-						HttpURLConnection con2 = (HttpURLConnection)control.openConnection();
-							
-						con2.setRequestProperty( "Content-Type", "text/xml; charset=\"utf-8\"" );
-							
-						con2.setRequestMethod( "M-POST" );
-							
-						con2.setRequestProperty( "MAN", "\"http://schemas.xmlsoap.org/soap/envelope/\"; ns=01" );
-				
-						con2.setRequestProperty( "01-SOAPACTION", "\""+ soap_action + "\"");
-							
-						con2.setDoInput( true );
-						con2.setDoOutput( true );
-							
-						os = con2.getOutputStream();
-							
-						pw = new PrintWriter( new OutputStreamWriter(os, "UTF-8" ));
-										
-						pw.println( request );
-							
-						pw.flush();
-				
-						con2.connect();
-						
-						return( parseXML(con2.getInputStream()));	
-						
-					}catch( Throwable e ){
-						
-					}
-					
-					InputStream es = con1.getErrorStream();
-					
-					String	info = null;
-					
-					try{
-						info = FileUtil.readInputStreamAsString( es, 512 );
-						
-					}catch( Throwable e ){
-					}
-					
-					String error = "SOAP RPC failed: " + con1.getResponseCode() + " " + con1.getResponseMessage();
-					
-					if ( info != null ){
-						
-						error += " - " + info;
-					}
-
-					throw( new IOException ( error ));
-					
-				}else{
-						
-					return( parseXML(con1.getInputStream()));
-				}
-			}finally{
-				
-				TorrentUtils.setTLSDescription( null );
-			}
-		}else{
-			Socket	socket = new Socket(control.getHost(), control.getPort());
-			
-			try{
-				PrintWriter	pw = new PrintWriter(new OutputStreamWriter( socket.getOutputStream(), "UTF8" ));
-
-				String	url_target = control.toString();
-			
-				int	p1 	= url_target.indexOf( "://" ) + 3;
-				p1		= url_target.indexOf( "/", p1 );
-				
-				url_target = url_target.substring( p1 );
-				
-				pw.print( "POST " + url_target + " HTTP/1.1" + NL );
-				pw.print( "Content-Type: text/xml; charset=\"utf-8\"" + NL );
-				pw.print( "SOAPAction: \"" + soap_action + "\"" + NL );
-				pw.print( "User-Agent: Azureus (UPnP/1.0)" + NL );
-				pw.print( "Host: " + control.getHost() + NL );
-				pw.print( "Content-Length: " + request.getBytes( "UTF8" ).length + NL );
-				pw.print( "Connection: Keep-Alive" + NL );
-				pw.print( "Pragma: no-cache" + NL + NL );
+		try{		
+			adapter.trace( "UPnP:Request: -> " + control + "," + request );
 	
-				pw.print( request );
+			if ( use_http_connection ){
 				
-				pw.flush();
-				
-				InputStream	is = HTTPUtils.decodeChunkedEncoding( socket );
-				
-				return( parseXML( is ));
-				
-			}finally{
-
 				try{
-					socket.close();
+					TorrentUtils.setTLSDescription( "UPnP Device: " + service.getDevice().getFriendlyName());
+				
+					HttpURLConnection	con1 = (HttpURLConnection)Java15Utils.openConnectionForceNoProxy(control);
+						
+					con1.setRequestProperty( "SOAPAction", "\""+ soap_action + "\"");
+						
+					con1.setRequestProperty( "Content-Type", "text/xml; charset=\"utf-8\"" );
+						
+					con1.setRequestProperty( "User-Agent", "Azureus (UPnP/1.0)" );
+						
+					con1.setRequestMethod( "POST" );
+						
+					con1.setDoInput( true );
+					con1.setDoOutput( true );
+						
+					OutputStream	os = con1.getOutputStream();
+						
+					PrintWriter	pw = new PrintWriter( new OutputStreamWriter(os, "UTF-8" ));
+									
+					pw.println( request );
+						
+					pw.flush();
+				
+					con1.connect();
+						
+					if ( con1.getResponseCode() == 405 || con1.getResponseCode() == 500 ){
+							
+							// gotta retry with M-POST method
+							
+						try{
+							HttpURLConnection con2 = (HttpURLConnection)control.openConnection();
+								
+							con2.setRequestProperty( "Content-Type", "text/xml; charset=\"utf-8\"" );
+								
+							con2.setRequestMethod( "M-POST" );
+								
+							con2.setRequestProperty( "MAN", "\"http://schemas.xmlsoap.org/soap/envelope/\"; ns=01" );
 					
-				}catch( Throwable e ){
+							con2.setRequestProperty( "01-SOAPACTION", "\""+ soap_action + "\"");
+								
+							con2.setDoInput( true );
+							con2.setDoOutput( true );
+								
+							os = con2.getOutputStream();
+								
+							pw = new PrintWriter( new OutputStreamWriter(os, "UTF-8" ));
+											
+							pw.println( request );
+								
+							pw.flush();
 					
-					Debug.printStackTrace(e);
+							con2.connect();
+							
+							return( parseXML(con2.getInputStream()));	
+							
+						}catch( Throwable e ){
+							
+						}
+						
+						InputStream es = con1.getErrorStream();
+						
+						String	info = null;
+						
+						try{
+							info = FileUtil.readInputStreamAsString( es, 512 );
+							
+						}catch( Throwable e ){
+						}
+						
+						String error = "SOAP RPC failed: " + con1.getResponseCode() + " " + con1.getResponseMessage();
+						
+						if ( info != null ){
+							
+							error += " - " + info;
+						}
+	
+						throw( new IOException ( error ));
+						
+					}else{
+							
+						return( parseXML(con1.getInputStream()));
+					}
+				}finally{
+					
+					TorrentUtils.setTLSDescription( null );
 				}
-			}
-		} 
+			}else{
+				final int CONNECT_TIMEOUT 	= 15*1000;
+				final int READ_TIMEOUT		= 30*1000;
+				
+				Socket	socket = new Socket( Proxy.NO_PROXY );
+				
+				socket.connect( new InetSocketAddress( control.getHost(), control.getPort()), CONNECT_TIMEOUT );
+				
+				socket.setSoTimeout( READ_TIMEOUT );
+					
+				try{
+					PrintWriter	pw = new PrintWriter(new OutputStreamWriter( socket.getOutputStream(), "UTF8" ));
+	
+					String	url_target = control.toString();
+				
+					int	p1 	= url_target.indexOf( "://" ) + 3;
+					p1		= url_target.indexOf( "/", p1 );
+					
+					url_target = url_target.substring( p1 );
+					
+					pw.print( "POST " + url_target + " HTTP/1.1" + NL );
+					pw.print( "Content-Type: text/xml; charset=\"utf-8\"" + NL );
+					pw.print( "SOAPAction: \"" + soap_action + "\"" + NL );
+					pw.print( "User-Agent: Azureus (UPnP/1.0)" + NL );
+					pw.print( "Host: " + control.getHost() + NL );
+					pw.print( "Content-Length: " + request.getBytes( "UTF8" ).length + NL );
+					pw.print( "Connection: Keep-Alive" + NL );
+					pw.print( "Pragma: no-cache" + NL + NL );
+		
+					pw.print( request );
+					
+					pw.flush();
+					
+					InputStream	is = HTTPUtils.decodeChunkedEncoding( socket );
+					
+					return( parseXML( is ));
+					
+				}finally{
+	
+					try{
+						socket.close();
+						
+					}catch( Throwable e ){
+						
+						Debug.printStackTrace(e);
+					}
+				}
+			} 
+		}finally{
+		
+			//System.out.println( "UPnP: invocation of " + control + "/" + soap_action + " took " + ( SystemTime.getMonotonousTime() - start ));
+		}
 	}
 	
 	protected File

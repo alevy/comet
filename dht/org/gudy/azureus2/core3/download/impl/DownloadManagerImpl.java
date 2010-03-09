@@ -30,15 +30,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
@@ -48,70 +40,47 @@ import org.gudy.azureus2.core3.disk.DiskManagerFactory;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfoSet;
 import org.gudy.azureus2.core3.disk.impl.DiskManagerImpl;
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerActivationListener;
-import org.gudy.azureus2.core3.download.DownloadManagerDiskListener;
-import org.gudy.azureus2.core3.download.DownloadManagerException;
-import org.gudy.azureus2.core3.download.DownloadManagerInitialisationAdapter;
-import org.gudy.azureus2.core3.download.DownloadManagerListener;
-import org.gudy.azureus2.core3.download.DownloadManagerPeerListener;
-import org.gudy.azureus2.core3.download.DownloadManagerPieceListener;
-import org.gudy.azureus2.core3.download.DownloadManagerState;
-import org.gudy.azureus2.core3.download.DownloadManagerStateAttributeListener;
-import org.gudy.azureus2.core3.download.DownloadManagerStats;
-import org.gudy.azureus2.core3.download.DownloadManagerTrackerListener;
-import org.gudy.azureus2.core3.download.ForceRecheckListener;
+import org.gudy.azureus2.core3.download.*;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
+import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.peer.PEPiece;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerException;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerFactory;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerListener;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraper;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.ListenerManager;
-import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
-import org.gudy.azureus2.core3.util.StringInterner;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.torrent.TOTorrentListener;
+import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
 import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
 import org.gudy.azureus2.plugins.download.savelocation.SaveLocationChange;
 import org.gudy.azureus2.plugins.network.ConnectionManager;
+import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
+import org.gudy.azureus2.pluginsimpl.local.download.DownloadImpl;
 
+import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.AzureusCoreOperation;
 import com.aelitis.azureus.core.AzureusCoreOperationTask;
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.peermanager.control.PeerControlSchedulerFactory;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
 import com.aelitis.azureus.core.util.CaseSensitiveFileMap;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
+import com.aelitis.azureus.plugins.extseed.ExternalSeedManualPeer;
+import com.aelitis.azureus.plugins.extseed.ExternalSeedPeer;
+import com.aelitis.azureus.plugins.extseed.ExternalSeedPlugin;
+import com.aelitis.azureus.plugins.tracker.dht.DHTTrackerPlugin;
+import com.aelitis.azureus.plugins.tracker.local.LocalTrackerPlugin;
 
 /**
  * @author Olivier
@@ -248,18 +217,16 @@ DownloadManagerImpl
 	
 		// one static async manager for them all
 	
-	private static ListenerManager	peer_listeners_aggregator 	= ListenerManager.createAsyncManager(
+	private static ListenerManager<DownloadManagerPeerListener>	peer_listeners_aggregator 	= ListenerManager.createAsyncManager(
 			"DM:PeerListenAggregatorDispatcher",
-			new ListenerManagerDispatcher()
+			new ListenerManagerDispatcher<DownloadManagerPeerListener>()
 			{
 				public void
 				dispatch(
-					Object		_listener,
-					int			type,
-					Object		value )
+					DownloadManagerPeerListener		listener,
+					int								type,
+					Object							value )
 				{
-					DownloadManagerPeerListener	listener = (DownloadManagerPeerListener)_listener;
-					
 					if ( type == LDT_PE_PEER_ADDED ){
 						
 						listener.peerAdded((PEPeer)value);
@@ -279,13 +246,15 @@ DownloadManagerImpl
 				}
 			});
 
-	private ListenerManager	peer_listeners 	= ListenerManager.createManager(
+	private static Object TPS_Key = new Object();
+	
+	private ListenerManager<DownloadManagerPeerListener>	peer_listeners 	= ListenerManager.createManager(
 			"DM:PeerListenDispatcher",
-			new ListenerManagerDispatcher()
+			new ListenerManagerDispatcher<DownloadManagerPeerListener>()
 			{
 				public void
 				dispatch(
-					Object		listener,
+					DownloadManagerPeerListener		listener,
 					int			type,
 					Object		value )
 				{
@@ -340,6 +309,8 @@ DownloadManagerImpl
 					piece_listeners_aggregator.dispatch( listener, type, value );
 				}
 			});	
+	
+	private List<DownloadManagerTPSListener>	tps_listeners;
 	
 	private AEMonitor	piece_listeners_mon	= new AEMonitor( "DM:DownloadManager:PeiceL" );
 	
@@ -440,34 +411,16 @@ DownloadManagerImpl
 								peer_listeners_mon.exit();
 							}
 															
-							new AEThread( "DM:torrentChangeFlusher", true )
+							new AEThread2( "DM:torrentChangeFlusher", true )
 							{
 								public void
-								runSupport()
+								run()
 								{
 									for (int i=0;i<peers.size();i++){
 										
 										PEPeer	peer = (PEPeer)peers.get(i);
 										
 										peer.getManager().removePeer( peer, "Private torrent: tracker changed" );
-									}
-									
-										// force through a stop on old url
-									
-									try{
-										TRTrackerAnnouncer an = TRTrackerAnnouncerFactory.create( torrent, true );
-										
-										an.cloneFrom( announcer );
-										
-										an.setTrackerUrl( old_url );
-										
-										an.stop( false );
-										
-										an.destroy();
-										
-									}catch( Throwable e ){
-										
-										Debug.printStackTrace(e);
 									}
 								}
 							}.start();
@@ -827,7 +780,23 @@ DownloadManagerImpl
 						download_manager_state.setFlag( DownloadManagerState.FLAG_LOW_NOISE, true );
 					}
 							
-				 	download_manager_state.setTrackerResponseCache( new HashMap());
+					Map peer_cache = TorrentUtils.getPeerCache( torrent );
+					
+					if ( peer_cache != null ){
+						
+						try{
+							download_manager_state.setTrackerResponseCache( peer_cache );
+							
+						}catch( Throwable e ){
+						
+							Debug.out( e );
+							
+							download_manager_state.setTrackerResponseCache( new HashMap());
+						}
+					}else{
+					
+						download_manager_state.setTrackerResponseCache( new HashMap());
+					}
 				 	
 				 		// also remove resume data incase someone's published a torrent with resume
 				 		// data in it
@@ -2029,36 +1998,31 @@ DownloadManagerImpl
 		}
 		
 		if (response != null) {
-			if (response.isValid()) {
-				int state = getState();
-				if (state == STATE_ERROR || state == STATE_STOPPED) {
-					long minNextScrape = SystemTime.getCurrentTime()
-							+ (state == STATE_ERROR ? SCRAPE_DELAY_ERROR_TORRENTS
-									: SCRAPE_DELAY_STOPPED_TORRENTS);
-					if (response.getNextScrapeStartTime() < minNextScrape) {
-						response.setNextScrapeStartTime(minNextScrape);
-					}
-				}
-			} else if (response.getStatus() == TRTrackerScraperResponse.ST_INITIALIZING) {
+			int state = getState();
+			if (state == STATE_ERROR || state == STATE_STOPPED) {
 				long minNextScrape;
-				int state = getState();
-				if (state == STATE_ERROR || state == STATE_STOPPED) {
-					// Delay initial scrape if torrent is stopped or in error.
-					// Save excessive thread creation (by the scraper) and spreads out
-					// CPU usage at startup time
+				if (response.getStatus() == TRTrackerScraperResponse.ST_INITIALIZING) {
 					minNextScrape = SystemTime.getCurrentTime()
 							+ (state == STATE_ERROR ? SCRAPE_INITDELAY_ERROR_TORRENTS
 									: SCRAPE_INITDELAY_STOPPED_TORRENTS);
 				} else {
-					// Spread the scrapes out a bit.  This is extremely helpfull on large
-					// torrent lists, and trackers that do not support multi-scrapes.
-					// For trackers that do support multi-scrapes, it will really delay
-					// the scrape for all torrent in the tracker to the one that has
-					// the lowest share ratio.
-					int sr = getStats().getShareRatio();
 					minNextScrape = SystemTime.getCurrentTime()
-							+ ((sr > 10000 ? 10000 : sr + 1000) * 60);
+							+ (state == STATE_ERROR ? SCRAPE_DELAY_ERROR_TORRENTS
+									: SCRAPE_DELAY_STOPPED_TORRENTS);
 				}
+				if (response.getNextScrapeStartTime() < minNextScrape) {
+					response.setNextScrapeStartTime(minNextScrape);
+				}
+			} else if (!response.isValid() && response.getStatus() == TRTrackerScraperResponse.ST_INITIALIZING) {
+				long minNextScrape;
+				// Spread the scrapes out a bit.  This is extremely helpfull on large
+				// torrent lists, and trackers that do not support multi-scrapes.
+				// For trackers that do support multi-scrapes, it will really delay
+				// the scrape for all torrent in the tracker to the one that has
+				// the lowest share ratio.
+				int sr = getStats().getShareRatio();
+				minNextScrape = SystemTime.getCurrentTime()
+						+ ((sr > 10000 ? 10000 : sr + 1000) * 60);
 
 				if (response.getNextScrapeStartTime() < minNextScrape) {
 					response.setNextScrapeStartTime(minNextScrape);
@@ -2067,6 +2031,14 @@ DownloadManagerImpl
 			
 			// Need to notify listeners, even if scrape result is not valid, in
 			// case they parse invalid scrapes 
+			
+			if ( response.isValid() && response.getStatus() == TRTrackerScraperResponse.ST_ONLINE ){
+			
+				long cache = ((((long)response.getSeeds())&0x00ffffffL)<<32)|(((long)response.getPeers())&0x00ffffffL);
+				
+				download_manager_state.setLongAttribute( DownloadManagerState.AT_SCRAPE_CACHE, cache );
+			}
+			
 			tracker_listeners.dispatch(LDT_TL_SCRAPERESULT, response);
 		}
 	}
@@ -2466,7 +2438,7 @@ DownloadManagerImpl
 				
 				// an active torrent changed its position, scheduling needs to be updated
 				if(getState() == DownloadManager.STATE_SEEDING || getState() == DownloadManager.STATE_DOWNLOADING)
-					PeerControlSchedulerFactory.getSingleton().updateScheduleOrdering();
+					PeerControlSchedulerFactory.updateScheduleOrdering();
 			}
 		}finally{
 			
@@ -2862,7 +2834,7 @@ DownloadManagerImpl
 		  
 			int nbSeeds = getNbSeeds();
 			int nbPeers = getNbPeers();
-			int nbRemotes = peerManager.getNbRemoteConnectionsExcludingUDP();
+			int nbRemotes = peerManager.getNbRemoteTCPConnections();
 			
 			TRTrackerAnnouncerResponse	announce_response = tc.getLastResponse();
 			
@@ -2934,7 +2906,7 @@ DownloadManagerImpl
 	  
 		if ( tc != null && peerManager != null && (state == STATE_DOWNLOADING || state == STATE_SEEDING)) {
 		  			
-			if ( peerManager.getNbRemoteConnectionsExcludingUDP() > 0 ){
+			if ( peerManager.getNbRemoteTCPConnections() > 0 ){
 				
 				return( ConnectionManager.NAT_OK );
 			}
@@ -3024,11 +2996,16 @@ DownloadManagerImpl
 	protected void 
 	deleteDataFiles() 
 	{
-		DiskManagerFactory.deleteDataFiles(torrent, torrent_save_location.getParent(), torrent_save_location.getName());
+		DiskManagerFactory.deleteDataFiles(
+			torrent, 
+			torrent_save_location.getParent(), 
+			torrent_save_location.getName(),
+			getDownloadState().getFlag( DownloadManagerState.FLAG_LOW_NOISE ));
 		
 		// Attempted fix for bug 1572356 - apparently sometimes when we perform removal of a download's data files,
 		// it still somehow gets processed by the move-on-removal rules. I'm making the assumption that this method
 		// is only called when a download is about to be removed.
+		
 		this.getDownloadState().setFlag(DownloadManagerState.FLAG_DISABLE_AUTO_FILE_MOVE, true);
 	}
   
@@ -3037,7 +3014,7 @@ DownloadManagerImpl
 	{
 		if ( torrentFileName != null ){
   		
-			TorrentUtils.delete( new File(torrentFileName));
+			TorrentUtils.delete( new File(torrentFileName),getDownloadState().getFlag( DownloadManagerState.FLAG_LOW_NOISE ));
 		}
 	}
   
@@ -3523,6 +3500,669 @@ DownloadManagerImpl
 		return( false );
   }
   
+  	public List<TrackerPeerSource> 
+  	getTrackerPeerSources() 
+  	{	  
+  		try{
+  			this_mon.enter();
+
+  			Object[] tps_data = (Object[])getUserData( TPS_Key );
+
+  			List<TrackerPeerSource>	tps;
+  			
+  			if ( tps_data == null ){
+
+  				tps = new ArrayList<TrackerPeerSource>();
+
+  				TOTorrentListener tol =
+  					new TOTorrentListener()
+					{
+						public void 
+						torrentChanged(
+							TOTorrent	torrent,
+							int 		type ) 
+						{
+							if ( type == TOTorrentListener.CT_ANNOUNCE_URLS ){
+
+								List<DownloadManagerTPSListener>	to_inform = null;
+								
+						 		try{
+						  			this_mon.enter();
+
+						  			torrent.removeListener( this );
+						  			
+						  			setUserData( TPS_Key, null );
+
+						  			if ( tps_listeners != null ){
+						  				
+						  				to_inform = new ArrayList<DownloadManagerTPSListener>( tps_listeners );
+						  			}
+						  		}finally{
+
+						  			this_mon.exit();
+						  		}
+						  		
+						  		if ( to_inform != null ){
+						  			
+						  			for ( DownloadManagerTPSListener l: to_inform ){
+						  				
+						  				try{
+						  				
+						  					l.trackerPeerSourcesChanged();
+						  					
+						  				}catch( Throwable e ){
+						  					
+						  					Debug.out(e);
+						  				}
+						  			}
+						  		}
+							}
+						}
+					};
+					
+  				setUserData( TPS_Key, new Object[]{ tps, tol });
+
+  					// tracker peer sources
+  				
+  				TOTorrent t = getTorrent();
+
+  				if ( t != null ){
+
+  					t.addListener( tol );
+  					
+  					TOTorrentAnnounceURLSet[] sets = t.getAnnounceURLGroup().getAnnounceURLSets();
+  					
+  					if ( sets.length == 0 ){
+  						
+  						sets = new TOTorrentAnnounceURLSet[]{ t.getAnnounceURLGroup().createAnnounceURLSet( new URL[]{ torrent.getAnnounceURL()})};
+  					}
+  					  
+  						// source per set
+  					
+					for ( final TOTorrentAnnounceURLSet set: sets ){
+						
+						final URL[] urls = set.getAnnounceURLs();
+						
+						if ( urls.length == 0 || TorrentUtils.isDecentralised( urls[0] )){
+							
+							continue;
+						}
+						
+						tps.add( 
+							new TrackerPeerSource()
+							{
+								private TrackerPeerSource _delegate;
+								
+			 					private TRTrackerAnnouncer		ta;
+			  					private long					ta_fixup;
+
+								private TrackerPeerSource
+								fixup()
+								{
+									long	now = SystemTime.getMonotonousTime();
+									
+									if ( now - ta_fixup > 1000 ){
+										
+										TRTrackerAnnouncer current_ta = getTrackerClient();
+										
+										if ( current_ta == ta ){
+											
+											if ( current_ta != null && _delegate == null ){
+												
+												_delegate = current_ta.getTrackerPeerSource( set );
+											}
+										}else{
+											
+											if ( current_ta == null ){
+												
+												_delegate = null;
+												
+											}else{
+												
+												_delegate = current_ta.getTrackerPeerSource( set );
+											}
+											
+											ta = current_ta;
+										}
+										
+										ta_fixup	= now;
+									}
+									
+									return( _delegate );
+								}
+								
+								public int
+								getType()
+								{
+									return( TrackerPeerSource.TP_TRACKER );
+								}
+								
+								public String
+								getName()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( urls[0].toExternalForm());
+									}
+									
+									return( delegate.getName());
+								}
+								
+								public int 
+								getStatus()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( ST_STOPPED );
+									}
+									
+									return( delegate.getStatus());
+								}
+								
+								public String 
+								getStatusString()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( null );
+									}
+									
+									return( delegate.getStatusString());
+								}
+								
+								public int
+								getSeedCount()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getSeedCount());
+								}
+								
+								public int
+								getLeecherCount()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getLeecherCount());							
+								}
+	
+								public int
+								getPeers()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getPeers());							
+								}
+
+								public int
+								getInterval()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getInterval());							
+								}
+								
+								public int
+								getMinInterval()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getMinInterval());							
+								}
+								
+								public boolean
+								isUpdating()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( false );
+									}
+									
+									return( delegate.isUpdating());							
+								}
+								
+								public int
+								getSecondsToUpdate()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getSecondsToUpdate());
+								}
+							});
+					}
+					
+						// cache peer source
+					
+					tps.add( 
+							new TrackerPeerSourceAdapter()
+							{
+								private TrackerPeerSource _delegate;
+								
+			 					private TRTrackerAnnouncer		ta;
+			 					private boolean					enabled;
+			  					private long					ta_fixup;
+
+								private TrackerPeerSource
+								fixup()
+								{
+									long	now = SystemTime.getMonotonousTime();
+									
+									if ( now - ta_fixup > 1000 ){
+										
+										TRTrackerAnnouncer current_ta = getTrackerClient();
+										
+										if ( current_ta == ta ){
+											
+											if ( current_ta != null && _delegate == null ){
+												
+												_delegate = current_ta.getCacheTrackerPeerSource();
+											}
+										}else{
+											
+											if ( current_ta == null ){
+												
+												_delegate = null;
+												
+											}else{
+												
+												_delegate = current_ta.getCacheTrackerPeerSource();
+											}
+											
+											ta = current_ta;
+										}
+										
+										enabled = controller.isPeerSourceEnabled( PEPeerSource.PS_BT_TRACKER );
+										
+										ta_fixup	= now;
+									}
+									
+									return( _delegate );
+								}
+								
+								public int
+								getType()
+								{
+									return( TrackerPeerSource.TP_TRACKER );
+								}
+								
+								public String
+								getName()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null ){
+									
+										return( MessageText.getString( "tps.tracker.cache" ));
+									}
+									
+									return( delegate.getName());
+								}
+								
+								public int 
+								getStatus()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( !enabled ){
+										
+										return( ST_DISABLED );
+									}
+									
+									if ( delegate == null ){
+									
+										return( ST_STOPPED );
+									}
+									
+									return( ST_ONLINE );
+								}
+	
+								public int
+								getPeers()
+								{
+									TrackerPeerSource delegate = fixup();
+									
+									if ( delegate == null || !enabled ){
+									
+										return( -1 );
+									}
+									
+									return( delegate.getPeers());							
+								}
+							});
+  				}
+  			}else{
+  				
+  				tps = (List<TrackerPeerSource>)tps_data[0];
+  			}
+  			
+  				// http seeds
+  			
+  			try{
+  				ExternalSeedPlugin esp = DownloadManagerController.getExternalSeedPlugin();
+  				
+  				if ( esp != null ){
+  					  					
+					tps.add( esp.getTrackerPeerSource( PluginCoreUtils.wrap( this ) ));
+ 				}
+  			}catch( Throwable e ){
+  			}
+  			
+  				// dht
+  			
+  			try{
+  				
+				PluginInterface dht_pi = AzureusCoreFactory.getSingleton().getPluginManager().getPluginInterfaceByClass(DHTTrackerPlugin.class);
+
+  			    if ( dht_pi != null ){
+  			    	
+  			    	tps.add(((DHTTrackerPlugin)dht_pi.getPlugin()).getTrackerPeerSource( PluginCoreUtils.wrap( this )));
+  			    }
+			}catch( Throwable e ){
+  			}
+  			
+				// LAN
+			
+			try{
+				
+				PluginInterface lt_pi = AzureusCoreFactory.getSingleton().getPluginManager().getPluginInterfaceByClass(LocalTrackerPlugin.class);
+
+				if ( lt_pi != null ){
+					
+  			    	tps.add(((LocalTrackerPlugin)lt_pi.getPlugin()).getTrackerPeerSource( PluginCoreUtils.wrap( this )));
+				
+				}
+				
+			}catch( Throwable e ){
+				
+			}
+			
+				// Plugin
+			
+			try{
+			
+				tps.add(((DownloadImpl)PluginCoreUtils.wrap( this )).getTrackerPeerSource());
+				
+			}catch( Throwable e ){
+				
+			}
+			
+				// PEX...
+			
+			tps.add(
+				new TrackerPeerSourceAdapter()
+				{
+					private PEPeerManager		_pm;
+					private TrackerPeerSource	_delegate;
+					
+					private TrackerPeerSource 
+					fixup()
+					{
+						PEPeerManager pm = getPeerManager();
+						
+						if ( pm == null ){
+							
+							_delegate 	= null;
+							_pm			= null;
+							
+						}else if ( pm != _pm ){
+							
+							_pm	= pm;
+							
+							_delegate = pm.getTrackerPeerSource();
+						}
+						
+						return( _delegate );
+					}
+					
+					public int
+					getType()
+					{
+						return( TP_PEX );
+					}
+					
+					public int
+					getStatus()
+					{
+						TrackerPeerSource delegate = fixup();
+						
+						if ( delegate == null ){
+							
+							return( ST_STOPPED );
+							
+						}else{
+							
+							return( delegate.getStatus());
+						}
+					}
+					
+					public String 
+					getName() 
+					{
+						TrackerPeerSource delegate = fixup();
+						
+						if ( delegate == null ){
+							
+							return( "" );
+							
+						}else{
+							
+							return( delegate.getName());
+						}	
+					}
+					
+					public int 
+					getPeers() 
+					{
+						TrackerPeerSource delegate = fixup();
+						
+						if ( delegate == null ){
+							
+							return( -1 );
+							
+						}else{
+							
+							return( delegate.getPeers());
+						}	
+					}
+				});
+			
+				// incoming
+			
+			tps.add(
+					new TrackerPeerSourceAdapter()
+					{
+						private long				fixup_time;
+					
+						private PEPeerManager		_pm;
+						private int					tcp;
+						private int					udp;
+						private int					total;
+						private boolean				enabled;
+						
+						private PEPeerManager 
+						fixup()
+						{
+							long	now = SystemTime.getMonotonousTime();
+							
+							if ( now - fixup_time > 1000 ){
+
+								PEPeerManager pm = _pm = getPeerManager();
+								
+								if ( pm != null ){
+									
+									tcp 	= pm.getNbRemoteTCPConnections();
+									udp		= pm.getNbRemoteUDPConnections();
+									total	= pm.getStats().getTotalIncomingConnections();
+								}
+								
+								enabled = controller.isPeerSourceEnabled( PEPeerSource.PS_INCOMING );
+								
+								fixup_time = now;
+							}
+							
+							return( _pm );
+						}
+						
+						public int
+						getType()
+						{
+							return( TP_INCOMING );
+						}
+						
+						public int
+						getStatus()
+						{
+							PEPeerManager delegate = fixup();
+							
+							if ( delegate == null ){
+								
+								return( ST_STOPPED );
+								
+							}else if ( !enabled ){
+								
+								return( ST_DISABLED );
+									
+							}else{
+							
+								return( ST_ONLINE );
+							}
+						}
+						
+						public String 
+						getName() 
+						{
+							PEPeerManager delegate = fixup();
+							
+							if ( delegate == null || !enabled ){
+								
+								return( "" );
+								
+							}else{
+								
+								return( 
+									MessageText.getString( 
+										"tps.incoming.details",
+										new String[]{ String.valueOf( tcp ), String.valueOf( udp ), String.valueOf( total )} ));
+							}	
+						}
+						
+						public int 
+						getPeers() 
+						{
+							PEPeerManager delegate = fixup();
+							
+							if ( delegate == null || !enabled ){
+								
+								return( -1 );
+								
+							}else{
+								
+								return( tcp + udp );
+							}	
+						}
+					});
+  			return( tps );
+
+  		}finally{
+
+  			this_mon.exit();
+  		}
+  	}
+
+    public void
+    addTPSListener(
+    	DownloadManagerTPSListener		listener )
+    {
+    	try{
+    		this_mon.enter();
+    		
+    		if ( tps_listeners == null ){
+    			
+    			tps_listeners = new ArrayList<DownloadManagerTPSListener>(1);
+    		}
+    		
+    		tps_listeners.add( listener );
+    		
+    	}finally{
+    		
+    		this_mon.exit();
+    	}
+    }	
+    
+    public void
+    removeTPSListener(
+    	DownloadManagerTPSListener		listener )
+    {
+       	try{
+    		this_mon.enter();
+    		
+    		if ( tps_listeners != null ){
+    		 		
+    			tps_listeners.remove( listener );
+    			
+    			if ( tps_listeners.size() == 0 ){
+    				
+    				tps_listeners = null;
+    				
+    	  			Object[] tps_data = (Object[])getUserData( TPS_Key );
+
+    	  			if ( tps_data != null ){
+		  			
+    	 				TOTorrent t = getTorrent();
+
+    	 				if ( t != null ){
+    	 					
+    	 					t.removeListener( (TOTorrentListener)tps_data[1] );
+    	 				}
+    	 				
+    	  				setUserData( TPS_Key, null );
+    	  			}
+    			}
+    		}
+    	}finally{
+    		
+    		this_mon.exit();
+    	}
+    }
+    
   private byte[]
   getIdentity()
   {
@@ -3799,7 +4439,7 @@ DownloadManagerImpl
 		this.moveTorrentFile(null, name);
 	}
 
-	private void renameTorrentSafe(String name) throws DownloadManagerException {
+	public void renameTorrentSafe(String name) throws DownloadManagerException {
 		String torrent_parent = new File(this.getTorrentFileName()).getParent();
 		String torrent_name = name;
 		

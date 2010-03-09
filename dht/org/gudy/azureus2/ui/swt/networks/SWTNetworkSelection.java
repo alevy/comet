@@ -23,8 +23,7 @@
 package org.gudy.azureus2.ui.swt.networks;
 
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -43,6 +42,7 @@ import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 
 
@@ -78,7 +78,7 @@ SWTNetworkSelection
 		final classifierDialog[]	dialog = new classifierDialog[1];
 		
 		try{
-			display.asyncExec(
+			Utils.execSWTThread(
 				new AERunnable()
 				{
 					public void
@@ -121,12 +121,12 @@ SWTNetworkSelection
 			
 			if ( display.isDisposed()){
 				
-				sem.release();
+				sem.releaseForever();
 				
 				return;
 			}
 			
-	 		shell = new Shell (display,SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+	 		shell = ShellFactory.createMainShell(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 	 	
 	 		Utils.setShellIcon(shell);
 	 		
@@ -250,6 +250,12 @@ SWTNetworkSelection
 			Utils.centreWindow( shell );
 
 			shell.open ();   
+			
+			while (!shell.isDisposed()) {
+				if (display != null && !display.isDisposed() && !display.readAndDispatch()) {
+					display.sleep();
+				}
+			}
 		}
    
 		protected void
@@ -278,7 +284,7 @@ SWTNetworkSelection
 	 		}
 	 		
 	 		shell.dispose();
-	 		sem.release();
+	 		sem.releaseForever();
 	 	}
 	 	
 	 	protected String[]

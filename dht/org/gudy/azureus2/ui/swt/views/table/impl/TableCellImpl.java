@@ -32,11 +32,8 @@ import java.util.Iterator;
 import java.util.Locale;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.internat.MessageText;
@@ -45,28 +42,15 @@ import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
+import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.plugins.ui.Graphic;
 import org.gudy.azureus2.plugins.ui.UIRuntimeException;
 import org.gudy.azureus2.plugins.ui.SWT.GraphicSWT;
-import org.gudy.azureus2.plugins.ui.tables.TableCellDisposeListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellLightRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseEvent;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseMoveListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellToolTipListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellVisibilityListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableRow;
+import org.gudy.azureus2.plugins.ui.tables.*;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.components.BufferedGraphicTableItem;
-import org.gudy.azureus2.ui.swt.components.BufferedGraphicTableItem1;
-import org.gudy.azureus2.ui.swt.components.BufferedGraphicTableItem2;
-import org.gudy.azureus2.ui.swt.components.BufferedTableItem;
-import org.gudy.azureus2.ui.swt.components.BufferedTableItemImpl;
-import org.gudy.azureus2.ui.swt.components.BufferedTableRow;
+import org.gudy.azureus2.ui.swt.components.*;
 import org.gudy.azureus2.ui.swt.debug.ObfusticateCellText;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.plugins.UISWTGraphic;
@@ -129,12 +113,12 @@ public class TableCellImpl
 	private ArrayList cellMouseMoveListeners;
 	private ArrayList cellVisibilityListeners;
 	private ArrayList cellSWTPaintListeners;
-	private boolean hasColumnSWTPaintListeners;
   private TableColumnCore tableColumn;
   private byte refreshErrLoopCount;
   private byte tooltipErrLoopCount;
   private byte loopFactor;
   private Object oToolTip;
+  private Object defaultToolTip;
 	private int iCursorID = -1;
 	private Graphic graphic = null;
 	
@@ -177,7 +161,6 @@ public class TableCellImpl
     refreshErrLoopCount = 0;
     tooltipErrLoopCount = 0;
     loopFactor = 0;
-    hasColumnSWTPaintListeners = (_tableColumn instanceof TableCellSWTPaintListener);
 
     if (item != null) {
     	bufferedTableItem = item;
@@ -508,7 +491,8 @@ public class TableCellImpl
   	tableColumn.setLastSortValueChange(SystemTime.getCurrentTime());
     sortValue = valueToSort;
     
-  	if (cellSWTPaintListeners != null || hasColumnSWTPaintListeners) {
+  	if (cellSWTPaintListeners != null
+				|| tableColumn.hasCellOtherListeners("SWTPaint")) {
   		redraw();
   	}
 
@@ -522,7 +506,7 @@ public class TableCellImpl
 				&& ((Long) sortValue).longValue() == valueToSort)
 			return false;
 
-		return _setSortValue(new Long(valueToSort));
+		return _setSortValue(Long.valueOf(valueToSort));
   }
   
   public boolean setSortValue( float valueToSort ) {
@@ -558,6 +542,13 @@ public class TableCellImpl
     return oToolTip;
   }
 
+  public Object getDefaultToolTip() {
+	return defaultToolTip;
+  }
+  public void setDefaultToolTip(Object tt) {
+	defaultToolTip = tt;
+  }
+  
 	public boolean isDisposed() {
 		return hasFlag(FLAG_DISPOSED);
 	}
@@ -1165,7 +1156,7 @@ public class TableCellImpl
 			  if (bDebug)
 				  debug("invoke refresh; wasValid? " + bWasValid);
 
-			  long lTimeStart = SystemTime.getMonotonousTime();
+			  long lTimeStart = Constants.isCVSVersion()?SystemTime.getMonotonousTime():0;
 			  tableColumn.invokeCellRefreshListeners(this, !bCellVisible);
 			  if (refreshListeners != null) {
 				  for (int i = 0; i < refreshListeners.size(); i++) {
@@ -1176,9 +1167,11 @@ public class TableCellImpl
 						  l.refresh(this);
 				  }
 			  }
-			  long lTimeEnd = SystemTime.getMonotonousTime();
-			  tableColumn.addRefreshTime(lTimeEnd - lTimeStart);
-
+			  if ( Constants.isCVSVersion()){
+				  long lTimeEnd = SystemTime.getMonotonousTime();
+				  tableColumn.addRefreshTime(lTimeEnd - lTimeStart);
+			  }
+			  
 			  // Change to valid only if we weren't valid before the listener calls
 			  // This is in case the listeners set valid to false when it was true
 			  if (!bWasValid && !hasFlag(FLAG_MUSTREFRESH)) {
@@ -1268,7 +1261,7 @@ public class TableCellImpl
   }
 
   public boolean needsPainting() {
-  	if (cellSWTPaintListeners != null || hasColumnSWTPaintListeners) {
+  	if (cellSWTPaintListeners != null || tableColumn.hasCellOtherListeners("SWTPaint")) {
   		return true;
   	}
   	if (bufferedTableItem == null) {
@@ -1330,7 +1323,8 @@ public class TableCellImpl
 		return "TableCell {"
 				+ tableColumn.getName()
 				+ ","
-				+ (bufferedTableItem == null ? "null" : ""
+				+ (tableRow == null ? "" : "r" + tableRow.getIndex())
+				+ (bufferedTableItem == null ? "c?" : "c"
 						+ bufferedTableItem.getPosition()) + "," + getText() + ","
 				+ getSortValue() + "}";
 	}
@@ -1583,4 +1577,11 @@ public class TableCellImpl
 		this.textAlpha = textOpacity;
 	}
 
+	public Rectangle getBoundsOnDisplay() {
+		Rectangle bounds = getBounds();
+		Point pt = ((TableViewSWT) tableRow.getView()).getTableComposite().toDisplay(bounds.x, bounds.y);
+		bounds.x = pt.x;
+		bounds.y = pt.y;
+		return bounds;
+	}
 }

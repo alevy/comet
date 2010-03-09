@@ -21,123 +21,48 @@
 package org.gudy.azureus2.core3.peer.impl.transport;
 
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerPiece;
 import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.peer.PEPeerListener;
-import org.gudy.azureus2.core3.peer.PEPeerManager;
-import org.gudy.azureus2.core3.peer.PEPeerSource;
-import org.gudy.azureus2.core3.peer.PEPeerStats;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.peer.*;
 import org.gudy.azureus2.core3.peer.impl.PEPeerControl;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransportFactory;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityDataID;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityManager;
 import org.gudy.azureus2.core3.peer.util.PeerUtils;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AddressUtils;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.IPToHostNameResolver;
-import org.gudy.azureus2.core3.util.IPToHostNameResolverListener;
-import org.gudy.azureus2.core3.util.IPToHostNameResolverRequest;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.StringInterner;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
 import org.gudy.azureus2.plugins.network.Connection;
 import org.gudy.azureus2.plugins.peers.Peer;
 import org.gudy.azureus2.pluginsimpl.local.network.ConnectionImpl;
 
 import com.aelitis.azureus.core.impl.AzureusCoreImpl;
-import com.aelitis.azureus.core.networkmanager.ConnectionEndpoint;
-import com.aelitis.azureus.core.networkmanager.IncomingMessageQueue;
-import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
-import com.aelitis.azureus.core.networkmanager.NetworkConnection;
-import com.aelitis.azureus.core.networkmanager.NetworkManager;
-import com.aelitis.azureus.core.networkmanager.OutgoingMessageQueue;
-import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
-import com.aelitis.azureus.core.networkmanager.Transport;
+import com.aelitis.azureus.core.networkmanager.*;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.udp.ProtocolEndpointUDP;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
 import com.aelitis.azureus.core.peermanager.messaging.Message;
 import com.aelitis.azureus.core.peermanager.messaging.MessageManager;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZBadPiece;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZHandshake;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZHave;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessage;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageDecoder;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageEncoder;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZPeerExchange;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZRequestHint;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZStylePeerExchange;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTBitfield;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTCancel;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTChoke;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTDHTPort;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTHandshake;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTHave;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTInterested;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTKeepAlive;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessage;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessageDecoder;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessageEncoder;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessageFactory;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTPiece;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTRawMessage;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTRequest;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTUnchoke;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTUninterested;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.LTHandshake;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.LTMessage;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.LTMessageDecoder;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.LTMessageEncoder;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.UTPeerExchange;
+import com.aelitis.azureus.core.peermanager.messaging.azureus.*;
+import com.aelitis.azureus.core.peermanager.messaging.bittorrent.*;
+import com.aelitis.azureus.core.peermanager.messaging.bittorrent.ltep.*;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerExchangerItem;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerItem;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerItemFactory;
 import com.aelitis.azureus.core.peermanager.piecepicker.PiecePicker;
 import com.aelitis.azureus.core.peermanager.piecepicker.util.BitFlags;
-import com.aelitis.azureus.core.peermanager.utils.AZPeerIdentityManager;
-import com.aelitis.azureus.core.peermanager.utils.ClientIdentifier;
-import com.aelitis.azureus.core.peermanager.utils.OutgoingBTHaveMessageAggregator;
-import com.aelitis.azureus.core.peermanager.utils.OutgoingBTPieceMessageHandler;
-import com.aelitis.azureus.core.peermanager.utils.OutgoingBTPieceMessageHandlerAdapter;
-import com.aelitis.azureus.core.peermanager.utils.PeerClassifier;
-import com.aelitis.azureus.core.peermanager.utils.PeerMessageLimiter;
+import com.aelitis.azureus.core.peermanager.utils.*;
 
 
 public class 
@@ -167,6 +92,8 @@ implements PEPeerTransport
 	private int tcp_listen_port = 0;
 	private int udp_listen_port = 0;
 	private int udp_non_data_port = 0;
+	// if the peer announces an ipv6 address
+	private InetAddress alternativeAddress;
 
 	private byte	crypto_level;
 
@@ -179,21 +106,22 @@ implements PEPeerTransport
 
 	private long lastNeededUndonePieceChange;
 
-	protected boolean choked_by_other_peer = true;
-	/** total time the other peer has unchoked us while not snubbed */
-	protected long unchokedTimeTotal;
-	/** the time at which the other peer last unchoked us when not snubbed */
-	protected long unchokedTime;
+	private boolean really_choked_by_other_peer = true;
+	private boolean effectively_choked_by_other_peer = true;
+	private long	effectively_unchoked_time = -1;
+	
 	protected boolean choking_other_peer = true;
 	private boolean interested_in_other_peer = false;
 	private boolean other_peer_interested_in_me = false;
 	private long snubbed =0;
-
+	
 	/** lazy allocation; null until needed */
 	private volatile BitFlags	peerHavePieces =null; 
 	private volatile boolean	availabilityAdded =false;
 	private volatile boolean	received_bitfield;
 
+	private int[]	piece_priority_offsets;
+	
 	private boolean handshake_sent;
 
 	private boolean seeding = false;
@@ -245,26 +173,40 @@ implements PEPeerTransport
 
 	private int messaging_mode = MESSAGING_BT_ONLY;
 	private Message[] supported_messages = null;
-	private byte	other_peer_bitfield_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_cancel_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_choke_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_handshake_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_bt_have_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_az_have_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_interested_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_keep_alive_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_pex_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_piece_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_unchoke_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_uninterested_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte	other_peer_request_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
-	private byte  	other_peer_bt_lt_ext_version    = BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_bitfield_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_cancel_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_choke_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_handshake_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_bt_have_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_az_have_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_interested_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_keep_alive_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_pex_version				= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_piece_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_unchoke_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_uninterested_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_request_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_suggest_piece_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_have_all_version			= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_have_none_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_reject_request_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte	other_peer_allowed_fast_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
+	private byte  	other_peer_bt_lt_ext_version    	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
 	private byte	other_peer_az_request_hint_version	= BTMessageFactory.MESSAGE_VERSION_INITIAL;
 	private byte	other_peer_az_bad_piece_version		= BTMessageFactory.MESSAGE_VERSION_INITIAL;
   
-	private boolean ut_pex_enabled = false;
-	private boolean ml_dht_enabled = false;
+	private static final boolean DEBUG_FAST = false;
+	
+	private boolean ut_pex_enabled 			= false;
+	private boolean fast_extension_enabled 	= false;
+	private boolean ml_dht_enabled 			= false;
 
+	private static final int	ALLOWED_FAST_PIECE_OFFERED_NUM		= 10;
+	private static final int	ALLOWED_FAST_OTHER_PEER_PIECE_MAX	= 10;
+	
+	private static final Object	KEY_ALLOWED_FAST_RECEIVED 	= new Object();
+	private static final Object	KEY_ALLOWED_FAST_SENT 		= new Object();
+	
 	private final AEMonitor closing_mon	= new AEMonitor( "PEPeerTransportProtocol:closing" );
 	private final AEMonitor general_mon  	= new AEMonitor( "PEPeerTransportProtocol:data" );
 
@@ -466,9 +408,10 @@ implements PEPeerTransport
 				ProtocolEndpoint.CONNECT_PRIORITY_MEDIUM,
 				new NetworkConnection.ConnectionListener() 
 				{
-					public final void 
-					connectStarted() {
+					public final int 
+					connectStarted( int ct ){
 						connection_state = PEPeerTransport.CONNECTION_CONNECTING;
+						return( ct );
 					}
 
 					public final void connectSuccess( ByteBuffer remaining_initial_data ) {  //will be called immediately
@@ -698,10 +641,18 @@ implements PEPeerTransport
 				{
 					private boolean	connect_ok;
 					
-					public final void 
-					connectStarted() 
+					public final int 
+					connectStarted(
+						int		default_connect_timeout ) 
 					{
 						connection_state = PEPeerTransport.CONNECTION_CONNECTING;
+												
+						if ( default_connect_timeout <= 0 ){
+							
+							return( default_connect_timeout );
+						}
+						
+						return( manager.getConnectTimeout( default_connect_timeout ));
 					}
 
 					public final void 
@@ -923,7 +874,7 @@ implements PEPeerTransport
 			recentlyDisconnected.put(mySessionID, this);
 	}
 	
-	public PEPeerTransport reconnect(boolean tryUDP) {
+	public PEPeerTransport reconnect(boolean tryUDP, boolean tryIPv6) {
 		
 		boolean use_tcp = isTCP() && !(tryUDP && getUDPListenPort() > 0);
 		
@@ -935,7 +886,7 @@ implements PEPeerTransport
 				PEPeerTransportFactory.createTransport( 
 						manager, 
 						getPeerSource(), 
-						getIp(), 
+						tryIPv6 && alternativeAddress != null ? alternativeAddress.getHostAddress() : getIp(), 
 						getTCPListenPort(), 
 						getUDPListenPort(),
 						use_tcp,
@@ -949,6 +900,9 @@ implements PEPeerTransport
 			{
 				PEPeerTransportProtocol pt = (PEPeerTransportProtocol) new_conn;
 				pt.checkForReconnect(mySessionID);
+				// carry over the alt address in case the reconnect fails and we try again with ipv6
+				pt.alternativeAddress = alternativeAddress;
+
 			}
 			
 			manager.addPeer( new_conn );
@@ -978,8 +932,6 @@ implements PEPeerTransport
 			peerSessionID = oldTransport.peerSessionID;
 			peer_stats = oldTransport.peer_stats;
 			peer_stats.setPeer(this);
-			unchokedTimeTotal += oldTransport.unchokedTimeTotal;
-			unchokedTime += oldTransport.unchokedTime;
 			setSnubbed(oldTransport.isSnubbed());
 			snubbed = oldTransport.snubbed;
 			last_good_data_time = oldTransport.last_good_data_time;
@@ -1086,6 +1038,9 @@ implements PEPeerTransport
 		data_dict.put("p", new Integer(localTcpPort));
 		data_dict.put("e", new Long(require_crypto ? 1L : 0L));
 		data_dict.put("upload_only", new Long(manager.isSeeding() && !ENABLE_LAZY_BITFIELD ? 1L : 0L));
+		InetAddress defaultV6 = NetworkAdmin.getSingleton().hasIPV6Potential(true) ? NetworkAdmin.getSingleton().getDefaultPublicAddressV6() : null;
+		if(defaultV6 != null)
+			data_dict.put("ipv6",defaultV6.getAddress());
 		LTHandshake lt_handshake = new LTHandshake(
 				data_dict, other_peer_bt_lt_ext_version
 		);
@@ -1133,6 +1088,7 @@ implements PEPeerTransport
 				local_tcp_port,
 				local_udp_port,
 				local_udp2_port,
+				NetworkAdmin.getSingleton().hasIPV6Potential(true) ? NetworkAdmin.getSingleton().getDefaultPublicAddressV6() : null,
 				avail_ids,
 				avail_vers,
 				require_crypto ? AZHandshake.HANDSHAKE_TYPE_CRYPTO : AZHandshake.HANDSHAKE_TYPE_PLAIN,
@@ -1146,7 +1102,7 @@ implements PEPeerTransport
 
 	public boolean isDownloadPossible()
 	{
-		if (!closing &&!choked_by_other_peer)
+		if (!closing &&!effectively_choked_by_other_peer)
 		{
 			if (lastNeededUndonePieceChange <piecePicker.getNeededUndonePieceChange())
 			{
@@ -1168,7 +1124,7 @@ implements PEPeerTransport
 	}
 
 	public boolean transferAvailable() {
-		return (!choked_by_other_peer && interested_in_other_peer);
+		return (!effectively_choked_by_other_peer && interested_in_other_peer);
 	}
 
 
@@ -1254,9 +1210,10 @@ implements PEPeerTransport
 		try{
 			requested_mon.enter();
 
-			if (!requested.contains(request))
-			{
+			if (!requested.contains(request)){
+				
 				requested.add(request);
+				
 				added =true;
 			}
 		}finally{
@@ -1269,6 +1226,13 @@ implements PEPeerTransport
             connection.getOutgoingMessageQueue().addMessage( new BTRequest( pieceNumber, pieceOffset, pieceLength, other_peer_request_version ), false );
 			_lastPiece =pieceNumber;
 
+			if ( DEBUG_FAST ){
+				if ( really_choked_by_other_peer ){
+				
+					System.out.println( "Sending allow-fast request for " + pieceNumber + "/" + pieceOffset + "/" + pieceLength + " to " + getIp());		
+				}
+			}
+			
 			try{
 				recent_outgoing_requests_mon.enter();
 
@@ -1325,12 +1289,7 @@ implements PEPeerTransport
 		choking_other_peer = true;
 		is_optimistic_unchoke = false;
 		
-		if(outgoing_piece_message_handler != null)
-		{
-			outgoing_piece_message_handler.removeAllPieceRequests();
-			outgoing_piece_message_handler.destroy();
-			outgoing_piece_message_handler = null;
-		}
+		destroyPieceMessageHandler();
 	}
 
 
@@ -1338,8 +1297,20 @@ implements PEPeerTransport
 		if ( current_peer_state != TRANSFERING ) return;
 
 		//System.out.println( "["+(System.currentTimeMillis()/1000)+"] " +connection + " unchoked");
-		if(outgoing_piece_message_handler == null)
-		{
+		
+		createPieceMessageHandler();
+
+		choking_other_peer = false;	// set this first as with pseudo peers we can effectively synchronously act
+		// on the unchoke advice and we don't want that borking with choked still set
+
+    connection.getOutgoingMessageQueue().addMessage( new BTUnchoke(other_peer_unchoke_version), false );
+	}
+
+	private void
+	createPieceMessageHandler()
+	{
+		if ( outgoing_piece_message_handler == null ){
+			
 			outgoing_piece_message_handler = new OutgoingBTPieceMessageHandler(
 				this,
 				connection.getOutgoingMessageQueue(),
@@ -1354,15 +1325,17 @@ implements PEPeerTransport
 			},
 			other_peer_piece_version);
 		}
-
-
-
-		choking_other_peer = false;	// set this first as with pseudo peers we can effectively synchronously act
-		// on the unchoke advice and we don't want that borking with choked still set
-
-    connection.getOutgoingMessageQueue().addMessage( new BTUnchoke(other_peer_unchoke_version), false );
 	}
-
+	
+	private void
+	destroyPieceMessageHandler()
+	{
+		if (outgoing_piece_message_handler != null ){
+			outgoing_piece_message_handler.removeAllPieceRequests();
+			outgoing_piece_message_handler.destroy();
+			outgoing_piece_message_handler = null;
+		}
+	}
 
 	private void sendKeepAlive() {
 		if ( current_peer_state != TRANSFERING ) return;
@@ -1605,6 +1578,7 @@ implements PEPeerTransport
 
 	public byte[] getId() {  return peer_id;  }
 	public String getIp() {  return ip;  }
+	public InetAddress getAlternativeIPv6() { return alternativeAddress; }
 	public int getPort() {  return port;  }
 
 	public int getTCPListenPort() {  return tcp_listen_port;  }
@@ -1626,16 +1600,14 @@ implements PEPeerTransport
 	public PEPeerStats getStats() {  return peer_stats;  }
 
 	public int[]
-	           getPriorityOffsets()
+	getPriorityOffsets()
 	{
-		// normal peer has no special priority requirements
-
-		return( null );
+		return( piece_priority_offsets );
 	}
 
 	public boolean
 	requestAllocationStarts(
-			int[]	base_priorities )
+		int[]	base_priorities )
 	{
 		return( false );
 	}
@@ -1660,7 +1632,8 @@ implements PEPeerTransport
 		return false;
 	}
 
-	public boolean isChokingMe() {  return choked_by_other_peer;  }
+	public boolean isChokingMe() {  return effectively_choked_by_other_peer;  }
+	public boolean isUnchokeOverride() {return really_choked_by_other_peer && !effectively_choked_by_other_peer; }
 	public boolean isChokedByMe() {  return choking_other_peer;  }
 	/**
 	 * @return true if the peer is interesting to us
@@ -1711,19 +1684,11 @@ implements PEPeerTransport
 				{
 					snubbed =0;
 					manager.decNbPeersSnubbed();
-					if (!choked_by_other_peer)
-						unchokedTime =now;
 				}
 			} else if (snubbed ==0)
 			{
 				snubbed =now;
 				manager.incNbPeersSnubbed();
-				if (!choked_by_other_peer)
-				{
-					final long unchoked =now -unchokedTime;
-					if (unchoked >0)
-						unchokedTimeTotal +=unchoked;
-				}
 			}
 		}
 	}
@@ -1894,23 +1859,6 @@ implements PEPeerTransport
 		finally{  requested_mon.exit();  }
 	}
 
-	/** @deprecated no longer used by CVS code
-	 */		
-	protected void
-	addRequest(
-			DiskManagerReadRequest	request )
-	{
-		try{
-			requested_mon.enter();
-
-			requested.add(request);
-		}finally{
-
-			requested_mon.exit();
-		}
-		_lastPiece =request.getPieceNumber();
-	}
-
 	protected void
 	removeRequest(
 			DiskManagerReadRequest	request )
@@ -1983,6 +1931,11 @@ implements PEPeerTransport
 		//PEPeerTransport.CONNECTION_CONNECTING are handled by the ConnectDisconnectManager
 		//so we don't need to deal with them here.
 
+		if ( fast_extension_enabled ){
+			
+			checkAllowedFast();
+		}
+		
 		final long now =SystemTime.getCurrentTime();
 		//make sure we time out stalled connections
 		if( connection_state == PEPeerTransport.CONNECTION_FULLY_ESTABLISHED ) {
@@ -2290,7 +2243,10 @@ implements PEPeerTransport
       }
 		 */
 		
-		this.ml_dht_enabled = (handshake_reserved_bytes[7] & 1) == 1; 
+		this.ml_dht_enabled = (handshake_reserved_bytes[7] & 0x01 ) == 1; 
+		
+		fast_extension_enabled = BTHandshake.FAST_EXTENSION_ENABLED && (handshake_reserved_bytes[7] & 0x04) != 0;
+				
 		messaging_mode = decideExtensionProtocol(handshake);
 
 		//extended protocol processing
@@ -2451,6 +2407,9 @@ implements PEPeerTransport
 		  relativeSeeding |= RELATIVE_SEEDING_UPLOAD_ONLY_INDICATED;
 		  checkSeed();
 	  }
+	  
+	  if(AddressUtils.isGlobalAddressV6(handshake.getIPv6()))
+		  alternativeAddress = handshake.getIPv6();
 		  
 	  
 	  
@@ -2497,6 +2456,9 @@ implements PEPeerTransport
 			// their random local port
 			peer_item_identity = PeerItemFactory.createPeerItem(ip, tcp_listen_port, PeerItem.convertSourceID(peer_source), type, udp_listen_port, crypto_level, 0);
 		}
+		
+		if(AddressUtils.isGlobalAddressV6(handshake.getIPv6()))
+			alternativeAddress = handshake.getIPv6();
 
 		
 		if(handshake.getReconnectSessionID() != null)
@@ -2556,6 +2518,16 @@ implements PEPeerTransport
 					other_peer_uninterested_version = supported_version;
 				else if (id == BTMessage.ID_BT_REQUEST)
 					other_peer_request_version = supported_version;
+				else if (id == BTMessage.ID_BT_SUGGEST_PIECE)
+					other_peer_suggest_piece_version = supported_version;
+				else if (id == BTMessage.ID_BT_HAVE_ALL)
+					other_peer_have_all_version = supported_version;
+				else if (id == BTMessage.ID_BT_HAVE_NONE)
+					other_peer_have_none_version = supported_version;
+				else if (id == BTMessage.ID_BT_REJECT_REQUEST)
+					other_peer_reject_request_version = supported_version;
+				else if (id == BTMessage.ID_BT_ALLOWED_FAST)
+					other_peer_allowed_fast_version = supported_version;
 				else if (id == AZMessage.ID_AZ_PEER_EXCHANGE)
 					other_peer_pex_version = supported_version;
 				else if (id == AZMessage.ID_AZ_REQUEST_HINT)
@@ -2597,7 +2569,99 @@ implements PEPeerTransport
 		sendMainlineDHTPort();
   	}
 
+	protected void 
+	decodeHaveAll( 
+		BTHaveAll have_all )
+	{
+		have_all.destroy();
+		
+		received_bitfield = true;
 
+		try{
+			closing_mon.enter();
+			
+			if ( !closing ){
+			
+				final BitFlags tempHavePieces;
+				
+				if ( peerHavePieces ==null ){
+				
+					tempHavePieces = new BitFlags(nbPieces);
+					
+				}else{
+				
+					tempHavePieces = peerHavePieces;
+					
+					removeAvailability();
+				}
+				
+				tempHavePieces.setAll();
+				
+				for ( int i=0; i<nbPieces; i++ ){
+					
+					manager.updateSuperSeedPiece( this, i );
+				}
+
+				peerHavePieces = tempHavePieces;
+				
+				addAvailability();
+
+				checkSeed();
+				
+				checkInterested();
+			}
+		}finally{
+			
+			closing_mon.exit();
+		}
+	}
+
+	protected void 
+	decodeHaveNone( 
+		BTHaveNone have_none )
+	{
+		have_none.destroy();
+		
+		received_bitfield = true;
+
+		try{
+			closing_mon.enter();
+			
+			if ( !closing ){
+			
+				final BitFlags tempHavePieces;
+				
+				if ( peerHavePieces ==null ){
+				
+					tempHavePieces = new BitFlags(nbPieces);
+					
+				}else{
+				
+					tempHavePieces = peerHavePieces;
+					
+					removeAvailability();
+				}
+				
+				tempHavePieces.clear();
+				
+				peerHavePieces = tempHavePieces;
+				
+					//some of these kinda pointless but whatever
+				
+				addAvailability();
+
+				checkSeed();
+				
+				checkInterested();
+				
+				checkFast( tempHavePieces );
+			}
+		}finally{
+			
+			closing_mon.exit();
+		}
+	}
+	
 	protected void decodeBitfield( BTBitfield bitfield )
 	{
 		received_bitfield = true;
@@ -2652,13 +2716,15 @@ implements PEPeerTransport
 
 				checkSeed();
 				checkInterested();
+				
+				checkFast( tempHavePieces );
 			}
 		}
 		finally{
 			closing_mon.exit();
 		}
 	}
-
+	
 	protected void decodeMainlineDHTPort(BTDHTPort port) {
 		int i_port = port.getDHTPort();
 		port.destroy();
@@ -2673,27 +2739,23 @@ implements PEPeerTransport
 
 	protected void decodeChoke( BTChoke choke ) {    
 		choke.destroy();
-		if (!choked_by_other_peer)
+		if (!really_choked_by_other_peer)
 		{
-			choked_by_other_peer = true;
+			really_choked_by_other_peer = true;
+			calculatePiecePriorities();
 			cancelRequests();
-			final long unchoked =SystemTime.getCurrentTime() -unchokedTime;
-			if (unchoked >0 &&!isSnubbed())
-				unchokedTimeTotal +=unchoked;
 		}
 	}
 
 
 	protected void decodeUnchoke( BTUnchoke unchoke ) {
 		unchoke.destroy();
-		if (choked_by_other_peer)
+		if (really_choked_by_other_peer)
 		{
-			choked_by_other_peer = false;
-			if (!isSnubbed())
-				unchokedTime =SystemTime.getCurrentTime();
+			really_choked_by_other_peer = false;
+			calculatePiecePriorities();
 		}
 	}
-
 
 	protected void 
 	decodeInterested( 
@@ -2897,20 +2959,89 @@ implements PEPeerTransport
 			return;
 		}
 		
-		if( !choking_other_peer ) {
-			outgoing_piece_message_handler.addPieceRequest( number, offset, length );
-			allowReconnect = true;
+		boolean	request_ok = false;
+		
+		if ( choking_other_peer ){
+			
+			try{
+				general_mon.enter();
+				
+				int[][] pieces = (int[][])getUserData( KEY_ALLOWED_FAST_SENT );
+				
+				if ( pieces != null ){
+				
+					for (int i=0;i<pieces.length;i++){
+						
+						if ( pieces[i][0] == number ){
+							
+							if ( pieces[i][1] >= length ){
+								
+								 pieces[i][1] -= length;
+								 
+								 if ( DEBUG_FAST ){
+									 System.out.println( "Permitting fast-allowed request for " + number + "/" + offset + "/" + length + " to " + getIp());
+								 }
+								 
+								 request_ok = true;
+								 
+								 createPieceMessageHandler();
+								 
+								 break;
+							}
+						}
+					}			
+				}
+			}finally{
+				
+				general_mon.exit();
+			}
+		}else{
+			
+			request_ok = true;
 		}
-		else {
+		
+		if ( request_ok ){
+		
+			if ( outgoing_piece_message_handler == null || !outgoing_piece_message_handler.addPieceRequest( number, offset, length )){
+				
+				sendRejectRequest( number, offset, length );
+			}
+			
+			allowReconnect = true;
+			
+		}else{
 			if (Logger.isEnabled())
 				Logger.log(new LogEvent(this, LOGID, "decodeRequest(): peer request for piece #"
 						+ number + ":" + offset + "->" + (offset + length -1)
 						+ " ignored as peer is currently choked."));
+			
+			sendRejectRequest( number, offset, length );
 		}
 	}
 
-
-
+	public void
+	sendRejectRequest(
+		DiskManagerReadRequest	request )
+	{
+		sendRejectRequest( request.getPieceNumber(), request.getOffset(), request.getLength());
+	}
+	
+	private void
+	sendRejectRequest(
+		int		number,
+		int		offset,
+		int		length )
+	{
+		if ( fast_extension_enabled && !closing ){
+			
+			// System.out.println( "Sending reject request " + number + "/" + offset + "/" + length + " to " + getIp());
+			
+			BTRejectRequest	reject = new BTRejectRequest( number, offset, length, other_peer_reject_request_version );
+	  		  
+	  		connection.getOutgoingMessageQueue().addMessage( reject, false );
+		}
+	}
+	
 	protected void decodePiece( BTPiece piece ) {
 		final int pieceNumber = piece.getPieceNumber();
 		final int offset = piece.getPieceOffset();
@@ -2956,6 +3087,12 @@ implements PEPeerTransport
 			return;
 		}
 
+	  if ( DEBUG_FAST ){
+		  if ( fast_extension_enabled && really_choked_by_other_peer ){
+
+			  System.out.println( "Received allow-fast piece for " + pieceNumber + "/" + offset + "/" + length + " from " + getIp());
+		  }
+	  }
 		final DiskManagerReadRequest request = manager.createDiskManagerRequest( pieceNumber, offset, length );
 		boolean piece_error = true;
 
@@ -3060,7 +3197,10 @@ implements PEPeerTransport
 
 
 
-	protected void decodeCancel( BTCancel cancel ) {
+	protected void 
+	decodeCancel( 
+		BTCancel cancel ) 
+	{
 		int number = cancel.getPieceNumber();
 		int offset = cancel.getPieceOffset();
 		int length = cancel.getLength();
@@ -3069,155 +3209,452 @@ implements PEPeerTransport
 			outgoing_piece_message_handler.removePieceRequest( number, offset, length );
 	}
 
+	protected void 
+	decodeRejectRequest( 
+		BTRejectRequest reject ) 
+	{
+		int number = reject.getPieceNumber();
+		int offset = reject.getPieceOffset();
+		int length = reject.getLength();
+		reject.destroy();
+		
+		final DiskManagerReadRequest request = manager.createDiskManagerRequest( number, offset, length );
 
+		if ( hasBeenRequested( request )){
+			
+			removeRequest( request );
+			
+			manager.requestCanceled( request );
+		
+				// if fast-allowed block rejected, remove from set so we don't re-request it
+			
+			try{
+				general_mon.enter();
+				
+				List<Integer> pieces = (List<Integer>)getUserData( KEY_ALLOWED_FAST_RECEIVED );
+				
+				if ( pieces != null ){
+					
+					pieces.remove( new Integer( number ));
+					
+					if ( pieces.size() == 0 ){
+						
+						setUserData( KEY_ALLOWED_FAST_RECEIVED, null );
+					}
+				}
+				
+				int[]	priorities = piece_priority_offsets;
+	
+				if ( priorities != null ){
+					
+					priorities[number] = Integer.MIN_VALUE;
+				}
+				
+				calculatePiecePriorities();
+				
+			}finally{
+				
+				general_mon.exit();
+			}
+		}
+	}
 
+	private void 
+	decodeAllowedFast( 
+		BTAllowedFast	allowed ) 
+	{
+		int	piece = allowed.getPieceNumber();
+		
+		allowed.destroy();
+				
+		if ( piecePicker.getNbPiecesDone() > ALLOWED_FAST_OTHER_PEER_PIECE_MAX ){
+			
+				// we have too many pieces already, ignore
+			
+			return;
+		}
+		
+		if ( DEBUG_FAST ){
+			System.out.println( "Received allow-fast " + piece + " from " + getIp());
+		}
+		
+		try{
+			general_mon.enter();
+			
+			List<Integer> pieces = (List<Integer>)getUserData( KEY_ALLOWED_FAST_RECEIVED );
+			
+			if ( pieces == null ){
+			
+				pieces = new ArrayList<Integer>( ALLOWED_FAST_OTHER_PEER_PIECE_MAX );
+				
+				setUserData( KEY_ALLOWED_FAST_RECEIVED, pieces );
+			}
+			
+			if ( pieces.size() < ALLOWED_FAST_OTHER_PEER_PIECE_MAX * 2 ){
+				
+				Integer i = new Integer( piece );
+						
+				if ( !pieces.contains( i ) && i >=0 && i < nbPieces ){
+					
+					pieces.add( i );
+				
+					calculatePiecePriorities();
+				}
+			}
+		}finally{
+			
+			general_mon.exit();
+		}
+	}
+	
+	private void
+	sendAllowFast(
+		int		number )
+	{
+		if ( fast_extension_enabled ){
+			
+			if ( DEBUG_FAST ){
+				System.out.println( "Sending allow-fast " + number + " to " + getIp());
+			}
+			
+			BTAllowedFast	af = new BTAllowedFast( number, other_peer_allowed_fast_version );
+	  		  
+	  		connection.getOutgoingMessageQueue().addMessage( af, false );
+		}
+	}
+
+	protected void
+	calculatePiecePriorities()
+	{
+		try{
+			general_mon.enter();
+			
+			if ( really_choked_by_other_peer ){
+				
+				List<Integer> pieces = (List<Integer>)getUserData( KEY_ALLOWED_FAST_RECEIVED );
+
+				if ( pieces == null ){
+					
+					effectively_choked_by_other_peer = true;
+					
+					piece_priority_offsets	= null;
+					
+				}else{
+										
+					int[]	priorities = piece_priority_offsets;
+					
+					if ( priorities == null ){
+						
+						priorities = new int[nbPieces];
+					
+						Arrays.fill( priorities, Integer.MIN_VALUE );
+					}
+					
+					for ( int i: pieces ){
+						
+						priorities[i] = 0;
+					}
+										
+					piece_priority_offsets = priorities;
+					
+					if ( effectively_choked_by_other_peer ){
+						
+						effectively_choked_by_other_peer = false;
+					
+						effectively_unchoked_time	= SystemTime.getMonotonousTime();
+					}
+				}
+			}else{
+				
+				if ( effectively_choked_by_other_peer ){
+				
+					effectively_choked_by_other_peer = false;
+				
+					effectively_unchoked_time	= SystemTime.getMonotonousTime();
+				}
+				
+				piece_priority_offsets = null;
+			}
+		}finally{
+			
+			general_mon.exit();
+		}
+	}
+
+	protected void
+	checkFast(
+		BitFlags	flags )
+	{		
+		if ( 	fast_extension_enabled &&
+				!(isSeed() || isRelativeSeed()) &&
+				PeerClassifier.fullySupportsFE( client_peer_id )){
+			
+				// if already has enough pieces then bail
+			
+			if ( flags.nbSet >= ALLOWED_FAST_OTHER_PEER_PIECE_MAX ){
+				
+				return;
+			}
+			
+			int[][] pieces;
+			
+			try{
+				general_mon.enter();
+				
+				pieces = (int[][])getUserData( KEY_ALLOWED_FAST_SENT );
+				
+				if ( pieces == null ){
+				
+					List<Integer> l_pieces = generateFastSet( ALLOWED_FAST_PIECE_OFFERED_NUM );
+					
+					pieces = new int[l_pieces.size()][2];
+					
+					int	piece_size = diskManager.getPieceLength();
+					
+					for ( int i=0;i<l_pieces.size(); i++ ){
+						
+						int	piece_number = l_pieces.get(i);
+						
+						pieces[i] = new int[]{ piece_number, piece_size*2 };
+					}
+					
+					setUserData( KEY_ALLOWED_FAST_SENT, pieces );
+				}
+			}finally{
+				
+				general_mon.exit();
+			}
+			
+			for ( int i=0;i<pieces.length;i++){
+				
+				int	piece_number = pieces[i][0];
+				
+				if ( !flags.flags[ piece_number ] ){
+				
+					sendAllowFast( piece_number );
+				}
+			}
+		}
+	}
+	
+	private void
+	checkAllowedFast()
+	{
+		try{
+			general_mon.enter();
+
+			if ( piecePicker.getNbPiecesDone() > ALLOWED_FAST_OTHER_PEER_PIECE_MAX ){
+		
+				List<Integer> pieces = (List<Integer>)getUserData( KEY_ALLOWED_FAST_RECEIVED );
+
+				if ( pieces != null ){
+					
+					if ( DEBUG_FAST ){
+						System.out.println( "Clearing down fast received for " + getIp());
+					}
+					
+					setUserData( KEY_ALLOWED_FAST_RECEIVED, null );
+					
+					calculatePiecePriorities();
+				}
+			}
+		
+			BitFlags flags = peerHavePieces;
+		
+			if ( flags != null && flags.nbSet >= ALLOWED_FAST_OTHER_PEER_PIECE_MAX ){
+				
+				int[][] pieces = (int[][])getUserData( KEY_ALLOWED_FAST_SENT );
+
+				if ( pieces != null ){
+					
+					if ( DEBUG_FAST ){
+						System.out.println( "Clearing down fast sent for " + getIp());
+					}
+					
+					setUserData( KEY_ALLOWED_FAST_SENT, null );
+				}
+			}
+		}finally{
+			
+			general_mon.exit();
+		}
+	}
+	
 	private void registerForMessageHandling() {
 
 		//INCOMING MESSAGES
-		connection.getIncomingMessageQueue().registerQueueListener( new IncomingMessageQueue.MessageQueueListener() {
-			public final boolean messageReceived( Message message ) {      
-
-				if (Logger.isEnabled())
-					Logger.log(new LogEvent(PEPeerTransportProtocol.this, LogIDs.NET,
-							"Received [" + message.getDescription() + "] message"));
-				final long now =SystemTime.getCurrentTime();
-				last_message_received_time =now;
-				if( message.getType() == Message.TYPE_DATA_PAYLOAD ) {
-					last_data_message_received_time =now;
-				}
-            
-        String	message_id = message.getID();
-
-        if( message_id.equals( BTMessage.ID_BT_PIECE ) ) {
-					decodePiece( (BTPiece)message );
-					return true;
-				}
-
-				if( closing ) {
-					message.destroy();
-					return true;
-				}
-
-        if(message_id.equals( BTMessage.ID_BT_KEEP_ALIVE ) ) {
-					message.destroy();
-
-					//make sure they're not spamming us
-					if( !message_limiter.countIncomingMessage( message.getID(), 6, 60*1000 ) ) {  //allow max 6 keep-alives per 60sec
-						System.out.println( manager.getDisplayName() + ": Incoming keep-alive message flood detected, dropping spamming peer connection." +PEPeerTransportProtocol.this );
-						closeConnectionInternally( "Incoming keep-alive message flood detected, dropping spamming peer connection." );
+		connection.getIncomingMessageQueue().registerQueueListener( 
+			new IncomingMessageQueue.MessageQueueListener() 
+			{
+				public final boolean 
+				messageReceived( 
+					Message message ) 
+				{      
+					if (Logger.isEnabled())
+						Logger.log(new LogEvent(PEPeerTransportProtocol.this, LogIDs.NET,
+								"Received [" + message.getDescription() + "] message"));
+					final long now =SystemTime.getCurrentTime();
+					last_message_received_time =now;
+					if( message.getType() == Message.TYPE_DATA_PAYLOAD ) {
+						last_data_message_received_time =now;
 					}
 
-					return true;
-				}
+					String	message_id = message.getID();
 
-
-        if( message_id.equals( BTMessage.ID_BT_HANDSHAKE ) ) {
-					decodeBTHandshake( (BTHandshake)message );
-					return true;
-				}
-
-        if( message_id.equals( AZMessage.ID_AZ_HANDSHAKE ) ) {
-					decodeAZHandshake( (AZHandshake)message );
-					return true;
-				}
-        
-        if (message_id.equals(LTMessage.ID_LT_HANDSHAKE)) {
-        	decodeLTHandshake((LTHandshake)message);
-        	return true;
-        }
-
-        if( message_id.equals( BTMessage.ID_BT_BITFIELD ) ) {
-					decodeBitfield( (BTBitfield)message );
-					return true;
-				}
-
-        if( message_id.equals( BTMessage.ID_BT_CHOKE ) ) {
-					decodeChoke( (BTChoke)message );
-					if( choking_other_peer ) {
-						connection.enableEnhancedMessageProcessing( false );  //downgrade back to normal handler
+					if( message_id.equals( BTMessage.ID_BT_PIECE ) ) {
+						decodePiece( (BTPiece)message );
+						return true;
 					}
-					return true;
+
+					if( closing ) {
+						message.destroy();
+						return true;
+					}
+
+					if(message_id.equals( BTMessage.ID_BT_KEEP_ALIVE ) ) {
+						message.destroy();
+
+						//make sure they're not spamming us
+						if( !message_limiter.countIncomingMessage( message.getID(), 6, 60*1000 ) ) {  //allow max 6 keep-alives per 60sec
+							System.out.println( manager.getDisplayName() + ": Incoming keep-alive message flood detected, dropping spamming peer connection." +PEPeerTransportProtocol.this );
+							closeConnectionInternally( "Incoming keep-alive message flood detected, dropping spamming peer connection." );
+						}
+
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_HANDSHAKE ) ) {
+						decodeBTHandshake( (BTHandshake)message );
+						return true;
+					}
+
+					if( message_id.equals( AZMessage.ID_AZ_HANDSHAKE ) ) {
+						decodeAZHandshake( (AZHandshake)message );
+						return true;
+					}
+
+					if (message_id.equals(LTMessage.ID_LT_HANDSHAKE)) {
+						decodeLTHandshake((LTHandshake)message);
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_BITFIELD ) ) {
+						decodeBitfield( (BTBitfield)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_CHOKE ) ) {
+						decodeChoke( (BTChoke)message );
+						if( choking_other_peer ) {
+							connection.enableEnhancedMessageProcessing( false, manager.getPartitionID());  //downgrade back to normal handler
+						}
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_UNCHOKE ) ) {
+						decodeUnchoke( (BTUnchoke)message );
+						connection.enableEnhancedMessageProcessing( true, manager.getPartitionID() );  //make sure we use a fast handler for the resulting download
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_INTERESTED ) ) {
+						decodeInterested( (BTInterested)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_UNINTERESTED ) ) {
+						decodeUninterested( (BTUninterested)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_HAVE ) ) {
+						decodeHave( (BTHave)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_REQUEST ) ) {
+						decodeRequest( (BTRequest)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_CANCEL ) ) {
+						decodeCancel( (BTCancel)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_SUGGEST_PIECE ) ) {
+						decodeSuggestPiece( (BTSuggestPiece)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_HAVE_ALL ) ) {
+						decodeHaveAll( (BTHaveAll)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_HAVE_NONE ) ) {
+						decodeHaveNone( (BTHaveNone)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_REJECT_REQUEST ) ) {
+						decodeRejectRequest( (BTRejectRequest)message );
+						return true;
+					}
+
+					if( message_id.equals( BTMessage.ID_BT_ALLOWED_FAST ) ) {
+						decodeAllowedFast( (BTAllowedFast)message );
+						return true;
+					}
+
+					if (message_id.equals(BTMessage.ID_BT_DHT_PORT)) {
+						decodeMainlineDHTPort((BTDHTPort)message);
+						return true;
+					}
+
+					if( message_id.equals( AZMessage.ID_AZ_PEER_EXCHANGE ) ) {
+						decodePeerExchange( (AZPeerExchange)message );
+						return true;
+					}
+
+					if (message_id.equals(LTMessage.ID_UT_PEX)) {
+						decodePeerExchange((UTPeerExchange)message);
+						return true;
+					}
+
+					if( message_id.equals( AZMessage.ID_AZ_REQUEST_HINT ) ) {        	
+						decodeAZRequestHint( (AZRequestHint)message );
+						return true;
+					}
+
+					if( message_id.equals( AZMessage.ID_AZ_HAVE ) ) {        	
+						decodeAZHave((AZHave)message );
+						return true;
+					}
+
+					if( message_id.equals( AZMessage.ID_AZ_BAD_PIECE ) ) {        	
+						decodeAZBadPiece((AZBadPiece)message );
+						return true;
+					}
+					return false;
 				}
 
-        if( message_id.equals( BTMessage.ID_BT_UNCHOKE ) ) {
-					decodeUnchoke( (BTUnchoke)message );
-					connection.enableEnhancedMessageProcessing( true );  //make sure we use a fast handler for the resulting download
-					return true;
+				public final void protocolBytesReceived( int byte_count ) {
+					//update stats
+					peer_stats.protocolBytesReceived( byte_count );
+					manager.protocolBytesReceived( PEPeerTransportProtocol.this, byte_count );
 				}
 
-        if( message_id.equals( BTMessage.ID_BT_INTERESTED ) ) {
-					decodeInterested( (BTInterested)message );
-					return true;
+				public final void dataBytesReceived( int byte_count ) {
+					// Observe that the peer is sending data so that if theyre so slow that the whole
+					// data block times out, we don't think theyre not sending anything at all
+					last_data_message_received_time =SystemTime.getCurrentTime();
+
+					//update stats
+					peer_stats.dataBytesReceived( byte_count );
+
+					manager.dataBytesReceived( PEPeerTransportProtocol.this, byte_count );
 				}
-
-        if( message_id.equals( BTMessage.ID_BT_UNINTERESTED ) ) {
-					decodeUninterested( (BTUninterested)message );
-					return true;
-				}
-
-        if( message_id.equals( BTMessage.ID_BT_HAVE ) ) {
-					decodeHave( (BTHave)message );
-					return true;
-				}
-
-        if( message_id.equals( BTMessage.ID_BT_REQUEST ) ) {
-					decodeRequest( (BTRequest)message );
-					return true;
-				}
-
-        if( message_id.equals( BTMessage.ID_BT_CANCEL ) ) {
-					decodeCancel( (BTCancel)message );
-					return true;
-				}
-        
-        if (message_id.equals(BTMessage.ID_BT_DHT_PORT)) {
-        	decodeMainlineDHTPort((BTDHTPort)message);
-        	return true;
-        }
-
-        if( message_id.equals( AZMessage.ID_AZ_PEER_EXCHANGE ) ) {
-					decodePeerExchange( (AZPeerExchange)message );
-					return true;
-				}
-        
-        if (message_id.equals(LTMessage.ID_UT_PEX)) {
-        	decodePeerExchange((UTPeerExchange)message);
-        	return true;
-        }
-
-        if( message_id.equals( AZMessage.ID_AZ_REQUEST_HINT ) ) {        	
-					decodeAZRequestHint( (AZRequestHint)message );
-            return true;
-        }
-        
-        if( message_id.equals( AZMessage.ID_AZ_HAVE ) ) {        	
-            decodeAZHave((AZHave)message );
-            return true;
-        }
-        
-        if( message_id.equals( AZMessage.ID_AZ_BAD_PIECE ) ) {        	
-            decodeAZBadPiece((AZBadPiece)message );
-					return true;
-				}
-				return false;
-			}
-
-			public final void protocolBytesReceived( int byte_count ) {
-				//update stats
-				peer_stats.protocolBytesReceived( byte_count );
-				manager.protocolBytesReceived( PEPeerTransportProtocol.this, byte_count );
-			}
-
-			public final void dataBytesReceived( int byte_count ) {
-				// Observe that the peer is sending data so that if theyre so slow that the whole
-				// data block times out, we don't think theyre not sending anything at all
-				last_data_message_received_time =SystemTime.getCurrentTime();
-
-				//update stats
-				peer_stats.dataBytesReceived( byte_count );
-
-				manager.dataBytesReceived( PEPeerTransportProtocol.this, byte_count );
-			}
 		});
 
 
@@ -3239,11 +3676,11 @@ implements PEPeerTransport
 				}
 
 				if( message.getID().equals( BTMessage.ID_BT_UNCHOKE ) ) { // is about to send piece data
-					connection.enableEnhancedMessageProcessing( true );  //so make sure we use a fast handler
+					connection.enableEnhancedMessageProcessing( true, manager.getPartitionID() );  //so make sure we use a fast handler
 				}
 				else if( message.getID().equals( BTMessage.ID_BT_CHOKE ) ) { // is done sending piece data
-					if( choked_by_other_peer ) {
-						connection.enableEnhancedMessageProcessing( false );  //so downgrade back to normal handler
+					if( effectively_choked_by_other_peer ) {
+						connection.enableEnhancedMessageProcessing( false, manager.getPartitionID() );  //so downgrade back to normal handler
 					}
 				}
 
@@ -3326,6 +3763,19 @@ implements PEPeerTransport
 		return( received_bitfield );
 	}
 
+	public long
+	getUnchokedForMillis()
+	{
+		long	time = effectively_unchoked_time;
+		
+		if ( effectively_choked_by_other_peer || time < 0 ){
+			
+			return( -1 );
+		}
+		
+		return( SystemTime.getMonotonousTime() - time );
+	}
+	
 	public String
 	getEncryption()
 	{
@@ -3429,6 +3879,8 @@ implements PEPeerTransport
 				//check for peer exchange support
 				if(ut_pex_enabled || peerSupportsMessageType(AZMessage.ID_AZ_PEER_EXCHANGE)) {
 					peer_exchange_supported = true;
+					
+					peer_exchange_item.enableStateMaintenance();
 				}
 				else {  //no need to maintain internal states as we wont be sending/receiving peer exchange messages
 					peer_exchange_item.disableStateMaintenance();
@@ -3563,8 +4015,36 @@ implements PEPeerTransport
 	}
 
 	protected void
+	decodeSuggestPiece(
+		BTSuggestPiece	hint )
+	{
+		int	piece_number 	= hint.getPieceNumber();
+		int	offset			= 0;
+		int	length			= manager.getPieceLength( piece_number );
+		int	life			= REQUEST_HINT_MAX_LIFE;
+
+		hint.destroy();
+
+		if ( life > REQUEST_HINT_MAX_LIFE ){
+
+			life = REQUEST_HINT_MAX_LIFE;
+		}
+
+		if ( manager.validateHintRequest( this, piece_number, offset, length )){
+
+			if ( request_hint == null ){ 
+
+				// we ignore life time currently as once hinted we don't accept another hint
+				// until that one is satisfied. This is to prevent too many pieces starting
+
+				request_hint = new int[]{ piece_number, offset, length };
+			}
+		}
+	}
+	
+	protected void
 	decodeAZRequestHint(
-			AZRequestHint	hint )
+		AZRequestHint	hint )
 	{
 		int	piece_number 	= hint.getPieceNumber();
 		int	offset			= hint.getOffset();
@@ -3741,12 +4221,6 @@ implements PEPeerTransport
 		return( connection.getEndpoint().getProtocols()[0].getType() == ProtocolEndpoint.PROTOCOL_TCP );
 	}
 
-	public long getUnchokedTimeTotal()
-	{
-		if (choked_by_other_peer)
-			return unchokedTimeTotal;
-		return unchokedTimeTotal +(SystemTime.getCurrentTime() -unchokedTime);
-	}
 
 	public void setUploadRateLimitBytesPerSecond( int bytes ){ connection.setUploadLimit( bytes ); }
 	public void setDownloadRateLimitBytesPerSecond( int bytes ){ connection.setDownloadLimit( bytes ); }
@@ -3791,7 +4265,67 @@ implements PEPeerTransport
 			return( priority_connection );
 		}
 	}
+		
+	protected static List<Integer>
+	generateFastSet(
+		byte[]		hash,
+		String		ip,
+		int			num_pieces,
+		int			num_required )
+	{
+		List<Integer>	res = new ArrayList<Integer>();
+							
+		try{
+			byte[]	address = InetAddress.getByName( ip ).getAddress();
 			
+				// no IPv6 support yet
+
+			if ( address.length == 4 ){
+				
+				byte[]	bytes = new byte[24];
+				
+				System.arraycopy( address, 0, bytes, 0, 3 );
+				System.arraycopy( hash, 0, bytes, 4, 20 );
+				
+				num_required = Math.min( num_required, num_pieces );
+				
+				while( res.size() < num_required ){
+					
+					bytes = new SHA1Simple().calculateHash( bytes );
+					
+					int	pos = 0;
+				
+					while( pos < 20 && res.size() < num_required ){
+						
+						long	index = (bytes[pos++] << 24 )&0xff000000L | 
+										(bytes[pos++] << 16 )&0x00ff0000L | 
+										(bytes[pos++] << 8  )&0x0000ff00L | 
+										bytes[pos++]&0x000000ffL;
+		
+						Integer i = new Integer((int)( index%num_pieces ));
+						
+						if ( !res.contains(i)){
+						
+							res.add( i );
+						}
+					}
+				}
+			}
+		}catch( Throwable e ){
+			
+			Debug.out( "Fast set generation failed", e );
+		}
+		
+		return( res );
+	}
+	
+	protected List<Integer>
+	generateFastSet(
+		int		num )
+	{
+		return( generateFastSet( manager.getHash(), getIp(), nbPieces, num ));	
+	}
+	
 	public void
 	generateEvidence(
 			IndentWriter	writer )
@@ -3799,7 +4333,7 @@ implements PEPeerTransport
 		writer.println( 
 				"ip=" + getIp() + ",in=" + isIncoming() + ",port=" + getPort() + ",cli=" + client + ",tcp=" + getTCPListenPort() + ",udp=" + getUDPListenPort() + 
 				",oudp=" + getUDPNonDataListenPort() + ",p_state=" + getPeerState() + ",c_state=" + getConnectionState() + ",seed=" + isSeed() + "partialSeed=" + isRelativeSeed() + ",pex=" + peer_exchange_supported + ",closing=" + closing );
-		writer.println( "    choked=" + choked_by_other_peer + ",choking=" + choking_other_peer + ",unchoke_time=" + unchokedTime + ", unchoke_total=" + unchokedTimeTotal + ",is_opt=" + is_optimistic_unchoke ); 
+		writer.println( "    choked=" + effectively_choked_by_other_peer + "/" + really_choked_by_other_peer + ",choking=" + choking_other_peer + ",is_opt=" + is_optimistic_unchoke ); 
 		writer.println( "    interested=" + interested_in_other_peer + ",interesting=" + other_peer_interested_in_me + ",snubbed=" + snubbed );
 		writer.println( "    lp=" + _lastPiece + ",up=" + uniquePiece + ",rp=" + reservedPiece );
 		writer.println( 
@@ -3849,6 +4383,25 @@ implements PEPeerTransport
 				return value == ((MutableInteger)obj).value;
 			}
 			return false;
+		}
+	}
+	
+	public static void
+	main(
+		String[]		args )
+	{
+		byte[]	 hash = new byte[20];
+		
+		Arrays.fill( hash, (byte)0xAA );
+
+		try{
+			List<Integer> res = generateFastSet( hash, "80.4.4.200", 9, 5 );
+
+			System.out.println( res );
+			
+		}catch( Throwable e ){
+			
+			e.printStackTrace();
 		}
 	}
 }

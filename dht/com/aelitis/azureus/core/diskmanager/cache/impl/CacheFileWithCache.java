@@ -28,12 +28,7 @@ package com.aelitis.azureus.core.diskmanager.cache.impl;
  */
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.logging.LogEvent;
@@ -41,12 +36,7 @@ import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Average;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
 import com.aelitis.azureus.core.diskmanager.cache.CacheFileManagerException;
@@ -1334,6 +1324,23 @@ CacheFileWithCache
 	}
 	
 	public void
+	renameFile(
+		String		new_name )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			flushCachePublic( true, -1 );
+			
+			file.renameFile( new_name );
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+		}	
+	}
+	
+	public void
 	setAccessMode(
 		int		mode )
 	
@@ -1381,7 +1388,7 @@ CacheFileWithCache
 				flushCachePublic( false, -1 );
 			}
 			
-			file.setStorageType( type==CT_COMPACT?FMFile.FT_COMPACT:FMFile.FT_LINEAR );
+			file.setStorageType( CacheFileManagerImpl.convertCacheToFileType( type ));
 			
 		}catch( FMFileManagerException e ){
 			
@@ -1396,7 +1403,7 @@ CacheFileWithCache
 	public int
 	getStorageType()
 	{
-		return( file.getStorageType()==FMFile.FT_COMPACT?CT_COMPACT:CT_LINEAR );
+		return( CacheFileManagerImpl.convertFileToCacheType( file.getStorageType()));
 	}
 
 	public long
@@ -1504,6 +1511,22 @@ CacheFileWithCache
 			flushCachePublic( true, -1 );
 			
 			file.setLength( length );
+			
+		}catch( FMFileManagerException e ){
+			
+			manager.rethrow(this,e);
+		}
+	}
+	
+	public void
+	setPieceComplete(
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws CacheFileManagerException
+	{
+		try{
+			file.setPieceComplete( piece_number, piece_data );
 			
 		}catch( FMFileManagerException e ){
 			

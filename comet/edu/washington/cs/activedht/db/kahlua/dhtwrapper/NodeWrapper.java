@@ -4,7 +4,6 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
-import se.krka.kahlua.vm.LuaTable;
 import se.krka.kahlua.vm.LuaTableImpl;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -19,6 +18,7 @@ public class NodeWrapper extends LuaTableWrapper {
 		static final int GET_IP = 1;
 		static final int GET_PORT = 2;
 		static final int GET_NODE_ID = 3;
+		static final int GET_VERSION = 4;
 		private final int type;
 		
 		public NodeWrapperFunction(int type) {
@@ -36,14 +36,16 @@ public class NodeWrapper extends LuaTableWrapper {
 			case GET_NODE_ID:
 				callFrame.push(getNodeID());
 				break;
+			case GET_VERSION:
+				callFrame.push(getVersion());
+				break;
 			default: return 0;
 			}
 			return 1;
 		}
 	}
 
-	protected final DHTTransportContact contact;
-	protected final LuaTable table = new LuaTableImpl();
+	public final DHTTransportContact contact;
 
 	public NodeWrapper(DHTTransportContact contact) {
 		super(new LuaTableImpl());
@@ -51,6 +53,7 @@ public class NodeWrapper extends LuaTableWrapper {
 		super.rawset("getIP", new NodeWrapperFunction(NodeWrapperFunction.GET_IP));
 		super.rawset("getID", new NodeWrapperFunction(NodeWrapperFunction.GET_NODE_ID));
 		super.rawset("getPort", new NodeWrapperFunction(NodeWrapperFunction.GET_PORT));
+		super.rawset("getVersion", new NodeWrapperFunction(NodeWrapperFunction.GET_VERSION));
 	}
 	
 	
@@ -60,6 +63,10 @@ public class NodeWrapper extends LuaTableWrapper {
 	
 	public Double getPort() {
 		return (double)contact.getExternalAddress().getPort();
+	}
+	
+	public Double getVersion() {
+		return (double)contact.getProtocolVersion();
 	}
 
 	public HashWrapper getNodeID() {

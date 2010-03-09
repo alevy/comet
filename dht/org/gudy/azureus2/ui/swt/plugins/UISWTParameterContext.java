@@ -20,9 +20,11 @@
  */
 package org.gudy.azureus2.ui.swt.plugins;
 
-import org.eclipse.swt.widgets.Composite;
-import org.gudy.azureus2.plugins.ui.config.UIParameterContext;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
+import org.gudy.azureus2.plugins.ui.config.UIParameterContext;
+
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 
 /**
  * This is to be used in conjunction with the

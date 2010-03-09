@@ -29,8 +29,7 @@ package org.gudy.azureus2.core3.disk.impl;
  *			2006/Jan/02: refactoring, change booleans to statusFlags
  */
 
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerPiece;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.disk.impl.piecemapper.DMPieceList;
 
 public class DiskManagerPieceImpl

@@ -19,43 +19,31 @@
  */
 package org.gudy.azureus2.ui.swt.debug;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageLoader;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.logging.impl.FileLogging;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.ui.swt.SimpleTextEntryWindow;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.shells.InputShell;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT.TriggerInThread;
 
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.AzureusCoreOperation;
-import com.aelitis.azureus.core.AzureusCoreOperationTask;
+import com.aelitis.azureus.core.*;
+import com.aelitis.azureus.ui.UserPrompterResultListener;
 
 /**
  * @author TuxPaper
@@ -131,16 +119,18 @@ public class UIDebugGenerator
 			}
 		}
 
-		InputShell inputShell = new InputShell("UIDebugGenerator.messageask.title",
+		SimpleTextEntryWindow entryWindow = new SimpleTextEntryWindow(
+				"UIDebugGenerator.messageask.title",
 				"UIDebugGenerator.messageask.text", true);
-		String message = inputShell.open();
-		if (inputShell.isCanceled()) {
+		entryWindow.prompt();
+		if (!entryWindow.hasSubmittedInput()) {
 			return;
-		} 
+		}
+		String message = entryWindow.getSubmittedInput();
 
 		if (message == null || message.length() == 0) {
-			Utils.openMessageBox(Utils.findAnyShell(), SWT.OK,
-					"UIDebugGenerator.message.cancel", (String[]) null);
+			new MessageBoxShell(SWT.OK, "UIDebugGenerator.message.cancel",
+					(String[]) null).open(null);
 			return;
 		}
 
@@ -157,35 +147,36 @@ public class UIDebugGenerator
 			e.printStackTrace();
 		}
 
-		AzureusCoreFactory.getSingleton().createOperation(
-			AzureusCoreOperation.OP_PROGRESS,
-			new AzureusCoreOperationTask()
-			{
-				public void 
-				run(
-						AzureusCoreOperation operation )
-				{		
-					try{
+		CoreWaiterSWT.waitForCore(TriggerInThread.ANY_THREAD,
+				new AzureusCoreRunningListener() {
 
-						File fEvidence = new File(path, "evidence.log");
-						FileWriter fw;
-						fw = new FileWriter(fEvidence);
-						PrintWriter pw = new PrintWriter(fw);
+					public void azureusCoreRunning(AzureusCore core) {
+						core.createOperation(AzureusCoreOperation.OP_PROGRESS,
+								new AzureusCoreOperationTask() {
+									public void run(AzureusCoreOperation operation) {
+										try {
 
-						AEDiagnostics.generateEvidence(pw);
+											File fEvidence = new File(path, "evidence.log");
+											FileWriter fw;
+											fw = new FileWriter(fEvidence);
+											PrintWriter pw = new PrintWriter(fw);
 
-						fw.close();
+											AEDiagnostics.generateEvidence(pw);
 
-					} catch (IOException e) {
+											fw.close();
 
-						Debug.printStackTrace( e );
+										} catch (IOException e) {
+
+											Debug.printStackTrace(e);
+										}
+									}
+								});
 					}
-				}
-			});
+				});
 
 
 		try {
-			File outFile = new File(SystemProperties.getUserPath(), "debug.zip");
+			final File outFile = new File(SystemProperties.getUserPath(), "debug.zip");
 			if (outFile.exists()) {
 				outFile.delete();
 			}
@@ -249,19 +240,23 @@ public class UIDebugGenerator
 			out.close();
 
 			if (outFile.exists()) {
-				int result = Utils.openMessageBox(Utils.findAnyShell(), SWT.OK
-						| SWT.CANCEL | SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL,
+				MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.CANCEL
+						| SWT.ICON_INFORMATION | SWT.APPLICATION_MODAL,
 						"UIDebugGenerator.complete", new String[] { outFile.toString() });
-
-				if (result == SWT.OK) {
-					try {
-						PlatformManagerFactory.getPlatformManager().showFile(
-								outFile.getAbsolutePath());
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+				mb.open(new UserPrompterResultListener() {
+					public void prompterClosed(int result) {
+						if (result == SWT.OK) {
+							try {
+								PlatformManagerFactory.getPlatformManager().showFile(
+										outFile.getAbsolutePath());
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
 					}
-				}
+				});
+
 			}
 
 		} catch (IOException e) {

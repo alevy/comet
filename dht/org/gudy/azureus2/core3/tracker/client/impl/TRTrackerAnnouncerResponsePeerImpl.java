@@ -22,7 +22,7 @@
 package org.gudy.azureus2.core3.tracker.client.impl;
 
 
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
+import org.gudy.azureus2.core3.tracker.client.*;
 import org.gudy.azureus2.core3.util.StringInterner;
 
 public class 

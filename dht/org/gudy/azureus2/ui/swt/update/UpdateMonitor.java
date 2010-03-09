@@ -26,36 +26,13 @@ import java.io.File;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DelayedEvent;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
-import org.gudy.azureus2.plugins.update.UpdateCheckerListener;
-import org.gudy.azureus2.plugins.update.UpdateManager;
-import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
-import org.gudy.azureus2.plugins.update.UpdateManagerListener;
-import org.gudy.azureus2.plugins.update.UpdateManagerVerificationListener;
-import org.gudy.azureus2.plugins.update.UpdateProgressListener;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.StringListChooser;
 import org.gudy.azureus2.ui.swt.progress.IProgressReport;
@@ -66,10 +43,15 @@ import org.gudy.azureus2.ui.swt.progress.ProgressReportingManager;
 import org.gudy.azureus2.update.CoreUpdateChecker;
 
 import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.ui.UIFunctions;
-import com.aelitis.azureus.ui.UIFunctionsManager;
-import com.aelitis.azureus.ui.UIFunctionsUserPrompter;
+import com.aelitis.azureus.ui.*;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
+
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.utils.DelayedTask;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
 
 /**
  * @author Olivier Chalouhi
@@ -116,7 +98,7 @@ public class UpdateMonitor
 	protected UpdateMonitor(AzureusCore _azureus_core) {
 		azCore = _azureus_core;
 
-		PluginInterface defPI = azCore.getPluginManager().getDefaultPluginInterface();
+		PluginInterface defPI = PluginInitializer.getDefaultInterface();
 		UpdateManager um = defPI.getUpdateManager();
 
 		um.addListener(new UpdateManagerListener() {
@@ -140,12 +122,15 @@ public class UpdateMonitor
 							+ "accept.unverified.text", new String[] {
 						update.getName()
 					});
-					return uiFunctions.promptUser(title, text, new String[] {
+					UIFunctionsUserPrompter prompter = uiFunctions.getUserPrompter(title, text, new String[] {
 						MessageText.getString("Button.yes"),
 						MessageText.getString("Button.no")
-					}, 1, MSG_PREFIX + "accept.unverified",
-							MessageText.getString("MessageBoxWindow.nomoreprompting"), false,
-							0) == 0;
+					}, 1);
+					prompter.setRemember(MSG_PREFIX + "accept.unverified", false,
+							MessageText.getString("MessageBoxWindow.nomoreprompting"));
+					prompter.setAutoCloseInMS(0);
+					prompter.open(null);
+					return prompter.waitUntilClosed() == 0;
 				}
 
 				return false;
@@ -164,7 +149,7 @@ public class UpdateMonitor
 					});
 					uiFunctions.promptUser(title, text, new String[] {
 						MessageText.getString("Button.ok")
-					}, 0, null, null, false, 0);
+					}, 0, null, null, false, 0, null);
 				}
 			}
 		});
@@ -189,7 +174,7 @@ public class UpdateMonitor
 						// elevating perms when updating) and warn user. Particularly useful on OSX when
 						// users haven't installed properly
 		
-						if ( !( Constants.isWindowsVista || SystemProperties.isJavaWebStartInstance())){
+						if ( !( Constants.isWindowsVistaOrHigher || SystemProperties.isJavaWebStartInstance())){
 		
 							String	app_str = SystemProperties.getApplicationPath();
 		
@@ -223,11 +208,10 @@ public class UpdateMonitor
 					
 												prompt.setIconResource( "warning" );
 					
-												prompt.setRememberID( "UpdateMonitor.can.not.write.to.app.dir.2", false );
+												prompt.setRemember( "UpdateMonitor.can.not.write.to.app.dir.2", false, 
+														MessageText.getString( "MessageBoxWindow.nomoreprompting" ));
 					
-												prompt.setRememberText( MessageText.getString( "MessageBoxWindow.nomoreprompting" ));
-					
-												prompt.open();
+												prompt.open(null);
 											}
 										},
 										true );
@@ -494,7 +478,7 @@ public class UpdateMonitor
 
 		AEThread2 t = new AEThread2("UpdateMonitor:kickoff", true) {
 			public void run() {
-				UpdateManager um = azCore.getPluginManager().getDefaultPluginInterface().getUpdateManager();
+				UpdateManager um = PluginInitializer.getDefaultInterface().getUpdateManager();
 
 				current_update_instance = um.createUpdateCheckInstance(bForce
 						? UpdateCheckInstance.UCI_INSTALL : UpdateCheckInstance.UCI_UPDATE,
@@ -515,7 +499,7 @@ public class UpdateMonitor
 		t.start();
 	}
 
-	public void complete(UpdateCheckInstance instance) {
+	public void complete( final UpdateCheckInstance instance) {
 		
 		if ( instance.isLowNoise()){
 			
@@ -523,19 +507,10 @@ public class UpdateMonitor
 			
 			return;
 		}
-		// we can get here for either update actions (triggered above) or for plugin
-		// install actions (triggered by the plugin installer)
-
-		boolean update_action = instance.getType() == UpdateCheckInstance.UCI_UPDATE;
-
-		UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
-		if (uiFunctions != null) {
-			uiFunctions.setStatusText("");
-		}
+		
+		boolean hasDownloads = false;
 
 		Update[] us = instance.getUpdates();
-
-		boolean hasDownloads = false;
 
 		// updates with zero-length downloaders exist for admin purposes
 		// and shoudn't cause the window to be shown if only they exist
@@ -549,6 +524,33 @@ public class UpdateMonitor
 				break;
 			}
 		}
+
+		try{
+			int ui = (Integer)instance.getProperty( UpdateCheckInstance.PT_UI_STYLE );
+		
+			if ( ui == UpdateCheckInstance.PT_UI_STYLE_SIMPLE ){
+				
+				new SimpleInstallUI( this, instance );
+				
+				return;
+			}
+			
+		}catch( Throwable e ){
+			
+			Debug.printStackTrace(e);
+		}
+		
+		// we can get here for either update actions (triggered above) or for plugin
+		// install actions (triggered by the plugin installer)
+
+		boolean update_action = instance.getType() == UpdateCheckInstance.UCI_UPDATE;
+
+		UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
+		if (uiFunctions != null) {
+			uiFunctions.setStatusText("");
+		}
+
+
 
 		// this controls whether or not the update window is displayed
 		// note that we just don't show the window if this is set, we still do the
@@ -590,7 +592,18 @@ public class UpdateMonitor
 			} else {
 				if (autoDownload) {
 					new UpdateAutoDownloader(us, new UpdateAutoDownloader.cbCompletion() {
-						public void allUpdatesComplete(boolean requiresRestart, boolean bHadMandatoryUpdates) {
+						public void 
+						allUpdatesComplete(
+							boolean requiresRestart, 
+							boolean bHadMandatoryUpdates) 
+						{
+							Boolean b = (Boolean)instance.getProperty( UpdateCheckInstance.PT_CLOSE_OR_RESTART_ALREADY_IN_PROGRESS );
+							
+							if ( b != null && b ){
+								
+								return;
+							}
+							
 							if (requiresRestart) {
 								handleRestart();
 							}else if ( bHadMandatoryUpdates ){
@@ -626,29 +639,32 @@ public class UpdateMonitor
 	
 	protected void
 	handleRestart()
-	{
-		UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
-		if (uiFunctions != null) {
-			String title = MessageText.getString(MSG_PREFIX
-					+ "restart.title");
-			String text = MessageText.getString(MSG_PREFIX
-					+ "restart.text");
-			uiFunctions.bringToFront();
-			int timeout = 180000;
-			if (azCore != null && !azCore.getPluginManager().isSilentRestartEnabled()) {
-				timeout = -1;
-			}
-			if (uiFunctions.promptUser(title, text, new String[] {
-				MessageText.getString("UpdateWindow.restart"),
-				MessageText.getString("UpdateWindow.restartLater")
-			}, 0, null, null, false, timeout) == 0) {
-				uiFunctions.dispose(true, false);
-			}
+ {
+		final UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
+		
+		if ( uiFunctions != null ){
+			
+			uiFunctions.performAction( 
+					UIFunctions.ACTION_UPDATE_RESTART_REQUEST,
+					Constants.isWindows7OrHigher,		// no timer for in 7 as they always get an elevation prompt so we don't want to shutdown and then leave\
+														// Vuze down pending user authorisation of the update
+					new UIFunctions.actionListener()
+					{
+						public void
+						actionComplete(
+							Object	result )
+						{
+							if ((Boolean)result){
+								
+								uiFunctions.dispose(true, false);
+							}
+						}
+					});
 		}
 	}
 		
 	protected void
-	handleLowNoise(
+	addDecisionHandler(
 		UpdateCheckInstance		instance )
 	{
 		instance.addDecisionListener(
@@ -693,6 +709,13 @@ public class UpdateMonitor
 		  				return( null );
 		  			}
 		  		});		
+	}
+	
+	protected void
+	handleLowNoise(
+		UpdateCheckInstance		instance )
+	{
+		addDecisionHandler( instance );
 				
 		Update[] updates = instance.getUpdates();
 		

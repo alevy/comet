@@ -25,8 +25,10 @@ package org.gudy.azureus2.core3.tracker.host;
  * @author parg
  */
 
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServer;
+import java.net.InetAddress;
+
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.tracker.server.*;
 
 public interface 
 TRHost
@@ -50,6 +52,9 @@ TRHost
 		
 	public String
 	getName();
+	
+	public InetAddress
+	getBindIP();
 	
 	public TRHostTorrent
 	hostTorrent(
@@ -85,6 +90,14 @@ TRHost
 	public void
 	removeListener(
 		TRHostListener	l );
+	
+	public void
+	addListener2(
+		TRHostListener2	l );
+		
+	public void
+	removeListener2(
+		TRHostListener2	l );
 	
 	public void
 	addAuthenticationListener(

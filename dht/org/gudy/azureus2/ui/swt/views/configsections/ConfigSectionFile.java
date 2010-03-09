@@ -30,34 +30,24 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.ExclusiveSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.GenericActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 public class ConfigSectionFile implements UISWTConfigSection {
   public String configSectionGetParentSection() {
@@ -323,7 +313,6 @@ public class ConfigSectionFile implements UISWTConfigSection {
 
       IntParameter paramSaveInterval = new IntParameter(cResumeGroup, sCurConfigID);
       gridData = new GridData();
-      gridData.widthHint = 30;
       paramSaveInterval.setLayoutData(gridData);
 
       Label lblMinutes = new Label(cResumeGroup, SWT.NULL);
@@ -357,7 +346,6 @@ public class ConfigSectionFile implements UISWTConfigSection {
       Messages.setLanguageText(lblSavePeersMax, "ConfigView.section.file.save.peers.max");
       final IntParameter savePeersMax = new IntParameter(cResumeGroup, sCurConfigID);
       gridData = new GridData();
-      gridData.widthHint = 30;
       savePeersMax.setLayoutData(gridData);
       final Label lblPerTorrent = new Label(cResumeGroup, SWT.NULL);
       Messages.setLanguageText(lblPerTorrent, "ConfigView.section.file.save.peers.pertorrent");
@@ -422,7 +410,28 @@ public class ConfigSectionFile implements UISWTConfigSection {
       }
       
 
-    // Confirm Delete
+      // rename incomplete
+      
+    sCurConfigID = "Rename Incomplete Files";
+    allConfigIDs.add(sCurConfigID);
+
+    gridData = new GridData();
+    gridData.horizontalSpan = 1;
+    BooleanParameter rename_incomplete = new BooleanParameter(gFile, sCurConfigID,
+  		"ConfigView.section.file.rename.incomplete");
+    rename_incomplete.setLayoutData(gridData);
+    
+    sCurConfigID = "Rename Incomplete Files Extension";
+    allConfigIDs.add(sCurConfigID);
+    gridData = new GridData(GridData.FILL_HORIZONTAL);
+    StringParameter rename_incomplete_ext = new StringParameter(gFile, sCurConfigID);
+    rename_incomplete_ext.setLayoutData(gridData);
+
+    IAdditionalActionPerformer incompFileAP = new ChangeSelectionActionPerformer(
+    		rename_incomplete_ext.getControls(), false);
+    rename_incomplete.setAdditionalActionPerformer(incompFileAP);
+    
+      // Confirm Delete
     sCurConfigID = "Confirm Data Delete";
     allConfigIDs.add(sCurConfigID);
 
@@ -440,7 +449,18 @@ public class ConfigSectionFile implements UISWTConfigSection {
     new BooleanParameter(gFile, sCurConfigID,
 				"ConfigView.section.file.delete.include_files_outside_save_dir").setLayoutData(gridData);
 
-    
+    if ( userMode > 0 ){
+
+		Label lIgnoreFiles = new Label(gFile, SWT.NULL);
+		Messages.setLanguageText(lIgnoreFiles,
+				"ConfigView.section.file.torrent.ignorefiles");
+
+		gridData = new GridData(GridData.FILL_HORIZONTAL);
+		new StringParameter(gFile, "File.Torrent.IgnoreFiles",
+				TOTorrent.DEFAULT_IGNORE_FILES).setLayoutData(gridData);
+
+	}
+
 
     try{
 	    final PlatformManager	platform  = PlatformManagerFactory.getPlatformManager();

@@ -32,8 +32,6 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.ui.swt.wizard.Wizard;
 
-import com.aelitis.azureus.core.AzureusCore;
-
 /**
  * @author Olivier Chalouhi
  *
@@ -43,10 +41,9 @@ public class UnInstallPluginWizard extends Wizard {
   List plugins = new ArrayList();
   
   public UnInstallPluginWizard(
-      	AzureusCore	azureus_core,	
  		Display 	display )
 	{
-		super(azureus_core,"uninstallPluginsWizard.title");			
+		super("uninstallPluginsWizard.title");			
 		
 		UIPWListPanel list_panel = new UIPWListPanel(this,null);
 	

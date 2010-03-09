@@ -23,18 +23,8 @@ package org.gudy.azureus2.core3.internat;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Vector;
-import java.util.WeakHashMap;
+import java.io.InputStream;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
 import org.gudy.azureus2.core3.util.Debug;
@@ -113,14 +103,17 @@ IntegratedResourceBundle
 	
 	private Locale	locale;
 
-	private Map	messages 		= new LightHashMap();
+	private Map	messages;
 	private Map	used_messages;
 	private List null_values;
 	
 	private int		clean_count	= 0;
 	private boolean	one_off_discard_done;
 	
-	private File	scratch_file;
+	private File		scratch_file_name;
+	private InputStream	scratch_file_is;
+
+	private final int initCapacity;
 	
 
 	
@@ -129,15 +122,28 @@ IntegratedResourceBundle
 		ResourceBundle 		main, 
 		Map 				localizationPaths) 
 	{
-		this( main, localizationPaths, null );
+		this( main, localizationPaths, null, 10 );
 	}
 
 	public 
 	IntegratedResourceBundle(
 		ResourceBundle 		main, 
 		Map 				localizationPaths,
-		Collection 			resource_bundles) 
+		int					initCapacity) 
 	{
+		this( main, localizationPaths, null, initCapacity );
+	}
+
+	public 
+	IntegratedResourceBundle(
+		ResourceBundle 		main, 
+		Map 				localizationPaths,
+		Collection 			resource_bundles,
+		int					initCapacity)  
+	{
+		this.initCapacity = initCapacity;
+		messages = new LightHashMap(initCapacity);
+
 		locale = main.getLocale();
 
 			// use a somewhat decent initial capacity, proper calculation would require java 1.6
@@ -172,6 +178,7 @@ IntegratedResourceBundle
 			
 			resetCompactTimer();
 		}
+		//System.out.println("IRB Size = " + messages.size() + "/cap=" + initCapacity + ";" + Debug.getCompressedStackTrace());
 	}
 
 	public Locale getLocale() 
@@ -343,6 +350,7 @@ IntegratedResourceBundle
 				}
 			}			
 		}
+//		System.out.println("after addrb; IRB Size = " + messages.size() + "/cap=" + initCapacity + ";" + Debug.getCompressedStackTrace());
 	}
 	
 	protected boolean
@@ -357,7 +365,7 @@ IntegratedResourceBundle
 			return( true );
 		}
 		
-		if ( scratch_file == null ){
+		if ( scratch_file_is == null ){
 			
 			File temp_file = null;
 			
@@ -378,7 +386,8 @@ IntegratedResourceBundle
 				
 				fos = null;
 				
-				scratch_file = temp_file;
+				scratch_file_name	= temp_file;
+				scratch_file_is 	= new FileInputStream( temp_file );
 				
 			}catch( Throwable e ){
 				
@@ -399,7 +408,7 @@ IntegratedResourceBundle
 			}
 		}
 		
-		if ( scratch_file != null ){
+		if ( scratch_file_is != null ){
 			
 			if ( clean_count >= 2 ){
 		
@@ -446,22 +455,22 @@ IntegratedResourceBundle
 				return( messages );
 			}
 			
-			if ( scratch_file == null ){
+			if ( scratch_file_is == null ){
 				
 				return( new LightHashMap());
 			}
 			
 			Properties p = new Properties();
 			
-			FileInputStream	fis = null;
+			InputStream	fis = scratch_file_is;
 			
 			try{
-				
-				fis = new FileInputStream( scratch_file );
-				
+								
 				p.load( fis );
 				
 				fis.close();
+				
+				scratch_file_is = new FileInputStream( scratch_file_name );
 				
 				messages = new LightHashMap();
 				
@@ -482,9 +491,9 @@ IntegratedResourceBundle
 				
 				Debug.out( "Failed to load message bundle scratch file", e );
 				
-				scratch_file.delete();
+				scratch_file_name.delete();
 				
-				scratch_file = null;
+				scratch_file_is = null;
 				
 				return( new LightHashMap());
 			}

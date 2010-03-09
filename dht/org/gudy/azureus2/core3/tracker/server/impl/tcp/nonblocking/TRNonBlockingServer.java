@@ -22,18 +22,15 @@
 
 package org.gudy.azureus2.core3.tracker.server.impl.tcp.nonblocking;
 
+import java.util.*;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
 import org.gudy.azureus2.core3.tracker.server.impl.tcp.TRTrackerServerTCP;
 import org.gudy.azureus2.core3.util.AEMonitor;
@@ -76,6 +73,8 @@ TRNonBlockingServer
 	private long	last_connections;
 	*/
 	
+	private InetAddress	current_bind_ip;
+	
 	private long	total_timeouts;
 	private long	total_connections;
 	
@@ -84,6 +83,8 @@ TRNonBlockingServer
 	private final AEMonitor this_mon = new AEMonitor( "TRNonBlockingServer" );
 
 	private VirtualServerChannelSelector accept_server;
+	
+	private boolean immediate_close = COConfigurationManager.getBooleanParameter( "Tracker TCP NonBlocking Immediate Close" );
 	
 	private volatile boolean	closed;
 	
@@ -138,10 +139,14 @@ TRNonBlockingServer
 					
 				}else{
 	
+					current_bind_ip = _bind_ip;
+					
 					address = new InetSocketAddress( _bind_ip, _port );			
 				}
 			}else{
 				
+				current_bind_ip = _bind_ip;
+
 				address = new InetSocketAddress(  _bind_ip, _port );	
 			}
 			
@@ -212,6 +217,19 @@ TRNonBlockingServer
 				destroySupport();
 			}
 		}
+	}
+	
+	public InetAddress 
+	getBindIP()
+	{
+		return( current_bind_ip );
+	}
+	
+	public void
+	setImmediateClose(
+		boolean	immediate )
+	{
+		immediate_close = immediate;
 	}
 	
 	protected void
@@ -429,7 +447,20 @@ TRNonBlockingServer
         		read_selector.cancel( processor.getSocketChannel() );
         		write_selector.cancel( processor.getSocketChannel() );
         	
-        		connections_to_close.add( processor );
+        		if ( immediate_close ){
+
+        			try{
+        				processor.closed();
+
+        				processor.getSocketChannel().close();
+        				
+        			}catch( Throwable e ){
+        				
+        			}
+        		}else{
+        			
+        			connections_to_close.add( processor );
+        		}
         	}
         	
         }finally{

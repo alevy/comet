@@ -27,57 +27,20 @@ package org.gudy.azureus2.ui.swt;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.StringIterator;
 import org.gudy.azureus2.core3.config.StringList;
@@ -93,24 +56,18 @@ import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
 import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloader;
 import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloaderCallBackInterface;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.shells.MessageSlideShell;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.ui.UIFunctionsManager;
 import com.aelitis.azureus.ui.common.updater.UIUpdatable;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+import com.aelitis.azureus.ui.swt.uiupdater.UIUpdaterSWT;
 
 /**
  * Torrent Opener Window.
@@ -141,7 +98,7 @@ public class OpenTorrentWindow
 	 */
 	//private final static int MIN_NODOWNLOAD_SIZE = 64 * 1024;
 	//private final static int MAX_NODOWNLOAD_COUNT = 3;
-	private final static int MIN_BUTTON_HEIGHT = Constants.isWindows ? 24 : -1;
+	private final static int MIN_BUTTON_HEIGHT = -1;
 
 	private final static String PARAM_DEFSAVEPATH = "Default save path";
 
@@ -213,7 +170,7 @@ public class OpenTorrentWindow
 	/** List of torrents being downloaded.  Stored so we don't close window
 	 * until they are done/aborted.
 	 */
-	private ArrayList downloaders = new ArrayList();
+	private ArrayList<TorrentDownloader> downloaders = new ArrayList<TorrentDownloader>();
 
 	private boolean bOverrideStartModeToStopped = false;
 
@@ -231,23 +188,11 @@ public class OpenTorrentWindow
 
 	protected boolean bSkipDataDirModify = false;
 
-	private static final AzureusCore core;
-
 	private StringList dirList;
 
 	private Label dataFileTableLabel;
 
 	private Composite diskspaceComp;
-
-	static {
-		if (!AzureusCoreFactory.isCoreAvailable()) {
-			// This should be only called in test mode
-			AzureusCore core2 = AzureusCoreFactory.create();
-			core2.start();
-		}
-
-		core = AzureusCoreFactory.getSingleton();
-	}
 
 	/**
 	 * A counter to track torrent file downloads that are still active;
@@ -290,7 +235,7 @@ public class OpenTorrentWindow
 			OpenTorrentWindow openTorrentWindow = stOpenTorrentWindow;
 			openTorrentWindow.bOverrideStartModeToStopped = bDefaultStopped;
 			openTorrentWindow.bDefaultForSeeding = bForSeeding;
-			if (sFilesToOpen != null) {
+			if (sFilesToOpen != null || sPathOfFilesToOpen != null) {
 				// If none of the files sent to us were valid files, don't open the 
 				// window
 				if (!bPopupOpenURL
@@ -553,38 +498,16 @@ public class OpenTorrentWindow
 
 		cmbDataDir.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (bSkipDataDirModify) {
-					return;
-				}
-				sDestDir = cmbDataDir.getText();
-
-				int[] indexes = torrentTable.getSelectionIndices();
-				for (int i = 0; i < indexes.length; i++) {
-					TorrentInfo info = (TorrentInfo) torrentList.get(indexes[i]);
-					//if (!info.allFilesMoving())
-					info.sDestDir = sDestDir;
-				}
-
-				torrentTable.clearAll();
-
-				checkSeedingMode();
-
-				File file = new File(sDestDir);
-				if (!file.isDirectory()) {
-					cmbDataDir.setBackground(Colors.colorErrorBG);
-				} else {
-					cmbDataDir.setBackground(null);
-				}
-				cmbDataDir.redraw();
-				cmbDataDir.update();
-				diskFreeInfoRefreshPending = true;
+				cmbDataDirChanged();
+			}
+		});
+		cmbDataDir.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event event) {
+				cmbDataDirChanged();
 			}
 		});
 
 		updateDataDirCombo();
-		if (sDestDir != null && sDestDir.length() > 0) {
-			cmbDataDir.add(sDestDir);
-		}
 		dirList = COConfigurationManager.getStringListParameter("saveTo_list");
 		StringIterator iter = dirList.iterator();
 		while (iter.hasNext()) {
@@ -728,10 +651,40 @@ public class OpenTorrentWindow
 		}
 
 		try {
-			UIFunctionsManager.getUIFunctions().getUIUpdater().addUpdater(this);
+			UIUpdaterSWT.getInstance().addUpdater(this);
 		} catch (Exception e) {
 			Debug.out(e);
 		}
+	}
+
+	protected void cmbDataDirChanged() {
+		if (bSkipDataDirModify) {
+			return;
+		}
+		sDestDir = cmbDataDir.getText();
+
+		int[] indexes = torrentTable.getSelectionIndices();
+		for (int i = 0; i < indexes.length; i++) {
+			TorrentInfo info = (TorrentInfo) torrentList.get(indexes[i]);
+			//if (!info.allFilesMoving())
+			info.sDestDir = sDestDir;
+		}
+
+		torrentTable.clearAll();
+
+		checkSeedingMode();
+
+		if (!Utils.isCocoa || SWT.getVersion() > 3600) { // See Eclipse Bug 292449
+  		File file = new File(sDestDir);
+  		if (!file.isDirectory()) {
+  			cmbDataDir.setBackground(Colors.colorErrorBG);
+  		} else {
+  			cmbDataDir.setBackground(null);
+  		}
+  		cmbDataDir.redraw();
+  		cmbDataDir.update();
+		}
+		diskFreeInfoRefreshPending = true;
 	}
 
 	protected void okPressed() {
@@ -755,11 +708,13 @@ public class OpenTorrentWindow
 
 		boolean isPathInvalid = cmbDataDir.getText().length() == 0 || file.isFile();
 		if (!isPathInvalid && !file.isDirectory()) {
-			int doCreate = Utils.openMessageBox(shellForChildren, SWT.YES | SWT.NO
+			MessageBoxShell mb = new MessageBoxShell(SWT.YES | SWT.NO
 					| SWT.ICON_QUESTION, "OpenTorrentWindow.mb.askCreateDir",
 					new String[] {
 						file.toString()
 					});
+			mb.open(null);
+			int doCreate = mb.waitUntilClosed();
 
 			if (doCreate == SWT.YES)
 				isPathInvalid = !FileUtil.mkdirs(file);
@@ -770,10 +725,11 @@ public class OpenTorrentWindow
 		}
 
 		if (isPathInvalid) {
-			Utils.openMessageBox(shellForChildren, SWT.OK | SWT.ICON_ERROR,
+			MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.ICON_ERROR,
 					"OpenTorrentWindow.mb.noGlobalDestDir", new String[] {
 						file.toString()
 					});
+			mb.open(null);
 			cmbDataDir.setFocus();
 			return;
 		}
@@ -793,19 +749,21 @@ public class OpenTorrentWindow
 			// 4) change the global def directory to a real one
 			// 5) click ok.  "hi.exe" will be written as moo in c:\test			
 			if (!file.isDirectory() && !FileUtil.mkdirs(file)) {
-				Utils.openMessageBox(shellForChildren, SWT.OK | SWT.ICON_ERROR,
+				MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.ICON_ERROR,
 						"OpenTorrentWindow.mb.noDestDir", new String[] {
 							file.toString(),
 							info.getTorrentName()
 						});
+				mb.open(null);
 				return;
 			}
 
 			if (!info.isValid) {
-				Utils.openMessageBox(shellForChildren, SWT.OK | SWT.ICON_ERROR,
+				MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.ICON_ERROR,
 						"OpenTorrentWindow.mb.notValid", new String[] {
 							info.getTorrentName()
 						});
+				mb.open(null);
 				return;
 			}
 
@@ -834,11 +792,13 @@ public class OpenTorrentWindow
 						+ "\n";
 			}
 
-			if (Utils.openMessageBox(shellForChildren, SWT.OK | SWT.CANCEL
+			MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.CANCEL
 					| SWT.ICON_WARNING, "OpenTorrentWindow.mb.existingFiles",
 					new String[] {
 						sExistingFiles
-					}) != SWT.OK) {
+					});
+			mb.open(null);
+			if (mb.waitUntilClosed() != SWT.OK) {
 				return;
 			}
 		}
@@ -938,6 +898,9 @@ public class OpenTorrentWindow
 			int[] indexes = torrentTable.getSelectionIndices();
 
 			if (indexes.length == 0) {
+				if (cmbDataDir.getItemCount() == 0) {
+					cmbDataDir.add(sDestDir);
+				}
 				cmbDataDir.setText(sDestDir);
 				return;
 			}
@@ -1053,7 +1016,7 @@ public class OpenTorrentWindow
 	}
 
 	private void browseURL() {
-		new OpenUrlWindow(core, shellForChildren, null, null,
+		new OpenUrlWindow(shellForChildren, null, null,
 				OpenTorrentWindow.this);
 	}
 
@@ -1065,7 +1028,7 @@ public class OpenTorrentWindow
 		bClosed = true;
 
 		try {
-			UIFunctionsManager.getUIFunctions().getUIUpdater().removeUpdater(this);
+			UIUpdaterSWT.getInstance().removeUpdater(this);
 		} catch (Exception e) {
 			Debug.out(e);
 		}
@@ -1077,15 +1040,24 @@ public class OpenTorrentWindow
 
 		Utils.disposeSWTObjects(disposeList);
 
-		if (downloaders.size() > 0) {
-			for (Iterator iter = downloaders.iterator(); iter.hasNext();) {
-				TorrentDownloader element = (TorrentDownloader) iter.next();
-				element.cancel();
-			}
-			downloaders.clear();
-		}
-
 		if (bCancel) {
+			
+			List<TorrentDownloader> to_cancel;
+			
+			synchronized( downloaders ){
+				
+				to_cancel = new ArrayList<TorrentDownloader>( downloaders );
+				
+				downloaders.clear(); 
+			}
+			
+			if (to_cancel.size() > 0){
+				for (Iterator iter = to_cancel.iterator(); iter.hasNext();) {
+					TorrentDownloader element = (TorrentDownloader) iter.next();
+					element.cancel();
+				}
+			}
+
 			for (Iterator iter = torrentList.iterator(); iter.hasNext();) {
 				TorrentInfo info = (TorrentInfo) iter.next();
 				if (info.bDeleteFileOnCancel) {
@@ -1203,7 +1175,7 @@ public class OpenTorrentWindow
 		// Menu for tableTorrents
 
 		String sTitle;
-		Menu menu = new Menu(torrentTable);
+		Menu menu = new Menu(torrentTable.getShell());
 		MenuItem item;
 		sTitle = MessageText.getString("OpenTorrentWindow.startMode");
 
@@ -1274,7 +1246,7 @@ public class OpenTorrentWindow
 					TorrentInfo info = (TorrentInfo) torrentList.get(indexes[i]);
 
 					TorrentFileInfo[] files = info.getFiles();
-					if (files.length == 1) {
+					if (files.length == 1 && info.torrent.isSimpleTorrent()) {
 						changeFileDestination(new int[] {
 							0
 						});
@@ -1832,12 +1804,14 @@ public class OpenTorrentWindow
 				File file = new File(sNewName);
 				if (file.length() == fileInfo.lSize)
 					fileInfo.setFullDestName(sNewName);
-				else
-					Utils.openMessageBox(shellForChildren, SWT.OK,
+				else {
+					MessageBoxShell mb = new MessageBoxShell(SWT.OK,
 							"OpenTorrentWindow.mb.badSize", new String[] {
 								file.getName(),
 								fileInfo.orgFullName
 							});
+					mb.open(null);
+				}
 			} else
 				fileInfo.setFullDestName(sNewName);
 
@@ -1987,9 +1961,9 @@ public class OpenTorrentWindow
 				String sURL = UrlUtils.parseTextForURL(sTorrentFilenames[i], true);
 				if (sURL != null) {
 					if (COConfigurationManager.getBooleanParameter("Add URL Silently")) {
-						new FileDownloadWindow(core, shellForChildren, sURL, null, null, this);
+						new FileDownloadWindow(shellForChildren, sURL, null, null, this);
 					} else {
-						new OpenUrlWindow(core, shellForChildren, sURL, null, this);
+						new OpenUrlWindow(shellForChildren, sURL, null, this);
 					}
 					numAdded++;
 					continue;
@@ -2026,23 +2000,29 @@ public class OpenTorrentWindow
 		// Make a copy if user wants that.  We'll delete it when we cancel, if we 
 		// actually made a copy.
 		try {
-			File fOriginal = new File(sFileName);
+			if (sFileName.startsWith("file://localhost/")) {
+				sFileName = UrlUtils.decode(sFileName.substring(16));
+			}
+
+			final File fOriginal = new File(sFileName);
 
 			if (!fOriginal.isFile() || !fOriginal.exists()) {
 				Utils.execSWTThread(new AERunnable() {
 					public void runSupport() {
 						if (shell == null)
 							new MessageSlideShell(Display.getCurrent(), SWT.ICON_ERROR,
-									"OpenTorrentWindow.mb.openError", "", new String[] {
-										sOriginatingLocation,
+									"OpenTorrentWindow.mb.openError", fOriginal.toString(), new String[] {
+										UrlUtils.decode(sOriginatingLocation),
 										"Not a File"
 									}, -1 );
-						else
-							Utils.openMessageBox(shell, SWT.OK,
+						else {
+							MessageBoxShell mb = new MessageBoxShell(SWT.OK,
 									"OpenTorrentWindow.mb.openError", new String[] {
 										sOriginatingLocation,
 										"Not a File"
 									});
+							mb.open(null);
+						}
 					}
 				});
 				return null;
@@ -2082,12 +2062,14 @@ public class OpenTorrentWindow
 									sOriginatingLocation,
 									e.getMessage()
 								}, -1 );
-					else
-						Utils.openMessageBox(shell, SWT.OK,
+					else {
+						MessageBoxShell mb = new MessageBoxShell(SWT.OK,
 								"OpenTorrentWindow.mb.openError", new String[] {
 									sOriginatingLocation,
 									e.getMessage()
 								});
+						mb.open(null);
+					}
 				}
 			});
 
@@ -2141,22 +2123,27 @@ public class OpenTorrentWindow
 			final DownloadManager fExistingDownload = existingDownload;
 			Utils.execSWTThread(new AERunnable() {
 				public void runSupport() {
-					if (shell == null)
-						new MessageSlideShell(Display.getCurrent(), SWT.ICON_INFORMATION,
-								MSG_ALREADY_EXISTS, null, new String[] {
-									":" + sOriginatingLocation,
-									sfExistingName,
-									MessageText.getString(MSG_ALREADY_EXISTS_NAME),
-								}, new Object[] {
-									fExistingDownload
-								}, -1 );
-					else
-						Utils.openMessageBox(shell, SWT.OK, MSG_ALREADY_EXISTS,
+					if (shell == null) {
+						boolean bPopup = COConfigurationManager.getBooleanParameter("Popup Download Added");
+						if (bPopup) {
+  						new MessageSlideShell(Display.getCurrent(), SWT.ICON_INFORMATION,
+  								MSG_ALREADY_EXISTS, null, new String[] {
+  									":" + sOriginatingLocation,
+  									sfExistingName,
+  									MessageText.getString(MSG_ALREADY_EXISTS_NAME),
+  								}, new Object[] {
+  									fExistingDownload
+  								}, -1 );
+						}
+					} else {
+						MessageBoxShell mb = new MessageBoxShell(SWT.OK, MSG_ALREADY_EXISTS,
 								new String[] {
 									":" + sOriginatingLocation,
 									sfExistingName,
 									MessageText.getString(MSG_ALREADY_EXISTS_NAME),
 								});
+						mb.open(null);
+					}
 				}
 			});
 
@@ -2229,6 +2216,14 @@ public class OpenTorrentWindow
 	 * @param sDataDir 
 	 */
 	private void openTorrents() {
+		Utils.getOffOfSWTThread(new AERunnable() {
+			public void runSupport() {
+				_openTorrents();
+			}
+		});
+	}
+
+	private void _openTorrents() {
 		ArrayList addedTorrentsTop = new ArrayList();
 
 		for (int i = 0; i < torrentList.size(); i++) {
@@ -2264,12 +2259,17 @@ public class OpenTorrentWindow
 								DiskManagerFileInfo fileInfo = fileInfos[iIndex];
 								if (iIndex >= 0 && iIndex < files.length && files[iIndex].lSize == fileInfo.getLength())
 								{
-									File fDest = files[iIndex].getDestFileFullName();
+									// Always pull destination file from fileInfo and not from
+									// TorrentFileInfo because the destination may have changed
+									// by magic code elsewhere
+									File fDest = fileInfo.getFile(true);
 									if (files[iIndex].isLinked())
 									{
+										fDest = files[iIndex].getDestFileFullName();
 										// Can't use fileInfo.setLink(fDest) as it renames
 										// the existing file if there is one
-										dm.getDownloadState().setFileLink(fileInfo.getFile(false), fDest);
+										dm.getDownloadState().setFileLink(
+														fileInfo.getFile(false), fDest);
 									}
 									if (!files[iIndex].bDownload)
 									{
@@ -2311,12 +2311,14 @@ public class OpenTorrentWindow
 								info.sOriginatingLocation,
 								e.getMessage()
 							}, -1 );
-				else
-					Utils.openMessageBox(shell, SWT.OK, "OpenTorrentWindow.mb.openError",
+				else {
+					MessageBoxShell mb = new MessageBoxShell(SWT.OK, "OpenTorrentWindow.mb.openError",
 							new String[] {
 								info.sOriginatingLocation,
 								e.getMessage()
 							});
+					mb.open(null);
+				}
 			}
 		}
 
@@ -2348,10 +2350,16 @@ public class OpenTorrentWindow
 
 			activeTorrentCount--;
 			enableControl(ok, activeTorrentCount < 1);
-			if (!downloaders.contains(inf))
-				return;
-			downloaders.remove(inf);
-
+			
+				// PARG - yes, this code sucks, added some sync here to prvent some errors but obviously
+				// it needs a complete rewrite
+			
+			synchronized( downloaders ){
+				if (!downloaders.contains(inf))
+					return;
+				downloaders.remove(inf);
+			}
+			
 			File file = inf.getFile();
 			// we already know it isn't a torrent.. we are just using the call
 			// to popup the message
@@ -2365,16 +2373,20 @@ public class OpenTorrentWindow
 		if (state == TorrentDownloader.STATE_INIT) {
 			activeTorrentCount++;
 			enableControl(ok, activeTorrentCount < 1);
-			downloaders.add(inf);
+			synchronized( downloaders ){
+				downloaders.add(inf);
+			}
 		} else if (state == TorrentDownloader.STATE_FINISHED) {
 			activeTorrentCount--;
 			enableControl(ok, activeTorrentCount < 1);
 
 			// This can be called more than once for each inf..
-			if (!downloaders.contains(inf))
-				return;
-			downloaders.remove(inf);
-
+			synchronized( downloaders ){
+				if (!downloaders.contains(inf))
+					return;
+				downloaders.remove(inf);
+			}
+			
 			File file = inf.getFile();
 			if (addTorrent(file.getAbsolutePath(), inf.getURL()) == null) {
 				// addTorrent may not delete it on error if the downloader saved it
@@ -2418,7 +2430,9 @@ public class OpenTorrentWindow
 				|| state == TorrentDownloader.STATE_DUPLICATE) {
 			activeTorrentCount--;
 			enableControl(ok, activeTorrentCount < 1);
-			downloaders.remove(inf);
+			synchronized( downloaders ){
+				downloaders.remove(inf);
+			}
 		} else if (state == TorrentDownloader.STATE_DOWNLOADING) {
 			int count = inf.getLastReadCount();
 			int numRead = inf.getTotalRead();
@@ -2917,7 +2931,7 @@ public class OpenTorrentWindow
 	public void updateUI() {
 		if (bClosed) {
 			try {
-				UIFunctionsManager.getUIFunctions().getUIUpdater().removeUpdater(this);
+				UIUpdaterSWT.getInstance().removeUpdater(this);
 			} catch (Exception e) {
 				Debug.out(e);
 			}
@@ -3065,6 +3079,8 @@ public class OpenTorrentWindow
 	}
 
 	public static void main(String[] args) {
+		AzureusCore core = AzureusCoreFactory.create();
+		core.start();
 		Display display = Display.getDefault();
 
 		Colors.getInstance();

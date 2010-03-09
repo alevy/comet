@@ -22,11 +22,10 @@
 
 package com.aelitis.azureus.core.networkmanager.impl.udp;
 
+import java.util.*;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import org.gudy.azureus2.core3.util.AEThread;
 import org.gudy.azureus2.core3.util.SystemTime;

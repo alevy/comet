@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.FileUtil;
 
 public class HTTPUtils {
@@ -71,6 +72,8 @@ public class HTTPUtils {
 		file_types.put("mp4", "video/mp4");
 		file_types.put("mov", "video/quicktime");
 		file_types.put("avi", "video/avi");
+		
+		file_types.put("xap", "application/x-silverlight-app");
 
 		compression.add("text/html");
 		compression.add("text/css");
@@ -86,7 +89,7 @@ public class HTTPUtils {
 	public static String guessContentTypeFromFileType(String file_type) {
 		if (file_type != null) {
 
-			String type = (String) file_types.get(file_type.toLowerCase());
+			String type = (String) file_types.get(file_type.toLowerCase( Constants.LOCALE_ENGLISH ));
 
 			if (type != null) {
 
@@ -105,7 +108,7 @@ public class HTTPUtils {
 		
 		if ( accept_encoding != null ){
 			
-			accept_encoding = accept_encoding.toLowerCase();
+			accept_encoding = accept_encoding.toLowerCase( Constants.LOCALE_ENGLISH );
 			
 			int gzip_index = accept_encoding.indexOf( "gzip" );
 			
@@ -222,7 +225,7 @@ public class HTTPUtils {
 			throw ( new IOException( error ));
 		}
 
-		String lc_reply_header = reply_header.toLowerCase();
+		String lc_reply_header = reply_header.toLowerCase( Constants.LOCALE_ENGLISH );
 
 		int te_pos = lc_reply_header.indexOf("transfer-encoding");
 

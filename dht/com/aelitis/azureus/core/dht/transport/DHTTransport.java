@@ -27,8 +27,7 @@ package com.aelitis.azureus.core.dht.transport;
  *
  */
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 
 public interface 
 DHTTransport 
@@ -55,6 +54,13 @@ DHTTransport
 		int	port )
 	
 		throws DHTTransportException;
+	
+	public long
+	getTimeout();
+	
+	public void
+	setTimeout(
+		long		millis );
 	
 	public DHTTransportContact
 	importContact(
@@ -120,6 +126,9 @@ DHTTransport
 	
 	public DHTTransportContact[]
 	getReachableContacts();
+	
+	public DHTTransportContact[]
+	getRecentContacts();
 	
 	public void
 	addListener(

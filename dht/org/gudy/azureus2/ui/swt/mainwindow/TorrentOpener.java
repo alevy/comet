@@ -33,34 +33,23 @@ import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.OpenTorrentWindow;
 import org.gudy.azureus2.ui.swt.URLTransfer;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.sharing.ShareUtils;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreException;
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
+import com.aelitis.azureus.core.*;
 import com.aelitis.azureus.core.vuzefile.VuzeFile;
 import com.aelitis.azureus.core.vuzefile.VuzeFileComponent;
 import com.aelitis.azureus.core.vuzefile.VuzeFileHandler;
+import com.aelitis.azureus.ui.UIFunctionsManager;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 
 /**
@@ -94,11 +83,10 @@ public class TorrentOpener {
     final String path, 
     final String fileNames[] )
   {
-  	Utils.execSWTThread(new AERunnable() {
-			public void runSupport() {
+  	CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(final AzureusCore core) {
 				final Display display = SWTThread.getInstance().getDisplay();
-		  	final AzureusCore azureus_core = AzureusCoreFactory.getSingleton();
-		  	if (display == null || display.isDisposed() || azureus_core == null)
+		  	if (display == null || display.isDisposed() || core == null)
 		  		return;
 		  	
 				new AEThread("TorrentOpener") {
@@ -110,7 +98,7 @@ public class TorrentOpener {
 								TOTorrent t = TorrentUtils.readFromFile(new File(path,
 										fileNames[i]), true);
 
-								azureus_core.getTrackerHost().hostTorrent(t, true, true);
+								core.getTrackerHost().hostTorrent(t, true, true);
 
 							} catch (Throwable e) {
 								Logger.log(new LogAlert(LogAlert.UNREPEATABLE,
@@ -175,8 +163,8 @@ public class TorrentOpener {
 		});
 	}
 
-  public static void openDroppedTorrents(final AzureusCore azureus_core,
-			DropTargetEvent event,final  boolean bAllowShareAdd) {
+  public static void openDroppedTorrents(DropTargetEvent event,
+			final boolean bAllowShareAdd) {
 		if (event.data == null)
 			return;
 
@@ -220,7 +208,7 @@ public class TorrentOpener {
 								if (!TorrentUtils.isTorrentFile(filename) && bAllowShareAdd) {
 									Logger.log(new LogEvent(LogIDs.GUI,
 													"openDroppedTorrents: file not a torrent file, sharing"));
-									ShareUtils.shareFile(azureus_core, filename);
+									ShareUtils.shareFile(filename);
 								} else {
 									openTorrentWindow(null, new String[] { filename },
 											bOverrideToStopped);
@@ -243,11 +231,11 @@ public class TorrentOpener {
 								"config.style.dropdiraction" );
 	
 						if (drop_action.equals("1")) {
-							ShareUtils.shareDir(azureus_core, dir_name);
+							ShareUtils.shareDir(dir_name);
 						} else if (drop_action.equals("2")) {
-							ShareUtils.shareDirContents(azureus_core, dir_name, false);
+							ShareUtils.shareDirContents(dir_name, false);
 						} else if (drop_action.equals("3")) {
-							ShareUtils.shareDirContents(azureus_core, dir_name, true);
+							ShareUtils.shareDirContents(dir_name, true);
 						} else {
 							openTorrentWindow(dir_name, null, bOverrideToStopped);
 						}
@@ -388,22 +376,27 @@ public class TorrentOpener {
 		Utils.execSWTThread(new AERunnable() {
 			public void runSupport() {
 				Shell shell = Utils.findAnyShell();
-				AzureusCore core = AzureusCoreFactory.getSingleton();
-				GlobalManager gm = null;
-				try {
-					gm = core.getGlobalManager();
-				} catch (AzureusCoreException e) {
-				}
-
-				if (gm == null) {
-					core.addLifecycleListener(new AzureusCoreLifecycleAdapter() {
-						public void componentCreated(AzureusCore core, AzureusCoreComponent component) {
-							if (component instanceof UIFunctionsSWT) {
+				if (!AzureusCoreFactory.isCoreRunning()) {
+					// not running, wait until running, then either
+					// wait for UIFunctionsManager to be initialized,
+					// or open immediately
+					AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+						public void azureusCoreRunning(AzureusCore core) {
+							if (UIFunctionsManager.getUIFunctions() == null) {
+								core.addLifecycleListener(new AzureusCoreLifecycleAdapter() {
+									public void componentCreated(AzureusCore core,
+											AzureusCoreComponent component) {
+										if (component instanceof UIFunctionsSWT) {
+											openTorrentWindow(path, f_torrents,
+													bOverrideStartModeToStopped);
+										}
+									}
+								});
+							} else {
 								openTorrentWindow(path, f_torrents, bOverrideStartModeToStopped);
 							}
 						}
 					});
-					return;
 				}
 
 				if (shell == null) {
@@ -411,8 +404,9 @@ public class TorrentOpener {
 					return;
 				}
 
-				OpenTorrentWindow.invoke(shell, gm, path, f_torrents,
-						bOverrideStartModeToStopped, false, false);
+				OpenTorrentWindow.invoke(shell,
+						AzureusCoreFactory.getSingleton().getGlobalManager(), path,
+						f_torrents, bOverrideStartModeToStopped, false, false);
 			}
 		});
 	}

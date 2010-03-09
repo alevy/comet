@@ -22,19 +22,12 @@
 
 package org.gudy.azureus2.pluginsimpl.local.disk;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfoListener;
+import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerPeerListener;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
@@ -51,6 +44,7 @@ import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.plugins.disk.DiskManagerListener;
 import org.gudy.azureus2.plugins.disk.DiskManagerRequest;
 import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadException;
 import org.gudy.azureus2.plugins.utils.PooledByteBuffer;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadImpl;
 import org.gudy.azureus2.pluginsimpl.local.utils.PooledByteBufferImpl;
@@ -89,7 +83,7 @@ DiskManagerChannelImpl
 	
 	private static final int COMPACT_DELAY	= 32;
 	
-	private static final int MAX_READ_CHUNK	= 64*1024;
+	private static final int MAX_READ_CHUNK_DEFAULT	= 64*1024;
 	
 	private static final Comparator comparator = new
 		Comparator()
@@ -211,11 +205,27 @@ DiskManagerChannelImpl
 	DiskManagerChannelImpl(
 		DownloadImpl															_download,
 		org.gudy.azureus2.pluginsimpl.local.disk.DiskManagerFileInfoImpl		_plugin_file )
+	
+		throws DownloadException
 	{
 		download		= _download;
 		plugin_file		= _plugin_file;
 		
 		core_file		= plugin_file.getCore();
+
+		DownloadManager core_download = core_file.getDownloadManager();
+		
+		if ( core_download.getTorrent() == null ){
+			
+			throw( new DownloadException( "Torrent invalid" ));
+		}
+		
+		if ( core_download.isDestroyed()){
+			
+			Debug.out( "Download has been removed" );
+			
+			throw( new DownloadException( "Download has been removed" ));
+		}
 		
 		synchronized( DiskManagerChannelImpl.class ){
 			
@@ -230,7 +240,7 @@ DiskManagerChannelImpl
 
 		rtas	= new long[torrent.getNumberOfPieces()];
 		
-		core_file.getDownloadManager().addPeerListener(this);
+		core_download.addPeerListener( this );
 			
 		for (int i=0;i<core_file.getIndex();i++){
 				
@@ -479,6 +489,7 @@ DiskManagerChannelImpl
 	{
 		buffer_millis = millis;
 	}
+	
 	public String
 	getUserAgent()
 	{
@@ -538,6 +549,8 @@ DiskManagerChannelImpl
 		
 		private String	user_agent;
 		
+		private int		max_read_chunk = MAX_READ_CHUNK_DEFAULT;
+		
 		private volatile boolean	cancelled;
 		
 		AESemaphore	wait_sem = new AESemaphore( "DiskManagerChannelImpl:wait" );
@@ -573,6 +586,13 @@ DiskManagerChannelImpl
 			}
 			
 			request_length	= _length;
+		}
+		
+		public void
+		setMaximumReadChunkSize(
+			int 	size )
+		{
+			max_read_chunk = size;
 		}
 		
 		public long
@@ -702,7 +722,7 @@ DiskManagerChannelImpl
 							
 							if ( available > 0 ){
 								
-								len = (int)( available<MAX_READ_CHUNK?available:MAX_READ_CHUNK);
+								len = (int)available;
 								
 								break;
 							}
@@ -710,6 +730,16 @@ DiskManagerChannelImpl
 					}				
 					
 					if ( len > 0 ){
+						
+						if ( len > rem ){
+							
+							len = (int)rem;
+						}
+						
+						if ( len > max_read_chunk ){
+						
+							len = max_read_chunk;
+						}
 						
 						DirectByteBuffer buffer = core_file.read( pos, len );
 	
@@ -736,8 +766,18 @@ DiskManagerChannelImpl
 						
 						try{
 
-							wait_sem.reserve();
+							while( true ){
 							
+								if ( wait_sem.reserve( 500 )){
+									
+									break;
+								}
+								
+								if ( core_file.getDownloadManager().isDestroyed()){
+									
+									throw( new Exception( "Download has been removed" ));
+								}
+							}
 						}finally{
 							
 							synchronized( data_written ){

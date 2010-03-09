@@ -22,10 +22,8 @@
 
 package com.aelitis.azureus.core.impl;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.*;
+import java.io.*;
 
 
 /**

@@ -1,15 +1,5 @@
 package org.bouncycastle.x509;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.security.cert.CertSelector;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.security.auth.x500.X500Principal;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
@@ -18,6 +8,15 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.V2Form;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Selector;
+
+import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.cert.CertSelector;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Carrying class for an attribute certificate issuer.

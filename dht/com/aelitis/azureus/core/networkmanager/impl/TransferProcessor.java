@@ -22,10 +22,11 @@
 
 package com.aelitis.azureus.core.networkmanager.impl;
 
-import java.util.HashMap;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
 import com.aelitis.azureus.core.networkmanager.NetworkConnectionBase;
@@ -331,7 +332,7 @@ public class TransferProcessor {
    * Upgrade the given connection to a high-speed transfer handler.
    * @param connection to upgrade
    */
-  public void upgradePeerConnection( final NetworkConnectionBase connection ) {
+  public void upgradePeerConnection( final NetworkConnectionBase connection, int partition_id ) {
     ConnectionData connection_data = null;
     
     try{ connections_mon.enter();
@@ -416,7 +417,7 @@ public class TransferProcessor {
           }
           main_bucket.setBytesUsed( num_bytes_written );
         }
-      });
+      }, partition_id );
       
       conn_data.state = ConnectionData.STATE_UPGRADED;
     }

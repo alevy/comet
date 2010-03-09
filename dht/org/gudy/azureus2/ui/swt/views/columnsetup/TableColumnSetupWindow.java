@@ -18,56 +18,21 @@
 
 package org.gudy.azureus2.ui.swt.views.columnsetup;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DragSource;
-import org.eclipse.swt.dnd.DragSourceEvent;
-import org.eclipse.swt.dnd.DragSourceListener;
-import org.eclipse.swt.dnd.DropTarget;
-import org.eclipse.swt.dnd.DropTargetAdapter;
-import org.eclipse.swt.dnd.DropTargetEvent;
-import org.eclipse.swt.dnd.DropTargetListener;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.dnd.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.ExpandBar;
-import org.eclipse.swt.widgets.ExpandItem;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
-import org.gudy.azureus2.plugins.ui.tables.TableRow;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
@@ -76,16 +41,14 @@ import org.gudy.azureus2.ui.swt.views.table.TableRowSWT;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.utils.TableColumnManager;
 
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableCountChangeListener;
-import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableSelectionAdapter;
-import com.aelitis.azureus.ui.common.table.TableStructureModificationListener;
-import com.aelitis.azureus.ui.common.table.TableView;
+import com.aelitis.azureus.ui.common.table.*;
 import com.aelitis.azureus.ui.common.updater.UIUpdatable;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 import com.aelitis.azureus.ui.swt.uiupdater.UIUpdaterSWT;
+
+import org.gudy.azureus2.plugins.ui.tables.TableColumn;
+import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.plugins.ui.tables.TableRow;
 
 /**
  * @author TuxPaper
@@ -140,6 +103,8 @@ public class TableColumnSetupWindow
 	private Combo comboFilter;
 
 	private Group cPickArea;
+
+	protected boolean doReset;
 
 	public TableColumnSetupWindow(final Class forDataSourceType, String _tableID,
 			TableRow sampleRow, TableStructureModificationListener _listener) {
@@ -272,12 +237,9 @@ public class TableColumnSetupWindow
 		Group cResultArea = new Group(shell, SWT.NONE);
 		Messages.setLanguageText(cResultArea, "ColumnSetup.chosencolumns");
 		cResultArea.setLayout(new FormLayout());
-		fd = new FormData();
-		fd.top = new FormAttachment(topInfo, 5);
-		fd.right = new FormAttachment(100, -3);
-		fd.bottom = new FormAttachment(btnOk, -5);
-		fd.width = 200;
-		cResultArea.setLayoutData(fd);
+		
+		Composite cResultButtonArea = new Composite(cResultArea, SWT.NONE);
+		cResultButtonArea.setLayout(new FormLayout());
 
 		tvAvail = createTVAvail();
 
@@ -453,7 +415,7 @@ public class TableColumnSetupWindow
 
 		ImageLoader imageLoader = ImageLoader.getInstance();
 
-		Button btnUp = new Button(cResultArea, SWT.PUSH);
+		Button btnUp = new Button(cResultButtonArea, SWT.PUSH);
 		imageLoader.setButtonImage(btnUp, "up");
 		btnUp.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
@@ -464,7 +426,7 @@ public class TableColumnSetupWindow
 			}
 		});
 
-		Button btnDown = new Button(cResultArea, SWT.PUSH);
+		Button btnDown = new Button(cResultButtonArea, SWT.PUSH);
 		imageLoader.setButtonImage(btnDown, "down");
 		btnDown.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
@@ -475,7 +437,7 @@ public class TableColumnSetupWindow
 			}
 		});
 
-		Button btnDel = new Button(cResultArea, SWT.PUSH);
+		Button btnDel = new Button(cResultButtonArea, SWT.PUSH);
 		imageLoader.setButtonImage(btnDel, "delete");
 		btnDel.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
@@ -513,6 +475,41 @@ public class TableColumnSetupWindow
 		}
 		tvChosen.processDataSourceQueue();
 
+		
+		Button btnReset = null;
+		String[] defaultColumnNames = tcm.getDefaultColumnNames(forTableID);
+		if (defaultColumnNames != null) {
+  		btnReset = new Button(cResultButtonArea, SWT.PUSH);
+  		Messages.setLanguageText(btnReset, "Button.reset");
+  		btnReset.addSelectionListener(new SelectionAdapter() {
+  			public void widgetSelected(SelectionEvent e) {
+  				String[] defaultColumnNames = tcm.getDefaultColumnNames(forTableID);
+  				if (defaultColumnNames != null) {
+  					List<TableColumnCore> defaultColumns = new ArrayList<TableColumnCore>();
+  					for (String name : defaultColumnNames) {
+  						TableColumnCore column = tcm.getTableColumnCore(forTableID, name);
+  						if (column != null) {
+  							defaultColumns.add(column);
+  						}
+						}
+  					if (defaultColumns.size() > 0) {
+  						for (TableColumnCore tc : mapNewVisibility.keySet()) {
+								mapNewVisibility.put(tc, Boolean.FALSE);
+							}
+  						tvChosen.removeAllTableRows();
+  						columnsChosen = defaultColumns.toArray(new TableColumnCore[0]);
+  						for (int i = 0; i < columnsChosen.length; i++) {
+  							mapNewVisibility.put(columnsChosen[i], Boolean.TRUE);
+								columnsChosen[i].setPositionNoShift(i);
+								tvChosen.addDataSource(columnsChosen[i]);
+  						}
+  						doReset = true;
+  					}
+  				}
+  			}
+  		});
+		}
+		
 		Button btnCancel = new Button(shell, SWT.PUSH);
 		Messages.setLanguageText(btnCancel, "Button.cancel");
 		btnCancel.addSelectionListener(new SelectionAdapter() {
@@ -521,7 +518,7 @@ public class TableColumnSetupWindow
 			}
 		});
 
-		Button btnApply = new Button(shell, SWT.PUSH);
+		Button btnApply = new Button(cResultButtonArea, SWT.PUSH);
 		Messages.setLanguageText(btnApply, "Button.apply");
 		btnApply.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
@@ -536,8 +533,21 @@ public class TableColumnSetupWindow
 		//lblChosenHeader.setLayoutData(fd);
 
 		fd = new FormData();
+		fd.top = new FormAttachment(topInfo, 5);
+		fd.right = new FormAttachment(100, -3);
+		fd.bottom = new FormAttachment(btnOk, -5);
+		fd.width = 200;
+		cResultArea.setLayoutData(fd);
+		
+		fd = new FormData();
+		fd.bottom = new FormAttachment(100, 0);
+		fd.left = new FormAttachment(cTableChosen, 0, SWT.CENTER);
+		//fd.right = new FormAttachment(100, 0);
+		cResultButtonArea.setLayoutData(fd);
+
+		fd = new FormData();
 		fd.right = new FormAttachment(btnDown, -5);
-		fd.bottom = new FormAttachment(100, -3);
+		fd.bottom = new FormAttachment(btnApply, -3);
 		btnUp.setLayoutData(fd);
 
 		fd = new FormData();
@@ -557,24 +567,31 @@ public class TableColumnSetupWindow
 		fd.left = new FormAttachment(0, 0);
 		fd.right = new FormAttachment(100, 0);
 		//fd.bottom = new FormAttachment(100, 0);
-		fd.bottom = new FormAttachment(btnUp, -3);
+		fd.bottom = new FormAttachment(cResultButtonArea, -3, SWT.TOP);
 		cTableChosen.setLayoutData(fd);
+		
+		if (btnReset != null) {
+  		fd = new FormData();
+  		fd.right = new FormAttachment(btnApply, -3);
+  		fd.bottom = new FormAttachment(btnApply, 0, SWT.BOTTOM);
+  		btnReset.setLayoutData(fd);
+		}
 
 		fd = new FormData();
-		fd.right = new FormAttachment(100, -8);
+		fd.right = new FormAttachment(100, -5);
 		fd.bottom = new FormAttachment(100, -3);
 		//fd.width = 64;
 		btnApply.setLayoutData(fd);
 
 		fd = new FormData();
-		fd.right = new FormAttachment(btnApply, -3);
-		fd.bottom = new FormAttachment(btnApply, 0, SWT.BOTTOM);
+		fd.right = new FormAttachment(100, -8);
+		fd.bottom = new FormAttachment(100, -3);
 		//fd.width = 65;
 		btnCancel.setLayoutData(fd);
 
 		fd = new FormData();
 		fd.right = new FormAttachment(btnCancel, -3);
-		fd.bottom = new FormAttachment(btnApply, 0, SWT.BOTTOM);
+		fd.bottom = new FormAttachment(btnCancel, 0, SWT.BOTTOM);
 		//fd.width = 64;
 		btnOk.setLayoutData(fd);
 
@@ -644,7 +661,6 @@ public class TableColumnSetupWindow
 			cResultArea,
 			btnOk,
 			btnCancel,
-			btnApply
 		});
 
 		cPickArea.setTabList(new Control[] {
@@ -714,7 +730,7 @@ public class TableColumnSetupWindow
 				forDataSourceType, forTableID);
 		
 		if (selectedCat == "uncat") {
-			datasources = (TableColumnCore[]) listColumnsNoCat.toArray();
+			datasources = (TableColumnCore[]) listColumnsNoCat.toArray( new TableColumnCore[listColumnsNoCat.size()]);
 		}
 		for (int i = 0; i < datasources.length; i++) {
 			TableColumnCore column = datasources[i];
@@ -745,7 +761,7 @@ public class TableColumnSetupWindow
 	 * @since 4.0.0.5
 	 */
 	protected void removeSelectedChosen() {
-		Object[] datasources = tvChosen.getSelectedDataSources();
+		Object[] datasources = tvChosen.getSelectedDataSources().toArray();
 		for (int i = 0; i < datasources.length; i++) {
 			TableColumnCore column = (TableColumnCore) datasources[i];
 			mapNewVisibility.put(column, Boolean.FALSE);
@@ -820,15 +836,16 @@ public class TableColumnSetupWindow
 	 * @since 4.0.0.5
 	 */
 	protected void apply() {
-		for (int i = 0; i < columnsChosen.length; i++) {
-			TableColumnCore column = columnsChosen[i];
-			if (column != null) {
-				column.setVisible(mapNewVisibility.get(column).booleanValue());
+		for (TableColumnCore tc : mapNewVisibility.keySet()) {
+			boolean visible = mapNewVisibility.get(tc).booleanValue();
+			tc.setVisible(visible);
+			if (doReset) {
+				tc.reset();
 			}
 		}
 		TableColumnManager.getInstance().saveTableColumns(forDataSourceType,
 				forTableID);
-		listener.tableStructureChanged(true);
+		listener.tableStructureChanged(true, forDataSourceType);
 	}
 
 	/**
@@ -851,13 +868,13 @@ public class TableColumnSetupWindow
 			}
 		}
 
-		final TableViewColumnSetup tvChosen = new TableViewColumnSetup(this,
-				TABLEID_CHOSEN, columnTVChosen, ColumnTC_ChosenColumn.COLUMN_ID, true);
+		final TableViewColumnSetup tvChosen = new TableViewColumnSetup(
+				this, TableColumn.class, TABLEID_CHOSEN, columnTVChosen,
+				ColumnTC_ChosenColumn.COLUMN_ID, true);
 		tvChosen.setMenuEnabled(false);
 		tvChosen.setSampleRow(sampleRow);
 		tvChosen.setHeaderVisible(false);
 		//tvChosen.setRowDefaultHeight(16);
-		tvChosen.setDataSourceType(TableColumn.class);
 
 		tvChosen.addLifeCycleListener(new TableLifeCycleListener() {
 			private DragSource dragSource;
@@ -890,7 +907,7 @@ public class TableColumnSetupWindow
 
 						TableView tv = id.equals("c") ? tvChosen : tvAvail;
 
-						Object[] dataSources = tv.getSelectedDataSources();
+						Object[] dataSources = tv.getSelectedDataSources().toArray();
 						for (int i = 0; i < dataSources.length; i++) {
 							TableColumnCore column = (TableColumnCore) dataSources[i];
 							if (column != null) {
@@ -991,11 +1008,11 @@ public class TableColumnSetupWindow
 		}
 
 		final TableViewColumnSetup tvAvail = new TableViewColumnSetup(this,
-				TABLEID_AVAIL, columns, ColumnTC_ChosenColumn.COLUMN_ID, false);
+				TableColumn.class, TABLEID_AVAIL, columns,
+				ColumnTC_ChosenColumn.COLUMN_ID, false);
 		tvAvail.setMenuEnabled(false);
 		tvAvail.setSampleRow(sampleRow);
 		tvAvail.setRowDefaultHeight(65);
-		tvAvail.setDataSourceType(TableColumn.class);
 
 		tvAvail.addLifeCycleListener(new TableLifeCycleListener() {
 			private DragSource dragSource;
@@ -1117,10 +1134,11 @@ public class TableColumnSetupWindow
 		private final TableColumnSetupWindow setupWindow;
 
 		public TableViewColumnSetup(TableColumnSetupWindow setupWindow,
+				Class forPluginDataSourceType,
 				String tableID, TableColumnCore[] items, String defaultSortOn,
 				boolean multi) {
-			super(tableID, tableID, items, defaultSortOn, SWT.FULL_SELECTION
-					| SWT.VIRTUAL | (multi ? SWT.MULTI : SWT.SINGLE));
+			super(forPluginDataSourceType, tableID, tableID, items, defaultSortOn,
+					SWT.FULL_SELECTION | SWT.VIRTUAL | (multi ? SWT.MULTI : SWT.SINGLE));
 			this.setupWindow = setupWindow;
 		}
 

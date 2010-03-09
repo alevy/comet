@@ -22,28 +22,18 @@
 package org.gudy.azureus2.core3.config.impl;
 
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.io.*;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.security.SESecurityManager;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SystemProperties;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.security.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.logging.*;
 
 import com.aelitis.azureus.core.proxy.socks.AESocksProxy;
 import com.aelitis.azureus.core.proxy.socks.AESocksProxyFactory;
@@ -341,19 +331,6 @@ ConfigurationChecker
 		    		changed	= true;
 	    		}
 	    	}
-	    	
-	    		// also, if we now have a default data dir enabled (either explicitly or by
-	    		// above migration fix), and there's no value defined for the dir, then
-	    		// set it to what it would have been before the default was changed to blank
-	    	
-	    	if ( 	COConfigurationManager.getBooleanParameter( "Use default data dir" ) &&
-	    			!COConfigurationManager.doesParameterNonDefaultExist( "Default save path" )){	
-	    		
-	    		COConfigurationManager.setParameter( "Default save path", SystemProperties.getUserPath()+"downloads" );
-	    		
-	    		changed	= true;
-	    	}
-	    	
 	    		    	
 	    	//enable Beginner user mode for first time
 	    	if( !COConfigurationManager.doesParameterNonDefaultExist( "User Mode" ) ) {
@@ -629,6 +606,43 @@ ConfigurationChecker
 	    if ( FeatureAvailability.isAutoSpeedDefaultClassic()){
 	    
 	    	ConfigurationDefaults.getInstance().addParameter( SpeedManagerImpl.CONFIG_VERSION, 1 );	// 1 == classic, 2 == beta
+	    }
+	    
+	    if ( COConfigurationManager.getIntParameter( "config.checker.level", 0 ) == 0 ){
+	    	
+	    	COConfigurationManager.setParameter( "config.checker.level", 1 );
+	    	
+	    	changed = true;
+	    	
+		    	// initial setting of auto-config for upload slots etc
+		    
+			String[]	params = { 
+					"Max Uploads", 
+					"enable.seedingonly.maxuploads", 
+					"Max Uploads Seeding",
+					"Max.Peer.Connections.Per.Torrent",
+					"Max.Peer.Connections.Per.Torrent.When.Seeding.Enable",
+					"Max.Peer.Connections.Per.Torrent.When.Seeding",
+					"Max.Peer.Connections.Total",
+					"Max Seeds Per Torrent"
+			};
+			
+			boolean	has_been_set = false;
+			
+			for ( String param: params ){
+			
+				if ( COConfigurationManager.doesParameterNonDefaultExist( param )){
+					
+					has_been_set = true;
+					
+					break;
+				}
+			}
+			
+			if ( has_been_set ){
+				
+				COConfigurationManager.setParameter( "Auto Adjust Transfer Defaults", false );
+			}
 	    }
 	
 	    if(changed) {

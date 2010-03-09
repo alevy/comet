@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc.,  59 Temple Plac(int)e, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: BrokenMd5Hasher.java,v 1.1.1.1 2009-02-26 00:36:21 roxana Exp $
+ * $Id: BrokenMd5Hasher.java,v 1.1 2005/11/16 13:36:23 parg Exp $
  *
  ********************************************************************************/
 
@@ -35,8 +35,8 @@ import java.nio.ByteOrder;
  * use final, it will reset the MD5 instance for a new calculation.
  *
  * @author emarant
- * @version $Revision: 1.1.1.1 $
- * <br>Last changed by $Author: roxana $ on $Date: 2009-02-26 00:36:21 $
+ * @version $Revision: 1.1 $
+ * <br>Last changed by $Author: parg $ on $Date: 2005/11/16 13:36:23 $
  */
 public final class BrokenMd5Hasher {
     

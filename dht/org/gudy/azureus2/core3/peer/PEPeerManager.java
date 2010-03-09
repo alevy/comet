@@ -28,11 +28,9 @@ package org.gudy.azureus2.core3.peer;
  *
  */
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityDataID;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
@@ -43,6 +41,7 @@ import org.gudy.azureus2.plugins.peers.PeerDescriptor;
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
 import com.aelitis.azureus.core.peermanager.peerdb.PeerExchangerItem;
 import com.aelitis.azureus.core.peermanager.piecepicker.PiecePicker;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
 
 
 public interface 
@@ -146,7 +145,8 @@ PEPeerManager
   public boolean
   seedPieceRecheck();
   
-  public int getNbRemoteConnectionsExcludingUDP();
+  public int getNbRemoteTCPConnections();
+  public int getNbRemoteUDPConnections();
   
   public long getLastRemoteConnectionTime();
   
@@ -197,6 +197,9 @@ PEPeerManager
 	public List<PEPeer>
 	getPeers(
 		String	address );
+	
+	public int
+	getPendingPeerCount();
 	
 	public PeerDescriptor[]
    	getPendingPeers();
@@ -370,10 +373,16 @@ PEPeerManager
 		LimitedRateGroup	group,
 		boolean				upload );
 	
+	public TrackerPeerSource
+	getTrackerPeerSource();
+	
 	public boolean
 	isPeerSourceEnabled(
 		String	peer_source );
 	
+	public int
+	getPartitionID();
+
 	public void
 	generateEvidence(
 		IndentWriter		writer );

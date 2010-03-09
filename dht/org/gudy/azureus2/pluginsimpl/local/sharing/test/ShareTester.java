@@ -23,35 +23,14 @@ package org.gudy.azureus2.pluginsimpl.local.sharing.test;
 
 
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
-import org.gudy.azureus2.plugins.download.DownloadListener;
-import org.gudy.azureus2.plugins.download.DownloadManager;
-import org.gudy.azureus2.plugins.download.DownloadManagerListener;
-import org.gudy.azureus2.plugins.download.DownloadPeerListener;
-import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
-import org.gudy.azureus2.plugins.download.DownloadTrackerListener;
-import org.gudy.azureus2.plugins.logging.LoggerChannel;
-import org.gudy.azureus2.plugins.peers.Peer;
-import org.gudy.azureus2.plugins.peers.PeerManager;
-import org.gudy.azureus2.plugins.peers.PeerManagerListener;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareManager;
-import org.gudy.azureus2.plugins.sharing.ShareManagerListener;
-import org.gudy.azureus2.plugins.sharing.ShareResource;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDirContents;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.logging.*;
+import org.gudy.azureus2.plugins.sharing.*;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.peers.*;
+import org.gudy.azureus2.core3.util.*;
 
 public class 
 ShareTester
@@ -278,9 +257,10 @@ ShareTester
 	
 	public void
 	resourceModified(
-		ShareResource		resource )
+		ShareResource		old_resource ,
+		ShareResource		new_resource )
 	{
-		System.out.println( "resource modified:" + resource.getName());
+		System.out.println( "resource modified:" + old_resource.getName());
 	}
 	
 	public void

@@ -26,10 +26,9 @@ package org.gudy.azureus2.pluginsimpl.local.peers;
  *
  */
 
-import org.gudy.azureus2.core3.peer.PEPeerManager;
-import org.gudy.azureus2.core3.peer.PEPeerStats;
-import org.gudy.azureus2.plugins.peers.Peer;
-import org.gudy.azureus2.plugins.peers.PeerStats;
+import org.gudy.azureus2.core3.peer.*;
+
+import org.gudy.azureus2.plugins.peers.*;
 
 public class 
 PeerStatsImpl 
@@ -120,5 +119,18 @@ PeerStatsImpl
 	getTimeSinceConnectionEstablished()
 	{
 		return( peer_manager.getTimeSinceConnectionEstablished( owner ));
+	}
+	
+	public int 
+	getDownloadRateLimit() 
+	{
+		return( delegate.getDownloadRateLimitBytesPerSecond());
+	}
+	
+	public void 
+	setDownloadRateLimit( 
+		int bytes ) 
+	{
+		delegate.setDownloadRateLimitBytesPerSecond( bytes );
 	}
 }

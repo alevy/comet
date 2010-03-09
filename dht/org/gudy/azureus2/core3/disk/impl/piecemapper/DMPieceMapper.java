@@ -23,7 +23,6 @@
 package org.gudy.azureus2.core3.disk.impl.piecemapper;
 
 import java.io.UnsupportedEncodingException;
-
 import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
 
 public interface 

@@ -26,11 +26,10 @@ package org.gudy.azureus2.plugins.tracker.web;
  *
  */
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
+import java.io.IOException;
+import org.gudy.azureus2.plugins.tracker.*;
 
 public interface 
 TrackerWebPageResponse 
@@ -58,6 +57,10 @@ TrackerWebPageResponse
 	setHeader(
 		String		name,
 		String		value );
+	
+	public void
+	setGZIP(
+		boolean		gzip );
 	
 		/**
 		 * use a file contents as the response. returns true of loaded ok, false if doesn't exist

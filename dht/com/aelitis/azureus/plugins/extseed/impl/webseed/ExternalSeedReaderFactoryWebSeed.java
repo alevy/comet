@@ -24,10 +24,7 @@ package com.aelitis.azureus.plugins.extseed.impl.webseed;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
@@ -84,6 +81,17 @@ ExternalSeedReaderFactoryWebSeed
 		
 		try{
 			Object	obj = config.get( "httpseeds" );
+			
+				// might as well handle case where there's a single entry rather than a list
+			
+			if ( obj instanceof byte[] ){
+				
+                List l = new ArrayList();
+                
+		        l.add(obj);
+		        
+		        obj = l;
+			}
 			
 			if ( obj instanceof List ){
 				

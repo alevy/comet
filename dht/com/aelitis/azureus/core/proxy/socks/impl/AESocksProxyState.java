@@ -26,12 +26,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 
-import com.aelitis.azureus.core.proxy.AEProxyState;
-import com.aelitis.azureus.core.proxy.socks.AESocksProxyConnection;
+import com.aelitis.azureus.core.proxy.*;
+import com.aelitis.azureus.core.proxy.socks.*;
 
 /**
  * @author parg

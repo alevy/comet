@@ -24,25 +24,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.category.Category;
 import org.gudy.azureus2.core3.category.CategoryManager;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
@@ -57,27 +46,27 @@ import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IPToHostNameResolver;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
+import org.gudy.azureus2.plugins.ui.UIInputReceiver;
+import org.gudy.azureus2.plugins.ui.UIInputReceiverListener;
 import org.gudy.azureus2.ui.swt.exporttorrent.wizard.ExportTorrentWizard;
 import org.gudy.azureus2.ui.swt.mainwindow.ClipboardCopy;
 import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
 import org.gudy.azureus2.ui.swt.maketorrent.MultiTrackerEditor;
 import org.gudy.azureus2.ui.swt.maketorrent.TrackerEditorListener;
+import org.gudy.azureus2.ui.swt.maketorrent.WebSeedsEditor;
+import org.gudy.azureus2.ui.swt.maketorrent.WebSeedsEditorListener;
 import org.gudy.azureus2.ui.swt.minibar.DownloadBar;
-import org.gudy.azureus2.ui.swt.shells.InputShell;
+import org.gudy.azureus2.ui.swt.shells.AdvRenameWindow;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.views.ViewUtils;
 import org.gudy.azureus2.ui.swt.views.utils.ManagerUtils;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.plugins.extseed.ExternalSeedPlugin;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
@@ -185,10 +174,6 @@ public class TorrentUtil {
 				}
 				catch (Exception ex) {
 					Debug.printStackTrace(ex);
-				}
-
-				if (dm.getTrackerClient() == null) {
-					changeUrl = false;
 				}
 
 				if (barsOpened && !DownloadBar.getManager().isOpen(dm)) {
@@ -403,9 +388,10 @@ public class TorrentUtil {
 		Messages.setLanguageText(itemChangeTracker, "MyTorrentsView.menu.changeTracker"); //$NON-NLS-1$
 		Utils.setMenuItemImage(itemChangeTracker, "add_tracker");
 		itemChangeTracker.addListener(SWT.Selection, new DMTask(dms) {
-			public void run(DownloadManager dm) {
-				TRTrackerAnnouncer tc = dm.getTrackerClient();
-				if (tc != null) new TrackerChangerWindow(composite.getDisplay(), tc);
+			public void run(DownloadManager[] dms) {
+				if ( dms.length > 0 ){
+					new TrackerChangerWindow(composite.getDisplay(), dms);
+				}
 			}
 		});
 		itemChangeTracker.setEnabled(changeUrl);
@@ -497,6 +483,118 @@ public class TorrentUtil {
 		
 		itemEditTracker.setEnabled(hasSelection);
 
+			// edit webseeds
+		
+		final MenuItem itemEditWebSeeds = new MenuItem(menuTracker, SWT.PUSH);
+		Messages.setLanguageText(itemEditWebSeeds, "MyTorrentsView.menu.editWebSeeds");
+		itemEditWebSeeds.addListener(SWT.Selection, new DMTask(dms) {
+			public void 
+			run(
+				final DownloadManager[] dms ) 
+			{
+				final TOTorrent torrent = dms[0].getTorrent();
+				
+				if ( torrent == null ){
+					
+					return;
+				}
+				
+				List getright = getURLList( torrent, "url-list" );
+				List webseeds = getURLList( torrent, "httpseeds" );
+				
+				Map ws = new HashMap();
+								
+				ws.put( "getright", getright );								
+				ws.put( "webseeds", webseeds );
+				
+				ws = BDecoder.decodeStrings( ws );
+				
+				new WebSeedsEditor(
+						null, ws,
+						new WebSeedsEditorListener()
+						{
+							public void 
+							webSeedsChanged(
+								String 	oldName,
+								String 	newName, 
+								Map 	ws ) 
+							{
+								try{
+										// String -> byte[] 
+									
+									ws = BDecoder.decode( BEncoder.encode( ws ));
+									
+									List	getright =  (List)ws.get( "getright" );
+									
+									if ( getright == null || getright.size() == 0 ){
+										
+										torrent.removeAdditionalProperty( "url-list" );
+										
+									}else{
+										
+										torrent.setAdditionalListProperty( "url-list", getright );
+									}
+									
+									List	webseeds =  (List)ws.get( "webseeds" );
+									
+									if ( webseeds == null || webseeds.size() == 0 ){
+										
+										torrent.removeAdditionalProperty( "httpseeds" );
+										
+									}else{
+										
+										torrent.setAdditionalListProperty( "httpseeds", webseeds );
+									}
+			
+									PluginInterface pi = AzureusCoreFactory.getSingleton().getPluginManager().getPluginInterfaceByClass(ExternalSeedPlugin.class);
+									
+									if ( pi != null ){
+										
+										ExternalSeedPlugin ext_seed_plugin = (ExternalSeedPlugin)pi.getPlugin();
+										
+										ext_seed_plugin.downloadChanged( PluginCoreUtils.wrap( dms[0] ));
+									}
+						
+								}catch (Throwable e){
+						
+									Debug.printStackTrace( e );
+								}
+							}
+						},
+						true );
+
+			}
+			
+			protected List
+			getURLList(
+				TOTorrent	torrent,
+				String		key )
+			{
+				Object obj = torrent.getAdditionalProperty( key );
+				
+				if ( obj instanceof byte[] ){
+					
+	                List l = new ArrayList();
+	                
+			        l.add(obj);
+			        
+			        return( l );
+			        
+				}else if ( obj instanceof List ){
+					
+					return((List)obj);
+					
+				}else{
+					
+					return( new ArrayList());
+				}
+			}
+		});
+		
+		itemEditWebSeeds.setEnabled(dms.length==1);
+
+			// manual update
+		
 		final MenuItem itemManualUpdate = new MenuItem(menuTracker, SWT.PUSH);
 		Messages.setLanguageText(itemManualUpdate, "GeneralView.label.trackerurlupdate"); //$NON-NLS-1$
 		//itemManualUpdate.setImage(ImageRepository.getImage("edit_trackers"));
@@ -633,6 +731,20 @@ public class TorrentUtil {
 		itemFileRescan.setSelection(allScanSelected);
 		itemFileRescan.setEnabled(fileRescan);
 
+			// clear allocation
+		
+		MenuItem itemFileClearAlloc = new MenuItem(menuFiles, SWT.PUSH);
+		Messages.setLanguageText(itemFileClearAlloc, "MyTorrentsView.menu.clear_alloc_data");
+		itemFileClearAlloc.addListener(SWT.Selection, new DMTask(dms) {
+			public void run(DownloadManager dm) {
+				dm.setDataAlreadyAllocated( false );
+			}
+		});
+		
+		itemFileClearAlloc.setEnabled(allStopped);
+		
+			// clear resume
+		
 		MenuItem itemFileClearResume = new MenuItem(menuFiles, SWT.PUSH);
 		Messages.setLanguageText(itemFileClearResume, "MyTorrentsView.menu.clear_resume_data");
 		itemFileClearResume.addListener(SWT.Selection, new DMTask(dms) {
@@ -643,101 +755,16 @@ public class TorrentUtil {
 		itemFileClearResume.setEnabled(allStopped);
 
 		// Advanced - > Rename
-		final MenuItem itemRename = new MenuItem(menuAdvanced, SWT.CASCADE);
+		final MenuItem itemRename = new MenuItem(menuAdvanced, SWT.DROP_DOWN);
 		Messages.setLanguageText(itemRename, "MyTorrentsView.menu.rename");
-		itemRename.setEnabled(hasSelection);
-
-		final Menu menuRename = new Menu(composite.getShell(), SWT.DROP_DOWN);
-		itemRename.setMenu(menuRename);
-		
-		DownloadManager first_selected = (dms.length == 0) ? null : dms[0];
-		
-		// Advanced - > Rename -> Displayed Name
-		final MenuItem itemRenameDisplayed = new MenuItem(menuRename, SWT.CASCADE);
-		Messages.setLanguageText(itemRenameDisplayed, "MyTorrentsView.menu.rename.displayed");
-		itemRenameDisplayed.setEnabled(hasSelection);
-		if (itemRenameDisplayed.isEnabled()) {
-			itemRenameDisplayed.setData("suggested_text", first_selected.getDisplayName());
-			itemRenameDisplayed.setData("display_name", Boolean.TRUE);
-			itemRenameDisplayed.setData("save_name", Boolean.FALSE);
-			itemRenameDisplayed.setData("rename_all", Boolean.FALSE);
-			itemRenameDisplayed.setData("msg_key", "displayed");
-		}
-
-		// Rename -> Save Name
-		final MenuItem itemRenameSavePath = new MenuItem(menuRename, SWT.CASCADE);
-		Messages.setLanguageText(itemRenameSavePath, "MyTorrentsView.menu.rename.save_path");
-		itemRenameSavePath.setEnabled(fileMove && dms.length == 1);
-		if (itemRenameSavePath.isEnabled()) {
-			itemRenameSavePath.setData("suggested_text", first_selected.getAbsoluteSaveLocation().getName());
-			itemRenameSavePath.setData("display_name", Boolean.FALSE);
-			itemRenameSavePath.setData("save_name", Boolean.TRUE);
-			itemRenameSavePath.setData("rename_all", Boolean.FALSE);
-			itemRenameSavePath.setData("msg_key", "save_path");
-		}
-
-		// Rename -> Both
-		final MenuItem itemRenameBoth = new MenuItem(menuRename, SWT.CASCADE);
-		Messages.setLanguageText(itemRenameBoth, "MyTorrentsView.menu.rename.displayed_and_save_path");
-		itemRenameBoth.setEnabled(fileMove && dms.length == 1);
-		if (itemRenameBoth.isEnabled()) {
-			itemRenameBoth.setData("suggested_text", first_selected.getAbsoluteSaveLocation().getName());
-			itemRenameBoth.setData("display_name", Boolean.TRUE);
-			itemRenameBoth.setData("save_name", Boolean.TRUE);
-			itemRenameBoth.setData("msg_key", "displayed_and_save_path");
-			itemRenameBoth.setData("rename_all", Boolean.FALSE);
-		}
-
-		Listener rename_listener = new Listener() {
+		itemRename.setEnabled(hasSelection && dms.length == 1);
+		itemRename.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
-				MenuItem mi = (MenuItem) event.widget;
-				String suggested = (String) mi.getData("suggested_text");
-				final boolean rename_all = ((Boolean) mi.getData("rename_all")).booleanValue();
-				final boolean change_displayed_name = ((Boolean) mi.getData("display_name")).booleanValue();
-				final boolean change_save_name = ((Boolean) mi.getData("save_name")).booleanValue();
-				String msg_key_prefix = "MyTorrentsView.menu.rename." + (String) mi.getData("msg_key") + ".enter.";
-				SimpleTextEntryWindow text_entry = new SimpleTextEntryWindow(composite.getDisplay());
-				text_entry.setTitle(msg_key_prefix + "title");
-				text_entry.setMessages(new String[] { msg_key_prefix + "message", msg_key_prefix + "message.2" });
-				text_entry.setPreenteredText(suggested, false);
-				text_entry.prompt();
-				if (text_entry.hasSubmittedInput()) {
-					String value = text_entry.getSubmittedInput();
-					final String value_to_set = (value.length() == 0) ? null : value;
-					DMTask task = new DMTask(dms) {
-						public void run(DownloadManager dm) {
-							if (rename_all) {
-								try {
-									dm.rename(value_to_set);
-								}
-								catch (Exception e) {
-									Logger.log(new LogAlert(dm, LogAlert.REPEATABLE,
-											"Download data rename operation failed", e));
-								}
-							}
-							if (change_displayed_name) {
-								dm.getDownloadState().setDisplayName(value_to_set);
-							}
-							if (change_save_name) {
-								try {
-									dm.renameDownload((value_to_set == null) ? dm.getDisplayName() : value_to_set);
-								}
-								catch (Exception e) {
-									Logger.log(new LogAlert(dm, LogAlert.REPEATABLE,
-											"Download data rename operation failed", e));
-								}
-							}
-						}
-					};
-					task.go();
-				}
+				AdvRenameWindow window = new AdvRenameWindow();
+				window.open(dms[0]);
 			}
-		};
+		});
 
-		itemRenameDisplayed.addListener(SWT.Selection, rename_listener);
-		itemRenameSavePath.addListener(SWT.Selection, rename_listener);
-		itemRenameBoth.addListener(SWT.Selection, rename_listener);
-		
 		// === advanced > export ===
 		// =========================
 
@@ -756,7 +783,7 @@ public class TorrentUtil {
 			itemExportXML.addListener(SWT.Selection, new DMTask(dms) {
 				public void run(DownloadManager[] dms) {
 					DownloadManager dm = dms[0]; // First only.
-					if (dm != null) new ExportTorrentWizard(azureus_core, itemExportXML.getDisplay(), dm);
+					if (dm != null) new ExportTorrentWizard(itemExportXML.getDisplay(), dm);
 				}
 			});
 
@@ -1045,37 +1072,44 @@ public class TorrentUtil {
 				"MyTorrentsView.menu.reposition.manual");
 		itemPositionManual.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				InputShell is = new InputShell(
+				SimpleTextEntryWindow entryWindow = new SimpleTextEntryWindow(
 						"MyTorrentsView.dialog.setPosition.title",
 						"MyTorrentsView.dialog.setPosition.text");
-
-				String sReturn = is.open();
-				if (sReturn == null)
-					return;
-
-				int newPosition = -1;
-				try {
-					newPosition = Integer.valueOf(sReturn).intValue();
-				} catch (NumberFormatException er) {
-					// Ignore
-				}
-
-				int size = azureus_core.getGlobalManager().downloadManagerCount(
-						isSeedingView);
-				if (newPosition > size)
-					newPosition = size;
-
-				if (newPosition <= 0) {
-					MessageBox mb = new MessageBox(composite.getShell(), SWT.ICON_ERROR
-							| SWT.OK);
-					mb.setText(MessageText.getString("MyTorrentsView.dialog.NumberError.title"));
-					mb.setMessage(MessageText.getString("MyTorrentsView.dialog.NumberError.text"));
-
-					mb.open();
-					return;
-				}
-
-				moveSelectedTorrentsTo(tv, dms, newPosition);
+				entryWindow.prompt(new UIInputReceiverListener() {
+					public void UIInputReceiverClosed(UIInputReceiver entryWindow) {
+						if (!entryWindow.hasSubmittedInput()) {
+							return;
+						}
+						String sReturn = entryWindow.getSubmittedInput();
+						
+						if (sReturn == null)
+							return;
+						
+						int newPosition = -1;
+						try {
+							newPosition = Integer.valueOf(sReturn).intValue();
+						} catch (NumberFormatException er) {
+							// Ignore
+						}
+						
+						int size = azureus_core.getGlobalManager().downloadManagerCount(
+								isSeedingView);
+						if (newPosition > size)
+							newPosition = size;
+						
+						if (newPosition <= 0) {
+							MessageBox mb = new MessageBox(composite.getShell(), SWT.ICON_ERROR
+									| SWT.OK);
+							mb.setText(MessageText.getString("MyTorrentsView.dialog.NumberError.title"));
+							mb.setMessage(MessageText.getString("MyTorrentsView.dialog.NumberError.text"));
+							
+							mb.open();
+							return;
+						}
+						
+						moveSelectedTorrentsTo(tv, dms, newPosition);
+					}
+				});
 			}
 		});
 
@@ -1173,31 +1207,6 @@ public class TorrentUtil {
 
 		addCategorySubMenu(dms, menuCategory, composite);
 		
-		// Rename
-		final MenuItem itemRenameAll = new MenuItem(menu, SWT.CASCADE);
-		Messages.setLanguageText(itemRenameAll, "MyTorrentsView.menu.rename");
-		itemRenameAll.setEnabled(hasSelection);
-		if (itemRenameAll.isEnabled()) {
-			itemRenameAll.setData("suggested_text", first_selected.getDisplayName());
-			itemRenameAll.setData("display_name", Boolean.FALSE);
-			itemRenameAll.setData("save_name", Boolean.FALSE);
-			itemRenameAll.setData("rename_all", Boolean.TRUE);
-			itemRenameAll.setData("msg_key", "displayed");
-		}
-
-		itemRenameAll.addListener(SWT.Selection, rename_listener);
-		
-		// Edit Comment
-		final MenuItem itemEditComment = new MenuItem(menu, SWT.CASCADE);
-		Messages.setLanguageText(itemEditComment, "MyTorrentsView.menu.edit_comment");
-		itemEditComment.setEnabled(dms.length > 0);
-
-		itemEditComment.addListener(SWT.Selection, new DMTask(dms) {
-			public void run(DownloadManager[] dms) {
-				promptUserForComment(dms);
-			}
-		});
-
 		// ---
 		new MenuItem(menu, SWT.SEPARATOR);
 
@@ -1419,14 +1428,28 @@ public class TorrentUtil {
 		dDialog.setMessage(MessageText.getString("MainWindow.dialog.choose.savepath"));
 		String sSavePath = dDialog.open();
 		if (sSavePath != null) {
+			File fSavePath = new File(sSavePath);
 			for (int i = 0; i < dms.length; i++) {
 				DownloadManager dm = dms[i];
 				if (dm.getState() == DownloadManager.STATE_ERROR) {
-
+					
 					dm.setTorrentSaveDir(sSavePath);
+					
+					boolean found = dm.filesExist(true);
+					if (!found && dm.getTorrent() != null
+							&& !dm.getTorrent().isSimpleTorrent()) {
+						String parentPath = fSavePath.getParent();
+						if (parentPath != null) {
+							dm.setTorrentSaveDir(parentPath);
+							found = dm.filesExist(true);
+							if (!found) {
+								dm.setTorrentSaveDir(sSavePath);
+							}
+						}
+					}
 
-					if (dm.filesExist(true)) {
 
+					if (found) {
 						dm.stopIt(DownloadManager.STATE_STOPPED, false, false);
 
 						ManagerUtils.queue(dm, shell);
@@ -1524,30 +1547,33 @@ public class TorrentUtil {
 		task.go();
 	}
 	
-	public static void promptUserForComment(DownloadManager[] dms) {
+	public static void promptUserForComment(final DownloadManager[] dms) {
 		if (dms.length == 0) {return;}
 		DownloadManager dm = dms[0];
 		
 		// Create dialog box.
 		String suggested = dm.getDownloadState().getUserComment(); 
 		String msg_key_prefix = "MyTorrentsView.menu.edit_comment.enter.";
-		SimpleTextEntryWindow text_entry = new SimpleTextEntryWindow(Display.getCurrent());
+		SimpleTextEntryWindow text_entry = new SimpleTextEntryWindow();
 		text_entry.setTitle(msg_key_prefix + "title");
 		text_entry.setMessage(msg_key_prefix + "message");
 		text_entry.setPreenteredText(suggested, false);
 		text_entry.setMultiLine(true);
-		text_entry.prompt();
-		
-		if (text_entry.hasSubmittedInput()) {
-			String value = text_entry.getSubmittedInput();
-			final String value_to_set = (value.length() == 0) ? null : value;
-			DMTask task = new DMTask(dms) {
-				public void run(DownloadManager dm) {
-					dm.getDownloadState().setUserComment(value_to_set);
+		text_entry.prompt(new UIInputReceiverListener() {
+			public void UIInputReceiverClosed(UIInputReceiver text_entry) {
+				if (text_entry.hasSubmittedInput()) {
+					String value = text_entry.getSubmittedInput();
+					final String value_to_set = (value.length() == 0) ? null : value;
+					DMTask task = new DMTask(dms) {
+						public void run(DownloadManager dm) {
+							dm.getDownloadState().setUserComment(value_to_set);
+						}
+					};
+					task.go();
 				}
-			};
-			task.go();
-		}
+			}
+		});
+		
 	}
 
 
@@ -1645,7 +1671,7 @@ public class TorrentUtil {
 		if (!sFirstChunk.startsWith("d")) {
 			if (parentShell != null) {
   			boolean isHTML = sFirstChunk.indexOf("<html") >= 0;
-  			MessageBoxShell boxShell = new MessageBoxShell(parentShell,
+  			MessageBoxShell boxShell = new MessageBoxShell(
   					MessageText.getString("OpenTorrentWindow.mb.notTorrent.title"),
   					MessageText.getString("OpenTorrentWindow.mb.notTorrent.text",
   							new String[] {
@@ -1657,7 +1683,7 @@ public class TorrentUtil {
   			if (isHTML) {
   				boxShell.setHtml(sFirstChunk);
   			}
-  			boxShell.open();
+  			boxShell.open(null);
 			}
 
 			return false;

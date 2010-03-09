@@ -21,63 +21,19 @@
 
 package com.aelitis.azureus.plugins.net.buddy;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.AsyncDispatcher;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SHA1Simple;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimeFormatter;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.core3.util.protocol.azplug.AZPluginConnection;
 import org.gudy.azureus2.core3.xml.util.XUXmlWriter;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfig;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseContact;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseEvent;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseKey;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseListener;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseValue;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.ddb.*;
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadException;
@@ -94,12 +50,7 @@ import org.gudy.azureus2.plugins.torrent.Torrent;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
 import org.gudy.azureus2.plugins.ui.UIInstance;
 import org.gudy.azureus2.plugins.ui.UIManagerListener;
-import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
-import org.gudy.azureus2.plugins.ui.config.IntParameter;
-import org.gudy.azureus2.plugins.ui.config.Parameter;
-import org.gudy.azureus2.plugins.ui.config.ParameterListener;
-import org.gudy.azureus2.plugins.ui.config.StringListParameter;
-import org.gudy.azureus2.plugins.ui.config.StringParameter;
+import org.gudy.azureus2.plugins.ui.config.*;
 import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.plugins.ui.menus.MenuItemFillListener;
 import org.gudy.azureus2.plugins.ui.menus.MenuItemListener;
@@ -107,11 +58,7 @@ import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
 import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
 import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.plugins.ui.tables.TableRow;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.utils.LocaleListener;
-import org.gudy.azureus2.plugins.utils.LocaleUtilities;
-import org.gudy.azureus2.plugins.utils.UTTimerEvent;
-import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
+import org.gudy.azureus2.plugins.utils.*;
 import org.gudy.azureus2.plugins.utils.security.SEPublicKey;
 import org.gudy.azureus2.plugins.utils.security.SEPublicKeyLocator;
 import org.gudy.azureus2.plugins.utils.security.SESecurityManager;
@@ -119,10 +66,7 @@ import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.security.CryptoHandler;
-import com.aelitis.azureus.core.security.CryptoManagerFactory;
-import com.aelitis.azureus.core.security.CryptoManagerKeyListener;
-import com.aelitis.azureus.core.security.CryptoManagerPasswordException;
+import com.aelitis.azureus.core.security.*;
 import com.aelitis.azureus.core.util.AZ3Functions;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 import com.aelitis.azureus.core.util.bloom.BloomFilter;
@@ -231,6 +175,7 @@ BuddyPlugin
 	private StringParameter 		nick_name_param;
 	private StringListParameter 	online_status_param;
 	private BooleanParameter 		enable_chat_notifications; 
+	private StringParameter 		cat_pub;
 
 	private boolean			ready_to_publish;
 	private publishDetails	current_publish		= new publishDetails();
@@ -439,11 +384,11 @@ BuddyPlugin
 		
 			// default published cats
 		
-		final StringParameter cat_pub = config.addStringParameter2( "azbuddy.enable_cat_pub", "azbuddy.enable_cat_pub", "" );
+		cat_pub = config.addStringParameter2( "azbuddy.enable_cat_pub", "azbuddy.enable_cat_pub", "" );
 		
 		cat_pub.setGenerateIntermediateEvents( false );
 		
-		setPublicCats( cat_pub.getValue());
+		setPublicCats( cat_pub.getValue(), false );
 		
 		cat_pub.addListener(
 			new ParameterListener()
@@ -452,7 +397,7 @@ BuddyPlugin
 				parameterChanged(
 					Parameter 	param ) 
 				{
-					setPublicCats( cat_pub.getValue());
+					setPublicCats( cat_pub.getValue(), false);
 				}
 			});
 		
@@ -623,18 +568,6 @@ BuddyPlugin
 				{
 					boolean enabled = enabled_param.getValue();
 
-					if (param != null && !enabled) {
-						UIInstance[] uis = plugin_interface.getUIManager().getUIInstances();
-						if (uis != null && uis.length > 0) {
-							int i = promptUserOnDisable(uis[0]);
-  						if (i != 0) {
-    						enabled_param.setValue(true);
-    						fireEnabledStateChanged();
-  							return;
-  						}
-						}
-					}
-					
 					nick_name_param.setEnabled( enabled );
 					
 						// only toggle overall state on a real change
@@ -730,38 +663,11 @@ BuddyPlugin
 					public void parameterChanged(
 							String parameterName) 
 					{
-						boolean enabled = COConfigurationManager.getBooleanParameter(parameterName);
-						if (enabled) {
-							fireEnabledStateChanged();
-							return;
-						}
-
-						if (promptUserOnDisable(ui) != 0) {
-							plugin_interface.getPluginState().setDisabled(false);
-							plugin_interface.getPluginState().setLoadedAtStartup(true);
-						} else {
-							fireEnabledStateChanged();
-						}
+						fireEnabledStateChanged();
 					}
 				});
 	}
 	
-	protected int
-	promptUserOnDisable(UIInstance ui)
-	{
-		if ("az2".equals(COConfigurationManager.getStringParameter("ui", "az3"))) {
-			return 0;
-		}
-		LocaleUtilities localeUtil = plugin_interface.getUtilities().getLocaleUtilities();
-		return ui.promptUser(
-				localeUtil.getLocalisedMessageText("azbuddy.ui.dialog.disable.title"),
-				localeUtil.getLocalisedMessageText("azbuddy.ui.dialog.disable.text"),
-				new String[] {
-					localeUtil.getLocalisedMessageText("Button.yes"),
-					localeUtil.getLocalisedMessageText("Button.no"),
-				}, 1);
-	}
-
 	public void
 	showConfig()
 	{
@@ -1008,13 +914,41 @@ BuddyPlugin
 	{
 		cat = normaliseCat( cat );
 		
-		return( !public_categories.contains( cat ));
+		return( public_categories.contains( cat ));
 	}
 	
+	public void
+	addPublicCategory(
+		String	cat )
+	{
+		cat = normaliseCat( cat );
+		
+		Set<String> new_cats = new HashSet( public_categories );
+		
+		if ( new_cats.add( cat )){
+		
+			setPublicCats( new_cats, true );
+		}
+	}
+	
+	public void
+	removePublicCategory(
+		String	cat )
+	{
+		cat = normaliseCat( cat );
+		
+		Set<String> new_cats = new HashSet( public_categories );
+		
+		if ( new_cats.remove( cat )){
+		
+			setPublicCats( new_cats, true );
+		}
+	}
 	
 	protected void
 	setPublicCats(
-		String	str )
+		String	str,
+		boolean	persist )
 	{
 		Set<String>	new_pub_cats = new HashSet<String>();
 		
@@ -1030,6 +964,14 @@ BuddyPlugin
 			}
 		}
 		
+		setPublicCats( new_pub_cats, persist );
+	}
+	
+	protected void
+	setPublicCats(
+		Set<String>	new_pub_cats,
+		boolean		persist )
+	{
 		if ( !public_categories.equals( new_pub_cats )){
 			
 			Set<String> removed = new HashSet<String>( public_categories );
@@ -1037,6 +979,18 @@ BuddyPlugin
 			removed.removeAll( new_pub_cats );
 			
 			public_categories = new_pub_cats;
+			
+			if ( persist ){
+				
+				String cat_str = "";
+				
+				for ( String s: public_categories ){
+					
+					cat_str += (cat_str.length()==0?"":",") + s;
+				}
+				
+				cat_pub.setValue( cat_str );
+			}
 			
 			List<BuddyPluginBuddy> buds = getBuddies();
 			
@@ -1890,7 +1844,7 @@ BuddyPlugin
 		
 		if ( ddb != null ){
 			
-			boolean	restarting = AzureusCoreFactory.getSingleton().isRestarting();
+			boolean	restarting = AzureusCoreFactory.isCoreAvailable() ? AzureusCoreFactory.getSingleton().isRestarting() : false;
 			
 			logMessage( "   closing buddy connections" );
 			
@@ -2010,70 +1964,96 @@ BuddyPlugin
 			List	buddies_config = (List)map.get( "friends" );
 				
 			if ( buddies_config != null ){
-							
-				for (int i=0;i<buddies_config.size();i++){
 					
-					Object o = buddies_config.get(i);
-		
-					if ( o instanceof Map ){
-						
-						Map	details = (Map)o;
-						
-						String	key = new String((byte[])details.get( "pk" ));
-						
-						List	recent_ygm = (List)details.get( "ygm" );
-											
-						String	nick = decodeString((byte[])details.get( "n" ));
-						
-						Long	l_seq = (Long)details.get( "ls" );
-						
-						int	last_seq = l_seq==null?0:l_seq.intValue();
-						
-						Long	l_lo = (Long)details.get( "lo" );
-						
-						long	last_time_online = l_lo==null?0:l_lo.longValue();
+				if ( buddies_config.size() == 0 ){
 					
-						if ( last_time_online > now ){
+					deleteConfig();
+					
+				}else{
+					for (int i=0;i<buddies_config.size();i++){
+						
+						Object o = buddies_config.get(i);
+			
+						if ( o instanceof Map ){
 							
-							last_time_online = now;
-						}
-						
-						Long l_subsystem = (Long)details.get( "ss" );
-						
-						int	subsystem = l_subsystem==null?SUBSYSTEM_AZ2:l_subsystem.intValue();
-						
-						Long l_ver = (Long)details.get("v");
-						
-						int	ver = l_ver==null?VERSION_INITIAL:l_ver.intValue();
-													
-						String	loc_cat = decodeString((byte[])details.get( "lc" ));
-						String	rem_cat = decodeString((byte[])details.get( "rc" ));
-						
-						BuddyPluginBuddy buddy = new BuddyPluginBuddy( this, subsystem, true, key, nick, ver, loc_cat, rem_cat, last_seq, last_time_online, recent_ygm );
-						
-						byte[]	ip_bytes = (byte[])details.get( "ip" );
-						
-						if ( ip_bytes != null ){
+							Map	details = (Map)o;
 							
-							try{
-								InetAddress ip = InetAddress.getByAddress( ip_bytes );
+							Long	l_ct = (Long)details.get( "ct" );
+							
+							long	created_time = l_ct==null?now:l_ct.longValue();
+							
+							if ( created_time > now ){
 								
-								int	tcp_port = ((Long)details.get( "tcp" )).intValue();
-								int	udp_port = ((Long)details.get( "udp" )).intValue();
-								
-								buddy.setCachedStatus( ip, tcp_port, udp_port );
-								
-							}catch( Throwable e ){
+								created_time = now;
 							}
+							
+							String	key = new String((byte[])details.get( "pk" ));
+							
+							List	recent_ygm = (List)details.get( "ygm" );
+												
+							String	nick = decodeString((byte[])details.get( "n" ));
+							
+							Long	l_seq = (Long)details.get( "ls" );
+							
+							int	last_seq = l_seq==null?0:l_seq.intValue();
+							
+							Long	l_lo = (Long)details.get( "lo" );
+							
+							long	last_time_online = l_lo==null?0:l_lo.longValue();
+						
+							if ( last_time_online > now ){
+								
+								last_time_online = now;
+							}
+							
+							Long l_subsystem = (Long)details.get( "ss" );
+							
+							int	subsystem = l_subsystem==null?SUBSYSTEM_AZ2:l_subsystem.intValue();
+							
+							if (subsystem == SUBSYSTEM_AZ3) {
+								continue;
+							}
+							
+							Long l_ver = (Long)details.get("v");
+							
+							int	ver = l_ver==null?VERSION_INITIAL:l_ver.intValue();
+														
+							String	loc_cat = decodeString((byte[])details.get( "lc" ));
+							String	rem_cat = decodeString((byte[])details.get( "rc" ));
+							
+							BuddyPluginBuddy buddy = new BuddyPluginBuddy( this, created_time, subsystem, true, key, nick, ver, loc_cat, rem_cat, last_seq, last_time_online, recent_ygm );
+							
+							byte[]	ip_bytes = (byte[])details.get( "ip" );
+							
+							if ( ip_bytes != null ){
+								
+								try{
+									InetAddress ip = InetAddress.getByAddress( ip_bytes );
+									
+									int	tcp_port = ((Long)details.get( "tcp" )).intValue();
+									int	udp_port = ((Long)details.get( "udp" )).intValue();
+									
+									buddy.setCachedStatus( ip, tcp_port, udp_port );
+									
+								}catch( Throwable e ){
+								}
+							}
+							
+							logMessage( "Loaded buddy " + buddy.getString());
+							
+							buddies.add( buddy );
+							
+							buddies_map.put( key, buddy );
 						}
-						
-						logMessage( "Loaded buddy " + buddy.getString());
-						
-						buddies.add( buddy );
-						
-						buddies_map.put( key, buddy );
 					}
 				}
+			}
+			
+			int	num_buddies = buddies.size();
+			
+			for ( BuddyPluginBuddy b: buddies ){
+				
+				b.setInitialStatus( now, num_buddies );
 			}
 		}
 	}
@@ -2123,6 +2103,8 @@ BuddyPlugin
 					
 					Map	map = new HashMap();
 				
+					map.put( "ct", new Long( buddy.getCreatedTime()));
+					
 					map.put( "pk", buddy.getPublicKey());
 				
 					List	ygm = buddy.getYGMMarkers();
@@ -2178,9 +2160,16 @@ BuddyPlugin
 				
 				Map	map = new HashMap();
 				
-				map.put( "friends", buddies_config );
+				if ( buddies_config.size() > 0 ){
 				
-				writeConfig( map );
+					map.put( "friends", buddies_config );
+				
+					writeConfig( map );
+					
+				}else{
+					
+					deleteConfig();
+				}
 				
 				config_dirty = false;
 			}
@@ -2248,7 +2237,7 @@ BuddyPlugin
 			if ( buddy_to_return == null ){
 				
 				buddy_to_return = 
-					new BuddyPluginBuddy( this, subsystem, authorised, key, null, VERSION_CURRENT, null, null, 0, 0, null );
+					new BuddyPluginBuddy( this, SystemTime.getCurrentTime(), subsystem, authorised, key, null, VERSION_CURRENT, null, null, 0, 0, null );
 				
 				buddies.add( buddy_to_return );
 				
@@ -2313,11 +2302,25 @@ BuddyPlugin
 		writeConfigFile( config_file, map );
 	}
 	
+	protected void
+	deleteConfig()
+	{
+		File	config_file = new File( plugin_interface.getUtilities().getAzureusUserDir(), "friends.config" );
+		
+		Utilities utils = plugin_interface.getUtilities();
+			
+		plugin_interface.getUtilities().deleteResilientBEncodedFile(
+				config_file.getParentFile(), config_file.getName(), true );
+
+	}
+	
 	protected Map
 	readConfigFile(
 		File		name )
 	{
-		Map map = plugin_interface.getUtilities().readResilientBEncodedFile(
+		Utilities utils = plugin_interface.getUtilities();
+		
+		Map map = utils.readResilientBEncodedFile(
 						name.getParentFile(), name.getName(), true );
 		
 		if ( map == null ){
@@ -2333,8 +2336,10 @@ BuddyPlugin
 		File		name,
 		Map			data )
 	{
+		Utilities utils = plugin_interface.getUtilities();
+			
 		plugin_interface.getUtilities().writeResilientBEncodedFile(
-				name.getParentFile(), name.getName(), data, true );
+			name.getParentFile(), name.getName(), data, true );
 		
 		return( name.exists());
 	}
@@ -2460,7 +2465,9 @@ BuddyPlugin
 			
 			period += random.nextInt( 2*60*1000 );
 			
-			if ( last_check > now || now - last_check > period ){
+				// last check may be in the future as we defer checks for seemingly inactive buddies
+			
+			if ( now - last_check > period ){
 				
 				if ( !buddy.statusCheckActive()){
 			
@@ -3702,11 +3709,7 @@ BuddyPlugin
 								reportActivity(
 									String	str )
 								{
-									if ( 	str.indexOf( " found " ) == -1 &&
-											str.indexOf( " is dead " ) == -1 ){
-						
-										log( "    MagnetDownload: " + str );
-									}
+									log( "    MagnetDownload: " + str );
 								}
 								
 								public void
@@ -3720,8 +3723,15 @@ BuddyPlugin
 									InetSocketAddress	address )
 								{
 								}
+								
+								public boolean 
+								verbose() 
+								{
+									return( false );
+								}
 							},
 							hash,
+							"",
 							new InetSocketAddress[0],
 							timeout );
 						

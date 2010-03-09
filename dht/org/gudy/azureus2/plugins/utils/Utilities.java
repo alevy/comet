@@ -35,16 +35,16 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploaderFactory;
 import org.gudy.azureus2.plugins.utils.search.SearchException;
+import org.gudy.azureus2.plugins.utils.search.SearchInitiator;
 import org.gudy.azureus2.plugins.utils.search.SearchProvider;
-import org.gudy.azureus2.plugins.utils.security.SESecurityManager;
-import org.gudy.azureus2.plugins.utils.xml.rss.RSSFeed;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentFactory;
+import org.gudy.azureus2.plugins.utils.security.*;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionException;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionManager;
+import org.gudy.azureus2.plugins.utils.xml.simpleparser.*;
+import org.gudy.azureus2.plugins.utils.xml.rss.*;
 
 public interface 
 Utilities 
@@ -289,6 +289,12 @@ Utilities
  		Map		data,
  		boolean	use_backup );	
 	
+	public void
+ 	deleteResilientBEncodedFile(
+ 		File	parent_dir,
+ 		String	file_name,
+ 		boolean	use_backup );
+	
 	/**
 	 * Compares two version strings for order. 
 	 * Returns a negative integer, zero, or a positive integer as the first 
@@ -340,6 +346,38 @@ Utilities
 	
 		throws SearchException;
 
+	public SearchInitiator
+	getSearchInitiator()
+	
+		throws SearchException;
+	
+	public SubscriptionManager
+	getSubscriptionManager()
+	
+		throws SubscriptionException;
+	
+	public boolean
+	isFeatureEnabled(
+		String					feature_id,
+		Map<String,Object>		feature_properties );
+	
+	public void
+	registerFeatureEnabler(
+		FeatureEnabler	enabler );
+	
+	public void
+	unregisterFeatureEnabler(
+		FeatureEnabler	enabler );
+	
+	public interface
+	FeatureEnabler
+	{
+		public boolean
+		isFeatureEnabled(
+			String					requester_id,
+			String					feature_id,
+			Map<String,Object>		feature_properties );
+	}
 }
 
 

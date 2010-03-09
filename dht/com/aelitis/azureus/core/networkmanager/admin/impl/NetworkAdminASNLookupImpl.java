@@ -35,16 +35,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import javax.naming.NamingEnumeration;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
+import javax.naming.*;
+import javax.naming.directory.*;
 
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;
 
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminException;
+import com.aelitis.azureus.core.util.DNSUtils;
 
 public class 
 NetworkAdminASNLookupImpl 
@@ -211,11 +210,7 @@ NetworkAdminASNLookupImpl
 		DirContext context = null;
 		
 		try{
-			Hashtable env = new Hashtable();
-			
-			env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-			
-			context = new InitialDirContext(env);
+			context = DNSUtils.getInitialDirContext();
 			
 			Attributes attrs = context.getAttributes( query, new String[]{ "TXT" });
 			
@@ -306,7 +301,7 @@ NetworkAdminASNLookupImpl
 				
 				if ( line_number == 1 ){
 					
-					keywords.add( token.toLowerCase());
+					keywords.add( token.toLowerCase( MessageText.LOCALE_ENGLISH ));
 					
 				}else{
 					

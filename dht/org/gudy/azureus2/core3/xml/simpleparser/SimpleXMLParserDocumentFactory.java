@@ -21,8 +21,7 @@
  
 package org.gudy.azureus2.core3.xml.simpleparser;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;

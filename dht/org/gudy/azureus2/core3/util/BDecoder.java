@@ -22,13 +22,7 @@
 
 package org.gudy.azureus2.core3.util;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -45,10 +39,13 @@ import java.util.Map;
  */
 public class BDecoder 
 {
+	private static final int MAX_BYTE_ARRAY_SIZE	= 8*1024*1024;
+	private static final int MAX_MAP_KEY_SIZE		= 64*1024;
+	
 	private static final boolean TRACE	= false;
 	
 	private boolean recovery_mode;
-	
+
 	public static Map
 	decode(
 		byte[]	data )
@@ -103,14 +100,24 @@ public class BDecoder
 	{ 
 		return( decode(new BDecoderInputStreamArray(data, offset, length )));
 	}
-	
+
 	public Map 
 	decodeStream(
 		BufferedInputStream data )  
 
 		throws IOException 
 	{
-		Object	res = decodeInputStream(new BDecoderInputStreamStream(data), 0);
+		return decodeStream(data, true);
+	}
+
+	public Map 
+	decodeStream(
+		BufferedInputStream data,
+		boolean internKeys)  
+
+		throws IOException 
+	{
+		Object	res = decodeInputStream(data, 0, internKeys);
 
 		if ( res == null ){
 
@@ -126,11 +133,11 @@ public class BDecoder
 
 	private Map 
 	decode(
-		BDecoderInputStream data ) 
+		InputStream data ) 
 
 		throws IOException 
 	{
-		Object res = decodeInputStream(data, 0);
+		Object res = decodeInputStream(data, 0, true);
 
 		if ( res == null ){
 
@@ -143,11 +150,15 @@ public class BDecoder
 
 		return((Map)res );
 	}
+	
+	// reuseable buffer for keys, recursion is not an issue as this is only a temporary buffer that gets converted into a string immediately
+	private ByteBuffer keyBytesBuffer = ByteBuffer.allocate(32);
 
 	private Object 
 	decodeInputStream(
-		BDecoderInputStream dbis,
-		int			nesting ) 
+		InputStream dbis,
+		int			nesting,
+		boolean internKeys) 
 
 		throws IOException 
 	{
@@ -175,31 +186,53 @@ public class BDecoder
 			try{
 					//get the key   
 				
-				byte[] tempByteArray = null;
-
-				while ((tempByteArray = (byte[]) decodeInputStream(dbis, nesting+1)) != null) {
-
-						//decode some more
-
-					Object value = decodeInputStream(dbis,nesting+1);
+				while (true) {
 					
-						// value interning is too CPU-intensive, let's skip that for now
-						//if(value instanceof byte[] && ((byte[])value).length < 17)
-						//value = StringInterner.internBytes((byte[])value);
+					dbis.mark(Integer.MAX_VALUE);
 
+					tempByte = dbis.read();
+					if(tempByte == 'e' || tempByte == -1)
+						break; // end of map
 
-						// keys often repeat a lot - intern to save space
+					dbis.reset();
 					
-					String	key = null;//StringInterner.intern( tempByteArray );
+					// decode key strings manually so we can reuse the bytebuffer
 
-					if ( key == null ){
+					int keyLength = (int)getNumberFromStream(dbis, ':');
 
-						CharBuffer	cb = Constants.BYTE_CHARSET.decode(ByteBuffer.wrap(tempByteArray));
-
-						key = new String(cb.array(),0,cb.limit());
-
-						key = StringInterner.intern( key );
+					ByteBuffer keyBytes;
+					if(keyLength < keyBytesBuffer.capacity())
+					{
+						keyBytes = keyBytesBuffer;
+						keyBytes.position(0).limit(keyLength);
+					} else {
+						keyBytes = keyBytesBuffer = ByteBuffer.allocate(keyLength);
 					}
+					
+					getByteArrayFromStream(dbis, keyLength, keyBytes.array());						
+
+					if ( keyLength > MAX_MAP_KEY_SIZE ){
+						String msg = "dictionary key is too large, max=" + MAX_MAP_KEY_SIZE + ": value=" + new String( keyBytes.array(), 0, 128 );
+						System.err.println( msg );
+						throw( new IOException( msg ));
+					}
+					
+					CharBuffer	cb = Constants.BYTE_CHARSET.decode(keyBytes);
+					String key = new String(cb.array(),0,cb.limit());
+					
+					// keys often repeat a lot - intern to save space
+					if (internKeys)
+						key = StringInterner.intern( key );
+					
+					
+
+					//decode value
+
+					Object value = decodeInputStream(dbis,nesting+1,internKeys);
+					
+					// value interning is too CPU-intensive, let's skip that for now
+					/*if(value instanceof byte[] && ((byte[])value).length < 17)
+					value = StringInterner.internBytes((byte[])value);*/
 
 					if ( TRACE ){
 						System.out.println( key + "->" + value + ";" );
@@ -213,12 +246,15 @@ public class BDecoder
 					
 					if ( value == null ){
 						
-						Debug.out( "Invalid encoding - value not serialsied for '" + key + "' - ignoring" );
+						System.err.println( "Invalid encoding - value not serialsied for '" + key + "' - ignoring" );
 						
 						break;
 					}
 				
-					tempMap.put( key, value);
+					if ( tempMap.put( key, value) != null ){
+						
+						Debug.out( "BDecoder: key '" + key + "' already exists!" );
+					}
 				}
 
 				/*	
@@ -264,7 +300,7 @@ public class BDecoder
 					//create the key
 				
 				Object tempElement = null;
-				while ((tempElement = decodeInputStream(dbis, nesting+1)) != null) {
+				while ((tempElement = decodeInputStream(dbis, nesting+1, internKeys)) != null) {
 						//add the element
 					tempList.add(tempElement);
 				}
@@ -297,7 +333,7 @@ public class BDecoder
 			return null;
 
 		case 'i' :
-			return new Long(getNumberFromStream(dbis, 'e'));
+			return Long.valueOf(getNumberFromStream(dbis, 'e'));
 
 		case '0' :
 		case '1' :
@@ -367,7 +403,7 @@ public class BDecoder
 	
 	private long 
 	getNumberFromStream(
-		BDecoderInputStream 	dbis, 
+		InputStream 	dbis, 
 		char 					parseChar) 
 
 		throws IOException 
@@ -398,25 +434,52 @@ public class BDecoder
 			return(0);
 		}
 
-		return( parseLong( numberChars, 0, pos ));
+		try{
+			return( parseLong( numberChars, 0, pos ));
+			
+		}catch( NumberFormatException e ){
+			
+			String temp = new String( numberChars, 0, pos );
+			
+			try{
+				double d = Double.parseDouble( temp );
+				
+				long l = (long)d;
+				
+				Debug.out( "Invalid number '" + temp + "' - decoding as " + l + " and attempting recovery" );
+					
+				return( l );
+				
+			}catch( Throwable f ){
+			}
+			
+			throw( e );
+		}
 	}
 
+	// This is similar to Long.parseLong(String) source
+	// It is also used in projects external to azureus2/azureus3 hence it is public
 	public static long
 	parseLong(
 		char[]	chars,
 		int		start,
 		int		length )
 	{
-		long result = 0;
-
-		boolean negative = false;
-
-		int 	i 	= start;
-		int	max = start + length;
-
-		long limit;
-
 		if ( length > 0 ){
+			// Short Circuit: We don't support octal parsing, so if it 
+			// starts with 0, it's 0
+			if (chars[start] == '0') {
+
+				return 0;
+			}
+
+			long result = 0;
+
+			boolean negative = false;
+
+			int 	i 	= start;
+
+			long limit;
 
 			if ( chars[i] == '-' ){
 
@@ -427,9 +490,26 @@ public class BDecoder
 				i++;
 
 			}else{
+				// Short Circuit: If we are only processing one char,
+				// and it wasn't a '-', just return that digit instead
+				// of doing the negative junk
+				if (length == 1) {
+					int digit = chars[i] - '0';
+
+					if ( digit < 0 || digit > 9 ){
+
+						throw new NumberFormatException(new String(chars,start,length));
+
+					}else{
+
+						return digit;
+					}
+				}
 
 				limit = -Long.MAX_VALUE;
 			}
+
+			int	max = start + length;
 
 			if ( i < max ){
 
@@ -472,25 +552,26 @@ public class BDecoder
 
 				result -= digit;
 			}
+
+			if ( negative ){
+
+				if ( i > start+1 ){
+
+					return result;
+
+				}else{	/* Only got "-" */
+
+					throw new NumberFormatException(new String(chars,start,length));
+				}
+			}else{
+
+				return -result;
+			}  
 		}else{
 
 			throw new NumberFormatException(new String(chars,start,length));
 		}
 
-		if ( negative ){
-
-			if ( i > start+1 ){
-
-				return result;
-
-			}else{	/* Only got "-" */
-
-				throw new NumberFormatException(new String(chars,start,length));
-			}
-		}else{
-
-			return -result;
-		}  
 	}
 
 
@@ -542,7 +623,7 @@ public class BDecoder
 
 	private byte[] 
 	getByteArrayFromStream(
-		BDecoderInputStream dbis )
+		InputStream dbis )
 		
 		throws IOException 
 	{
@@ -555,25 +636,29 @@ public class BDecoder
 		// note that torrent hashes can be big (consider a 55GB file with 2MB pieces
 		// this generates a pieces hash of 1/2 meg
 
-		if ( length > 8*1024*1024 ){
+		if ( length > MAX_BYTE_ARRAY_SIZE ){
 
 			throw( new IOException( "Byte array length too large (" + length + ")"));
 		}
-
+		
 		byte[] tempArray = new byte[length];
+		
+		getByteArrayFromStream(dbis, length, tempArray);		
+		
+		return tempArray; 
+	}
+
+	private void getByteArrayFromStream(InputStream dbis, int length, byte[] targetArray) throws IOException {
+
 		int count = 0;
 		int len = 0;
 		//get the string
-		while (count != length && (len = dbis.read(tempArray, count, length - count)) > 0) {
+		while (count != length && (len = dbis.read(targetArray, count, length - count)) > 0)
 			count += len;
-		}
 
-		if ( count != tempArray.length ){
-			throw( new IOException( "BDecoder::getByteArrayFromStream: truncated"));
-		}
-
-		return tempArray;
-	}
+		if (count != length)
+			throw (new IOException("BDecoder::getByteArrayFromStream: truncated"));
+	}	
 
 	public void
 	setRecoveryMode(
@@ -700,7 +785,7 @@ public class BDecoder
 
 				}catch( Throwable e ){
 
-					Debug.printStackTrace(e);
+					System.err.println(e);
 				}
 			}else if ( value instanceof Map ){
 
@@ -736,7 +821,7 @@ public class BDecoder
 
 				}catch( Throwable e ){
 
-					Debug.printStackTrace(e);
+					System.err.println(e);
 				}
 			}else if ( value instanceof Map ){
 
@@ -772,7 +857,7 @@ public class BDecoder
 			e.printStackTrace();
 		}
 	}
-
+/*
 	private interface
 	BDecoderInputStream
 	{
@@ -884,11 +969,11 @@ public class BDecoder
 			is.reset();
 		}
 	}
-
+*/
 	private class
 	BDecoderInputStreamArray
 	
-		implements BDecoderInputStream
+		extends InputStream
 	{
 		final private byte[]		buffer;
 		final private int			count;

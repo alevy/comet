@@ -23,11 +23,8 @@ package org.gudy.azureus2.ui.swt.config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.ui.swt.Utils;
@@ -63,6 +60,10 @@ public class StringParameter extends Parameter{
     		// Text widget, at least on Windows, forces the preferred width
     		// to the width of the text inside of it
     		// Fix this by forcing to LayoutData's minWidth
+    		if ( hHint==0 && !isVisible()){
+    			
+    			return( new Point( 0, 0 ));
+    		}
     		Point pt = super.computeSize(wHint, hHint, changed);
     		
     		if (wHint == SWT.DEFAULT) {
@@ -73,6 +74,8 @@ public class StringParameter extends Parameter{
       			}
       		}
     		}
+    		
+ 
     		return pt;
     	}
     };

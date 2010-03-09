@@ -21,21 +21,12 @@
  */
 package com.aelitis.azureus.core.update.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Properties;
 
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.SystemProperties;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
 import org.gudy.azureus2.platform.unix.ScriptAfterShutdown;
@@ -43,10 +34,11 @@ import org.gudy.azureus2.platform.win32.access.AEWin32Access;
 import org.gudy.azureus2.platform.win32.access.AEWin32Manager;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 import org.gudy.azureus2.update.UpdaterUtils;
 
 import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreException;
 import com.aelitis.azureus.core.update.AzureusRestarter;
 
 public class 
@@ -93,13 +85,40 @@ AzureusRestarterImpl
 		
 		restarted	= true;
 		
+		try{
+		
+			runUpdateProcess( update_only, false );
+			
+		}catch( Throwable e ){
+			// already logged
+		}
+	}
+	
+	public void
+	updateNow()
+	
+		throws AzureusCoreException
+	{
+		if ( !runUpdateProcess( true, true )){
+			
+			throw( new AzureusCoreException( "Failed to invoke restart" ));
+		}
+	}
+	
+	private boolean
+	runUpdateProcess(
+		boolean		update_only,
+		boolean		no_wait )
+	
+		throws AzureusCoreException
+	{
 		PluginInterface pi = azureus_core.getPluginManager().getPluginInterfaceByID( "azupdater" );
 		
 		if ( pi == null ){
 			Logger.log(new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_ERROR,
-					"Can't restart, mandatory plugin 'azupdater' not found"));
+					"Can't update/restart, mandatory plugin 'azupdater' not found"));
 			
-			return;
+			throw( new AzureusCoreException( "mandatory plugin 'azupdater' not found" ));
 		}
 		
 		String	updater_dir = pi.getPluginDirectoryName();
@@ -137,13 +156,13 @@ AzureusRestarterImpl
 	  	FileOutputStream	fos	= null;
 	  	
 	  	try{
-	  		Properties	restart_properties = new Properties();
+	  		Properties	update_properties = new Properties();
 	  	
 	  		long	max_mem = Runtime.getRuntime().maxMemory();
 	  			  			  			
-	  		restart_properties.put( "max_mem", ""+max_mem );
-	  		restart_properties.put( "app_name", SystemProperties.getApplicationName());
-	  		restart_properties.put( "app_entry", SystemProperties.getApplicationEntryPoint());
+	  		update_properties.put( "max_mem", ""+max_mem );
+	  		update_properties.put( "app_name", SystemProperties.getApplicationName());
+	  		update_properties.put( "app_entry", SystemProperties.getApplicationEntryPoint());
 	  		
 	  		if ( System.getProperty( "azureus.nativelauncher" ) != null || Constants.isOSX ){
 	  			//NOTE: new 2306 osx bundle now sets azureus.nativelauncher=1, but older bundles dont
@@ -153,7 +172,7 @@ AzureusRestarterImpl
 		  			
 		  			if ( cmd != null ){
 		  				
-		  				restart_properties.put( "app_cmd", cmd );
+		  				update_properties.put( "app_cmd", cmd );
 		  			}
 	  			}catch( Throwable e ){
 	  				
@@ -161,12 +180,16 @@ AzureusRestarterImpl
 	  			}
 	  		}	  		
 	  		
+	  		if ( no_wait ){
+	  			
+	  			update_properties.put( "no_wait", "1" );
+	  		}
 	  		
 	  		fos	= new FileOutputStream( new File( user_path, UPDATE_PROPERTIES ));
 	  		
 	  			// this handles unicode chars by writing \\u escapes
 	  		
-	  		restart_properties.store(fos, "Azureus restart properties" );
+	  		update_properties.store(fos, "Azureus restart properties" );
 	  		
 	  	}catch( Throwable e ){
 	  		
@@ -191,7 +214,7 @@ AzureusRestarterImpl
 	  	
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		
-		restartAzureus(new PrintWriter(os) {
+		boolean res = restartAzureus(new PrintWriter(os) {
 			public void println(String str) {
 				// we intercept these logs and log immediately
 				Logger.log(new LogEvent(LOGID, str));
@@ -205,9 +228,11 @@ AzureusRestarterImpl
 		
 		if ( bytes.length > 0 ){
 			
-			Logger.log(new LogEvent(LOGID, "AzureusRestarter: extra log - "
+			Logger.log(new LogEvent(LOGID, "AzureusUpdater: extra log - "
 					+ new String(bytes)));
 		}
+		
+		return( res );
 	}
   
 	
@@ -246,59 +271,25 @@ AzureusRestarterImpl
 
 	private String getExeUpdater(PrintWriter log) {
 		try {
-			boolean isVistaOrHigher = false;
-			if (Constants.isWindows) {
-				Float ver = null;
-				try {
-					ver = new Float(System.getProperty("os.version"));
-				} catch (Exception e) {
-				}
-				isVistaOrHigher = ver != null && ver.floatValue() >= 6;
-			}
 
-			// Vista test: We will need to run an elevated EXE updater if we can't
-			//             write to the program dir.
+				// Vista test: 	We will need to run an elevated EXE updater if we can't
+				//            	write to the program dir.
 			
-			if (isVistaOrHigher) {
-				if (AzureusCoreFactory.getSingleton().getPluginManager().getDefaultPluginInterface().getUpdateManager().getInstallers().length > 0) {
-					log.println("Vista restart w/Updates.. checking if EXE needed");
-					try {
-						final File writeFile = FileUtil.getApplicationFile("write.dll");
-						// should fail if no perms, but sometimes it's created in
-						// virtualstore (if ran from java(w).exe for example)
-						FileOutputStream fos = new FileOutputStream(writeFile);
-						fos.write(32);
-						fos.close();
-
-						writeFile.delete();
-
-						File renameFile = FileUtil.getApplicationFile("License.txt");
-						if (renameFile != null && renameFile.exists()) {
-							File oldFile = FileUtil.getApplicationFile("License.txt");
-							String oldName = renameFile.getName();
-							File newFile = new File(renameFile.getParentFile(), oldName
-									+ ".bak");
-							renameFile.renameTo(newFile);
-
-							if (oldFile.exists()) {
-								log.println("Requiring EXE because rename test failed");
-								return EXE_UPDATER; 
-							}
-
-							newFile.renameTo(oldFile);
-						} else {
-							log.println("Could not try Permission Test 2. File " + renameFile
-									+ " not found");
-						}
-
-					} catch (Exception e) {
-						log.println("Permission Test Failed. " + e.getMessage() + ";"
-								+ Debug.getCompressedStackTrace());
-						return EXE_UPDATER; 
+			if (Constants.isWindowsVistaOrHigher ){
+				
+				if (PluginInitializer.getDefaultInterface().getUpdateManager().getInstallers().length > 0) {
+					
+					log.println( "Vista restart w/Updates.. checking if EXE needed" );
+					
+					if ( !FileUtil.canReallyWriteToAppDirectory()){
+						
+						log.println( "It appears we can't write to the application dir, using the EXE updater" );
+						
+						return( EXE_UPDATER );
 					}
 				}
 			}
-		} catch (Throwable t) {
+		}catch ( Throwable t ){ 
 			// ignore vista test
 		}
 
@@ -446,7 +437,7 @@ AzureusRestarterImpl
   
 
 
-  public void 
+  public boolean 
   restartAzureus(
       PrintWriter log, 
     String    mainClass,
@@ -456,19 +447,19 @@ AzureusRestarterImpl
   {
     if(Constants.isOSX){
     	
-    	restartAzureus_OSX(log,mainClass,properties,parameters);
+    	return( restartAzureus_OSX(log,mainClass,properties,parameters));
     	
     }else if( Constants.isUnix ){
     	
-    	restartAzureus_Unix(log,mainClass,properties,parameters);
+    	return( restartAzureus_Unix(log,mainClass,properties,parameters));
       
     }else{
     	
-    	restartAzureus_win32(log,mainClass,properties,parameters,update_only);
+    	return( restartAzureus_win32(log,mainClass,properties,parameters,update_only));
     }
   }
   
-  private void 
+  private boolean 
   restartAzureus_win32(
       PrintWriter log,
     String    mainClass,
@@ -494,14 +485,16 @@ AzureusRestarterImpl
 		}
 
 		if (exeUpdater != null) {
-			restartViaEXE(log, exeUpdater, properties, parameters, exec, update_only);
+			return( restartViaEXE(log, exeUpdater, properties, parameters, exec, update_only));
 		} else {
 			if (log != null) {
 				log.println("  " + exec);
 			}
 
 			if (!win32NativeRestart(log, exec)) {
-				javaSpawn(log, exec);
+				return( javaSpawn(log, exec));
+			}else{
+				return( true );
 			}
 		}
 	}
@@ -530,7 +523,7 @@ AzureusRestarterImpl
 		}
 	}
 
-	private void 
+	private boolean 
   restartAzureus_OSX(
       PrintWriter log,
     String mainClass,
@@ -550,7 +543,7 @@ AzureusRestarterImpl
     	 exec += " \"" + parameters[i] + "\"";
      }
 
-     runExternalCommandViaUnixShell( log, exec );
+     return( runExternalCommandViaUnixShell( log, exec ));
   }
   
   
@@ -565,7 +558,7 @@ AzureusRestarterImpl
 		return version;
   }
 
-  private void 
+  private boolean 
   restartAzureus_Unix(
     PrintWriter log,
   String    mainClass,
@@ -600,8 +593,10 @@ AzureusRestarterImpl
 					+ "echo \"Restarting Azureus..\"\n"
 					+ "$0\n");
 			ScriptAfterShutdown.setRequiresExit(true);
+			
+			return( true );
   	} else {
-  		runExternalCommandViaUnixShell( log, exec );
+  		return( runExternalCommandViaUnixShell( log, exec ));
   	}
   }
   
@@ -728,7 +723,7 @@ AzureusRestarterImpl
   */
   
   
-  private void runExternalCommandViaUnixShell( PrintWriter log, String command ) {
+  private boolean runExternalCommandViaUnixShell( PrintWriter log, String command ) {
   	String[] to_run = new String[3];
   	to_run[0] = "/bin/sh";
   	to_run[1] = "-c";
@@ -739,6 +734,8 @@ AzureusRestarterImpl
   	try {
   		//NOTE: no logging done here, as we need the method to return right away, before the external process completes
   		Runtime.getRuntime().exec( to_run );	
+  		
+  		return( true );
   	}
   	catch(Throwable t) {
   		if( log != null )  {
@@ -749,6 +746,8 @@ AzureusRestarterImpl
   		else {
   			t.printStackTrace();
   		}
+  		
+  		return( false );
   	}
   }
   

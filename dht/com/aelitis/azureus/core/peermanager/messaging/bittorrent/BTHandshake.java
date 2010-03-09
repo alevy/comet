@@ -22,13 +22,10 @@
 
 package com.aelitis.azureus.core.peermanager.messaging.bittorrent;
 
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.RawMessage;
-import com.aelitis.azureus.core.peermanager.messaging.Message;
-import com.aelitis.azureus.core.peermanager.messaging.MessageException;
+import com.aelitis.azureus.core.peermanager.messaging.*;
 import com.aelitis.azureus.core.peermanager.utils.PeerClassifier;
 
 
@@ -58,6 +55,23 @@ public class BTHandshake implements BTMessage, RawMessage {
 		  //BT_RESERVED[7] = (byte)(BT_RESERVED[7] & 0xFE);
 		  AZ_RESERVED[7] = (byte)(AZ_RESERVED[7] & 0xFE);		  
 	  }
+  }
+  
+  public static final boolean FAST_EXTENSION_ENABLED = true;
+  
+  public static void setFastExtensionEnabled(boolean enabled) {
+	  if (enabled) {
+		  //BT_RESERVED[7] = (byte)(BT_RESERVED[7] | 0x04);
+		  AZ_RESERVED[7] = (byte)(AZ_RESERVED[7] | 0x04);
+	  }
+	  else {
+		  //BT_RESERVED[7] = (byte)(BT_RESERVED[7] & 0xF3);
+		  AZ_RESERVED[7] = (byte)(AZ_RESERVED[7] & 0xF3);		  
+	  }
+  }
+  
+  static{
+	  setFastExtensionEnabled( FAST_EXTENSION_ENABLED );
   }
   
   private DirectByteBuffer buffer = null;

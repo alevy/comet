@@ -22,10 +22,8 @@ package org.gudy.azureus2.ui.swt.views.tableitems.files;
 
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
+import org.gudy.azureus2.plugins.ui.tables.*;
+
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
 
 /**
@@ -57,14 +55,15 @@ public class PercentItem
     long percent = 0;
 	
     if (fileInfo != null ){
+    	long bytesDownloaded = fileInfo.getDownloaded();
 		
-		if ( fileInfo.getDownloaded() < 0 ){
+		if ( bytesDownloaded < 0 ){
 			
 			percent = -1; // unknown skeleton value
 			
 		}else if ( fileInfo.getLength() != 0 ){
 
-			percent = (1000 * fileInfo.getDownloaded()) / fileInfo.getLength();
+			percent = (1000 * bytesDownloaded) / fileInfo.getLength();
 		}
 	  
     }else{

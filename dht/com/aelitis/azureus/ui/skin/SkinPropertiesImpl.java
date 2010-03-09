@@ -19,10 +19,7 @@
  */
 package com.aelitis.azureus.ui.skin;
 
-import java.util.Collections;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -83,7 +80,7 @@ public class SkinPropertiesImpl
 		}
 		ResourceBundle bundle = ResourceBundle.getBundle(skinPath + mainSkinFile,
 				Locale.getDefault(), classLoader);
-		rb = new IntegratedResourceBundle(bundle, Collections.EMPTY_MAP);
+		rb = new IntegratedResourceBundle(bundle, Collections.EMPTY_MAP, 1200);
 		rb.setUseNullList(true);
 
 		String sFiles = rb.getString("skin.include", null);

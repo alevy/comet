@@ -22,12 +22,10 @@
 
 package com.aelitis.azureus.core.peermanager.unchoker;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.net.InetAddress;
+import java.util.*;
 
+import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerListener;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
@@ -115,6 +113,7 @@ public class UnchokerUtilTest {
       
       final PEPeerStats[] f_stats = { null };
       final PEPeer peer = new PEPeer() {
+    	public InetAddress getAlternativeIPv6() { return null; }
         public void addListener( PEPeerListener listener ){}
         public void removeListener( PEPeerListener listener ){}
         public int getPeerState(){  return PEPeer.TRANSFERING;  }
@@ -134,6 +133,8 @@ public class UnchokerUtilTest {
         public void setSnubbed(boolean b){}
         public boolean isChokingMe(){ return true;  }
         public boolean isChokedByMe() {  return true;  }
+        public void sendChoke(){}
+        public void sendUnChoke(){}
         public boolean isInteresting(){  return true;  }
         public boolean isInterested(){  return true;  }
         public boolean isRelativeSeed() { return false; }
@@ -193,6 +194,10 @@ public class UnchokerUtilTest {
 		clearRequestHint()
 		{
 		}
+		public void sendRejectRequest(DiskManagerReadRequest request) {
+			// TODO Auto-generated method stub
+			
+		}
 		public void setUploadRateLimitBytesPerSecond( int bytes ){}
 		public void setDownloadRateLimitBytesPerSecond( int bytes ){}
 		public int getUploadRateLimitBytesPerSecond(){ return 0 ;}
@@ -237,6 +242,10 @@ public class UnchokerUtilTest {
 			// TODO Auto-generated method stub
 			
 		}
+		public boolean isUnchokeOverride() {
+			// TODO Auto-generated method stub
+			return false;
+		}
       };
       
      f_stats[0] = new PEPeerStats() {
@@ -279,6 +288,15 @@ public class UnchokerUtilTest {
     return peers;
   }
   
-  
-  
+  public static class
+  UF
+  	extends UnchokerFactory
+  {
+	public Unchoker 
+	getUnchoker(
+		boolean seeding) 
+	{
+		return super.getUnchoker(seeding);
+	}  
+  } 
 }

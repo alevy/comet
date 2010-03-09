@@ -25,23 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.StringTokenizer;
+import java.net.*;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -54,52 +39,20 @@ import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.security.SESecurityManager;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerDataProvider;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerException;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraper;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperFactory;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerFactoryImpl;
-import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerImpl;
-import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerResponseImpl;
-import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerResponsePeerImpl;
-import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerScraperResponseImpl;
+import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.tracker.client.impl.*;
 import org.gudy.azureus2.core3.tracker.protocol.PRHelpers;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyAnnounce;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyAnnounce2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyConnect;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyError;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestAnnounce;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestAnnounce2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestConnect;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketTracker;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPTrackerCodecs;
+import org.gudy.azureus2.core3.tracker.protocol.udp.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.AddressUtils;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.core3.util.Timer;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
 import org.gudy.azureus2.plugins.clientid.ClientIDException;
 import org.gudy.azureus2.plugins.clientid.ClientIDGenerator;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
@@ -112,11 +65,8 @@ import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
 import com.aelitis.azureus.core.peermanager.utils.PeerClassifier;
-import com.aelitis.net.udp.uc.PRUDPPacket;
-import com.aelitis.net.udp.uc.PRUDPPacketHandler;
-import com.aelitis.net.udp.uc.PRUDPPacketHandlerException;
-import com.aelitis.net.udp.uc.PRUDPPacketHandlerFactory;
-import com.aelitis.net.udp.uc.PRUDPPacketRequest;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.net.udp.uc.*;
 
 
 /**
@@ -128,9 +78,9 @@ import com.aelitis.net.udp.uc.PRUDPPacketRequest;
  */
 public class 
 TRTrackerBTAnnouncerImpl
-	extends TRTrackerAnnouncerImpl
+	implements TRTrackerAnnouncerHelper
 {
-	
+	public final static LogIDs LOGID = LogIDs.TRACKER;
 		
 	private static final int OVERRIDE_PERIOD			= 10*1000;
 	 
@@ -138,6 +88,10 @@ TRTrackerBTAnnouncerImpl
 	
 	public static String 	UDP_REALM = "UDP Tracker";
 	
+	private static int userMinInterval = 0;
+	private static int userMaxNumwant = 100;
+	private static boolean udpAnnounceEnabled = true;
+
     static{
 	  	PRUDPTrackerCodecs.registerCodecs();
 	  	COConfigurationManager.addAndFireParameterListeners(
@@ -161,24 +115,27 @@ TRTrackerBTAnnouncerImpl
 	private static Map			tracker_report_map	= new HashMap();
 	
     
-	private TOTorrent				torrent;
+	private TOTorrent					torrent;
+	private TOTorrentAnnounceURLSet[]	announce_urls;
+	
+	private TRTrackerAnnouncerImpl.Helper	helper;
 	
 	private TimerEvent				current_timer_event;
 	private TimerEventPerformer		timer_event_action;
 	
-	protected int				tracker_state 			= TS_INITIALISED;
+	protected int				tracker_state 			= TRTrackerAnnouncer.TS_INITIALISED;
 	private String				tracker_status_str		= "";
 	private TRTrackerAnnouncerResponseImpl	last_response			= null;
 	private long				last_update_time_secs;
 	private long				current_time_to_wait_secs;
 	private boolean				manual_control;
   
-	private long min_interval = 0;
-	private static int userMinInterval = 0;
-	private static int userMaxNumwant = 100;
-	private static boolean udpAnnounceEnabled = true;
+	private long		tracker_interval;
+	private long		tracker_min_interval;
 	
-  
+	
+	private long 		min_interval = 0;
+	
 	private int  failure_added_time = 0;
     private long failure_time_last_updated = 0;
 	
@@ -208,12 +165,7 @@ TRTrackerBTAnnouncerImpl
 	private String tracker_peer_id_str = "&peer_id=";
 	
 	private byte[] data_peer_id;
-	
-	private String 					key_id			= "";
-	private static final int	   	key_id_length	= 8;
-	private int						key_udp;
-	
-	
+		
 	
 	private int announceCount;
 	private int announceFailCount;
@@ -236,35 +188,22 @@ TRTrackerBTAnnouncerImpl
 	private boolean	destroyed;
 		
 
-
-	static final String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-	public static String
-	createKeyID()
-	{
-		String	key_id = "";
-		
-		for (int i = 0; i < key_id_length; i++) {
-			int pos = (int) ( Math.random() * chars.length());
-		    key_id +=  chars.charAt(pos);
-		}
-		
-		return( key_id );
-	}
 	
   public 
   TRTrackerBTAnnouncerImpl(
-   	TOTorrent		_torrent,
-	String[]		_peer_networks,
-	boolean			_manual ) 
+   	TOTorrent						_torrent,
+   	TOTorrentAnnounceURLSet[]		_announce_urls,
+	String[]						_peer_networks,
+	boolean							_manual,
+	TRTrackerAnnouncerImpl.Helper	_helper )
   	
   	throws TRTrackerAnnouncerException
   {
-	super( _torrent );
-	 
 	torrent			= _torrent;
+	announce_urls	= _announce_urls;
   	peer_networks	= _peer_networks;
   	manual_control	= _manual;
+  	helper			= _helper;
   	
 		//Get the Tracker url
 		
@@ -273,24 +212,20 @@ TRTrackerBTAnnouncerImpl
 		//Create our unique peerId
 	
 	try{
-	    tracker_peer_id = ClientIDManagerImpl.getSingleton().generatePeerID( torrent, true );
+		data_peer_id = helper.getPeerID();
 	
 	    if ( COConfigurationManager.getBooleanParameter("Tracker Separate Peer IDs")){
-	    	
-	    	data_peer_id = ClientIDManagerImpl.getSingleton().generatePeerID( torrent, false );
+	       	
+	    	tracker_peer_id = ClientIDManagerImpl.getSingleton().generatePeerID( torrent, true );
 	    	
 	    }else{
 	    	
-	    	data_peer_id	= tracker_peer_id;
+	    	tracker_peer_id	= data_peer_id;
 	    }
 	}catch( ClientIDException e ){
 
 		 throw( new TRTrackerAnnouncerException( "TRTrackerAnnouncer: Peer ID generation fails", e ));
 	}
-
-    key_id	= createKeyID();
-    
-	key_udp	= (int)(Math.random() *  0xFFFFFFFFL );
 	
 	try {
 	
@@ -342,7 +277,7 @@ TRTrackerBTAnnouncerImpl
 						
 					current_time_to_wait_secs	= secs_to_wait;
 							
-					if ( tracker_state == TS_STOPPED ){
+					if ( tracker_state == TRTrackerAnnouncer.TS_STOPPED ){
 						
 						// System.out.println( "\tperform: stopped so no more events");
 						
@@ -408,24 +343,15 @@ TRTrackerBTAnnouncerImpl
   	
 	public void
 	cloneFrom(
-		TRTrackerAnnouncer	_other )
+		TRTrackerBTAnnouncerImpl	other )
 	{
-		if ( _other instanceof TRTrackerBTAnnouncerImpl ){
-			
-			TRTrackerBTAnnouncerImpl	other = (TRTrackerBTAnnouncerImpl)_other;
-			
-			data_peer_id			= other.data_peer_id;
-			tracker_peer_id			= other.tracker_peer_id;
-			tracker_peer_id_str		= other.tracker_peer_id_str;
-			tracker_id				= other.tracker_id;
-			key_id					= other.key_id;
-			key_udp					= other.key_udp;
-	
-			announce_data_provider	= other.announce_data_provider;
-		}else{
-			
-			Debug.out( "Incompatible type" );
-		}
+		helper					= other.helper;
+		data_peer_id			= other.data_peer_id;
+		tracker_peer_id			= other.tracker_peer_id;
+		tracker_peer_id_str		= other.tracker_peer_id_str;
+		tracker_id				= other.tracker_id;
+
+		announce_data_provider	= other.announce_data_provider;
 	}
 	
 	protected long
@@ -467,7 +393,7 @@ TRTrackerBTAnnouncerImpl
 				if (Logger.isEnabled())
 					Logger.log(new LogEvent(torrent, LOGID,
 							"MIN INTERVAL CALC: override, perc = 0"));
-      	return REFRESH_MINIMUM_SECS;
+      	return TRTrackerAnnouncer.REFRESH_MINIMUM_SECS;
       }
 
       if (rd_override_percentage != 100) {
@@ -478,9 +404,9 @@ TRTrackerBTAnnouncerImpl
     		}
       }
 									
-      if ( secs_to_wait < REFRESH_MINIMUM_SECS ){
+      if ( secs_to_wait < TRTrackerAnnouncer.REFRESH_MINIMUM_SECS ){
 	  			
-        secs_to_wait = REFRESH_MINIMUM_SECS;
+        secs_to_wait = TRTrackerAnnouncer.REFRESH_MINIMUM_SECS;
       }
       
       //use 'min interval' for calculation
@@ -518,6 +444,12 @@ TRTrackerBTAnnouncerImpl
   		return( tracker_status_str );
   	}
   	
+	public TRTrackerAnnouncer
+	getBestAnnouncer()
+	{
+		return( this );
+	}
+	
 	public void
 	setRefreshDelayOverrides(
 		int		percentage )
@@ -526,9 +458,9 @@ TRTrackerBTAnnouncerImpl
 			
 			percentage = 100;
 			
-		}else if ( percentage < 0 ){
+		}else if ( percentage < 50 ){
 			
-			percentage	= 0;
+			percentage	= 50;
 		}
 		
 		long	now = SystemTime.getCurrentTime();
@@ -581,6 +513,24 @@ TRTrackerBTAnnouncerImpl
 		}
 	}
 	
+	public boolean
+	isUpdating()
+	{
+		return( update_in_progress );
+	}
+	
+	public long
+	getInterval()
+	{
+		return( tracker_interval );
+	}
+	
+	public long
+	getMinInterval()
+	{
+		return( tracker_min_interval );
+	}
+	
 	public int
 	getTimeUntilNextUpdate()
 	{
@@ -616,7 +566,7 @@ TRTrackerBTAnnouncerImpl
         
         if ( now < last_update_time_secs )  force = true;  //time went backwards
 
-        long	effective_min = min_interval_override>0?min_interval_override:REFRESH_MINIMUM_SECS;
+        long	effective_min = min_interval_override>0?min_interval_override:TRTrackerAnnouncer.REFRESH_MINIMUM_SECS;
         
 		if ( manual_control || force || ( now - last_update_time_secs >= effective_min )){
 			
@@ -714,29 +664,29 @@ TRTrackerBTAnnouncerImpl
 					// if manual control then we assume that a stop request is required, even if we
 					// are in an init state. needed for explicit stop based on URL
 				
-				if ( tracker_state == TS_INITIALISED && !manual_control ){
+				if ( tracker_state == TRTrackerAnnouncer.TS_INITIALISED && !manual_control ){
 					
 						// never started
 					
-					tracker_state = TS_STOPPED;
+					tracker_state = TRTrackerAnnouncer.TS_STOPPED;
 					
-				}else if ( tracker_state != TS_STOPPED ){
+				}else if ( tracker_state != TRTrackerAnnouncer.TS_STOPPED ){
 			
 					response = stopSupport();
 					
 					if ( response.getStatus() == TRTrackerAnnouncerResponse.ST_ONLINE ){
 												
-						tracker_state = TS_STOPPED;
+						tracker_state = TRTrackerAnnouncer.TS_STOPPED;
 						
 					}else{
 						
 							// just have one go at sending a stop event as we don't want to sit here
 							// forever trying to send stop to a stuffed tracker
 							
-						tracker_state = TS_STOPPED;
+						tracker_state = TRTrackerAnnouncer.TS_STOPPED;
 					}
 				}	
-			}else if ( tracker_state == TS_INITIALISED ){
+			}else if ( tracker_state == TRTrackerAnnouncer.TS_INITIALISED ){
 							
 					// always go through the "start" phase, even if we're already complete
 					// as some trackers insist on the initial "start"
@@ -745,7 +695,7 @@ TRTrackerBTAnnouncerImpl
 					
 				if ( response.getStatus() == TRTrackerAnnouncerResponse.ST_ONLINE ){
 						
-					tracker_state = TS_DOWNLOADING;
+					tracker_state = TRTrackerAnnouncer.TS_DOWNLOADING;
 				}
 			}else if ( completed ){
 				
@@ -762,10 +712,10 @@ TRTrackerBTAnnouncerImpl
 						
 						complete_reported	= true;
 				
-						tracker_state = TS_COMPLETED;
+						tracker_state = TRTrackerAnnouncer.TS_COMPLETED;
 					}
 				}else{
-					tracker_state = TS_COMPLETED;
+					tracker_state = TRTrackerAnnouncer.TS_COMPLETED;
 					
 					response = updateSupport();
 				}
@@ -792,7 +742,7 @@ TRTrackerBTAnnouncerImpl
 						// will fail peers that don't start with a "started" event after a 
 						// tracker restart
 					
-					tracker_state	= TS_INITIALISED;
+					tracker_state	= TRTrackerAnnouncer.TS_INITIALISED;
 					
 				}else{
 	    	       	    
@@ -816,7 +766,7 @@ TRTrackerBTAnnouncerImpl
 				
 				last_response = response;
 				
-				listeners.dispatch( LDT_TRACKER_RESPONSE, response );
+				helper.informResponse( this, response );
 				
 				return( response.getTimeToWait());
 			}
@@ -976,6 +926,13 @@ TRTrackerBTAnnouncerImpl
 		  
 		  URL	request_url = null;
 		  
+		  if ( last_failure_resp != null ){
+			  
+			  	// report this now as it is about to be lost
+			  
+			  helper.informResponse( this, last_failure_resp );
+		  }
+		  
 		  try{
 		  
 		  	request_url = constructUrl(evt,original_url);
@@ -1104,7 +1061,7 @@ TRTrackerBTAnnouncerImpl
 	  int	num_want = calculateNumWant() * 4;
 
 
-      TRTrackerAnnouncerResponsePeer[]	cached_peers = getPeersFromCache(num_want);      
+      TRTrackerAnnouncerResponsePeer[]	cached_peers = helper.getPeersFromCache(num_want);      
       
       if ( cached_peers.length > 0 ){
 
@@ -1124,6 +1081,8 @@ TRTrackerBTAnnouncerImpl
   		throws Exception
 	{
    			// set context in case authentication dialog is required
+ 		
+ 		boolean errorLevel = true;
     	
  		try{
 	    	TorrentUtils.setTLSTorrentHash( torrent_hash );
@@ -1133,9 +1092,10 @@ TRTrackerBTAnnouncerImpl
 	 		for (int i=0;i<2;i++){	
 	 		
 		  		String	failure_reason = null;
-		  	
+
+				String	protocol = reqUrl.getProtocol();
+
 				try{  
-					String	protocol = reqUrl.getProtocol();
 					
 					if (Logger.isEnabled()){
 						Logger.log(new LogEvent(torrent, LOGID,
@@ -1256,6 +1216,25 @@ TRTrackerBTAnnouncerImpl
 						failure_reason = exceptionToString( e );
 						
 					}
+				}catch( IOException e ){
+					
+					if(e instanceof UnknownHostException)
+						errorLevel = false;
+					
+		     		if ( i == 0 && protocol.toLowerCase().startsWith( "http" )){
+		      			
+		      			URL retry_url = UrlUtils.getIPV4Fallback( reqUrl );
+		      			
+		      			if ( retry_url != null ){
+		      				
+		      				reqUrl = retry_url;
+		      				
+		      				continue;
+		      			}
+		     		}
+		     		
+		     		failure_reason = exceptionToString( e );
+		     		
 				}catch (Exception e){
 			  
 			  		// e.printStackTrace();
@@ -1266,10 +1245,11 @@ TRTrackerBTAnnouncerImpl
 				if ( failure_reason != null && failure_reason.indexOf("401" ) != -1 ){
 						
 					failure_reason = "Tracker authentication failed";
+					errorLevel = false;
 				}
 			
 				if (Logger.isEnabled())
-					Logger.log(new LogEvent(torrent, LOGID, LogEvent.LT_ERROR,
+					Logger.log(new LogEvent(torrent, LOGID, errorLevel ? LogEvent.LT_ERROR : LogEvent.LT_WARNING,
 							"Exception while processing the Tracker Request for " + reqUrl + ": "
 									+ failure_reason));
 				
@@ -1290,16 +1270,23 @@ TRTrackerBTAnnouncerImpl
  	protected String
  	announceHTTP(
  		URL[]					tracker_url,	// overwritten if redirected
- 		URL						reqUrl,
+ 		URL						original_reqUrl,
  		ByteArrayOutputStream	message )
  	
  		throws IOException
  	{ 		
- 		TRTrackerUtils.checkForBlacklistedURLs( reqUrl );
+ 		TRTrackerUtils.checkForBlacklistedURLs( original_reqUrl );
  		
- 		reqUrl = TRTrackerUtils.adjustURLForHosting( reqUrl );
+ 		URL reqUrl = TRTrackerUtils.adjustURLForHosting( original_reqUrl );
  		
  		reqUrl = AddressUtils.adjustURL( reqUrl );
+ 		
+ 		if ( reqUrl != original_reqUrl ){
+			if (Logger.isEnabled()){
+				Logger.log(new LogEvent(torrent, LOGID,
+						"    HTTP: url adjusted to " + reqUrl ));
+			}
+ 		}
  		
  		String	failure_reason = null;
  		
@@ -1500,7 +1487,7 @@ TRTrackerBTAnnouncerImpl
  	
  	protected String
  	announceUDP(
- 		URL						reqUrl,
+ 		URL						original_reqUrl,
 		ByteArrayOutputStream	message,
 		boolean                 is_probe )
  	
@@ -1508,8 +1495,15 @@ TRTrackerBTAnnouncerImpl
  	{
  		long timeout = is_probe?10000:PRUDPPacket.DEFAULT_UDP_TIMEOUT;
  		
- 		reqUrl = TRTrackerUtils.adjustURLForHosting( reqUrl );
+ 		URL reqUrl = TRTrackerUtils.adjustURLForHosting( original_reqUrl );
 
+ 		if ( reqUrl != original_reqUrl ){
+			if (Logger.isEnabled()){
+				Logger.log(new LogEvent(torrent, LOGID,
+						"    UDP: url adjusted to " + reqUrl ));
+			}
+ 		}
+ 		
  		String	failure_reason = null;
 		
  		PasswordAuthentication	auth = null;	
@@ -1641,7 +1635,7 @@ TRTrackerBTAnnouncerImpl
 								getLongURLParam( url_str, "downloaded" ), 
 								event,
 								ip,
-								key_udp,
+								helper.getUDPKey(),
 								(int)getLongURLParam( url_str, "numwant" ), 
 								getLongURLParam( url_str, "left" ), 
 								(short)getLongURLParam( url_str, "port" ),
@@ -1999,7 +1993,7 @@ TRTrackerBTAnnouncerImpl
 	
     if ( COConfigurationManager.getBooleanParameter("Tracker Key Enable Client", true )){
       	
-      	request.append( "&key=").append(key_id);
+      	request.append( "&key=").append( helper.getTrackerKey());
     }
     
 	String	ext = announce_data_provider.getExtensions();
@@ -2065,7 +2059,9 @@ TRTrackerBTAnnouncerImpl
 
     int MAX_PEERS = 100;
     
-    int maxAllowed = announce_data_provider.getMaxNewConnectionsAllowed();
+    	// ask for a bit more than our max to allow for connections failures
+    
+    int maxAllowed = 3*announce_data_provider.getMaxNewConnectionsAllowed()/2;
     
     if ( maxAllowed < 0 || maxAllowed > MAX_PEERS ) {
       maxAllowed = MAX_PEERS;
@@ -2102,13 +2098,13 @@ TRTrackerBTAnnouncerImpl
 	}
 	
 	public URL 
-	getTrackerUrl() 
+	getTrackerURL() 
 	{
 		return( lastUsedUrl );
 	} 
   
 	public void 
-	setTrackerUrl(
+	setTrackerURL(
 		URL new_url ) 
 	{
 		try{
@@ -2130,6 +2126,19 @@ TRTrackerBTAnnouncerImpl
 		}
 	}
   
+	public void
+	setAnnounceSets(
+		TOTorrentAnnounceURLSet[]		_set )
+	{
+		announce_urls = _set;
+	}
+	
+	public TOTorrentAnnounceURLSet[]
+	getAnnounceSets()
+	{
+		return( announce_urls );
+	}
+	
 	public void
 	resetTrackerUrl(
 		boolean		shuffle )
@@ -2178,10 +2187,8 @@ TRTrackerBTAnnouncerImpl
 			trackerUrlLists = new ArrayList(1);
 	  
 				//This entry is present on multi-tracker torrents
-	  
-			TOTorrentAnnounceURLSet[]	announce_sets = torrent.getAnnounceURLGroup().getAnnounceURLSets();
-	       
-			if ( announce_sets.length == 0 ){
+	  	       
+			if ( announce_urls.length == 0 ){
 	  	
 					//If not present, we use the default specification
 					
@@ -2199,11 +2206,11 @@ TRTrackerBTAnnouncerImpl
 	  			
 					//Ok we have a multi-tracker torrent
 				
-				for(int i = 0 ; i < announce_sets.length ; i++){
+				for(int i = 0 ; i < announce_urls.length ; i++){
 					
 				  	//Each list contains a list of urls
 				  
-					URL[]	urls = announce_sets[i].getAnnounceURLs();
+					URL[]	urls = announce_urls[i].getAnnounceURLs();
 					
 				 	List random_urls = new ArrayList();
 				 	
@@ -2356,7 +2363,7 @@ TRTrackerBTAnnouncerImpl
 					long	time_to_wait;
 										
 					try {
-						time_to_wait = ((Long) metaData.get("interval")).longValue();
+						tracker_interval = time_to_wait = ((Long) metaData.get("interval")).longValue();
 						
 						Long raw_min_interval = (Long) metaData.get("min interval");
 
@@ -2372,7 +2379,7 @@ TRTrackerBTAnnouncerImpl
 						}
 
 						if (raw_min_interval != null) {
-							min_interval = raw_min_interval.longValue();
+							tracker_min_interval = min_interval = raw_min_interval.longValue();
 							
 							// ignore useless values
 							// Note: Many trackers set min_interval and interval the same.
@@ -2401,6 +2408,12 @@ TRTrackerBTAnnouncerImpl
 								}
 								min_interval = 0;
 							}
+						} else {
+							// tracker owners complain we announce too much but then never
+							// implement "min interval".  So take it into our own hands
+							// and enforce a min_interval of interval when there is no
+							// "min interval"
+							min_interval = time_to_wait > 30 ? time_to_wait - 10 : time_to_wait;
 						}
 						
 						if(userMinInterval != 0)
@@ -2446,8 +2459,9 @@ TRTrackerBTAnnouncerImpl
 				   
 				   	//System.out.println("Response from Announce: " + new String(data));
 				   
-				   Long incomplete_l 	= (Long)metaData.get("incomplete");
-				   Long complete_l 		= (Long)metaData.get("complete");
+				   Long incomplete_l 	= getLong( metaData, "incomplete");
+				   Long complete_l 		= getLong( metaData, "complete");
+				   Long downloaded_l 	= getLong( metaData, "downloaded");
 				   
 				   if ( incomplete_l != null || complete_l != null  ){
 				   
@@ -2497,6 +2511,11 @@ TRTrackerBTAnnouncerImpl
 						List meta_peers = (List)meta_peers_peek;
 
 						int peers_length = meta_peers.size();
+
+				  	 if (Logger.isEnabled()) {
+								Logger.log(new LogEvent(torrent, LOGID,
+										"ANNOUNCE CompactPeers2: num=" + peers_length));
+					   }
 
 						if ( peers_length > 1 ){
 								// calculate average rtt to use for those with no rtt
@@ -2689,7 +2708,7 @@ TRTrackerBTAnnouncerImpl
 					    		
 					    		int		tcp_port 	= ((tcp_bytes[0]&0xff) << 8 ) + (tcp_bytes[1]&0xff );
 	                
-					    		byte[]	peer_peer_id = getAnonymousPeerId( ip, tcp_port );
+					    		byte[]	peer_peer_id = TRTrackerAnnouncerImpl.getAnonymousPeerId( ip, tcp_port );
 	
 					    		int		udp_port 	= 0;
 					    		
@@ -2791,7 +2810,12 @@ TRTrackerBTAnnouncerImpl
 							//for every peer
 						
 						int peers_length = meta_peers.size();
-							
+
+				  	 if (Logger.isEnabled()) {
+								Logger.log(new LogEvent(torrent, LOGID,
+										"ANNOUNCE old style non-compact: num=" + peers_length));
+					   }
+						
 						if ( crypto_flags != null && peers_length != crypto_flags.length ){
 							
 							crypto_flags = null;
@@ -2844,7 +2868,7 @@ TRTrackerBTAnnouncerImpl
 	                
 									// Debug.out(ip + ": tracker did not give peerID in reply");
 
-									peer_peer_id = getAnonymousPeerId( ip, peer_port );
+									peer_peer_id = TRTrackerAnnouncerImpl.getAnonymousPeerId( ip, peer_port );
 									
 									// System.out.println("generated peer id" + new String(peerId) + "/" + ByteFormatter.nicePrint( peerId, true ));
 								}else{
@@ -2907,6 +2931,12 @@ TRTrackerBTAnnouncerImpl
 
 				    	int	peer_number = 0;
 				    	
+					  	 if (Logger.isEnabled()) {
+									Logger.log(new LogEvent(torrent, LOGID,
+											"ANNOUNCE CompactPeers: num=" + (meta_peers.length/entry_size)));
+						   }
+
+				    	
 				    	for (int i=0;i<meta_peers.length;i+=entry_size){
 				    		
 				    		peer_number++;
@@ -2929,7 +2959,7 @@ TRTrackerBTAnnouncerImpl
 				    			continue;
 				    		}
                 
-				    		byte[]	peer_peer_id = getAnonymousPeerId( ip, tcp_port );
+				    		byte[]	peer_peer_id = TRTrackerAnnouncerImpl.getAnonymousPeerId( ip, tcp_port );
 							
 				    		short 	protocol;
 				    		int		udp_port;
@@ -3026,7 +3056,7 @@ TRTrackerBTAnnouncerImpl
 								continue;
 							}
 							
-							byte[] peer_peer_id = getAnonymousPeerId( ip, tcp_port );
+							byte[] peer_peer_id = TRTrackerAnnouncerImpl.getAnonymousPeerId( ip, tcp_port );
 							
 							short protocol = DownloadAnnounceResultPeer.PROTOCOL_NORMAL;
 							
@@ -3046,7 +3076,7 @@ TRTrackerBTAnnouncerImpl
 					
 					valid_meta_peers.toArray(peers);
 					
-					addToTrackerCache( peers);
+					helper.addToTrackerCache( peers);
 					
 					TRTrackerAnnouncerResponseImpl resp = new TRTrackerAnnouncerResponseImpl( url, torrent_hash, TRTrackerAnnouncerResponse.ST_ONLINE, time_to_wait, peers );
           
@@ -3100,13 +3130,13 @@ TRTrackerBTAnnouncerImpl
 													? MessageText.getString("MyTorrentsView.peers")
 															+ " == " + incomplete + ". " : "") }));
 						} else {
-
+							
 							resp.setScrapeResult( complete, incomplete );
 
 							TRTrackerScraper scraper = TRTrackerScraperFactory.getSingleton();
 
 							if (scraper != null) {
-								TRTrackerScraperResponse scrapeResponse = scraper.scrape(this);
+								TRTrackerScraperResponse scrapeResponse = scraper.scrape( torrent, getTrackerURL());
 								if (scrapeResponse != null) {
 									long lNextScrapeTime = scrapeResponse.getNextScrapeStartTime();
 									long lNewNextScrapeTime = TRTrackerScraperResponseImpl.calcScrapeIntervalSecs(
@@ -3122,6 +3152,11 @@ TRTrackerBTAnnouncerImpl
 										scrapeResponse.setNextScrapeStartTime(lNewNextScrapeTime);
 
 									scrapeResponse.setSeedsPeers(complete, incomplete);
+
+									if ( downloaded_l != null ){
+										
+										scrapeResponse.setCompleted( downloaded_l.intValue());
+									}
 								}
 							}
 						}
@@ -3162,20 +3197,34 @@ TRTrackerBTAnnouncerImpl
 		return( new TRTrackerAnnouncerResponseImpl( url, torrent_hash, TRTrackerAnnouncerResponse.ST_OFFLINE, getErrorRetryInterval(), failure_reason ));
   	}
   	
+  	private Long
+  	getLong(
+  		Map		map,
+  		String	key )
+  	{
+  		Object o = map.get( key );
+  		
+  		if ( o instanceof Long ){
+  			
+  			return((Long)o);
+  		}
+  		
+  		return( null );
+  	}
+  	
 	protected void
 	informURLChange(
 		URL		old_url,
 		URL		new_url,
 		boolean	explicit  )
 	{
-		listeners.dispatch(	LDT_URL_CHANGED,
-							new Object[]{old_url, new_url, new Boolean(explicit)});
+		helper.informURLChange( old_url, new_url, explicit );
 	}
 	
 	protected void
 	informURLRefresh()
 	{
-		listeners.dispatch( LDT_URL_REFRESH, null );		
+		helper.informURLRefresh();	
 	}
 	
 	public TRTrackerAnnouncerResponse
@@ -3199,9 +3248,7 @@ TRTrackerBTAnnouncerImpl
 	destroy()
 	{       
 		destroyed	= true;
-		
-		TRTrackerAnnouncerFactoryImpl.destroy( this );
-		
+				
 		try{
 			this_mon.enter();
 			
@@ -3360,7 +3407,7 @@ TRTrackerBTAnnouncerImpl
 
 			l_peers.toArray( peers );
 			
-			addToTrackerCache( peers);
+			helper.addToTrackerCache( peers);
 		
 			if ( ps_enabled || peers.length > 0 || ext_peers.length == 0 ){
 				
@@ -3391,7 +3438,58 @@ TRTrackerBTAnnouncerImpl
 			tracker_status_str	= status + " (" + result.getURL() + ")";
 		}
 		
-		listeners.dispatch( LDT_TRACKER_RESPONSE, response );
+		helper.informResponse( this, response );
+	}
+	
+	public void 
+	addListener(
+		TRTrackerAnnouncerListener l )
+	{
+		helper.addListener( l );
+	}
+	
+	public void 
+	removeListener(
+		TRTrackerAnnouncerListener l )
+	{
+		helper.removeListener( l );
+	}
+	
+	public void 
+	setTrackerResponseCache(
+		Map map	)
+	{
+		helper.setTrackerResponseCache( map );
+	}
+	
+	public void 
+	removeFromTrackerResponseCache(
+		String ip, int tcpPort) 
+	{
+		helper.removeFromTrackerResponseCache( ip, tcpPort );
+	}
+	
+	public Map 
+	getTrackerResponseCache() 
+	{
+		return( helper.getTrackerResponseCache());
+	}
+	
+	public TrackerPeerSource 
+	getTrackerPeerSource(
+		TOTorrentAnnounceURLSet set) 
+	{
+		Debug.out( "not implemented" );
+		
+		return null;
+	}
+	
+	public TrackerPeerSource 
+	getCacheTrackerPeerSource()
+	{
+		Debug.out( "not implemented" );
+		
+		return null;
 	}
 	
 	public void 
@@ -3412,6 +3510,10 @@ TRTrackerBTAnnouncerImpl
 			writer.println( "last_update_secs: " + last_update_time_secs );
 			
 			writer.println( "secs_to_wait: " + current_time_to_wait_secs  + (manual_control?" - manual":""));
+			
+			writer.println( "t_interval: " + tracker_interval );
+			
+			writer.println( "t_min_interval: " + tracker_min_interval );
 			
 			writer.println( "min_interval: " + min_interval );
 			

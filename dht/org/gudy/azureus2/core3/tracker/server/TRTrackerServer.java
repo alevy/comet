@@ -21,6 +21,7 @@
 
 package org.gudy.azureus2.core3.tracker.server;
 
+import java.net.InetAddress;
 import java.util.Set;
 
 import org.gudy.azureus2.core3.util.Constants;
@@ -28,7 +29,7 @@ import org.gudy.azureus2.core3.util.Constants;
 public interface 
 TRTrackerServer 
 {
-	public static final String	DEFAULT_NAME	= Constants.AZUREUS_NAME;
+	public static final String	DEFAULT_NAME	= Constants.APP_NAME;
 	
 	public static final int DEFAULT_MIN_RETRY_DELAY 		= 120;
 	public static final int DEFAULT_MAX_RETRY_DELAY 		= 3600;
@@ -54,6 +55,9 @@ TRTrackerServer
 	public String
 	getHost();
 	
+	public InetAddress
+	getBindIP();
+	
 	public void
 	setReady();
 	
@@ -63,7 +67,11 @@ TRTrackerServer
 	
 	public boolean
 	isSSL();
-		
+	
+	public void
+	setEnableKeepAlive(
+		boolean	enable );
+	
 	public TRTrackerServerTorrent
 	permit(
 		String		originator,
@@ -110,6 +118,15 @@ TRTrackerServer
 	public void
 	removeListener(
 		TRTrackerServerListener	l );
+	
+	public void
+	addListener2(
+		TRTrackerServerListener2	l );
+		
+	public void
+	removeListener2(
+		TRTrackerServerListener2	l );
+	
 	
 	public void
 	addRequestListener(

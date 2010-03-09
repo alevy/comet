@@ -23,9 +23,8 @@ package org.gudy.azureus2.plugins;
 
 import java.util.Properties;
 
-import org.gudy.azureus2.plugins.installer.PluginInstaller;
-import org.gudy.azureus2.pluginsimpl.local.PluginManagerDefaultsImpl;
-import org.gudy.azureus2.pluginsimpl.local.PluginManagerImpl;
+import org.gudy.azureus2.pluginsimpl.local.*;
+import org.gudy.azureus2.plugins.installer.*;
 
 /**
  * This class allows Azureus to be started as an embedded component and also allows plugins to

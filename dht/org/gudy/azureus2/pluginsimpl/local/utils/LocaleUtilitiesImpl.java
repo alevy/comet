@@ -26,26 +26,16 @@ package org.gudy.azureus2.pluginsimpl.local.utils;
  *
  */
 
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.PropertyResourceBundle;
-import java.util.ResourceBundle;
+import java.io.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.internat.LocaleUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.internat.*;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.utils.LocaleDecoder;
-import org.gudy.azureus2.plugins.utils.LocaleListener;
-import org.gudy.azureus2.plugins.utils.LocaleUtilities;
+
+import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.plugins.*;
 
 
 public class 

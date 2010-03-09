@@ -1,8 +1,7 @@
 package com.aelitis.azureus.core.speedmanager.impl.v2;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-
 import com.aelitis.azureus.core.speedmanager.SpeedManagerLimitEstimate;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
 
 /**
  * Created on Jul 30, 2007

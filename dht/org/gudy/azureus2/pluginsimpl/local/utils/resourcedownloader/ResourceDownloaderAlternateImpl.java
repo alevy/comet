@@ -27,16 +27,11 @@ package org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader;
  *
  */
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderCancelledException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 public class 
 ResourceDownloaderAlternateImpl 	

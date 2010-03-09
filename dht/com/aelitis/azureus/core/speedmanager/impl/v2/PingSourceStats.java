@@ -1,8 +1,8 @@
 package com.aelitis.azureus.core.speedmanager.impl.v2;
 
-import com.aelitis.azureus.core.speedmanager.SpeedManagerPingSource;
-import com.aelitis.azureus.core.util.average.Average;
 import com.aelitis.azureus.core.util.average.AverageFactory;
+import com.aelitis.azureus.core.util.average.Average;
+import com.aelitis.azureus.core.speedmanager.SpeedManagerPingSource;
 
 /**
  * Created on May 8, 2007

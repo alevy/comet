@@ -24,36 +24,20 @@ import java.util.Properties;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
-import org.gudy.azureus2.ui.swt.mainwindow.Colors;
-import org.gudy.azureus2.ui.swt.mainwindow.Cursors;
-import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
-import org.gudy.azureus2.ui.swt.mainwindow.SWTThreadAlreadyInstanciatedException;
+import org.gudy.azureus2.ui.swt.mainwindow.*;
+import org.gudy.azureus2.update.CorePatchLevel;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 
@@ -68,13 +52,24 @@ public class AboutWindow {
   static AEMonitor	class_mon	= new AEMonitor( "AboutWindow" );
   private static Shell instance;
 	private static Image imgSrc;
+	private static int paintColorTo = 0;
 
-  public static void show(final Display display) {
+  public static void show() {
+  	Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				_show();
+			}
+		});
+  }
+
+  private static void _show() {
     if(instance != null)
     {
         instance.open();
         return;
     }
+    
+    paintColorTo = 0;
 
     Properties properties = new Properties();
     try {
@@ -88,6 +83,7 @@ public class AboutWindow {
     final Shell window = ShellFactory.createMainShell((Constants.isOSX)
 				? SWT.DIALOG_TRIM : (SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL));
     Utils.setShellIcon(window);
+    final Display display = window.getDisplay();
 
     window.setText(MessageText.getString("MainWindow.about.title") + " " + Constants.AZUREUS_VERSION); //$NON-NLS-1$
     GridData gridData;
@@ -140,10 +136,27 @@ public class AboutWindow {
     label.setText(properties.getProperty("developers")); //$NON-NLS-1$ //$NON-NLS-2$
     label.setLayoutData(gridData = new GridData());
     
-    final Label labelImage = new Label(window, SWT.NONE);
-    labelImage.setImage(image);
+    final Canvas labelImage = new Canvas(window, SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
+    //labelImage.setImage(image);
     gridData = new GridData(GridData.HORIZONTAL_ALIGN_CENTER);
+    Rectangle imgBounds = image.getBounds();
+    gridData.widthHint = imgBounds.width;
+    gridData.heightHint = imgBounds.height;
     labelImage.setLayoutData(gridData);
+    labelImage.addPaintListener(new PaintListener() {
+			public void paintControl(PaintEvent e) {
+				Rectangle boundsColor = imgSrc.getBounds();
+				if (paintColorTo > 0) {
+					e.gc.drawImage(imgSrc, 0, 0, paintColorTo, boundsColor.height, 0, 0, paintColorTo, boundsColor.height);
+				}
+				Rectangle imgBounds = image.getBounds();
+				if (imgBounds.width - paintColorTo - 1 > 0) {
+					e.gc.drawImage(image, 
+							paintColorTo + 1, 0, imgBounds.width - paintColorTo - 1, imgBounds.height, 
+							paintColorTo + 1, 0, imgBounds.width - paintColorTo - 1, imgBounds.height);
+				}
+			}
+		});
   
     Group gTranslators = new Group(window, SWT.NULL);
     GridLayout gl = new GridLayout();
@@ -186,7 +199,8 @@ public class AboutWindow {
 				+ System.getProperty("os.name") + " v"
 				+ System.getProperty("os.version") + ", "
 				+ System.getProperty("os.arch") + "\n"
-				+ Constants.APP_NAME.charAt(0) + Constants.AZUREUS_VERSION + " " + COConfigurationManager.getStringParameter("ui"));
+				+ Constants.APP_NAME.charAt(0) + Constants.AZUREUS_VERSION + (Constants.AZUREUS_SUBVER.length()==0?"":("-"+Constants.AZUREUS_SUBVER)) + "/" + CorePatchLevel.getCurrentPatchLevel() + " " 
+				+ COConfigurationManager.getStringParameter("ui"));
     txtSysInfo.setLayoutData(gridData = new GridData(GridData.FILL_BOTH));
     if (window.getCaret() != null)
     	window.getCaret().setVisible(false);
@@ -194,10 +208,10 @@ public class AboutWindow {
     final String[][] link =
       { { "homepage", "sourceforge", "sourceforgedownloads", "bugreports", "forumdiscussion", "wiki" }, {
           "http://www.vuze.com",
-          "http://sourceforge.net/projects/azureus/",
+          "http://azureus.sourceforge.net",
           "http://sourceforge.net/project/showfiles.php?group_id=84122",
-          Constants.isCVSVersion() ? "http://forum.vuze.com/forum.jspa?forumID=4" : "http://sourceforge.net/tracker/?atid=575154&group_id=84122&func=browse",
-          "http://forum.vuze.com/index.jspa",
+          "http://forum.vuze.com/category.jspa?categoryID=3",
+          "http://forum.vuze.com",
           Constants.AZUREUS_WIKI }
     };
   
@@ -243,37 +257,28 @@ public class AboutWindow {
         }
     });
 
-    Thread updater =  new AEThread("Splash Screen Updater") {
-      public void runSupport() {        
+    AEThread2 updater =  new AEThread2("Splash Screen Updater", true) {
+      public void run() {        
         if(image == null || image.isDisposed())
           return;
         
-        final boolean finished[] = new boolean[1];
-        final int[] x = new int[1];
         final int maxX = image.getBounds().width;
         final int maxY = image.getBounds().height;
-        while(!finished[0]) {
+        while(paintColorTo < maxX) {
           if(image == null || image.isDisposed()) {
-            finished[0] = true;
+            paintColorTo = maxX;
             break;
           }
           if(display.isDisposed()) {
-            finished[0] = true;
+            paintColorTo = maxX;
             break;
           }
           Utils.execSWTThread(new AERunnable() {
             public void runSupport() {
               if(labelImage.isDisposed())
                 return;
-              GC gcImage = new GC(labelImage);
-              gcImage.setClipping(x[0],0,1,maxY);
-              gcImage.drawImage(imgSrc,0,0);
-              gcImage.dispose();
-              x[0]++;
-              if(x[0] >= maxX) {
-                finished[0] = true;
-                labelImage.setImage(imgSrc);
-              }
+              paintColorTo++;
+              labelImage.redraw(paintColorTo - 1, 0, 2, maxY, true);
             }
           });
           try {
@@ -308,7 +313,7 @@ public class AboutWindow {
   		new Display();
   		Colors.getInstance();
 			SWTThread.createInstance(null);
-			show(Display.getCurrent());
+			show();
 		} catch (SWTThreadAlreadyInstanciatedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

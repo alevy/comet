@@ -23,42 +23,20 @@
 package org.gudy.azureus2.ui.swt.update;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.ProgressBar;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AERunnableBoolean;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.LinkArea;
@@ -70,6 +48,13 @@ import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
+
+import org.gudy.azureus2.plugins.update.Update;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
+import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
 
 /**
  * @author Olivier Chalouhi
@@ -261,13 +246,15 @@ UpdateWindow
     link_area.getComponent().setLayoutData(fd);
     
     try {
-    	browser = new Browser(cInfoArea, Utils.getInitialBrowserStyle(SWT.BORDER));
-      fd = new FormData();
-      fd.top = new FormAttachment(0, 0);
-      fd.bottom = new FormAttachment(100, 0);
-      fd.right = new FormAttachment(100, 0);
-      fd.left = new FormAttachment(0, 0);
-      browser.setLayoutData(fd);
+    	browser = Utils.createSafeBrowser(cInfoArea, SWT.BORDER);
+    	if (browser != null) {
+        fd = new FormData();
+        fd.top = new FormAttachment(0, 0);
+        fd.bottom = new FormAttachment(100, 0);
+        fd.right = new FormAttachment(100, 0);
+        fd.left = new FormAttachment(0, 0);
+        browser.setLayoutData(fd);
+    	}
     } catch (Throwable t) {
     }
 
@@ -572,6 +559,16 @@ UpdateWindow
     
     display.asyncExec(new AERunnable(){
       public void runSupport() {
+    	  
+		Boolean b = (Boolean)check_instance.getProperty( UpdateCheckInstance.PT_CLOSE_OR_RESTART_ALREADY_IN_PROGRESS );
+			
+		if ( b != null && b ){
+			
+			finishUpdate(false, true);
+			
+			return;
+		}
+		
       	checkRestartNeeded();	// gotta recheck coz a maybe might have got to yes
         progress.setSelection(100);
         status.setText(MessageText.getString("UpdateWindow.status.done"));
@@ -579,7 +576,7 @@ UpdateWindow
         btnOk.setEnabled(true);
         btnOk.addListener(SWT.Selection,new Listener() {
           public void handleEvent(Event e) {
-            finishUpdate(true);
+            finishUpdate(true, false);
           }
         });
         if(restartRequired) {
@@ -588,7 +585,7 @@ UpdateWindow
           Messages.setLanguageText(btnCancel,"UpdateWindow.restartLater");
           btnCancel.addListener(SWT.Selection, new Listener() {
             public void handleEvent(Event e) {
-              finishUpdate(false);
+              finishUpdate(false,false);
             }
           });
           updateWindow.layout();
@@ -679,7 +676,7 @@ UpdateWindow
   }
   
   
-  private void finishUpdate(boolean restartNow) {
+  private void finishUpdate(boolean restartNow, boolean just_close ) {
     //When completing, remove the link in mainWindow :
   	UIFunctionsSWT functionsSWT = UIFunctionsManagerSWT.getUIFunctionsSWT();
   	if (functionsSWT != null) {
@@ -690,20 +687,23 @@ UpdateWindow
   	}
     
   	boolean bDisposeUpdateWindow = true;
-    //If restart is required, then restart
-    if( restartRequired && restartNow) {
-    	// this HAS to be done this way around else the restart inherits
-    	// the 6880 port listen. However, this is a general problem....
-    	UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
-    	if (uiFunctions != null && uiFunctions.dispose(true, false)) {
-   			bDisposeUpdateWindow = false;
-			}
-    }else if ( hasMandatoryUpdates && !restartRequired ){
-    	
-    		// run a further update check as we can immediately install non-mandatory updates now
-    	
-    	update_monitor.requestRecheck();
-    }
+
+  	if ( !just_close ){
+	    //If restart is required, then restart
+	    if( restartRequired && restartNow) {
+	    	// this HAS to be done this way around else the restart inherits
+	    	// the 6880 port listen. However, this is a general problem....
+	    	UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
+	    	if (uiFunctions != null && uiFunctions.dispose(true, false)) {
+	   			bDisposeUpdateWindow = false;
+				}
+	    }else if ( hasMandatoryUpdates && !restartRequired ){
+	    	
+	    		// run a further update check as we can immediately install non-mandatory updates now
+	    	
+	    	update_monitor.requestRecheck();
+	    }
+  	}
 
     if (bDisposeUpdateWindow) {
       updateWindow.dispose();

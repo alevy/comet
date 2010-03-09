@@ -26,49 +26,18 @@ package org.gudy.azureus2.core3.tracker.server.impl.udp;
  *
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
+import java.io.*;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.tracker.protocol.PRHelpers;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyAnnounce;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyAnnounce2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyConnect;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyError;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyScrape;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyScrape2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestAnnounce;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestAnnounce2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestScrape;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketTracker;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPTrackerCodecs;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerPeerImpl;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerProcessor;
-import org.gudy.azureus2.core3.tracker.server.impl.TRTrackerServerTorrentImpl;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.tracker.server.*;
+import org.gudy.azureus2.core3.tracker.server.impl.*;
+
+import org.gudy.azureus2.core3.tracker.protocol.*;
+import org.gudy.azureus2.core3.tracker.protocol.udp.*;
 
 import com.aelitis.net.udp.uc.PRUDPPacket;
 import com.aelitis.net.udp.uc.PRUDPPacketRequest;

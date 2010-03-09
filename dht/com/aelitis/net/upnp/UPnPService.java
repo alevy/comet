@@ -29,7 +29,7 @@ package com.aelitis.net.upnp;
 
 import java.net.URL;
 
-import com.aelitis.net.upnp.services.UPnPSpecificService;
+import com.aelitis.net.upnp.services.*;
 
 public interface 
 UPnPService 
@@ -44,6 +44,9 @@ UPnPService
 	getControlURL()
 	
 		throws UPnPException;
+	
+	public boolean
+	isConnectable();
 	
 	public UPnPAction[]
 	getActions()

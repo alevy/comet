@@ -20,29 +20,15 @@
 package org.gudy.azureus2.ui.swt.mainwindow;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.config.impl.TransferSpeedValidator;
@@ -50,32 +36,24 @@ import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.ipfilter.IpFilter;
+import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.stats.transfer.OverallStats;
 import org.gudy.azureus2.core3.stats.transfer.StatsFactory;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.PluginManager;
 import org.gudy.azureus2.plugins.network.ConnectionManager;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.ui.swt.AZProgressBar;
-import org.gudy.azureus2.ui.swt.BlockedIpsWindow;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.progress.IProgressReport;
-import org.gudy.azureus2.ui.swt.progress.IProgressReportConstants;
-import org.gudy.azureus2.ui.swt.progress.IProgressReporter;
-import org.gudy.azureus2.ui.swt.progress.IProgressReportingListener;
-import org.gudy.azureus2.ui.swt.progress.ProgressReporterWindow;
-import org.gudy.azureus2.ui.swt.progress.ProgressReportingManager;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
+import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.ui.swt.Alerts.AlertHistoryListener;
+import org.gudy.azureus2.ui.swt.progress.*;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
 import org.gudy.azureus2.ui.swt.update.UpdateWindow;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.plugins.dht.DHTPlugin;
@@ -128,6 +106,8 @@ public class MainStatusBar
 	private CLabel statusUp;
 
 	private Composite plugin_label_composite;
+	
+	private ArrayList<Runnable> listRunAfterInit = new ArrayList<Runnable>();
 
 	private Display display;
 
@@ -151,10 +131,6 @@ public class MainStatusBar
 	private ConnectionManager connection_manager;
 
 	private DHTPlugin dhtPlugin;
-
-	private GlobalManager globalManager;
-
-	private AzureusCore azureusCore;
 
 	private UIFunctions uiFunctions;
 
@@ -187,13 +163,7 @@ public class MainStatusBar
 	 */
 	private CLabelPadding progressViewerImageLabel;
 
-	private Image progress_error_img = null;
-
-	private Image progress_info_img = null;
-
-	private Image progress_viewer_img = null;
-
-	private Image currentProgressImage = null;
+	private String lastProgressImageID = null;
 
 	private boolean updateProgressBarDisplayQueued = false;
 
@@ -203,29 +173,38 @@ public class MainStatusBar
 
 	private String lastSRimageID = null;
 
+	private int last_dl_limit;
+
+	private long last_rec_data = - 1;
+
+	private long last_rec_prot;
+
+	private CLabelPadding statusWarnings;
+
 	/**
 	 * 
 	 */
 	public MainStatusBar() {
 		numberFormat = NumberFormat.getInstance();
-		overall_stats = StatsFactory.getStats();
-		PluginManager pm = AzureusCoreFactory.getSingleton().getPluginManager();
-		connection_manager = pm.getDefaultPluginInterface().getConnectionManager();
-		PluginInterface dht_pi = pm.getPluginInterfaceByClass(DHTPlugin.class);
-		if (dht_pi != null) {
-			dhtPlugin = (DHTPlugin) dht_pi.getPlugin();
-		}
+		// Proably need to wait for core to be running to make sure dht plugin is fully avail
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				PluginManager pm = core.getPluginManager();
+				connection_manager = PluginInitializer.getDefaultInterface().getConnectionManager();
+				PluginInterface dht_pi = pm.getPluginInterfaceByClass(DHTPlugin.class);
+				if (dht_pi != null) {
+					dhtPlugin = (DHTPlugin) dht_pi.getPlugin();
+				}
+			}
+		});
 	}
 
 	/**
 	 * 
 	 * @return composite holding the statusbar
 	 */
-	public Composite initStatusBar(final AzureusCore core,
-			final GlobalManager globalManager, Display display, final Composite parent) {
-		this.display = display;
-		this.globalManager = globalManager;
-		this.azureusCore = core;
+	public Composite initStatusBar(final Composite parent) {
+		this.display = parent.getDisplay();
 		this.uiFunctions = UIFunctionsManager.getUIFunctions();
 		ImageLoader imageLoader = ImageLoader.getInstance();
 
@@ -236,6 +215,18 @@ public class MainStatusBar
 		statusBar = new Composite(parent, SWT.NONE);
 		statusBar.setForeground(fgColor);
 		isAZ3 = "az3".equalsIgnoreCase(COConfigurationManager.getStringParameter("ui"));
+		
+		statusBar.getShell().addListener(SWT.Deiconify, new Listener() {
+			public void handleEvent(Event event) {
+				Utils.execSWTThreadLater(0, new AERunnable() {
+					public void runSupport() {
+						if (!statusBar.isDisposed()) {
+							statusBar.layout();
+						}
+					}
+				});
+			}
+		});
 		
 		GridLayout layout_status = new GridLayout();
 		layout_status.numColumns = 20;
@@ -306,51 +297,7 @@ public class MainStatusBar
 		if ( isAZ3 ){
 		
 			try{
-				/*
-				 * Feedback
-				 * 
-				 */
-				
-					// only show after restart after 15 mins uptime
-				
-				OverallStats stats = StatsFactory.getStats();
-				
-				long secs_uptime = stats.getTotalUpTime();
-				
-				long last_uptime = COConfigurationManager.getLongParameter( "statusbar.feedback.uptime", 0 );
-				
-				if ( last_uptime == 0 ){
-					
-					COConfigurationManager.setParameter( "statusbar.feedback.uptime", secs_uptime );
-					
-				}else if ( secs_uptime - last_uptime > 15*60 ){
-					
-					CLabelPadding feedback = new CLabelPadding(statusBar, borderFlag);
-					feedback.setText(MessageText.getString("statusbar.feedback"));
-			
-					Listener feedback_listener = new Listener() {
-						public void handleEvent(Event e) {
-		
-							String url = "feedback?"
-									+ Utils.getWidgetBGColorURLParam()
-									+ "&fromWeb=false&os.name=" + UrlUtils.encode(Constants.OSName)
-									+ "&os.version="
-									+ UrlUtils.encode(System.getProperty("os.version"))
-									+ "&java.version=" + UrlUtils.encode(Constants.JAVA_VERSION);
-							
-							// Utils.launch( url );
-							
-							UIFunctionsManagerSWT.getUIFunctionsSWT().viewURL(url, null, 600,
-									520, true, false);
-						}
-					};
-					
-					feedback.setToolTipText(MessageText.getString("statusbar.feedback.tooltip"));
-					feedback.setCursor(Cursors.handCursor);
-					feedback.setForeground(Colors.blue);
-					feedback.addListener(SWT.MouseUp, feedback_listener);
-					feedback.addListener(SWT.MouseDoubleClick, feedback_listener);
-				}
+				addFeedBack();
 			}catch( Throwable e ){
 				
 				Debug.printStackTrace(e);
@@ -360,10 +307,6 @@ public class MainStatusBar
 		/*
 		 * Progress reporting window image label
 		 */
-		// TODO: get image only when needed, release on switch
-		progress_error_img = imageLoader.getImage("progress_error");
-		progress_info_img = imageLoader.getImage("progress_info");
-		progress_viewer_img = imageLoader.getImage("progress_viewer");
 
 		progressViewerImageLabel = new CLabelPadding(statusBar, SWT.NONE);
 		// image set below after adding listener
@@ -408,8 +351,6 @@ public class MainStatusBar
 				imageLoader.releaseImage("progress_viewer");
 			}
 		});
-
-		statusBar.layout();
 
 		this.plugin_label_composite = new Composite(statusBar, SWT.NONE);
 		this.plugin_label_composite.setForeground(fgColor);
@@ -465,9 +406,9 @@ public class MainStatusBar
 		ipBlocked = new CLabelPadding(statusBar, borderFlag);
 		ipBlocked.setText("{} IPs:"); //$NON-NLS-1$
 		Messages.setLanguageText(ipBlocked, "MainWindow.IPs.tooltip");
-		ipBlocked.addMouseListener(new MouseAdapter() {
-			public void mouseDoubleClick(MouseEvent arg0) {
-				BlockedIpsWindow.showBlockedIps(azureusCore, parent.getShell());
+		ipBlocked.addListener(SWT.MouseDoubleClick, new ListenerNeedingCoreRunning() {
+			public void handleEvent(AzureusCore core, Event event) {
+				BlockedIpsWindow.showBlockedIps(core, parent.getShell());
 			}
 		});
 
@@ -481,7 +422,7 @@ public class MainStatusBar
 
 		statusDown = new CLabelPadding(statusBar, borderFlag);
 		statusDown.setImage(imageLoader.getImage("down"));
-		statusDown.setText(/*MessageText.getString("ConfigView.download.abbreviated") +*/"n/a");
+		//statusDown.setText(/*MessageText.getString("ConfigView.download.abbreviated") +*/"n/a");
 		Messages.setLanguageText(statusDown,
 				"MainWindow.status.updowndetails.tooltip");
 
@@ -493,7 +434,7 @@ public class MainStatusBar
 
 		statusUp = new CLabelPadding(statusBar, borderFlag);
 		statusUp.setImage(imageLoader.getImage("up"));
-		statusUp.setText(/*MessageText.getString("ConfigView.upload.abbreviated") +*/"n/a");
+		//statusUp.setText(/*MessageText.getString("ConfigView.upload.abbreviated") +*/"n/a");
 		Messages.setLanguageText(statusUp,
 				"MainWindow.status.updowndetails.tooltip");
 
@@ -514,6 +455,10 @@ public class MainStatusBar
 				uiFunctions.openView(UIFunctions.VIEW_STATS, "transfers");
 
 				OverallStats stats = StatsFactory.getStats();
+				
+				if (stats == null) {
+					return;
+				}
 
 				long ratio = (1000 * stats.getUploadedBytes() / (stats.getDownloadedBytes() + 1));
 
@@ -526,12 +471,12 @@ public class MainStatusBar
 
 		srStatus.addListener(SWT.MouseDoubleClick, lSR);
 
-		Listener lNAT = new Listener() {
-			public void handleEvent(Event e) {
+		Listener lNAT = new ListenerNeedingCoreRunning() {
+			public void handleEvent(AzureusCore core, Event e) {
 				uiFunctions.openView(UIFunctions.VIEW_CONFIG,
 						ConfigSection.SECTION_CONNECTION);
 
-				if (azureusCore.getPluginManager().getDefaultPluginInterface().getConnectionManager().getNATStatus() != ConnectionManager.NAT_OK) {
+				if (PluginInitializer.getDefaultInterface().getConnectionManager().getNATStatus() != ConnectionManager.NAT_OK) {
 					Utils.launch(Constants.AZUREUS_WIKI + "NAT_problem");
 				}
 			}
@@ -546,6 +491,12 @@ public class MainStatusBar
 			final Menu menuUpSpeed = new Menu(statusBar.getShell(), SWT.POP_UP);
 			menuUpSpeed.addListener(SWT.Show, new Listener() {
 				public void handleEvent(Event e) {
+					if (!AzureusCoreFactory.isCoreRunning()) {
+						return;
+					}
+					AzureusCore core = AzureusCoreFactory.getSingleton();
+					GlobalManager globalManager = core.getGlobalManager();
+					
 					SelectableSpeedMenu.generateMenuItems(menuUpSpeed, core,
 							globalManager, true);
 				}
@@ -565,9 +516,9 @@ public class MainStatusBar
 					event.button = e.button;
 					e.widget.getDisplay().post(event);
 
-					Utils.execSWTThread(new AERunnable() {
-						public void runSupport() {
-							SelectableSpeedMenu.invokeSlider(true);
+					CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+						public void azureusCoreRunning(AzureusCore core) {
+							SelectableSpeedMenu.invokeSlider(core, true);
 						}
 					});
 				}
@@ -578,6 +529,12 @@ public class MainStatusBar
 			final Menu menuDownSpeed = new Menu(statusBar.getShell(), SWT.POP_UP);
 			menuDownSpeed.addListener(SWT.Show, new Listener() {
 				public void handleEvent(Event e) {
+					if (!AzureusCoreFactory.isCoreRunning()) {
+						return;
+					}
+					AzureusCore core = AzureusCoreFactory.getSingleton();
+					GlobalManager globalManager = core.getGlobalManager();
+
 					SelectableSpeedMenu.generateMenuItems(menuDownSpeed, core,
 							globalManager, false);
 				}
@@ -596,21 +553,162 @@ public class MainStatusBar
 					event.button = e.button;
 					e.widget.getDisplay().post(event);
 
-					Utils.execSWTThread(new AERunnable() {
-						public void runSupport() {
-							SelectableSpeedMenu.invokeSlider(false);
+					CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+						public void azureusCoreRunning(AzureusCore core) {
+							SelectableSpeedMenu.invokeSlider(core, false);
 						}
 					});
 				}
 			});
 		}
 
+		statusWarnings = new CLabelPadding(statusBar, borderFlag);
+		statusWarnings.setImage(imageLoader.getImage("image.sidebar.vitality.alert"));
+		updateStatusWarnings();
+		Messages.setLanguageText(statusWarnings,
+				"MainWindow.status.warning.tooltip");
+		Alerts.addMessageHistoryListener(new AlertHistoryListener() {
+			public void alertHistoryAdded(LogAlert params) {
+				updateStatusWarnings();
+			}
+			public void alertHistoryRemoved(LogAlert alert) {
+				updateStatusWarnings();
+			}
+		});
+		statusWarnings.addMouseListener(new MouseListener() {
+			public void mouseUp(MouseEvent e) {
+				if (SystemWarningWindow.numWarningWindowsOpen > 0) {
+					return;
+				}
+				ArrayList<LogAlert> alerts = Alerts.getUnviewedLogAlerts();
+				if (alerts.size() == 0) {
+					return;
+				}
+
+				Shell shell = statusWarnings.getShell();
+				Rectangle bounds = statusWarnings.getClientArea();
+				Point ptBottomRight = statusWarnings.toDisplay(bounds.x + bounds.width, bounds.y);
+				new SystemWarningWindow(alerts.get(0), ptBottomRight, shell, 0);
+			}
+			
+			public void mouseDown(MouseEvent e) {
+			}
+			
+			public void mouseDoubleClick(MouseEvent e) {
+			}
+		});
+		
+		/////////
+		
 		PRManager.addListener(new ProgressListener());
 		setProgressImage();
 		
 		uiFunctions.getUIUpdater().addUpdater(this);
 		
+		ArrayList<Runnable> list;
+		this_mon.enter();
+		try {
+			list = listRunAfterInit;
+			listRunAfterInit = null;
+		} finally {
+			this_mon.exit();
+		}
+		for (Runnable runnable : list) {
+			try {
+				runnable.run();
+			} catch (Exception e) {
+				Debug.out(e);
+			}
+		}
+		
+		statusBar.layout(true);
+
 		return statusBar;
+	}
+
+	protected void updateStatusWarnings() {
+		Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				if (statusWarnings == null || statusWarnings.isDisposed()) {
+					return;
+				}
+				
+				ArrayList<LogAlert> alerts = Alerts.getUnviewedLogAlerts();
+				int count = alerts.size();
+				statusWarnings.setVisible(count > 0);
+				statusWarnings.setText("" + count);
+				statusWarnings.layoutNow();
+			}
+		});
+	}
+
+	private void addFeedBack() {
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				Utils.execSWTThread(new AERunnable() {
+					public void runSupport() {
+						_addFeedBack();
+					}
+				});
+			}
+		});
+	}
+
+	private void _addFeedBack() {
+		/*
+		 * Feedback
+		 * 
+		 */
+
+		// only show after restart after 15 mins uptime
+		OverallStats stats = StatsFactory.getStats();
+
+		long secs_uptime = stats.getTotalUpTime();
+
+		long last_uptime = COConfigurationManager.getLongParameter(
+				"statusbar.feedback.uptime", 0);
+
+		if (last_uptime == 0) {
+
+			COConfigurationManager.setParameter("statusbar.feedback.uptime",
+					secs_uptime);
+
+		} else if (secs_uptime - last_uptime > 15 * 60) {
+
+			createStatusEntry(new CLabelUpdater() {
+				public void update(CLabel label) {
+				}
+
+				public void created(CLabel feedback) {
+					feedback.setText(MessageText.getString("statusbar.feedback"));
+					
+					Listener feedback_listener = new Listener() {
+						public void handleEvent(Event e) {
+							
+							String url = "feedback.start?" + Utils.getWidgetBGColorURLParam()
+							+ "&fromWeb=false&os.name=" + UrlUtils.encode(Constants.OSName)
+							+ "&os.version="
+							+ UrlUtils.encode(System.getProperty("os.version"))
+							+ "&java.version=" + UrlUtils.encode(Constants.JAVA_VERSION);
+							
+							// Utils.launch( url );
+							
+							UIFunctionsManagerSWT.getUIFunctionsSWT().viewURL(url, null, 600,
+									520, true, false);
+						}
+					};
+					
+					feedback.setToolTipText(MessageText.getString("statusbar.feedback.tooltip"));
+					feedback.setCursor(Cursors.handCursor);
+					feedback.setForeground(Colors.blue);
+					feedback.addListener(SWT.MouseUp, feedback_listener);
+					feedback.addListener(SWT.MouseDoubleClick, feedback_listener);
+					
+					feedback.setVisible(true);
+				}
+			});
+			
+		}
 	}
 
 	/**
@@ -816,41 +914,49 @@ public class MainStatusBar
 
 
 		// UL/DL Status Sections
+		if (AzureusCoreFactory.isCoreRunning()) {
+			AzureusCore core = AzureusCoreFactory.getSingleton();
+			GlobalManager gm = core.getGlobalManager();
+			GlobalManagerStats stats = gm.getStats();
 
-		int dl_limit = NetworkManager.getMaxDownloadRateBPS() / 1024;
+			int dl_limit = NetworkManager.getMaxDownloadRateBPS() / 1024;
+			long rec_data = stats.getDataReceiveRate();
+			long rec_prot = stats.getProtocolReceiveRate();
+			
+			if (last_dl_limit != dl_limit || last_rec_data != rec_data || last_rec_prot != rec_prot) {
+				last_dl_limit = dl_limit;
+				last_rec_data = rec_data;
+				last_rec_prot = rec_prot;
 
-		GlobalManagerStats stats = globalManager.getStats();
-
-		statusDown.setText((dl_limit == 0 ? "" : "[" + dl_limit + "K] ")
-				+ DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
-						stats.getDataReceiveRate(), stats.getProtocolReceiveRate()));
-
-		boolean auto_up = COConfigurationManager.getBooleanParameter(TransferSpeedValidator.getActiveAutoUploadParameter(globalManager))
-				&& TransferSpeedValidator.isAutoUploadAvailable(azureusCore);
-
-		int ul_limit_norm = NetworkManager.getMaxUploadRateBPSNormal() / 1024;
-
-		String seeding_only;
-		if (NetworkManager.isSeedingOnlyUploadRate()) {
-			int ul_limit_seed = NetworkManager.getMaxUploadRateBPSSeedingOnly() / 1024;
-			if (ul_limit_seed == 0) {
-				seeding_only = "+" + Constants.INFINITY_STRING + "K";
-			} else {
-				int diff = ul_limit_seed - ul_limit_norm;
-				seeding_only = (diff >= 0 ? "+" : "") + diff + "K";
+				statusDown.setText((dl_limit == 0 ? "" : "[" + dl_limit + "K] ")
+						+ DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(rec_data, rec_prot));
 			}
-		} else {
-			seeding_only = "";
+
+
+			boolean auto_up = TransferSpeedValidator.isAutoSpeedActive(gm)
+					&& TransferSpeedValidator.isAutoUploadAvailable(core);
+
+			int ul_limit_norm = NetworkManager.getMaxUploadRateBPSNormal() / 1024;
+
+			String seeding_only;
+			if (NetworkManager.isSeedingOnlyUploadRate()) {
+				int ul_limit_seed = NetworkManager.getMaxUploadRateBPSSeedingOnly() / 1024;
+				if (ul_limit_seed == 0) {
+					seeding_only = "+" + Constants.INFINITY_STRING + "K";
+				} else {
+					int diff = ul_limit_seed - ul_limit_norm;
+					seeding_only = (diff >= 0 ? "+" : "") + diff + "K";
+				}
+			} else {
+				seeding_only = "";
+			}
+
+			statusUp.setText((ul_limit_norm == 0 ? "" : "[" + ul_limit_norm + "K"
+					+ seeding_only + "]")
+					+ (auto_up ? "* " : " ")
+					+ DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
+							stats.getDataSendRate(), stats.getProtocolSendRate()));
 		}
-
-		statusUp.setText((ul_limit_norm == 0 ? "" : "[" + ul_limit_norm + "K"
-				+ seeding_only + "]")
-				+ (auto_up ? "* " : " ")
-				+ DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
-						stats.getDataSendRate(), stats.getProtocolSendRate()));
-
-		// End of Status Sections
-		statusBar.layout();
 	}
 
 	/**
@@ -859,9 +965,11 @@ public class MainStatusBar
 	 * @since 3.1.1.1
 	 */
 	private void updateDHTStatus() {
+		if (dhtPlugin == null) {
+			return;
+		}
 		// DHT Status Section
-		int dht_status = (dhtPlugin == null) ? DHTPlugin.STATUS_DISABLED
-				: dhtPlugin.getStatus();
+		int dht_status = dhtPlugin.getStatus();
 		long dht_count = -1;
 		//boolean	reachable = false;
 		if (dht_status == DHTPlugin.STATUS_RUNNING) {
@@ -942,6 +1050,9 @@ public class MainStatusBar
 	 */
 	private void updateNatStatus() {
 		// NAT status Section
+		if (connection_manager == null) {
+			return;
+		}
 
 		int nat_status = connection_manager.getNATStatus();
 
@@ -999,6 +1110,14 @@ public class MainStatusBar
 	 */
 	private void updateShareRatioStatus() {
 		// SR status section
+		
+		if (overall_stats == null) {
+			overall_stats = StatsFactory.getStats();
+			
+			if (overall_stats == null) {
+				return;
+			}
+		}
 
 		long ratio = (1000 * overall_stats.getUploadedBytes() / (overall_stats.getDownloadedBytes() + 1));
 
@@ -1090,6 +1209,12 @@ public class MainStatusBar
 	 * @since 3.1.1.1
 	 */
 	private void updateIPBlocked() {
+		if (!AzureusCoreFactory.isCoreRunning()) {
+			return;
+		}
+		
+		AzureusCore azureusCore = AzureusCoreFactory.getSingleton();
+
 		// IP Filter Status Section
 		IpFilter ip_filter = azureusCore.getIpFilterManager().getIPFilter();
 
@@ -1111,12 +1236,12 @@ public class MainStatusBar
 	 * @param string
 	 */
 	public void setDebugInfo(String string) {
-		if (!statusText.isDisposed())
+		if (statusText != null && !statusText.isDisposed())
 			statusText.setToolTipText(string);
 	}
 	
 	public boolean isMouseOver() {
-		if (statusText.isDisposed()) {
+		if (statusText == null || statusText.isDisposed()) {
 			return false;
 		}
 		return statusText.getDisplay().getCursorControl() == statusText;
@@ -1124,6 +1249,7 @@ public class MainStatusBar
 
 	public static interface CLabelUpdater
 	{
+		public void created(CLabel label);
 		public void update(CLabel label);
 	}
 
@@ -1157,6 +1283,36 @@ public class MainStatusBar
 					| GridData.VERTICAL_ALIGN_FILL);
 			setLayoutData(gridData);
 			setForeground(parent.getForeground());
+		}
+		
+		public void setText(String text) {
+			if (text == null) {
+				text = "";
+			}
+			if (text.equals(getText())) {
+				return;
+			}
+			super.setText(text);
+			int oldWidth = lastWidth;
+			Point pt = super.computeSize(SWT.DEFAULT, SWT.DEFAULT, true);
+			pt.x += 4;
+			if (pt.x > oldWidth && text.length() > 0) {
+				statusBar.layout();
+			} else if (pt.x < oldWidth) {
+				Utils.execSWTThreadLater(KEEPWIDTHFOR_MS, new AERunnable() {
+					public void runSupport() {
+						if (statusBar == null || statusBar.isDisposed()) {
+							return;
+						}
+						statusBar.layout();
+					}
+				});
+			}
+		}
+		
+		public void layoutNow() {
+			widthSetOn = 0;
+			statusBar.layout();
 		}
 
 		/* (non-Javadoc)
@@ -1203,21 +1359,26 @@ public class MainStatusBar
 		}
 	}
 
-	public CLabel createStatusEntry(final CLabelUpdater updater) {
-		final CLabel[] result = new CLabel[1];
-		Utils.execSWTThread(new AERunnable() {
+	public void createStatusEntry(final CLabelUpdater updater) {
+		AERunnable r = new AERunnable() {
 			public void runSupport() {
-				try {
-					this_mon.enter();
-					result[0] = new UpdateableCLabel(plugin_label_composite, borderFlag,
-							updater);
-					result[0].setLayoutData(new GridData(GridData.FILL_BOTH));
-				} finally {
-					this_mon.exit();
-				}
+				UpdateableCLabel result = new UpdateableCLabel(plugin_label_composite, borderFlag,
+						updater);
+				result.setLayoutData(new GridData(GridData.FILL_BOTH));
+				updater.created(result);
 			}
-		}, false);
-		return result[0];
+		};
+		this_mon.enter();
+		try {
+			if (listRunAfterInit != null) {
+				listRunAfterInit.add(r);
+				return;
+			}
+		} finally {
+			this_mon.exit();
+		}
+
+		Utils.execSWTThread(r);
 	}
 
 	// =============================================================
@@ -1313,22 +1474,29 @@ public class MainStatusBar
 	}
 
 	private void setProgressImage() {
-		Image newProgressImage;
+		String imageID;
+
 		if (PRManager.getReporterCount(ProgressReportingManager.COUNT_ERROR) > 0) {
-			newProgressImage = progress_error_img;
+			imageID = "progress_error";
 		} else if (PRManager.getReporterCount(ProgressReportingManager.COUNT_ALL) > 0) {
-			newProgressImage = progress_info_img;
+			imageID = "progress_info";
 		} else {
-			newProgressImage = progress_viewer_img;
+			imageID = "progress_viewer";
 		}
-		if (currentProgressImage != newProgressImage) {
-			currentProgressImage = newProgressImage;
+
+		if (!imageID.equals(lastProgressImageID)) {
+			final String fImageID = imageID;
 			Utils.execSWTThread(new AERunnable() {
 				public void runSupport() {
 					if (progressViewerImageLabel.isDisposed()) {
 						return;
 					}
-					progressViewerImageLabel.setImage(currentProgressImage);
+					ImageLoader imageLoader = ImageLoader.getInstance();
+					progressViewerImageLabel.setImage(imageLoader.getImage(fImageID));
+					if (lastProgressImageID != null) {
+						imageLoader.releaseImage(lastProgressImageID);
+					}
+					lastProgressImageID  = fImageID;
 				}
 			});
 		}

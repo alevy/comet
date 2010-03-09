@@ -27,21 +27,14 @@ package org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader;
  *
  */
 
-import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
 import java.util.Properties;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 public class 
 Test
@@ -54,7 +47,7 @@ Test
 		try{
 			ResourceDownloaderFactory	rdf = pi.getUtilities().getResourceDownloaderFactory();
 			
-			// ResourceDownloader rd_t = rdf.create(new URL("http://play.aelitis.com/torrents/Azureus2201-B22.jar.torrent"));
+			// ResourceDownloader rd_t = rdf.create(new URL("http://torrent.vuze.com:88/torrents/Azureus2201-B22.jar.torrent"));
 			
 			//rd_t = rdf.getMetaRefreshDownloader(rd_t);
 			
@@ -72,7 +65,7 @@ Test
 			
 			//rd_u = rdf.getSuffixBasedDownloader(rd_u);
 
-			ResourceDownloader rd_u = rdf.create( new URL( "http://torrents.aelitis.com:88/files/Azureus3009-B5.jar" ));
+			ResourceDownloader rd_u = rdf.create( new URL( "http://torrent.vuze.com:88/files/Azureus3009-B5.jar" ));
 			
 			// rd_u = rdf.getTorrentDownloader( rd_u, true );
 

@@ -27,7 +27,7 @@ package org.gudy.azureus2.plugins.update;
  *
  */
 
-import java.io.InputStream;
+import java.io.*;
 
 public interface 
 UpdateInstaller 
@@ -119,4 +119,18 @@ UpdateInstaller
 		String    file )
 
     	throws UpdateException;
+	
+		/**
+		 * Runs the action now, not as part of a shutdown/restart of Vuze
+		 * @throws UpdateException
+		 */
+	
+	public void
+	installNow(
+		UpdateInstallerListener		listener )
+	
+		throws UpdateException;
+	
+	public void
+	destroy();
 }

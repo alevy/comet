@@ -27,8 +27,8 @@ package org.gudy.azureus2.core3.security;
  *
  */
 
-import java.security.Key;
-import java.security.cert.X509Certificate;
+import java.security.*;
+import java.security.cert.*;
 
 public interface 
 SEKeyDetails 

@@ -22,23 +22,15 @@
 
 package com.aelitis.azureus.core.peermanager.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequestListener;
+import org.gudy.azureus2.core3.disk.*;
 import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.OutgoingMessageQueue;
-import com.aelitis.azureus.core.peermanager.messaging.Message;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTMessage;
-import com.aelitis.azureus.core.peermanager.messaging.bittorrent.BTPiece;
+import com.aelitis.azureus.core.peermanager.messaging.*;
+import com.aelitis.azureus.core.peermanager.messaging.bittorrent.*;
 
 
 /**
@@ -55,9 +47,9 @@ public class OutgoingBTPieceMessageHandler {
   private final OutgoingMessageQueue 	outgoing_message_queue;
   private 		byte					piece_version;
   
-  private final LinkedList requests = new LinkedList();
-  private final ArrayList	loading_messages = new ArrayList();
-  private final HashMap  queued_messages = new HashMap();
+  private final LinkedList<DiskManagerReadRequest>			requests 			= new LinkedList<DiskManagerReadRequest>();
+  private final ArrayList<DiskManagerReadRequest>			loading_messages 	= new ArrayList<DiskManagerReadRequest>();
+  private final HashMap<BTPiece,DiskManagerReadRequest> 	queued_messages 	= new HashMap<BTPiece, DiskManagerReadRequest>();
   
   private final AEMonitor	lock_mon	= new AEMonitor( "OutgoingBTPieceMessageHandler:lock");
   private boolean destroyed = false;
@@ -131,11 +123,11 @@ public class OutgoingBTPieceMessageHandler {
           	  return;
           	}
           	loading_messages.remove( request );
-          	
-          }
-          finally{
+        }finally{
           	lock_mon.exit();
-          }
+        }
+        
+      	peer.sendRejectRequest( request );
     }
     
     public int
@@ -196,14 +188,14 @@ public class OutgoingBTPieceMessageHandler {
    * @param piece_offset
    * @param length
    */
-  public void addPieceRequest( int piece_number, int piece_offset, int length ) {
-    if( destroyed )  return;
+  public boolean addPieceRequest( int piece_number, int piece_offset, int length ) {
+    if( destroyed )  return( false );
          
     DiskManagerReadRequest dmr = peer.getManager().getDiskManager().createReadRequest( piece_number, piece_offset, length );
 
     try{
       lock_mon.enter();
-    
+         
       requests.addLast( dmr );
       
     }finally{
@@ -211,6 +203,8 @@ public class OutgoingBTPieceMessageHandler {
     }
     
     doReadAheadLoads();
+    
+    return( true );
   }
   
   
@@ -225,16 +219,20 @@ public class OutgoingBTPieceMessageHandler {
   	
     DiskManagerReadRequest dmr = peer.getManager().getDiskManager().createReadRequest( piece_number, piece_offset, length );
     
+    boolean	inform_rejected = false;
+    
     try{
       lock_mon.enter();
     
       if( requests.contains( dmr ) ) {
         requests.remove( dmr );
+        inform_rejected = true;
         return;
       }
       
       if( loading_messages.contains( dmr ) ) {
         loading_messages.remove( dmr );
+        inform_rejected = true;
         return;
       }
       
@@ -244,14 +242,20 @@ public class OutgoingBTPieceMessageHandler {
         if( entry.getValue().equals( dmr ) ) {  //it's already been queued
           BTPiece msg = (BTPiece)entry.getKey();
           if( outgoing_message_queue.removeMessage( msg, true ) ) {
+        	inform_rejected = true;
             i.remove();
           }
           break;  //do manual listener notify
         }
       }
-    }
-    finally{
+    }finally{
+    	
       lock_mon.exit();
+      
+      if ( inform_rejected ){
+ 
+   		  peer.sendRejectRequest( dmr );
+      }
     }
     
     outgoing_message_queue.doListenerNotifications();
@@ -264,6 +268,8 @@ public class OutgoingBTPieceMessageHandler {
    */
   public void removeAllPieceRequests() {
   	if( destroyed )  return;
+  	
+  	List<DiskManagerReadRequest> removed = new ArrayList<DiskManagerReadRequest>();
   	
     try{
       lock_mon.enter();
@@ -290,17 +296,31 @@ public class OutgoingBTPieceMessageHandler {
       }
       */
       
-      for( Iterator i = queued_messages.keySet().iterator(); i.hasNext(); ) {
-          BTPiece msg = (BTPiece)i.next();
-          outgoing_message_queue.removeMessage( msg, true );
+     
+      for( Iterator<BTPiece> i = queued_messages.keySet().iterator(); i.hasNext(); ) {
+          BTPiece msg = i.next();
+          if (outgoing_message_queue.removeMessage( msg, true )){
+        	  removed.add( queued_messages.get( msg ));
+          }
       }
       
       queued_messages.clear();	// this replaces stuff above 
+      
+      removed.addAll( requests );
+      
       requests.clear();
+      
+      removed.addAll( loading_messages );
+      
       loading_messages.clear();
     }
     finally{
       lock_mon.exit();
+    }
+    
+    for ( DiskManagerReadRequest request: removed ){
+    	
+    	 peer.sendRejectRequest( request );
     }
     
     outgoing_message_queue.doListenerNotifications();

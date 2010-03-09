@@ -26,21 +26,18 @@ package org.gudy.azureus2.core3.util;
  *
  */
 
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.text.NumberFormat;
 
-import org.gudy.azureus2.core3.config.COConfigurationListener;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerStats;
-import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.download.*;
+import org.gudy.azureus2.core3.config.*;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.internat.*;
 
 
 public class
@@ -78,6 +75,7 @@ DisplayFormatters
 	private static String		per_sec;
 	
 	private static boolean use_si_units;
+	private static boolean force_si_values;
 	private static boolean use_units_rate_bits;
 	private static boolean not_use_GB_TB;
 
@@ -88,52 +86,29 @@ DisplayFormatters
 		private static char decimalSeparator;
     
 	static{
-		use_si_units = COConfigurationManager.getBooleanParameter("config.style.useSIUnits");
-
-		COConfigurationManager.addParameterListener( "config.style.useSIUnits",
+		COConfigurationManager.addAndFireParameterListeners( 
+				new String[]{
+					"config.style.useSIUnits",
+					"config.style.forceSIValues",
+					"config.style.useUnitsRateBits",
+					"config.style.doNotUseGB",
+				},
 				new ParameterListener()
 				{
 					public void
 					parameterChanged(
-						String	value )
+						String	x )
 					{
-						use_si_units = COConfigurationManager.getBooleanParameter("config.style.useSIUnits");
-
-						setUnits();
-					}
-				});
-
-		use_units_rate_bits = COConfigurationManager.getBooleanParameter("config.style.useUnitsRateBits");
-
-		COConfigurationManager.addParameterListener( "config.style.useUnitsRateBits",
-				new ParameterListener()
-				{
-					public void
-					parameterChanged(
-						String	value )
-					{
+						use_si_units 		= COConfigurationManager.getBooleanParameter("config.style.useSIUnits");
+						force_si_values 		= COConfigurationManager.getBooleanParameter("config.style.forceSIValues");
 						use_units_rate_bits = COConfigurationManager.getBooleanParameter("config.style.useUnitsRateBits");
+			            not_use_GB_TB 		= COConfigurationManager.getBooleanParameter("config.style.doNotUseGB");
+			            
+			            unitsStopAt = (not_use_GB_TB) ? UNIT_MB : UNIT_TB;
 
 						setUnits();
 					}
 				});
-
-	    not_use_GB_TB = COConfigurationManager.getBooleanParameter("config.style.doNotUseGB");
-	    unitsStopAt = (not_use_GB_TB) ? UNIT_MB : UNIT_TB;
-	
-	    COConfigurationManager.addParameterListener( "config.style.doNotUseGB",
-	        new ParameterListener()
-	        {
-	          public void
-	          parameterChanged(
-	            String  value )
-	          {
-	            not_use_GB_TB = COConfigurationManager.getBooleanParameter("config.style.doNotUseGB");
-	            unitsStopAt = (not_use_GB_TB) ? UNIT_MB : UNIT_TB;
-	
-							setUnits();
-	          }
-	        });
 
     	COConfigurationManager.addListener(
     		new COConfigurationListener()
@@ -149,7 +124,10 @@ DisplayFormatters
     		});
 		
 		COConfigurationManager.addAndFireParameterListeners( 
-				new String[]{ "config.style.dataStatsOnly", "config.style.separateProtDataStats" },
+				new String[]{ 
+						"config.style.dataStatsOnly", 
+						"config.style.separateProtDataStats" 
+				},
 				new ParameterListener()
 				{
 					public void
@@ -277,7 +255,9 @@ DisplayFormatters
 	private static String	ManagerItem_queued;
 	private static String	ManagerItem_error;
 	private static String	ManagerItem_forced;
-
+	private static String	yes;
+	private static String	no;
+	
 	public static void
 	loadMessages()
 	{
@@ -300,6 +280,8 @@ DisplayFormatters
 		ManagerItem_queued				= getResourceString( "ManagerItem.queued", "queued" );
 		ManagerItem_error				= getResourceString( "ManagerItem.error", "error" );
 		ManagerItem_forced				= getResourceString( "ManagerItem.forced", "forced" );
+		yes								= getResourceString( "GeneralView.yes", "Yes" );
+		no								= getResourceString( "GeneralView.no", "No" );
 	}
 	
 	private static String
@@ -334,6 +316,13 @@ DisplayFormatters
 	}
 
 	public static String
+	getYesNo(
+		boolean	b )
+	{
+		return( b?yes:no );
+	}
+	
+	public static String
 	getRateUnit(
 		int		unit_size )
 	{
@@ -356,6 +345,12 @@ DisplayFormatters
 		return units_base10[unit_size];
 	}
 
+	public static boolean
+	isRateUsingBits()
+	{
+		return( use_units_rate_bits );
+	}
+	
 	public static String
 	formatByteCountToKiBEtc(int n)
 	{
@@ -396,9 +391,11 @@ DisplayFormatters
 
 	  	int unitIndex = UNIT_B;
 	  	
-	  	while (dbl >= 1024 && unitIndex < unitsStopAt){ 
+        long	div = force_si_values?1024:(use_si_units?1024:1000);
+        
+	  	while (dbl >= div && unitIndex < unitsStopAt){ 
 	  	
-		  dbl /= 1024L;
+		  dbl /= div;
 		  unitIndex++;
 		}
 	  	
@@ -568,9 +565,11 @@ DisplayFormatters
 
         int unitIndex = UNIT_B;
 
-        while (dbl >= 1024 && unitIndex < unitsStopAt){
+        long	div = force_si_values?1024:(use_si_units?1024:1000);
+        
+        while (dbl >= div && unitIndex < unitsStopAt){
 
-          dbl /= 1024L;
+          dbl /= div;
           unitIndex++;
         }
 
@@ -652,7 +651,7 @@ DisplayFormatters
 				tmp = ManagerItem_downloading;
 				break;
 
-			case DownloadManager.STATE_SEEDING:
+			case DownloadManager.STATE_SEEDING:{
 
 				DiskManager diskManager = manager.getDiskManager();
 
@@ -675,7 +674,7 @@ DisplayFormatters
 					tmp = ManagerItem_seeding;
 				}
 				break;
-
+			}
 			case DownloadManager.STATE_STOPPED:
 				tmp = manager.isPaused() ? ManagerItem_paused : ManagerItem_stopped;
 				break;
@@ -696,10 +695,14 @@ DisplayFormatters
 				tmp = ManagerItem_initializing;
 				break;
 
-			case DownloadManager.STATE_ALLOCATING:
+			case DownloadManager.STATE_ALLOCATING:{
 				tmp = ManagerItem_allocating;
+				DiskManager diskManager = manager.getDiskManager();
+				if (diskManager != null){		
+					tmp += ": " + formatPercentFromThousands( diskManager.getPercentDone());
+				}
 				break;
-
+			}
 			case DownloadManager.STATE_CHECKING:
 				tmp = ManagerItem_checking + ": "
 						+ formatPercentFromThousands(manager.getStats().getCompleted());

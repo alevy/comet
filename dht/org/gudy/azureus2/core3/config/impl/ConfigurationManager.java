@@ -20,35 +20,13 @@
  */
 package org.gudy.azureus2.core3.config.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.io.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationListener;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.config.StringList;
+
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.config.*;
 import org.gudy.azureus2.core3.config.COConfigurationManager.ParameterVerifier;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.FrequencyLimitedDispatcher;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashSet;
 
 import com.aelitis.azureus.core.security.CryptoManager;
 
@@ -62,6 +40,8 @@ public class
 ConfigurationManager 
 	implements AEDiagnosticsEvidenceGenerator
 {
+  private static final boolean DEBUG_PARAMETER_LISTENERS = false;
+  
   private static ConfigurationManager 	config_temp = null;
   private static ConfigurationManager 	config 		= null;
   private static AEMonitor				class_mon	= new AEMonitor( "ConfigMan:class" );
@@ -70,11 +50,9 @@ ConfigurationManager
   private Map propertiesMap;	// leave this NULL - it picks up errors caused by initialisation sequence errors
   private List transient_properties     = new ArrayList();
   
-  private List		listeners 			= new ArrayList();
-  private Hashtable parameterListeners 	= new Hashtable();
-  
-  private AEMonitor	this_mon	= new AEMonitor( "ConfigMan");
-  
+  private List<COConfigurationListener>		listenerz 			= new ArrayList<COConfigurationListener>();
+  private Map<String,ParameterListener[]> 	parameterListenerz 	= new HashMap<String,ParameterListener[]>();
+    
   private static FrequencyLimitedDispatcher dirty_dispatcher = 
 	  new FrequencyLimitedDispatcher(
 			  new AERunnable()
@@ -254,16 +232,11 @@ ConfigurationManager
 	
   	FileUtil.writeResilientConfigFile( filename, properties_clone );
     
-  	List	listeners_copy;
+  	List<COConfigurationListener>	listeners_copy;
   	
-    try{
-    	this_mon.enter();
+  	synchronized( listenerz ){
     
-    	listeners_copy = new ArrayList( listeners );
-    	
-    }finally{
-    	
-    	this_mon.exit();
+    	listeners_copy = new ArrayList<COConfigurationListener>( listenerz );
     }
     
 	for (int i=0;i<listeners_copy.size();i++){
@@ -778,78 +751,158 @@ ConfigurationManager
     return false;
   }
     
-  private void notifyParameterListeners(String parameter) {
-		LightHashSet parameterListener = (LightHashSet) parameterListeners.get(parameter);
-		if (parameterListener == null) {
+  private void 
+  notifyParameterListeners(
+		String parameter) 
+  {
+	  	ParameterListener[] listeners;
+		
+		synchronized( parameterListenerz ){
+			 
+			 listeners = parameterListenerz.get(parameter);
+		}
+		
+		if ( listeners == null ){
 			return;
 		}
 
-		for (Iterator it = parameterListener.iterator(); it.hasNext();) {
-			ParameterListener listener = (ParameterListener) it.next();
+		for ( ParameterListener listener: listeners ) {
 
-			if (listener != null) {
-				try {
-					listener.parameterChanged(parameter);
-				} catch (Throwable e) {
-					// we're not synchronized so possible but unlikely error here
+			if ( listener != null ){
+				
+				try{
+					listener.parameterChanged( parameter );
+					
+				}catch (Throwable e) {
+					
 					Debug.printStackTrace(e);
 				}
 			}
 		}
 	}
 
-  public void addParameterListener(String parameter, ParameterListener listener){
-  	try{
-  		this_mon.enter();
-  	
-	    if(parameter == null || listener == null)
+  public void 
+  addParameterListener(
+	String 				parameter, 
+	ParameterListener 	new_listener )
+  {
+    if ( parameter == null || new_listener == null ){
+	    	
 	      return;
-	    LightHashSet parameterListener = (LightHashSet) parameterListeners.get(parameter);
-	    if(parameterListener == null) {
-	      parameterListeners.put(parameter, parameterListener = new LightHashSet(1));
+    }
+		    
+	  synchronized( parameterListenerz ){
+  	
+	    ParameterListener[] listeners = parameterListenerz.get( parameter );
+	    
+	    if ( listeners == null ){
+	    		     
+	    	parameterListenerz.put(parameter, new ParameterListener[]{ new_listener } );
+	    	
+	    }else{
+	    
+	    	ParameterListener[]	new_listeners = new ParameterListener[ listeners.length + 1 ];
+	    	
+	    	int	pos;
+	    	
+	    	if ( new_listener instanceof PriorityParameterListener ){
+	    		
+	    		new_listeners[0] = new_listener;
+	    		
+	    		pos = 1;
+	    		
+	    	}else{
+	    		
+	    		new_listeners[ listeners.length ] = new_listener;
+	    		
+	    		pos = 0;
+	    	}
+	    	
+	    	for ( int i=0;i<listeners.length;i++){
+	    		
+	    		ParameterListener existing_listener = listeners[i];
+	    		
+	    		if ( existing_listener == new_listener ){
+	    			
+	    			return;
+	    		}
+	    		
+	    		new_listeners[pos++] = existing_listener;
+	    	}
+	    	
+	    	if ( DEBUG_PARAMETER_LISTENERS ){
+	    	
+	    		System.out.println( parameter + "->" + new_listeners.length );
+	    	}
+	    	
+	    	parameterListenerz.put( parameter, new_listeners );
 	    }
-	    if(!parameterListener.contains(listener))
-	      parameterListener.add(listener); 
-  	}finally{
-  		this_mon.exit();
   	}
   }
 
   public void removeParameterListener(String parameter, ParameterListener listener){
-  	try{
-  		this_mon.enter();
  
-	    if(parameter == null || listener == null)
-	      return;
-	    LightHashSet parameterListener = (LightHashSet) parameterListeners.get(parameter);
-	    if(parameterListener != null) {
-	    	parameterListener.remove(listener);
+    if( parameter == null || listener == null ){
+    	return;
+    }
+    
+    synchronized( parameterListenerz ){
+	    ParameterListener[] listeners = parameterListenerz.get( parameter );
+	    
+	    if ( listeners == null ){
+	    	
+	    	return;
 	    }
-  	}finally{
-  		this_mon.exit();
-  	}
+	    
+	    if ( listeners.length == 1 ){
+	    	
+	    	if ( listeners[0] == listener ){
+	    		
+	    		parameterListenerz.remove( parameter );
+	    	}
+	    }else{
+	    	
+	    	ParameterListener[] new_listeners = new ParameterListener[ listeners.length - 1 ];
+	    	
+	    	int	pos = 0;
+	    	
+	    	for ( int i=0;i<listeners.length;i++){
+	    		
+	    		ParameterListener existing_listener = listeners[i];
+
+	    		if ( existing_listener != listener ){
+	    			
+	    			if ( pos == new_listeners.length ){
+	    				
+	    				return;
+	    			}
+	    			
+	    			new_listeners[pos++] = existing_listener;
+	    		}
+	    	}
+	    	
+	    	if ( DEBUG_PARAMETER_LISTENERS ){
+	    	
+	    		System.out.println( parameter + "->" + new_listeners.length );
+	    	}
+	    	
+	    	parameterListenerz.put( parameter, new_listeners );
+	    }
+    }
   }
 
   public void addListener(COConfigurationListener listener) {
-  	try{
-  		this_mon.enter();
+  	synchronized( listenerz ){
 
-  		listeners.add(listener);
+  		listenerz.add(listener);
   		
-  	}finally{
-  		
-  		this_mon.exit();
   	}
   }
 
   public void removeListener(COConfigurationListener listener) {
-  	try{
-  		this_mon.enter();
+	  synchronized( listenerz ){
   	
-  		listeners.remove(listener);
-  	}finally{
-  		
-  		this_mon.exit();
+  		listenerz.remove(listener);
   	}
   }
   
@@ -862,6 +915,8 @@ ConfigurationManager
 		try{
 			writer.indent();
 		
+			writer.println( "version=" + Constants.AZUREUS_VERSION + ", subver=" + Constants.AZUREUS_SUBVER );
+			
 			writer.println( "System Properties" );
 			
 			try{
@@ -876,6 +931,33 @@ ConfigurationManager
 					String	key = (String)it.next();
 					
 					writer.println( key + "=" + props.get( key ));
+				}
+			}finally{
+				
+				writer.exdent();
+			}
+			
+			writer.println( "Environment" );
+			
+			try{
+				writer.indent();
+			
+				Map<String,String> env = System.getenv();
+				
+				if ( env == null ){
+					
+					writer.println( "Not supported" );
+					
+				}else{
+					
+					Iterator	it = new TreeSet( env.keySet()).iterator();
+					
+					while(it.hasNext()){
+						
+						String	key = (String)it.next();
+						
+						writer.println( key + "=" + env.get( key ));
+					}
 				}
 			}finally{
 				

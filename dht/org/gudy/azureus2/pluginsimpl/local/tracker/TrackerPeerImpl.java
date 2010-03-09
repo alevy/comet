@@ -26,8 +26,8 @@ package org.gudy.azureus2.pluginsimpl.local.tracker;
  *
  */
  
-import org.gudy.azureus2.core3.tracker.host.TRHostPeer;
-import org.gudy.azureus2.plugins.tracker.TrackerPeer;
+import org.gudy.azureus2.core3.tracker.host.*;
+import org.gudy.azureus2.plugins.tracker.*;
 
 public class 
 TrackerPeerImpl

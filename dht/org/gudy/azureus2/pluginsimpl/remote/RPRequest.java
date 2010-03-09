@@ -22,7 +22,6 @@
 package org.gudy.azureus2.pluginsimpl.remote;
 
 import java.io.Serializable;
-
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 

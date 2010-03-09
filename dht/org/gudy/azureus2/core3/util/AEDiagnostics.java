@@ -22,30 +22,26 @@
 
 package org.gudy.azureus2.core3.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
 
+import com.aelitis.azureus.core.util.AEThreadMonitor;
 import com.aelitis.azureus.core.util.Java15Utils;
+
+
+/**
+ * @author parg
+ *
+ */
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class 
 AEDiagnostics 
@@ -119,16 +115,18 @@ AEDiagnostics
 	
 	private static boolean	started_up;
 	private static boolean	startup_complete;
+	private static boolean	enable_pending_writes;
 	
-	private static Map		loggers	= new HashMap();
-	private static boolean	loggers_enabled;
+	private static Map<String,AEDiagnosticsLogger>		loggers	= new HashMap<String, AEDiagnosticsLogger>();
+	
+	protected static boolean	logging_enabled;
+	protected static boolean	loggers_enabled;
 	
 	private static List		evidence_generators	= new ArrayList();
-	
-	private static boolean load_15_tried;
-	
+		
 	public static synchronized void
-	startup()
+	startup(
+		boolean	_enable_pending )
 	{
 		if ( started_up ){
 			
@@ -137,15 +135,21 @@ AEDiagnostics
 		
 		started_up	= true;
 		
+		enable_pending_writes = _enable_pending;
+		
 		try{
-			// Minimize risk of loading to much when in transitory startup mode
+				// Minimize risk of loading to much when in transitory startup mode
+			
 			boolean transitoryStartup = System.getProperty("transitory.startup", "0").equals("1");
-			if (transitoryStartup) {
-				// no vivaldi and Thread monitor for you!
-				load_15_tried = true;
-				// no xxx_?.log logging for you!
+			
+			if ( transitoryStartup ){
+				
+					// no xxx_?.log logging for you!
+				
 				loggers_enabled = false;
-				// skip tidy check and more!
+				
+					// skip tidy check and more!
+				
 				return;
 			}
 
@@ -153,8 +157,28 @@ AEDiagnostics
 			
 			debug_save_dir	= new File( debug_dir, "save" );
 			
-			loggers_enabled = COConfigurationManager.getBooleanParameter( "Logger.DebugFiles.Enabled");
-
+			COConfigurationManager.addAndFireParameterListeners(
+				new String[]{
+					"Logger.Enabled",
+					"Logger.DebugFiles.Enabled",	
+				},
+				new ParameterListener()
+				{
+					public void 
+					parameterChanged(
+						String parameterName) 
+					{			
+						logging_enabled = COConfigurationManager.getBooleanParameter( "Logger.Enabled" );
+						
+						loggers_enabled = logging_enabled && COConfigurationManager.getBooleanParameter( "Logger.DebugFiles.Enabled");
+						
+						if ( !loggers_enabled ){
+							
+							loggers_enabled = Constants.IS_CVS_VERSION || COConfigurationManager.getBooleanParameter( "Logger.DebugFiles.Enabled.Force" );
+						}
+					}
+				});
+			
 			boolean	was_tidy	= COConfigurationManager.getBooleanParameter( CONFIG_KEY );
 			
 			new AEThread2( "asyncify", true )
@@ -174,9 +198,7 @@ AEDiagnostics
 			if ( debug_dir.exists()){
 				
 				long	now = SystemTime.getCurrentTime();
-				
-				debug_save_dir.mkdir();
-				
+								
 				File[] files = debug_dir.listFiles();
 				
 				if ( files != null ){
@@ -194,6 +216,11 @@ AEDiagnostics
 						
 						if ( !was_tidy ){
 				
+							if ( !file_copied ){
+								
+								debug_save_dir.mkdir();
+							}
+							
 							file_copied	= true;
 							
 							FileUtil.copyFile( file, new File( debug_save_dir, now + "_" + file.getName()));
@@ -211,6 +238,9 @@ AEDiagnostics
 				
 				debug_dir.mkdir();
 			}
+			
+			AEThreadMonitor.initialise();
+			
 		}catch( Throwable e ){
 			
 				// with webui we don't have the file stuff so this fails with class not found
@@ -222,43 +252,9 @@ AEDiagnostics
 		}finally{
 			
 			startup_complete	= true;
-			
-			load15Stuff();
 		}
 	}
-	
-	protected static void
-	load15Stuff()
-	{
-		if ( load_15_tried ){
-			
-			return;
-		}
 		
-		load_15_tried = true;
-		
-		// pull in the JDK1.5 monitoring stuff if present
-			
-		try{
-			Class c = Class.forName( "com.aelitis.azureus.jdk15.Java15Initialiser" );
-					
-			if ( c != null ){
-				
-				Method m = c.getDeclaredMethod( "getUtilsProvider", new Class[0] );
-				
-				Java15Utils.Java15UtilsProvider provider = (Java15Utils.Java15UtilsProvider)m.invoke( null, new Object[0] );
-				
-				if ( provider != null ){
-					
-					 Java15Utils.setProvider( provider );
-				}
-			}
-			// System.out.println( "**** AEThread debug on ****" );
-
-		}catch( Throwable e ){
-		}
-	}
-	
 	public static void
 	dumpThreads()
 	{
@@ -307,9 +303,20 @@ AEDiagnostics
 	public static File
 	getLogDir()
 	{
-		startup();
+		startup( false );
 
 		return( debug_dir );
+	}
+	
+	public static synchronized void
+	flushPendingLogs()
+	{
+		for ( AEDiagnosticsLogger logger: loggers.values()){
+			
+			logger.writePending();
+		}
+		
+		enable_pending_writes = false;
 	}
 	
 	public static synchronized AEDiagnosticsLogger
@@ -320,34 +327,11 @@ AEDiagnostics
 		
 		if ( logger == null ){
 			
-			startup();
+			startup( false );
 			
-			logger	= new AEDiagnosticsLogger( name );
-			
-			try{
-				File	f1 = getLogFile( logger );
-				
-				logger.setFirstFile( false );
-				
-				File	f2 = getLogFile( logger );
-				
-				logger.setFirstFile( true );
-	
-					// if we were writing to the second file, carry on from there
-				
-				if ( f1.exists() && f2.exists()){
-		
-					if ( f1.lastModified() < f2.lastModified()){
-						
-						logger.setFirstFile( false );	
-					}
-				}
-			}catch( Throwable ignore ){
-				
-			}
+			logger	= new AEDiagnosticsLogger( debug_dir, name, MAX_FILE_SIZE, !enable_pending_writes );
 			
 			loggers.put( name, logger );
-			
 		}
 		
 		return( logger );
@@ -367,109 +351,6 @@ AEDiagnostics
 		String	str )
 	{
 		getLogger( logger_name ).log( str );
-	}
-	
-	protected static synchronized void
-	log(
-		AEDiagnosticsLogger		logger,
-		String					str )
-	{
-		if ( !loggers_enabled ){
-			
-			return;
-		}
-		
-		try{
-			
-			File	log_file	= getLogFile( logger );
-			
-			/**
-			 *  log_file.length will return 0 if the file doesn't exist, so we don't need
-			 *  to explicitly check for its existence.
-			 */
-			if ( log_file.length() >= MAX_FILE_SIZE ){
-				
-				logger.setFirstFile(!logger.isFirstFile());
-				
-				log_file	= getLogFile( logger );
-			
-				// If the file doesn't exist, this will just return false.
-				log_file.delete();
-			}
-			
-			Calendar now = GregorianCalendar.getInstance();
-
-			String timeStamp =
-				"[" + format(now.get(Calendar.DAY_OF_MONTH))+format(now.get(Calendar.MONTH)+1) + " " + 
-				format(now.get(Calendar.HOUR_OF_DAY))+ ":" + format(now.get(Calendar.MINUTE)) + ":" + format(now.get(Calendar.SECOND)) + "] ";        
-
-			str = timeStamp + str;
-	
-			PrintWriter	pw = null;
-	
-			try{		
-						
-				pw = new PrintWriter(new FileWriter( log_file, true ));
-				
-				if (!logger.isWrittenToThisSession()) {
-					logger.setWrittenToThisSession(true);
-					pw.println("\n\n[" + now.get(Calendar.YEAR)
-							+ "] Log File Opened for " + Constants.APP_NAME + " "
-							+ Constants.AZUREUS_VERSION + "\n");
-				}
-			
-				pw.println( str );
-		 							
-			}finally{
-				
-				if ( pw != null ){
-										
-					pw.close();
-				}
-			}
-		}catch( Throwable ignore ){
-			
-		}
-	}
-	
-	private static File
-	getLogFile(
-		AEDiagnosticsLogger		logger )
-	{
-		return( new File( debug_dir, logger.getName() + "_" + (logger.isFirstFile()?"1":"2") + ".log" ));
-	}
-	
-	private static String 
-	format(
-		int 	n ) 
-	{
-		if (n < 10){
-	   	
-			return( "0" + n );
-	   }
-		
-	   return( String.valueOf(n));
-	}
-	
-	protected static void
-	log(
-		AEDiagnosticsLogger		logger,
-		Throwable				e )
-	{
-		try{
-			ByteArrayOutputStream	baos = new ByteArrayOutputStream();
-			
-			PrintWriter	pw = new PrintWriter( new OutputStreamWriter( baos ));
-			
-			e.printStackTrace( pw );
-			
-			pw.close();
-			
-			log( logger, baos.toString());
-			
-		}catch( Throwable ignore ){
-			
-		}
 	}
 	
 	public static void

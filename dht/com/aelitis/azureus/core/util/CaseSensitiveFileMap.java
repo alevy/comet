@@ -22,10 +22,8 @@
 
 package com.aelitis.azureus.core.util;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.io.*;
 
 public class 
 CaseSensitiveFileMap 

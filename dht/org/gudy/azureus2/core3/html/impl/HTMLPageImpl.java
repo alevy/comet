@@ -27,15 +27,12 @@ package org.gudy.azureus2.core3.html.impl;
  *
  */
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.gudy.azureus2.core3.html.HTMLException;
-import org.gudy.azureus2.core3.html.HTMLPage;
+import org.gudy.azureus2.core3.html.*;
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Debug;
 
 public class 
@@ -109,7 +106,7 @@ HTMLPageImpl
 			
 			String	tag 	= tags[i];
 			
-			String	lc_tag	= tag.toLowerCase();
+			String	lc_tag	= tag.toLowerCase( MessageText.LOCALE_ENGLISH );
 			
 			int pos = lc_tag.indexOf("http-equiv=\"refresh\"");
 							

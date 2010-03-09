@@ -22,12 +22,7 @@ package org.gudy.azureus2.core3.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -35,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 import org.gudy.azureus2.plugins.utils.resourceuploader.ResourceUploader;
 
@@ -72,6 +68,69 @@ public class UrlUtils
 		new String[] { "'", "&apos;" },
 	};
 
+	public static String
+	getMagnetURI(
+		byte[]		hash )
+	{
+		return( "magnet:?xt=urn:btih:" + Base32.encode( hash ));
+	}
+
+		/**
+		 * returns magnet uri if input is base 32 or base 16 encoded sha1 hash, null otherwise
+		 * @param base_hash
+		 * @return
+		 */
+	
+	public static String
+	normaliseMagnetURI(
+		String		base_hash )
+	{
+		byte[]	hash = decodeSHA1Hash( base_hash );
+		
+		if ( hash != null ){
+			
+			return( getMagnetURI( hash ));
+		}
+		
+		return( null );
+	}
+	
+	public static byte[]
+	decodeSHA1Hash(
+		String	str )
+	{
+		if ( str == null ){
+			
+			return( null );
+		}
+		
+		str = str.trim();
+		
+		byte[] hash = null;
+		
+		try{
+			if ( str.length() == 40 ){
+				
+				hash = ByteFormatter.decodeString( str );
+				
+			}else if ( str.length() == 32 ){
+				
+				hash = Base32.decode( str );
+			}
+		}catch( Throwable e ){
+		}
+		
+		if ( hash != null ){
+			
+			if ( hash.length != 20 ){
+								
+				hash = null;
+			}
+		}
+		
+		return( hash );
+	}
+	
 	/**
 	 * test string for possibility that it's an URL.  Considers 40 byte hex 
 	 * strings as URLs
@@ -91,6 +150,13 @@ public class UrlUtils
 		return parseTextForURL(text, accept_magnets, true);
 	}
 
+	public static String
+	getURL(
+		String	text )
+	{
+		return( parseTextForURL(text, false, false ));
+	}
+	
 	public static String parseTextForURL(String text, boolean accept_magnets,
 			boolean guess) {
 
@@ -332,81 +398,17 @@ public class UrlUtils
 	
 		throws IOException
 	{
-		if ( Java15Utils.isAvailable()){
-			
-			if ( connect_timeout != -1 ){
+		if ( connect_timeout != -1 ){
 				
-				Java15Utils.setConnectTimeout( connection, (int)connect_timeout );	
-			}
-			
-			if ( read_timeout != -1 ){
-				
-				Java15Utils.setReadTimeout( connection, (int)read_timeout );	
-			}
-			
-			connection.connect();
-			
-		}else{
-			
-				// TODO: No read timeout support here yet...
-			
-			final AESemaphore sem = new AESemaphore( "URLUtils:cwt" );
-			
-			final Throwable[] res = { null };
-			
-			//long	start = SystemTime.getMonotonousTime();
-			
-			if ( connect_pool.isFull()){
-				
-				Debug.out( "Connect pool is full, forcing timeout" );
-				
-				throw( new IOException( "Timeout" ));
-			}
-			
-			connect_pool.run(
-				new AERunnable()
-				{
-					public void
-					runSupport()
-					{
-						try{
-							connection.connect();
-							
-						}catch( Throwable e ){
-							
-							res[0] = e;
-							
-						}finally{
-							
-							sem.release();
-						}
-					}
-				});
-			
-			boolean ok = sem.reserve( connect_timeout );
-			
-			//long	duration = SystemTime.getMonotonousTime() - start;
-			
-			//System.out.println( connection.getURL() + ": time=" + duration + ", ok=" + ok );
-			
-			if ( ok ){
-	
-				Throwable error = res[0];
-				
-				if ( error != null ){
-					
-					if ( error instanceof IOException ){
-						
-						throw((IOException)error);
-					}
-					
-					throw( new IOException( Debug.getNestedExceptionMessage( error )));
-				}
-			}else{
-				
-				throw( new IOException( "Timeout" ));
-			}
+			Java15Utils.setConnectTimeout( connection, (int)connect_timeout );	
 		}
+			
+		if ( read_timeout != -1 ){
+				
+			Java15Utils.setReadTimeout( connection, (int)read_timeout );	
+		}
+			
+		connection.connect();
 	}
 	
 	private static String	last_headers = COConfigurationManager.getStringParameter( "metasearch.web.last.headers", null );
@@ -660,7 +662,12 @@ public class UrlUtils
 		String authority=u.getAuthority();
 		if (authority != null && authority.length() > 0) {
 			result.append("//");
-			int pos = authority.lastIndexOf(':');
+			int pos = authority.indexOf( '@' );
+			if ( pos != -1 ){
+				result.append(authority.substring(0,pos+1));
+				authority = authority.substring(pos+1);
+			}
+			pos = authority.lastIndexOf(':');
 			if ( pos == -1 ){
 				result.append(authority + ":" + port );
 			}else{
@@ -684,5 +691,113 @@ public class UrlUtils
 			Debug.out(e);
 			return(u);
 		}
+	}
+	
+	public static URL
+	setHost(
+		URL			u,
+		String		host )
+	{
+		StringBuffer result = new StringBuffer();
+		result.append(u.getProtocol());
+		result.append(":");
+		String authority=u.getAuthority();
+		if (authority != null && authority.length() > 0) {
+			result.append("//");
+			int pos = authority.indexOf( '@' );
+			if ( pos != -1 ){
+				result.append(authority.substring(0,pos+1));
+				authority = authority.substring(pos+1);
+			}
+			pos = authority.lastIndexOf(':');
+			if ( pos == -1 ){
+				result.append(host );
+			}else{
+				result.append(host + authority.substring(pos));				
+			}
+		}
+		if (u.getPath() != null) {
+			result.append(u.getPath());
+		}
+		if (u.getQuery() != null) {
+			result.append('?');
+			result.append(u.getQuery());
+		}
+		if (u.getRef() != null) {
+			result.append("#");
+			result.append(u.getRef());
+		}
+		try{
+			return( new URL( result.toString()));
+		}catch( Throwable e ){
+			Debug.out(e);
+			return(u);
+		}
+	}
+	
+		/**
+		 * Returns an explicit IPv4 url if the supplied one has both IPv6 and IPv4 addresses
+		 * @param url
+		 * @return
+		 */
+	
+	public static URL
+	getIPV4Fallback(
+		URL	url )
+	{
+		try{
+			InetAddress[] addresses = InetAddress.getAllByName( url.getHost());
+			
+			if ( addresses.length > 0 ){
+				
+				InetAddress	ipv4	= null;
+				InetAddress	ipv6	= null;
+				
+				for ( InetAddress a: addresses ){
+					
+					if ( a instanceof Inet4Address ){
+						
+						ipv4 = a;
+						
+					}else{
+						
+						ipv6 = a;
+					}
+				}
+				
+				if ( ipv4 != null && ipv6 != null ){
+					
+					url = UrlUtils.setHost( url, ipv4.getHostAddress());
+					
+					return( url );
+				}
+			}
+		}catch( Throwable f ){
+		}	
+		
+		return( null );
+	}
+	
+	public static long
+	getContentLength(
+		HttpURLConnection	con )
+	{
+		long res = con.getContentLength();
+		
+		if ( res == -1 ){
+			
+			try{
+				String	str = con.getHeaderField( "content-length" );
+				
+				if ( str != null ){
+					
+					res = Long.parseLong( str );
+				}
+			}catch( Throwable e ){
+				
+			}
+		}
+		
+		return( res );
 	}
 }

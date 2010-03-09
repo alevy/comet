@@ -21,90 +21,34 @@
 
 package org.gudy.azureus2.ui.swt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.io.File;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
-import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DropTarget;
-import org.eclipse.swt.dnd.DropTargetAdapter;
-import org.eclipse.swt.dnd.DropTargetEvent;
-import org.eclipse.swt.dnd.DropTargetListener;
-import org.eclipse.swt.dnd.FileTransfer;
-import org.eclipse.swt.dnd.HTMLTransfer;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Device;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.PaletteData;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Region;
-import org.eclipse.swt.graphics.Resource;
-import org.eclipse.swt.graphics.TextLayout;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.dnd.*;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.program.Program;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Monitor;
-import org.eclipse.swt.widgets.ScrollBar;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Widget;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsLogger;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AERunnableBoolean;
-import org.gudy.azureus2.core3.util.AERunnableObject;
-import org.gudy.azureus2.core3.util.AERunnableWithCallback;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.core3.util.Timer;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.platform.PlatformManager;
+import org.gudy.azureus2.platform.PlatformManagerCapabilities;
+import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.plugins.platform.PlatformManagerException;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
-import org.gudy.azureus2.ui.swt.views.utils.VerticalAligner;
 
-import com.aelitis.azureus.core.impl.AzureusCoreImpl;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
@@ -118,6 +62,10 @@ public class Utils
 	public static final String GOOD_STRING = "(/|,jI~`gy";
 
 	public static final boolean isGTK = SWT.getPlatform().equals("gtk");
+	
+	public static final boolean isCarbon = SWT.getPlatform().equals("carbon");
+
+	public static final boolean isCocoa = SWT.getPlatform().equals("cocoa");
 
 	/** Some platforms expand the last column to fit the remaining width of
 	 * the table.
@@ -127,11 +75,6 @@ public class Utils
 	/** GTK already handles alternating background for tables */
 	public static final boolean TABLE_GRIDLINE_IS_ALTERNATING_COLOR = isGTK;
 
-	private static final boolean DIRECT_SETCHECKED = !Constants.isOSX
-			|| SWT.getVersion() >= 3212;
-
-	public static final boolean SWT32_TABLEPAINT = SWT.getVersion() >= 3200;
-
 	/**
 	 * Debug/Diagnose SWT exec calls.  Provides usefull information like how
 	 * many we are queuing up, and how long each call takes.  Good to turn on
@@ -140,11 +83,13 @@ public class Utils
 	private static final boolean DEBUG_SWTEXEC = System.getProperty(
 			"debug.swtexec", "0").equals("1");
 
-	private static ArrayList queue;
+	private static ArrayList<Runnable> queue;
 
 	private static AEDiagnosticsLogger diag_logger;
 
 	private static Image[] shellIcons = null;
+
+	private static Image icon128;
 
 	private final static String[] shellIconNames = {
 		"azureus",
@@ -157,9 +102,20 @@ public class Utils
 
 	static {
 		if (DEBUG_SWTEXEC) {
-			queue = new ArrayList();
+			queue = new ArrayList<Runnable>();
 			diag_logger = AEDiagnostics.getLogger("swt");
 			diag_logger.log("\n\nSWT Logging Starts");
+			
+			AEDiagnostics.addEvidenceGenerator(new AEDiagnosticsEvidenceGenerator(){
+				public void generate(IndentWriter writer) {
+					writer.println("SWT Queue:");
+					writer.indent();
+					for (Runnable r : queue) {
+						writer.println(r.toString());
+					}
+					writer.exdent();
+				}
+			});
 		} else {
 			queue = null;
 			diag_logger = null;
@@ -216,37 +172,12 @@ public class Utils
 		if (disposeList == null) {
 			return;
 		}
-		boolean bResourceObjectExists = SWT.getVersion() >= 3129;
-
 		for (int i = 0; i < disposeList.length; i++) {
 			Object o = disposeList[i];
 			if (o instanceof Widget && !((Widget) o).isDisposed())
 				((Widget) o).dispose();
-			else if (bResourceObjectExists && (o instanceof Resource)
-					&& !((Resource) o).isDisposed())
+			else if ((o instanceof Resource) && !((Resource) o).isDisposed()) {
 				((Resource) o).dispose();
-			else {
-				try {
-					// For Pre-SWT 3.1
-					if ((o instanceof Cursor) && !((Cursor) o).isDisposed()) {
-						((Cursor) o).dispose();
-					} else if ((o instanceof Font) && !((Font) o).isDisposed()) {
-						((Font) o).dispose();
-					} else if ((o instanceof GC) && !((GC) o).isDisposed()) {
-						((GC) o).dispose();
-					} else if ((o instanceof Image) && !((Image) o).isDisposed()) {
-						((Image) o).dispose();
-					} else if ((o instanceof Region) && !((Region) o).isDisposed()) {
-						((Region) o).dispose(); // 3.0
-					} else if ((o instanceof TextLayout)
-							&& !((TextLayout) o).isDisposed()) {
-						((TextLayout) o).dispose(); // 3.0
-					}
-				} catch (NoClassDefFoundError e) {
-					// ignore
-				}
-				// Path, Pattern, Transform are all 3.1, which will be instances of 
-				// Resource
 			}
 		}
 	}
@@ -292,10 +223,14 @@ public class Utils
 
 	public static void centreWindow(Shell shell) {
 		Rectangle displayArea; // area to center in
-		try {
-			displayArea = shell.getMonitor().getClientArea();
-		} catch (NoSuchMethodError e) {
-			displayArea = shell.getDisplay().getClientArea();
+		if (shell.getParent() != null) {
+			displayArea = shell.getParent().getBounds();
+		} else {
+  		try {
+  			displayArea = shell.getMonitor().getClientArea();
+  		} catch (NoSuchMethodError e) {
+  			displayArea = shell.getDisplay().getClientArea();
+  		}
 		}
 
 		Rectangle shellRect = shell.getBounds();
@@ -353,21 +288,12 @@ public class Utils
 			final boolean bAllowShareAdd, final Text url,
 			DropTargetListener dropTargetListener) {
 
-		Transfer[] transferList;
-		if (SWT.getVersion() >= 3107) {
-			transferList = new Transfer[] {
-				HTMLTransfer.getInstance(),
-				URLTransfer.getInstance(),
-				FileTransfer.getInstance(),
-				TextTransfer.getInstance()
-			};
-		} else {
-			transferList = new Transfer[] {
-				URLTransfer.getInstance(),
-				FileTransfer.getInstance(),
-				TextTransfer.getInstance()
-			};
-		}
+		Transfer[] transferList = new Transfer[] {
+			HTMLTransfer.getInstance(),
+			URLTransfer.getInstance(),
+			FileTransfer.getInstance(),
+			TextTransfer.getInstance()
+		};
 
 		final DropTarget dropTarget = new DropTarget(composite, DND.DROP_DEFAULT
 				| DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK | DND.DROP_TARGET_MOVE);
@@ -439,8 +365,7 @@ public class Utils
 
 		public void drop(DropTargetEvent event) {
 			if (url == null || url.isDisposed()) {
-				TorrentOpener.openDroppedTorrents(AzureusCoreImpl.getSingleton(),
-						event, bAllowShareAdd);
+				TorrentOpener.openDroppedTorrents(event, bAllowShareAdd);
 			} else {
 				if (event.data instanceof URLTransfer.URLType) {
 					if (((URLTransfer.URLType) event.data).linkURL != null)
@@ -454,89 +379,6 @@ public class Utils
 			}
 		}
 	}
-
-	/**
-	 * Force label to use more vertical space if wrapped and in a GridLayout
-	 * Place this listener on the _parent_ of the label
-	 * See Eclipse SWT Bug #9866 (GridLayout does not handle wrapped Label properly)
-	 * This workaround only works for labels who:
-	 *   - horizontally span their whole parent 
-	 *     (ie. the parent has 3 columns, the label must span 3 columns)
-	 *   - GridData style has GridData.FILL_HORIZONTAL
-	 *   - Label style has SWT.WRAP
-	 *
-	 * @author TuxPaper
-	 * @note Bug 9866 fixed in 3105 and later
-	 */
-	public static class LabelWrapControlListener
-		extends ControlAdapter
-	{
-		public void controlResized(ControlEvent e) {
-			if (SWT.getVersion() >= 3105)
-				return;
-			Composite parent = (Composite) e.widget;
-			Control children[] = parent.getChildren();
-
-			if (children.length > 0) {
-				GridLayout parentLayout = (GridLayout) parent.getLayout();
-				if (parentLayout != null) {
-					Point size;
-					int marginWidth = parentLayout.marginWidth;
-
-					Composite grandParent = parent.getParent();
-					if (grandParent instanceof ScrolledComposite) {
-						Composite greatGP = grandParent.getParent();
-						if (greatGP != null) {
-							size = greatGP.getSize();
-
-							if (greatGP.getLayout() instanceof GridLayout) {
-								marginWidth += ((GridLayout) greatGP.getLayout()).marginWidth;
-							}
-						} else {
-							// not tested
-							size = grandParent.getSize();
-						}
-
-						if (grandParent.getLayout() instanceof GridLayout) {
-							marginWidth += ((GridLayout) grandParent.getLayout()).marginWidth;
-						}
-
-						ScrollBar sb = grandParent.getVerticalBar();
-						if (sb != null) {
-							// I don't know why, but we have to remove one
-							size.x -= sb.getSize().x + 1;
-						}
-					} else
-						size = parent.getSize();
-
-					boolean oneChanged = false;
-					for (int i = 0; i < children.length; i++) {
-						if ((children[i] instanceof Label)
-								&& (children[i].getStyle() & SWT.WRAP) == SWT.WRAP) {
-							GridData gd = (GridData) children[i].getLayoutData();
-							if (gd != null && gd.horizontalAlignment == GridData.FILL) {
-								if (gd.horizontalSpan == parentLayout.numColumns) {
-									gd.widthHint = size.x - 2 * marginWidth;
-									oneChanged = true;
-								} else {
-									Point pt = children[i].getLocation();
-									gd.widthHint = size.x - pt.x - (2 * marginWidth);
-									oneChanged = true;
-								}
-							}
-						}
-					}
-					if (oneChanged) {
-						parent.layout(true);
-						if (grandParent instanceof ScrolledComposite) {
-							((ScrolledComposite) grandParent).setMinSize(parent.computeSize(
-									SWT.DEFAULT, SWT.DEFAULT, true));
-						}
-					}
-				}
-			} // size
-		} // controlResized
-	} // class
 
 	public static void alternateRowBackground(TableItem item) {
 		if (Utils.TABLE_GRIDLINE_IS_ALTERNATING_COLOR) {
@@ -571,6 +413,9 @@ public class Utils
 		}
 
 		int iTopIndex = table.getTopIndex();
+		if (iTopIndex < 0) {
+			return;
+		}
 		int iBottomIndex = getTableBottomIndex(table, iTopIndex);
 
 		Color[] colors = {
@@ -628,6 +473,33 @@ public class Utils
 	 */
 	public static void setShellIcon(Shell shell) {
 		if (Constants.isOSX) {
+			if (true) {
+				return;
+			}
+			if (icon128 == null) {
+  			ImageLoader imageLoader = ImageLoader.getInstance();
+  			icon128 = imageLoader.getImage("azureus128");
+  			if (Constants.isCVSVersion()) {
+  				final int border = 9;
+					Image image = Utils.createAlphaImage(shell.getDisplay(),
+							128 + (border * 2), 128 + (border * 2));
+					image = blitImage(shell.getDisplay(), icon128, null, image, new Point(border,
+							border + 1));
+					imageLoader.releaseImage("azureus128");
+					icon128 = image;
+//  				GC gc = new GC(icon128);
+//  				gc.setTextAntialias(SWT.ON);
+//  				gc.setForeground(shell.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+//  				Font font = getFontWithHeight(gc.getFont(), gc, 20, SWT.BOLD);
+//  				gc.setFont(font);
+//					GCStringPrinter.printString(gc, Constants.AZUREUS_VERSION,
+//							new Rectangle(0, 0, 128, 128), false, false, SWT.CENTER
+//									| SWT.BOTTOM);
+//  				gc.dispose();
+//  				font.dispose();
+  			}
+			}
+ 			shell.setImage(icon128);
 			return;
 		}
 
@@ -766,7 +638,7 @@ public class Utils
 				} else {
 					queue.add(code);
 
-					diag_logger.log(SystemTime.getCurrentTime() + "] + QUEUE. size= "
+					diag_logger.log(SystemTime.getCurrentTime() + "] + Q. size= "
 							+ queue.size() + "; add " + code + " via "
 							+ Debug.getCompressedStackTrace());
 					final long lStart = SystemTime.getCurrentTime();
@@ -795,15 +667,23 @@ public class Utils
 									code.run();
 								}
 							} finally {
-								wait = SystemTime.getCurrentTime() - lStartTimeRun;
-								if (wait > 500) {
+								long runTIme = SystemTime.getCurrentTime() - lStartTimeRun;
+								if (runTIme > 500) {
 									diag_logger.log(SystemTime.getCurrentTime() + "] took "
-											+ wait + "ms to run " + code);
+											+ runTIme + "ms to run " + code);
 								}
 
-								diag_logger.log(SystemTime.getCurrentTime()
-										+ "] - QUEUE. size=" + queue.size());
 								queue.remove(code);
+
+								if (runTIme > 10) {
+									diag_logger.log(SystemTime.getCurrentTime()
+											+ "] - Q. size=" + queue.size() + ";wait:" + wait
+											+ "ms;run:" + runTIme + "ms " + code);
+								} else {
+									diag_logger.log(SystemTime.getCurrentTime()
+											+ "] - Q. size=" + queue.size() + ";wait:" + wait
+											+ "ms;run:" + runTIme + "ms");
+								}
 							}
 						}
 					};
@@ -876,153 +756,6 @@ public class Utils
 		return (display.getThread() == Thread.currentThread());
 	}
 
-	/** Open a messagebox using resource keys for title/text
-	 * 
-	 * @param parent Parent shell for messagebox
-	 * @param style SWT styles for messagebox
-	 * @param keyPrefix message bundle key prefix used to get title and text.  
-	 *         Title will be keyPrefix + ".title", and text will be set to
-	 *         keyPrefix + ".text"
-	 * @param textParams any parameters for text
-	 * 
-	 * @return what the messagebox returns
-	 */
-	public static int openMessageBox(Shell parent, int style, String keyPrefix,
-			String[] textParams) {
-		if ((style & (0x7f << 5)) == 0) {
-			// need at least one button
-			style |= SWT.OK;
-		}
-		Object[] buttonInfo = swtButtonStylesToText(style);
-		MessageBoxShell mb = new MessageBoxShell(parent,
-				MessageText.getString(keyPrefix + ".title"), MessageText.getString(
-						keyPrefix + ".text", textParams), (String[]) buttonInfo[0], 0);
-		mb.setLeftImage(style & 0x1f);
-		int ret = mb.open();
-
-		Integer[] buttonVals = (Integer[]) buttonInfo[1];
-		if (ret < 0 || ret > buttonVals.length) {
-			return SWT.CANCEL;
-		}
-		return buttonVals[ret].intValue();
-	}
-
-	/** Open a messagebox with actual title and text
-	 * 
-	 * @param parent
-	 * @param style
-	 * @param title
-	 * @param text
-	 * @return
-	 */
-	public static int openMessageBox(Shell parent, int style, String title,
-			String text) {
-		if (parent == null) {
-			parent = findAnyShell();
-		}
-		if ((style & (0x7f << 5)) == 0) {
-			// need at least one button
-			style |= SWT.OK;
-		}
-
-		Object[] buttonInfo = swtButtonStylesToText(style);
-		MessageBoxShell mb = new MessageBoxShell(parent, title, text,
-				(String[]) buttonInfo[0], 0);
-		mb.setLeftImage(style & 0x1f);
-		int ret = mb.open();
-
-		Integer[] buttonVals = (Integer[]) buttonInfo[1];
-		if (ret < 0 || ret > buttonVals.length) {
-			return SWT.CANCEL;
-		}
-		return buttonVals[ret].intValue();
-	}
-
-	public static int openMessageBox(Shell parent, int style, int default_style,
-			String title, String text) {
-		if (parent == null) {
-			parent = findAnyShell();
-		}
-		if ((style & (0x7f << 5)) == 0) {
-			// need at least one button
-			style |= SWT.OK;
-		}
-
-		Object[] buttonInfo = swtButtonStylesToText(style);
-
-		Object[] defaultButtonInfo = swtButtonStylesToText(default_style);
-
-		int defaultIndex = 0;
-
-		if (defaultButtonInfo.length > 0) {
-			String name = ((String[]) defaultButtonInfo[0])[0];
-
-			String[] names = (String[]) buttonInfo[0];
-
-			for (int i = 0; i < names.length; i++) {
-				if (names[i].equals(name)) {
-					defaultIndex = i;
-					break;
-				}
-			}
-		}
-		MessageBoxShell mb = new MessageBoxShell(parent, title, text,
-				(String[]) buttonInfo[0], defaultIndex);
-		mb.setLeftImage(style & 0x1f);
-		int ret = mb.open();
-
-		Integer[] buttonVals = (Integer[]) buttonInfo[1];
-		if (ret < 0 || ret > buttonVals.length) {
-			return SWT.CANCEL;
-		}
-		return buttonVals[ret].intValue();
-	}
-
-	private static Object[] swtButtonStylesToText(int style) {
-		List buttons = new ArrayList(2);
-		List buttonVal = new ArrayList(2);
-		int buttonCount = 0;
-		if ((style & SWT.OK) > 0) {
-			buttons.add(MessageText.getString("Button.ok"));
-			buttonVal.add(new Integer(SWT.OK));
-			buttonCount++;
-		}
-		if ((style & SWT.YES) > 0) {
-			buttons.add(MessageText.getString("Button.yes"));
-			buttonVal.add(new Integer(SWT.YES));
-			buttonCount++;
-		}
-		if ((style & SWT.NO) > 0) {
-			buttons.add(MessageText.getString("Button.no"));
-			buttonVal.add(new Integer(SWT.NO));
-			buttonCount++;
-		}
-		if ((style & SWT.CANCEL) > 0) {
-			buttons.add(MessageText.getString("Button.cancel"));
-			buttonVal.add(new Integer(SWT.CANCEL));
-			buttonCount++;
-		}
-		if ((style & SWT.ABORT) > 0) {
-			buttons.add(MessageText.getString("Button.abort"));
-			buttonVal.add(new Integer(SWT.ABORT));
-			buttonCount++;
-		}
-		if ((style & SWT.RETRY) > 0) {
-			buttons.add(MessageText.getString("Button.retry"));
-			buttonVal.add(new Integer(SWT.RETRY));
-			buttonCount++;
-		}
-		if ((style & SWT.IGNORE) > 0) {
-			buttons.add(MessageText.getString("Button.ignore"));
-			buttonVal.add(new Integer(SWT.IGNORE));
-			buttonCount++;
-		}
-		return new Object[] {
-			(String[]) buttons.toArray(new String[buttonCount]),
-			(Integer[]) buttonVal.toArray(new Integer[buttonCount])
-		};
-	}
-
 	/**
 	 * Bottom Index may be negative. Returns bottom index even if invisible.
 	 */
@@ -1034,7 +767,7 @@ public class Utils
 		// (such as within a paint event)
 
 		int itemCount = table.getItemCount();
-		if (iTopIndex >= itemCount)
+		if (iTopIndex >= itemCount || iTopIndex < 0)
 			return -1;
 
 		if (Constants.isOSX || Constants.isWindows) {
@@ -1079,21 +812,22 @@ public class Utils
 		if (sFile == null || sFile.trim().length() == 0) {
 			return;
 		}
-
-		if (SWT.getVersion() >= 3315 || SWT.getVersion() < 3300
-				|| UrlUtils.isURL(sFile) || sFile.startsWith("mailto:")) {
-			boolean launched = Program.launch(sFile);
-			if (!launched && Constants.isUnix
-					&& (UrlUtils.isURL(sFile) || sFile.startsWith("mailto:"))) {
-				if (!Program.launch("xdg-open " + sFile)) {
-					Program.launch("htmlview " + sFile);
+		
+		if (!Constants.isWindows && new File(sFile).isDirectory()) {
+			PlatformManager mgr = PlatformManagerFactory.getPlatformManager();
+			if (mgr.hasCapability(PlatformManagerCapabilities.ShowFileInBrowser)) {
+				try {
+					PlatformManagerFactory.getPlatformManager().showFile(sFile);
+					return;
+				} catch (PlatformManagerException e) {
 				}
 			}
-		} else {
-			if (Constants.isOSX) {
-				Program.launch("file://" + sFile.replaceAll(" ", "%20"));
-			} else {
-				Program.launch(sFile);
+		}
+
+		boolean launched = Program.launch(sFile);
+		if (!launched && Constants.isUnix) {
+			if (!Program.launch("xdg-open " + sFile)) {
+				Program.launch("htmlview " + sFile);
 			}
 		}
 	}
@@ -1107,29 +841,26 @@ public class Utils
 	 */
 	public static void setCheckedInSetData(final TableItem item,
 			final boolean checked) {
-		if (DIRECT_SETCHECKED) {
-			item.setChecked(checked);
-		} else {
-			item.setChecked(!checked);
-			item.getDisplay().asyncExec(new AERunnable() {
-				public void runSupport() {
-					item.setChecked(checked);
-				}
-			});
-		}
+		item.setChecked(checked);
 
 		if (Constants.isWindowsXP || isGTK) {
 			Rectangle r = item.getBounds(0);
 			Table table = item.getParent();
 			Rectangle rTable = table.getClientArea();
 
-			r.y += VerticalAligner.getTableAdjustVerticalBy(table);
 			table.redraw(0, r.y, rTable.width, r.height, true);
 		}
 	}
 
 	public static boolean linkShellMetricsToConfig(final Shell shell,
 			final String sConfigPrefix) {
+		boolean isMaximized = COConfigurationManager.getBooleanParameter(sConfigPrefix
+				+ ".maximized");
+		
+		if (!isMaximized) {
+			shell.setMaximized(false);
+		}
+
 		String windowRectangle = COConfigurationManager.getStringParameter(
 				sConfigPrefix + ".rectangle", null);
 		boolean bDidResize = false;
@@ -1144,20 +875,19 @@ public class Utils
 				if (i == 4) {
 					Rectangle shellBounds = new Rectangle(values[0], values[1],
 							values[2], values[3]);
-					shell.setBounds(shellBounds);
-					verifyShellRect(shell, true);
-					bDidResize = true;
+					if (shellBounds.width > 100 && shellBounds.height > 50) {
+  					shell.setBounds(shellBounds);
+  					verifyShellRect(shell, true);
+  					bDidResize = true;
+					}
 				}
 			} catch (Exception e) {
 			}
 		}
 
-		boolean isMaximized = COConfigurationManager.getBooleanParameter(sConfigPrefix
-				+ ".maximized");
-		if (Constants.isOSX && windowRectangle != null) {
-			isMaximized = false;
+		if (isMaximized) {
+			shell.setMaximized(isMaximized);
 		}
-		shell.setMaximized(isMaximized);
 
 		new ShellMetricsResizeListener(shell, sConfigPrefix);
 
@@ -1186,7 +916,7 @@ public class Utils
 
 		private int calcState(Shell shell) {
 			return shell.getMinimized() ? SWT.MIN : shell.getMaximized()
-					&& !Constants.isOSX ? SWT.MAX : SWT.NONE;
+					&& !isCarbon ? SWT.MAX : SWT.NONE;
 		}
 
 		private void saveMetrics() {
@@ -1557,6 +1287,11 @@ public class Utils
 	}
 
 	public static Font getFontWithHeight(Font baseFont, GC gc, int heightInPixels) {
+		return getFontWithHeight(baseFont, gc, heightInPixels, SWT.DEFAULT);
+	}
+
+	public static Font getFontWithHeight(Font baseFont, GC gc,
+			int heightInPixels, int style) {
 		Font font = null;
 		Device device = baseFont.getDevice();
 
@@ -1582,6 +1317,9 @@ public class Utils
 					font.dispose();
 				}
 				fontData[0].setHeight(size);
+				if (style != SWT.DEFAULT) {
+					fontData[0].setStyle(style);
+				}
 
 				font = new Font(device, fontData);
 
@@ -1966,6 +1704,21 @@ public class Utils
 		return false;
 	}
 
+	public static Shell findFirstShellWithStyle(int styles) {
+		Display display = Display.getCurrent();
+		if (display != null) {
+			Shell[] shells = display.getShells();
+			for (int i = 0; i < shells.length; i++) {
+				Shell shell = shells[i];
+				int style = shell.getStyle();
+				if ((style & styles) == styles && !shell.isDisposed()) {
+					return shell;
+				}
+			}
+		}
+		return null;
+	}
+
 	public static int[] colorToIntArray(Color color) {
 		if (color == null || color.isDisposed()) {
 			return null;
@@ -2332,6 +2085,8 @@ public class Utils
 	
 	
 	private static Map truncatedTextCache = new HashMap();
+
+	private static ThreadPool tp = new ThreadPool("GetOffSWT", 2);
 	
 	private static class TruncatedTextResult {
 		String text;
@@ -2427,7 +2182,6 @@ public class Utils
 	{
 		MessageBoxShell mb = 
 			new MessageBoxShell(
-				findAnyShell(),
 				MessageText.getString("ConfigView.section.security.op.error.title"),
 				MessageText.getString("ConfigView.section.security.op.error",
 						new String[] {
@@ -2438,6 +2192,26 @@ public class Utils
 				},
 				0 );
 		
-		mb.open();
+		mb.open(null);
+	}
+	
+	public static void getOffOfSWTThread(AERunnable runnable) {
+		tp.run(runnable);
+	}
+	
+	public static Browser createSafeBrowser(Composite parent, int style) {
+		try {
+  		Browser browser = new Browser(parent, Utils.getInitialBrowserStyle(style));
+  		browser.addDisposeListener(new DisposeListener() {
+  			public void widgetDisposed(DisposeEvent e) {
+  				((Browser)e.widget).setUrl("about:blank");
+  				((Browser)e.widget).setVisible(false);
+  				while (!e.display.isDisposed() && e.display.readAndDispatch());
+  			}
+  		});
+  		return browser;
+		} catch (Throwable e) {
+		}
+		return null;
 	}
 }

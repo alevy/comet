@@ -46,12 +46,7 @@
 
 package com.aelitis.net.natpmp.impl;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.PortUnreachableException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 
 import com.aelitis.azureus.core.util.NetUtils;
 import com.aelitis.net.natpmp.NATPMPDeviceAdapter;

@@ -25,26 +25,21 @@
 package org.gudy.azureus2.ui.swt.views.configsections;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
+
+import com.aelitis.azureus.core.*;
+
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
-
-import com.aelitis.azureus.core.AzureusCore;
 
 public class 
 ConfigSectionTracker 
 	implements UISWTConfigSection 
 {
 	
-	protected	AzureusCore	azureus_core;
-	
-	public
-	ConfigSectionTracker(
-		AzureusCore		_azureus_core )
-	{
-		azureus_core	= _azureus_core;
+	public ConfigSectionTracker() {
 	}
 	
   public String configSectionGetParentSection() {

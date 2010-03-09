@@ -22,6 +22,7 @@ package org.gudy.azureus2.ui.swt.config;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+
 import org.gudy.azureus2.ui.swt.config.generic.GenericIntParameter;
 
 /**

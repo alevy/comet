@@ -27,10 +27,9 @@ package org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader;
  *
  */
 
-import java.io.InputStream;
+import java.io.*;
 
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 public class 
 ResourceDownloaderErrorImpl

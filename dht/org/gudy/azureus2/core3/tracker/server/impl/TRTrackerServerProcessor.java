@@ -27,21 +27,15 @@ package org.gudy.azureus2.core3.tracker.server.impl;
  */
 
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerPeer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerRequest;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.tracker.server.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.ByteEncodedKeyHashMap;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.ThreadPoolTask;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 
@@ -82,7 +76,7 @@ TRTrackerServerProcessor
 		int							udp_port,
 		int							http_port,
 		String						real_ip_address,
-		String						client_ip_address,
+		String						original_client_ip_address,
 		long						downloaded,
 		long						uploaded,
 		long						left,
@@ -104,7 +98,7 @@ TRTrackerServerProcessor
 		
 		start = SystemTime.getHighPrecisionCounter();
 
-		boolean	ip_override = real_ip_address != client_ip_address;
+		boolean	ip_override = real_ip_address != original_client_ip_address;
 		
 		boolean	loopback	= TRTrackerUtils.isLoopback( real_ip_address );
 		
@@ -119,7 +113,20 @@ TRTrackerServerProcessor
 			// translate any 127.0.0.1 local addresses back to the tracker address. Note this
 			// fixes up .i2p and onion addresses back to their real values when needed
 		
-		client_ip_address = TRTrackerUtils.adjustHostFromHosting( client_ip_address );
+		String client_ip_address = TRTrackerUtils.adjustHostFromHosting( original_client_ip_address );
+		
+		if ( client_ip_address != original_client_ip_address ){
+			
+			if ( Logger.isEnabled()){
+				
+				Logger.log(
+					new LogEvent(LogIDs.TRACKER, 
+						"    address adjusted: original=" +	original_client_ip_address +
+						", real=" + real_ip_address +
+						", adjusted=" + client_ip_address +
+						", loopback=" + loopback ));
+			}	
+		}
 		
 		if ( !TRTrackerServerImpl.getAllNetworksSupported()){
 		
@@ -572,6 +579,18 @@ TRTrackerServerProcessor
 		getTCPPort()
 		{
 			return( port );
+		}
+		
+		public int 
+		getHTTPPort() 
+		{
+			return( 0 );
+		}
+		
+		public int 
+		getUDPPort() 
+		{
+			return( 0 );
 		}
 		
 		public byte[]

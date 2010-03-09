@@ -27,9 +27,12 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import org.gudy.azureus2.core3.util.AEThread2;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
+import org.gudy.azureus2.core3.util.SystemTime;
 
+import com.aelitis.azureus.core.diskmanager.file.FMFile;
 import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
 
 public class 
@@ -54,6 +57,13 @@ FMFileAccessLinear
 		owner	= _owner;
 	}
 	
+	public void
+	aboutToOpen()
+	
+		throws FMFileManagerException
+	{
+	}
+	
 	public long
 	getLength(
 		RandomAccessFile		raf )
@@ -61,6 +71,8 @@ FMFileAccessLinear
 		throws FMFileManagerException
 	{
 		try{
+			AEThread2.setDebug( owner );
+			
 			return( raf.length());
 			
 		}catch( Throwable e ){
@@ -76,13 +88,25 @@ FMFileAccessLinear
 	
 		throws FMFileManagerException
 	{
-		try{			
+		try{
+			AEThread2.setDebug( owner );
+			
 			raf.setLength( length );
 			
 		}catch( Throwable e ){
 			
 			throw( new FMFileManagerException( "setLength fails", e ));
 		}
+	}
+	
+	public void
+	setPieceComplete(
+		RandomAccessFile	raf,
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws FMFileManagerException
+	{	
 	}
 	
 	public void
@@ -107,6 +131,8 @@ FMFileAccessLinear
 			throw( new FMFileManagerException( "read - file is closed"));
 		}
 
+		AEThread2.setDebug( owner );
+		
 		try{
 			fc.position(offset);
 			
@@ -145,7 +171,11 @@ FMFileAccessLinear
 			throw( new FMFileManagerException( "read - file is closed"));
 		}
 		
+		AEThread2.setDebug( owner );
+		
 		int[]	original_positions = null;
+		
+		long read_start = SystemTime.getHighPrecisionCounter();
 		
 		try{			
 			fc.position(offset);
@@ -239,6 +269,15 @@ FMFileAccessLinear
 			}
 			
 			throw( new FMFileManagerException( "read fails", e ));
+			
+		}finally{
+			
+			long elapsed_millis = ( SystemTime.getHighPrecisionCounter() - read_start )/1000000;
+
+			if ( elapsed_millis > 10*1000 ){
+				
+				System.out.println( "read took " + elapsed_millis + " for " + owner.getString());
+			}
 		}
 	}
 	
@@ -264,6 +303,8 @@ FMFileAccessLinear
 			throw( new FMFileManagerException( "read - file is closed"));
 		}
 
+		AEThread2.setDebug( owner );
+		
 		int[]	original_positions = null;
 
 		try{

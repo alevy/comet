@@ -23,13 +23,7 @@ package com.aelitis.azureus.plugins.net.buddy.tracker;
 
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
@@ -69,10 +63,7 @@ import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 import com.aelitis.azureus.core.util.CopyOnWriteSet;
-import com.aelitis.azureus.plugins.net.buddy.BuddyPlugin;
-import com.aelitis.azureus.plugins.net.buddy.BuddyPluginAZ2TrackerListener;
-import com.aelitis.azureus.plugins.net.buddy.BuddyPluginBuddy;
-import com.aelitis.azureus.plugins.net.buddy.BuddyPluginListener;
+import com.aelitis.azureus.plugins.net.buddy.*;
 
 public class 
 BuddyPluginTracker 
@@ -176,6 +167,8 @@ BuddyPluginTracker
 				}
 			});
 		
+		// Assumed if we already have a plugin reference, that the
+		// Azureus Core is available
 		GlobalManager gm = AzureusCoreFactory.getSingleton().getGlobalManager();
 		
 		gm.addListener(

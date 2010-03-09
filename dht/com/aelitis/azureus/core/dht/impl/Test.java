@@ -22,27 +22,29 @@
 
 package com.aelitis.azureus.core.dht.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
+import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.dht.*;
+import com.aelitis.azureus.core.dht.control.DHTControlContact;
+import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
+import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
+import com.aelitis.azureus.core.dht.nat.impl.DHTNATPuncherImpl;
+import com.aelitis.azureus.core.dht.transport.*;
+import com.aelitis.azureus.core.dht.transport.loopback.DHTTransportLoopbackImpl;
+import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
+import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
+import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
+
+import java.io.*;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.security.KeyFactory;
 import java.security.Signature;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateKeySpec;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.core3.util.Timer;
 import org.gudy.azureus2.core3.util.TimerEvent;
@@ -50,32 +52,6 @@ import org.gudy.azureus2.core3.util.TimerEventPerformer;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
-
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.DHTFactory;
-import com.aelitis.azureus.core.dht.DHTLogger;
-import com.aelitis.azureus.core.dht.DHTOperationAdapter;
-import com.aelitis.azureus.core.dht.DHTOperationListener;
-import com.aelitis.azureus.core.dht.DHTStorageAdapter;
-import com.aelitis.azureus.core.dht.DHTStorageKeyStats;
-import com.aelitis.azureus.core.dht.control.DHTControlContact;
-import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
-import com.aelitis.azureus.core.dht.nat.impl.DHTNATPuncherImpl;
-import com.aelitis.azureus.core.dht.transport.DHTTransport;
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportException;
-import com.aelitis.azureus.core.dht.transport.DHTTransportFactory;
-import com.aelitis.azureus.core.dht.transport.DHTTransportFullStats;
-import com.aelitis.azureus.core.dht.transport.DHTTransportProgressListener;
-import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandlerAdapter;
-import com.aelitis.azureus.core.dht.transport.DHTTransportStats;
-import com.aelitis.azureus.core.dht.transport.DHTTransportTransferHandler;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
-import com.aelitis.azureus.core.dht.transport.loopback.DHTTransportLoopbackImpl;
-import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
-import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
-import com.aelitis.azureus.plugins.dht.impl.DHTPluginStorageManager;
 
 /**
  * @author parg
@@ -93,11 +69,11 @@ Test
 	
 	static{
 		
-		DHTTransportUDPImpl.TEST_EXTERNAL_IP	= false;
+		DHTTransportUDPImpl.TEST_EXTERNAL_IP	= true;
 	}
 	
-	int num_dhts			= 3;
-	int num_stores			= 2;
+	int num_dhts			= 6;
+	int num_stores			= 0;
 	static int MAX_VALUES	= 10000;
 	
 	boolean	udp_protocol	= true;
@@ -105,14 +81,16 @@ Test
 	
 
 	static int		K			= 20;
- 	static int		B			= 5;
+	static int		B			= 5;
 	static int		ID_BYTES	= 20;
 	
 	int		fail_percentage	= 00;
 	
 	static Properties	dht_props = new Properties();
+	
+	static{		
+		// DHTDBImpl.ORIGINAL_REPUBLISH_INTERVAL_GRACE = 0;
 
-	static{
 		dht_props.put( DHT.PR_CONTACTS_PER_NODE, new Integer(K));
 		dht_props.put( DHT.PR_NODE_SPLIT_FACTOR, new Integer(B));
 		dht_props.put( DHT.PR_CACHE_REPUBLISH_INTERVAL, new Integer(30000));
@@ -210,14 +188,10 @@ Test
 	
 	
 	Map	port_map = new HashMap();
-
-	protected Test() { this(3); }
 	
 	protected
-	Test(int _num_dhts)
+	Test()
 	{
-		this.num_dhts = _num_dhts;
-		
 		try{
 			DHTLog.setLogging( true );
 			
@@ -355,8 +329,8 @@ Test
 					
 					DHT	dht = dhts[dht_index];
 					
-					String	lhs = str.substring(0,pos);
-					String	rhs = str.substring(pos+1);
+					String	lhs = str.substring(0,pos).trim();
+					String	rhs = str.substring(pos+1).trim();
 					
 					DHTTransportStats	stats_before 	= null;
 					
@@ -379,7 +353,43 @@ Test
 							String	key = rhs.substring(0,pos);
 							String	val = rhs.substring(pos+1);
 							
-							dht.put( key.getBytes(), "", getBytes(val), (byte)(Math.random()*255), new DHTOperationAdapter() );
+							pos = val.indexOf( ' ' );
+							
+							byte flags 		= 0;
+							byte life 		= 0;
+							byte rep_fact 	= DHT.REP_FACT_DEFAULT;
+							
+							if ( pos != -1 ){
+								
+								String	opts = val.substring( pos+1 );
+								
+								String[] x = opts.split( "," );
+								
+								for ( String s: x ){
+									
+									String[] y = s.split("=");
+									
+									String	opt = y[0];
+									
+									if ( opt.equals( "f" )){
+										
+										flags = (byte)Integer.parseInt(y[1],16);
+										
+									}else if ( opt.equals( "l" )){
+										
+										life = (byte)Integer.parseInt(y[1]);
+										
+									}else if ( opt.equals( "r" )){
+										
+										rep_fact = (byte)Integer.parseInt(y[1]);
+
+									}
+								}
+								
+								val = val.substring(0,pos);
+							}
+							
+							dht.put( key.getBytes(), "", val.getBytes(), flags, life, rep_fact, false, new DHTOperationAdapter() );
 						}
 					}else if ( command == 'x' ){
 						
@@ -400,7 +410,7 @@ Test
 								store_index.remove( rhs );
 							}
 							
-							System.out.println( "=====> " + (res==null?"null":new String(res)));
+							System.out.println( "-> " + (res==null?"null":new String(res)));
 						}
 					}else if ( command == 'e' ){
 						
@@ -412,7 +422,7 @@ Test
 							
 						}else{
 							
-							DataOutputStream	daos = new DataOutputStream( new FileOutputStream( getTmpDirectory() + "state"));
+							DataOutputStream	daos = new DataOutputStream( new FileOutputStream( "C:\\temp\\dht.state"));
 							
 							dht.exportState( daos, 0 );
 							
@@ -424,8 +434,33 @@ Test
 						
 						stats_before = dht.getTransport().getStats().snapshot();
 					
+						pos = rhs.indexOf( ' ' );
+						
+						byte flags 	= 0;
+						
+						if ( pos != -1 ){
+							
+							String	opts = rhs.substring( pos+1 );
+							
+							String[] x = opts.split( "," );
+							
+							for ( String s: x ){
+								
+								String[] y = s.split("=");
+								
+								String	opt = y[0];
+								
+								if ( opt.equals( "f" )){
+									
+									flags = (byte)Integer.parseInt(y[1]);
+								}
+							}
+							
+							rhs = rhs.substring(0,pos);
+						}
+						
 						dht.get( 
-								rhs.getBytes(), "", (byte)0, 32, 0, false, false,
+								rhs.getBytes(), "", flags, 32, 0, false, false,
 								new DHTOperationAdapter()
 								{
 									public void
@@ -433,8 +468,7 @@ Test
 										DHTTransportContact	contact,
 										DHTTransportValue	value )
 									{
-										System.out.println( "=====> " + getString( value ) +
-												" (from: " + contact.getString() + ")");
+										System.out.println( "-> " + getString( value ));
 									}
 																	
 									public void
@@ -520,7 +554,8 @@ Test
 									
 									public void
 									found(
-										DHTTransportContact	contact )
+										DHTTransportContact	contact,
+										boolean				is_closest )
 									{
 									}
 									
@@ -902,24 +937,15 @@ Test
 		}
 	}
 	
-	protected byte[] 
-	getBytes(
-			String 	val)
-	{
-		return val.getBytes();
-	}
-	
 	protected String
 	getString(
 		DHTTransportValue		value )
 	{
 		return( new String( value.getValue()) + 
-				"; flags=" + Integer.parseInt(String.valueOf( value.getFlags()), 16 ) +
+				"; flags=" + Integer.toHexString( value.getFlags()) +
+				"; life=" + value.getLifeTimeHours() +
+				"; rep=" + Integer.toHexString( value.getReplicationControl())  +
 				", orig=" + value.getOriginator().getAddress());
-	}
-	
-	protected String getTmpDirectory() {
-		return "C:\\temp\\dht\\";
 	}
 	
 	protected void
@@ -1028,23 +1054,13 @@ Test
 		check.put(id,"");
 		*/
 		
-		DHTStorageAdapter	storage_adapter =
-			createStorageAdapter(network, logger, new File( getTmpDirectory() + i));
+		DHTStorageAdapter	storage_adapter = new DHTPluginStorageManager( network, logger, new File( "C:\\temp\\dht\\" + i));
 
 		DHT	dht = DHTFactory.create( transport, dht_props, storage_adapter, this, logger );
 		
 		dhts[i]	= dht;					
 
 		transports[i] = transport;
-	}
-	
-	protected DHTStorageAdapter
-	createStorageAdapter(
-		int network,
-		DHTLogger logger,
-		File file)
-	{
-		return new DHTPluginStorageManager( network, logger, file);
 	}
 	
 	/*

@@ -25,19 +25,14 @@ package org.gudy.azureus2.core3.xml.util;
  * @author parg
  */
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.*;
 
 public class 
 XUXmlWriter 
@@ -183,7 +178,23 @@ XUXmlWriter
 		str = str.replaceAll( "'", "&apos;" );
 		str = str.replaceAll( "--", "&#45;&#45;" );
 		
-		return( str );
+		char[]	chars = str.toCharArray();
+				
+			// eliminate chars not supported by XML 
+		
+		for ( int i=0;i<chars.length;i++){
+			
+			int	c = (int)chars[i];
+			
+			if (	( c <= 31 ) ||
+					( c >= 127 && c <= 159 ) ||
+					!Character.isDefined( c )){
+				
+				chars[i] = '?';
+			}
+		}
+
+		return( new String( chars ));
 	}
 	
 	public static String
@@ -203,6 +214,49 @@ XUXmlWriter
 		str = str.replaceAll( "&amp;", "&" );
 
 		return( str );
+	}
+	
+	public static String[]
+	splitWithEscape(
+		String		str,
+		char		delim )
+	{
+		List<String> res = new ArrayList<String>();
+				
+		String	current = "";
+		
+		char[]	chars = str.toCharArray();
+		
+		for (int i=0;i<chars.length;i++){
+			
+			char c = chars[i];
+			
+			if ( c == '\\' && i+1<chars.length && chars[i+1] == delim ){
+				
+				current += delim;
+				
+				i++;
+				
+			}else if ( c == delim ){
+								
+				if ( current.length() > 0 ){
+						
+					res.add( current );
+						
+					current = "";
+				}
+			}else{
+					
+				current += c;
+			}
+		}
+		
+		if ( current.length() > 0 ){
+			
+			res.add( current );
+		}
+		
+		return( res.toArray( new String[ res.size() ]));
 	}
 	
 	protected void
@@ -279,6 +333,10 @@ XUXmlWriter
 			
 			writeGeneric((List)obj);
 			
+		}else if ( obj instanceof String ){
+			
+			writeGeneric((String)obj );
+			
 		}else if ( obj instanceof byte[] ){
 		
 			writeGeneric((byte[])obj);
@@ -351,6 +409,25 @@ XUXmlWriter
 		}else{
 			
 			writeTag( "BYTES", encodeBytes( bytes ));
+		}
+	}
+	
+	protected void
+	writeGeneric(
+		String	str  )
+	{
+		if ( generic_simple ){
+			
+			try{
+				writeLineRaw( escapeXML( str ));
+				
+			}catch( Throwable e ){
+				
+				e.printStackTrace();
+			}
+		}else{
+			
+			writeTag( "STRING", str );
 		}
 	}
 	

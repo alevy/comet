@@ -22,14 +22,17 @@
 
 package com.aelitis.azureus.core.instancemanager;
 
-import java.net.InetAddress;
 import java.util.List;
+import java.net.InetAddress;
 
 public interface 
 AZInstance 
 {
 	public String
 	getID();
+	
+	public String
+	getApplicationID();
 	
 	public InetAddress
 	getInternalAddress();

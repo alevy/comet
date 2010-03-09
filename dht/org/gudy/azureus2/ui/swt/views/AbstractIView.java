@@ -27,7 +27,7 @@ import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.ui.swt.Messages;
 
 /**
- * @author Rene
+ * @author René
  * 
  */
 

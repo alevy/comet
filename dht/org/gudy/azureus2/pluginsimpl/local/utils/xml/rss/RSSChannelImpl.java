@@ -29,9 +29,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.utils.xml.rss.RSSChannel;
-import org.gudy.azureus2.plugins.utils.xml.rss.RSSItem;
-import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
+import org.gudy.azureus2.plugins.utils.xml.rss.*;
+import org.gudy.azureus2.plugins.utils.xml.simpleparser.*;
 
 /**
  * @author parg
@@ -84,7 +83,28 @@ RSSChannelImpl
 	public String
 	getDescription()
 	{
-		return( node.getChild( is_atom?"summary":"description" ).getValue());
+		String[] fields;
+		
+		if ( is_atom ){
+			
+			fields = new String[]{ "summary", "description" };
+			
+		}else{
+			
+			fields = new String[]{ "description", "summary" };
+		}
+		
+		for ( String field: fields ){
+			
+			SimpleXMLParserDocumentNode x = node.getChild( field );
+			
+			if ( x != null ){
+				
+				return( x.getValue());
+			}
+		}
+		
+		return( null );
 	}
 	
 	public URL

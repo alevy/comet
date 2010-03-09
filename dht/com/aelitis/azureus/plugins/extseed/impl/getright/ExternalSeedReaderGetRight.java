@@ -22,31 +22,37 @@
 
 package com.aelitis.azureus.plugins.extseed.impl.getright;
 
+import java.util.*;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Map;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.plugins.peers.PeerManager;
 import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentImpl;
 
+import com.aelitis.azureus.core.peermanager.piecepicker.PiecePicker;
+import com.aelitis.azureus.core.peermanager.piecepicker.PiecePriorityProvider;
 import com.aelitis.azureus.plugins.extseed.ExternalSeedException;
 import com.aelitis.azureus.plugins.extseed.ExternalSeedPlugin;
 import com.aelitis.azureus.plugins.extseed.ExternalSeedReader;
 import com.aelitis.azureus.plugins.extseed.impl.ExternalSeedReaderImpl;
 import com.aelitis.azureus.plugins.extseed.impl.ExternalSeedReaderRequest;
 import com.aelitis.azureus.plugins.extseed.util.ExternalSeedHTTPDownloader;
+import com.aelitis.azureus.plugins.extseed.util.ExternalSeedHTTPDownloaderLinear;
 import com.aelitis.azureus.plugins.extseed.util.ExternalSeedHTTPDownloaderListener;
+import com.aelitis.azureus.plugins.extseed.util.ExternalSeedHTTPDownloaderRange;
 
 public class 
 ExternalSeedReaderGetRight
 	extends ExternalSeedReaderImpl
+	implements PiecePriorityProvider
 {
 	private static final int	TARGET_REQUEST_SIZE_DEFAULT	= 256*1024;
 	
 	private URL			url;
-	private String		ip;
 	private int			port;
 	
 	private ExternalSeedHTTPDownloader[]	http_downloaders;
@@ -54,9 +60,12 @@ ExternalSeedReaderGetRight
 	private long[]							downloader_lengths;
 	
 	private int			piece_size;
-
 	private int			piece_group_size;
 		
+	private long[]		piece_priorities;
+	
+	private boolean		linear_download;
+	
 	protected
 	ExternalSeedReaderGetRight(
 		ExternalSeedPlugin 		_plugin,
@@ -66,13 +75,14 @@ ExternalSeedReaderGetRight
 	
 		throws Exception
 	{
-		super( _plugin, _torrent, _params );
+		super( _plugin, _torrent, _url.getHost(), _params );
 				
 		int target_request_size	= getIntParam( _params, "req_size", TARGET_REQUEST_SIZE_DEFAULT );
 		
+		linear_download	= getBooleanParam( _params, "linear", false );
+
 		url		= _url;
 		
-		ip		= url.getHost();
 		port	= url.getPort();
 		
 		if ( port == -1 ){
@@ -95,7 +105,9 @@ ExternalSeedReaderGetRight
 		
 		if ( to_torrent.isSimpleTorrent()){
 			
-			http_downloaders = new ExternalSeedHTTPDownloader[]{ new ExternalSeedHTTPDownloader( url, ua )};
+			http_downloaders = 
+				new ExternalSeedHTTPDownloader[]{ 
+					linear_download?new ExternalSeedHTTPDownloaderLinear( url, ua ):new ExternalSeedHTTPDownloaderRange( url, ua )};
 			
 			downloader_offsets 	= new long[]{ 0 };
 			downloader_lengths	= new long[]{ to_torrent.getSize() };
@@ -137,7 +149,7 @@ ExternalSeedReaderGetRight
 					file_url_str += "/" + URLEncoder.encode( new String( bits[j], "ISO-8859-1" ), "ISO-8859-1" ).replaceAll("\\+", "%20");
 				}
 				
-				http_downloaders[i] = new ExternalSeedHTTPDownloader( new URL( file_url_str), ua );
+				http_downloaders[i] = linear_download?new ExternalSeedHTTPDownloaderLinear( new URL( file_url_str), ua ):new ExternalSeedHTTPDownloaderRange( new URL( file_url_str), ua );
 				
 				downloader_offsets[i]	= offset;
 				downloader_lengths[i]	= length;
@@ -165,10 +177,10 @@ ExternalSeedReaderGetRight
 		return( "GR: " + url );
 	}
 	
-	public String
-	getIP()
+	public URL 
+	getURL() 
 	{
-		return( ip );
+		return( url );
 	}
 	
 	public int
@@ -189,6 +201,74 @@ ExternalSeedReaderGetRight
 		return( true );
 	}
 		
+	protected void
+	setActiveSupport(
+		PeerManager	peer_manager,
+		boolean		active )
+	{
+		if ( linear_download ){
+			
+				// force overall download order to be from end of file to start (for BT peers)
+			
+			if ( peer_manager != null ){
+				
+				PiecePicker picker = PluginCoreUtils.unwrap( peer_manager ).getPiecePicker();
+	
+				if ( active ){
+					
+					piece_priorities = new long[peer_manager.getPieces().length];
+					
+					for ( int i=0;i<piece_priorities.length;i++){
+						
+						piece_priorities[i] = 10*1000 +  i;
+					}
+					
+					picker.addPriorityProvider( this );
+					
+				}else{
+					
+					piece_priorities = null;
+					
+					picker.removePriorityProvider( this );
+				}
+			}
+			
+			if ( !active ){
+				
+				for ( ExternalSeedHTTPDownloader d: http_downloaders ){
+					
+					d.deactivate();
+				}
+			}
+		}
+	}
+	
+	public long[]
+	updatePriorities(
+		PiecePicker		picker )
+	{
+		return( piece_priorities );
+	}
+	
+	public void
+	calculatePriorityOffsets(
+		PeerManager		peer_manager,
+		int[]			base_priorities )
+	{
+		if ( linear_download ){
+			
+				// force us linear from front of file to end
+			
+			for (int i=0;i<base_priorities.length;i++){
+				
+				base_priorities[i] = TOP_PIECE_PRIORITY + base_priorities.length - ( i + 1 );
+			}
+		}else{
+			
+			super.calculatePriorityOffsets( peer_manager, base_priorities );
+		}
+	}
+	
 	protected void
 	readData(
 		ExternalSeedReaderRequest	request )
@@ -344,6 +424,12 @@ ExternalSeedReaderGetRight
 			        		bytes_read += num;
 			        		
 			        		listener.reportBytesRead( num );
+			        	}
+			        	
+			        	public boolean 
+			        	isCancelled() 
+			        	{
+			        		return( listener.isCancelled());
 			        	}
 			        	
 			        	public void

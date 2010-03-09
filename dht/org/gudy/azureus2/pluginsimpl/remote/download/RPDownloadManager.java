@@ -26,25 +26,16 @@ package org.gudy.azureus2.pluginsimpl.remote.download;
  *
  */
 
-import java.io.File;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadEventNotifier;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadManager;
-import org.gudy.azureus2.plugins.download.DownloadManagerListener;
-import org.gudy.azureus2.plugins.download.DownloadManagerStats;
-import org.gudy.azureus2.plugins.download.DownloadWillBeAddedListener;
-import org.gudy.azureus2.plugins.download.savelocation.DefaultSaveLocationManager;
-import org.gudy.azureus2.plugins.download.savelocation.SaveLocationManager;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.pluginsimpl.remote.RPException;
-import org.gudy.azureus2.pluginsimpl.remote.RPObject;
-import org.gudy.azureus2.pluginsimpl.remote.RPReply;
-import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
-import org.gudy.azureus2.pluginsimpl.remote.torrent.RPTorrent;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.download.savelocation.*;
+import org.gudy.azureus2.plugins.torrent.*;
+
+import org.gudy.azureus2.pluginsimpl.remote.*;
+import org.gudy.azureus2.pluginsimpl.remote.torrent.*;
 
 public class 
 RPDownloadManager

@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.StringTokenizer;
 
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;
@@ -38,8 +39,8 @@ import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
 import com.aelitis.azureus.core.networkmanager.VirtualChannelSelector;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminException;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminHTTPProxy;
-import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPConnectionManager;
+import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportHelperFilterFactory;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportImpl;
@@ -200,9 +201,11 @@ NetworkAdminHTTPProxyImpl
 			TCPConnectionManager.ConnectListener connect_listener = 
 				new TCPConnectionManager.ConnectListener() 
 				{
-					public void 
-					connectAttemptStarted() 
+					public int 
+					connectAttemptStarted(
+						int	default_connect_timeout )
 					{	
+						return( default_connect_timeout );
 					}
 		
 					public void 
@@ -311,7 +314,7 @@ NetworkAdminHTTPProxyImpl
 														 
 														 if ( pos != -1 ){
 															 
-															 String	lhs = token.substring( 0, pos ).trim().toLowerCase();
+															 String	lhs = token.substring( 0, pos ).trim().toLowerCase( MessageText.LOCALE_ENGLISH );
 															 String	rhs = token.substring( pos+1 ).trim();
 
 															 if ( lhs.equals( "server" )){

@@ -23,13 +23,7 @@ package com.aelitis.azureus.core.lws;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
@@ -44,12 +38,14 @@ import org.gudy.azureus2.core3.util.TimerEvent;
 import org.gudy.azureus2.core3.util.TimerEventPerformer;
 import org.gudy.azureus2.core3.util.TimerEventPeriodic;
 import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.util.UrlUtils;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.pluginsimpl.local.ddb.DDBaseImpl;
 import org.gudy.azureus2.pluginsimpl.local.ddb.DDBaseTTTorrent;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
 import com.aelitis.azureus.plugins.tracker.dht.DHTTrackerPlugin;
@@ -84,25 +80,11 @@ LightWeightSeedManager
 	protected
 	LightWeightSeedManager()
 	{
-		AzureusCore	core = AzureusCoreFactory.getSingleton();
-		
-		core.addLifecycleListener(
-			new AzureusCoreLifecycleAdapter()
-			{
-				public void
-				started(
-					AzureusCore		core )
-				{
-					core.removeLifecycleListener( this );
-					
-					startUp();
-				}
-			});
-		
-		if ( core.isStarted()){
-		
-			startUp();
-		}
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				startUp();
+			}
+		});
 	}
 	
 	protected void
@@ -228,7 +210,7 @@ LightWeightSeedManager
 							});
 			}
 			
-			log( "Added LWS: " + name + ", " + TorrentUtils.getMagnetURI( hash.getBytes()));
+			log( "Added LWS: " + name + ", " + UrlUtils.getMagnetURI( hash.getBytes()));
 		}
 		
 		lws.start();
@@ -289,7 +271,7 @@ LightWeightSeedManager
 			}
 		}
 		
-		log( "Added LWS: " + lws.getName() + ", " + TorrentUtils.getMagnetURI( lws.getHash().getBytes()));
+		log( "Added LWS: " + lws.getName() + ", " + UrlUtils.getMagnetURI( lws.getHash().getBytes()));
 	}
 	
 	protected void

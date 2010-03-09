@@ -6,13 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Semaphore;
 
-import com.aelitis.azureus.core.dht.DHTOperationAdapter;
-import com.aelitis.azureus.core.dht.control.DHTControl;
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
-
-import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
-import edu.washington.cs.activedht.expt.ActivePeer;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.SHA1Simple;
 
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.stdlib.BaseLib;
@@ -24,6 +19,17 @@ import se.krka.kahlua.vm.LuaTable;
 import se.krka.kahlua.vm.LuaTableImpl;
 import se.krka.kahlua.vm.serialize.Deserializer;
 import se.krka.kahlua.vm.serialize.Serializer;
+
+import com.aelitis.azureus.core.dht.DHT;
+import com.aelitis.azureus.core.dht.DHTOperationAdapter;
+import com.aelitis.azureus.core.dht.control.DHTControl;
+import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandlerAdapter;
+import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+
+import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
+import edu.washington.cs.activedht.expt.ActivePeer;
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 public class Interpreter {
 
@@ -55,27 +61,74 @@ public class Interpreter {
 			if (nArguments < 1) {
 				BaseLib.fail("get takes at least one argument");
 			}
-			byte[] key = callFrame.get(0).toString().getBytes();
-			byte[] payload = new byte[] {};
+			byte[] key = encodeKey(callFrame.get(0).toString().getBytes());
+			byte[] payload = null;
 			if (nArguments > 1) {
-				payload = Serializer.serialize(callFrame.get(1), state.getEnvironment());
+				payload = Serializer.serialize(callFrame.get(1), state
+						.getEnvironment());
 			}
 			final LuaTable values = new LuaTableImpl();
 			final Semaphore sema = new Semaphore(0);
-			dhtControl.get(key, dhtControl.getTransport().getLocalContact().getID(), payload, "", (byte)0, 20, 60000, false, true, new DHTOperationAdapter() {
-				int i = 1;
-				public void read(DHTTransportContact contact,
-						DHTTransportValue value) {
-					Object obj = Deserializer.deserializeBytes(value.getValue(), state
-							.getEnvironment());
-					values.rawset(i, obj);
-					++i;
+
+			if (nArguments > 2) {
+				LuaTable contacts = (LuaTable) callFrame.get(2);
+				for (int i = 1; i <= contacts.len(); ++i) {
+					DHTTransportContact contact = ((NodeWrapper) contacts
+							.rawget(i)).contact;
+					contact.sendFindValue(
+							new DHTTransportReplyHandlerAdapter() {
+
+								@Override
+								public void failed(DHTTransportContact contact,
+										Throwable error) {
+									System.err
+											.print(contact.getString() + ": ");
+									System.err.println(error.getMessage());
+									sema.release();
+								}
+
+								@Override
+								public void findValueReply(
+										DHTTransportContact contact,
+										DHTTransportValue[] vals,
+										byte diversificationType,
+										boolean moreToCome) {
+									values.rawset(new NodeWrapper(contact),
+											Deserializer.deserializeBytes(
+													vals[0].getValue(), state
+															.getEnvironment()));
+									if (!moreToCome) {
+										sema.release();
+									}
+								}
+								
+								@Override
+								public void findValueReply(
+										DHTTransportContact contact,
+										DHTTransportContact[] contacts) {
+								}
+
+							}, key, dhtControl.getTransport().getLocalContact().getID(), payload, 1, (byte) 0);
 				}
-				
-				public void complete(boolean timeout) {
-					sema.release();
-				}
-			});
+				sema.acquireUninterruptibly(contacts.len());
+				callFrame.push(values);
+				return 1;
+			}
+
+			dhtControl.getEncodedKey(key, dhtControl.getTransport()
+					.getLocalContact().getID(), payload, "", (byte) 0, 20,
+					60000, false, true, new DHTOperationAdapter() {
+						public void read(DHTTransportContact contact,
+								DHTTransportValue value) {
+							Object obj = Deserializer.deserializeBytes(value
+									.getValue(), state.getEnvironment());
+							values.rawset(new NodeWrapper(contact), obj);
+						}
+
+						public void complete(boolean timeout) {
+							sema.release();
+						}
+					});
 			sema.acquireUninterruptibly();
 			if (values.len() == 0) {
 				callFrame.pushNil();
@@ -83,6 +136,61 @@ public class Interpreter {
 			}
 			callFrame.push(values);
 			return values.len();
+		}
+
+	}
+
+	private class Lookup implements JavaFunction {
+
+		public int call(LuaCallFrame callFrame, int nArguments) {
+			if (nArguments < 1) {
+				BaseLib.fail("lookup takes at least 1 argument");
+			}
+			Object obj = callFrame.get(0);
+			byte[] key;
+			if (String.class.isInstance(obj)) {
+				key = ((String) obj).getBytes();
+				final LuaTable contacts = new LuaTableImpl();
+				final Semaphore sema = new Semaphore(0);
+				dhtControl.lookup(key, "", 60000, new DHTOperationAdapter() {
+					int i = 1;
+
+					public void found(DHTTransportContact contact,
+							boolean isClosest) {
+						contacts.rawset(i, new NodeWrapper(contact));
+						++i;
+					}
+
+					public void complete(boolean timeout) {
+						sema.release();
+					}
+				});
+				sema.acquireUninterruptibly();
+				callFrame.push(contacts);
+				return 1;
+			} else {
+				key = ((HashWrapper) obj).getBytes();
+
+				final LuaTable contacts = new LuaTableImpl();
+				final Semaphore sema = new Semaphore(0);
+				dhtControl.lookupEncoded(key, "", 60000, true,
+						new DHTOperationAdapter() {
+							int i = 1;
+
+							public void found(DHTTransportContact contact,
+									boolean isClosest) {
+								contacts.rawset(i, new NodeWrapper(contact));
+								++i;
+							}
+
+							public void complete(boolean timeout) {
+								sema.release();
+							}
+						});
+				sema.acquireUninterruptibly();
+				callFrame.push(contacts);
+				return 1;
+			}
 		}
 
 	}
@@ -96,10 +204,51 @@ public class Interpreter {
 			String key = callFrame.get(0).toString();
 			byte[] payload = Serializer.serialize(callFrame.get(1), state
 					.getEnvironment());
+			if (nArguments > 2) {
+				LuaTable contacts = (LuaTable) callFrame.get(2);
+				final Semaphore sema = new Semaphore(0);
+				for (int i = 1; i <= contacts.len(); ++i) {
+					DHTTransportContact contact = ((NodeWrapper) contacts
+							.rawget(i)).contact;
+					contact
+							.sendStore(
+									new DHTTransportReplyHandlerAdapter() {
+
+										public void failed(
+												DHTTransportContact contact,
+												Throwable error) {
+											System.err.print(contact
+													.getString()
+													+ ": ");
+											System.err.println(error
+													.getMessage());
+											sema.release();
+										}
+
+										public void storeReply(
+												DHTTransportContact contact,
+												byte[] diversifications) {
+											System.out.println("Wrote to: "
+													+ contact.getString());
+											sema.release();
+										}
+									},
+									new byte[][] { encodeKey(key.getBytes()) },
+									new DHTTransportValue[][] { new DHTTransportValue[] { new BasicDHTTransportValue(
+											System.currentTimeMillis(),
+											payload, "", 1, dhtControl
+													.getTransport()
+													.getLocalContact(), false,
+											0) } }, true);
+				}
+				sema.acquireUninterruptibly(contacts.len());
+				return 0;
+			}
+
 			final LuaTable contacts = new LuaTableImpl();
 			final Semaphore sema = new Semaphore(0);
-			dhtControl.put(key.getBytes(), "", payload, (byte) 0, true,
-					new DHTOperationAdapter() {
+			dhtControl.put(key.getBytes(), "", payload, (byte) 0, (byte) 8,
+					DHT.REP_FACT_DEFAULT, true, new DHTOperationAdapter() {
 						int i = 1;
 
 						public void wrote(DHTTransportContact contact,
@@ -126,6 +275,9 @@ public class Interpreter {
 		state.getEnvironment().rawset("require", new Require());
 		state.getEnvironment().rawset("get", new Get());
 		state.getEnvironment().rawset("put", new Put());
+		state.getEnvironment().rawset("lookup", new Lookup());
+		state.getEnvironment().rawset("localNode",
+				new NodeWrapper(dhtControl.getTransport().getLocalContact()));
 	}
 
 	public void run() throws Exception {
@@ -186,9 +338,22 @@ public class Interpreter {
 		}
 	}
 
+	public byte[] encodeKey(byte[] key) {
+		byte[] temp = new SHA1Simple().calculateHash(key);
+
+		int keylen = dhtControl.getTransport().getLocalContact().getID().length;
+		byte[] result = new byte[keylen];
+
+		System.arraycopy(temp, 0, result, 0, keylen);
+
+		return (result);
+	}
+
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(1234, "localhost:4321");
-		peer.init("localhost");
+		ActivePeer peer = new ActivePeer(1234, "dht.aelitis.com:6881");
+		// ActivePeer peer = new ActivePeer(5432,
+		// "nethack.cs.washington.edu:5432");
+		peer.init("granville.cs.washington.edu");
 		Thread.sleep(5000);
 		new Interpreter(new LuaState(), System.in, peer.dht.getControl()).run();
 		peer.stop();

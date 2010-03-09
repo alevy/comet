@@ -3,20 +3,9 @@ package org.gudy.azureus2.ui.swt.mainwindow;
 import java.util.Iterator;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.MenuEvent;
-import org.eclipse.swt.events.MenuListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Widget;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.download.DownloadManager;
@@ -28,20 +17,12 @@ import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.ui.menus.MenuManager;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
-import org.gudy.azureus2.plugins.ui.tables.TableRow;
-import org.gudy.azureus2.plugins.ui.tables.TableRowMouseListener;
+import org.gudy.azureus2.plugins.ui.tables.*;
 import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
 import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
 import org.gudy.azureus2.ui.common.util.MenuItemManager;
-import org.gudy.azureus2.ui.swt.BlockedIpsWindow;
-import org.gudy.azureus2.ui.swt.KeyBindings;
-import org.gudy.azureus2.ui.swt.MenuBuildUtils;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.TorrentUtil;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.*;
 import org.gudy.azureus2.ui.swt.components.shell.ShellManager;
 import org.gudy.azureus2.ui.swt.config.wizard.ConfigureWizard;
 import org.gudy.azureus2.ui.swt.debug.UIDebugGenerator;
@@ -57,6 +38,8 @@ import org.gudy.azureus2.ui.swt.nat.NatTestWindow;
 import org.gudy.azureus2.ui.swt.pluginsinstaller.InstallPluginWizard;
 import org.gudy.azureus2.ui.swt.pluginsuninstaller.UnInstallPluginWizard;
 import org.gudy.azureus2.ui.swt.sharing.ShareUtils;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.speedtest.SpeedTestWizard;
 import org.gudy.azureus2.ui.swt.update.UpdateMonitor;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
@@ -66,6 +49,7 @@ import org.gudy.azureus2.ui.swt.welcome.WelcomeWindow;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.core.vuzefile.VuzeFileComponent;
 import com.aelitis.azureus.core.vuzefile.VuzeFileHandler;
 import com.aelitis.azureus.ui.UIFunctions;
@@ -76,8 +60,6 @@ import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 public class MenuFactory
 	implements IMenuConstants
 {
-
-	public static boolean isAZ3_ADV = COConfigurationManager.getBooleanParameter("v3.Start Advanced");
 
 	private static boolean isAZ3 = "az3".equalsIgnoreCase(COConfigurationManager.getStringParameter("ui"));
 
@@ -103,8 +85,14 @@ public class MenuFactory
 
 		transferMenu.addMenuListener(new MenuListener() {
 			public void menuShown(MenuEvent menu) {
-				itemPause.setEnabled(getCore().getGlobalManager().canPauseDownloads());
-				itemResume.setEnabled(getCore().getGlobalManager().canResumeDownloads());
+				if (!AzureusCoreFactory.isCoreRunning()) {
+					itemPause.setEnabled(false);
+					itemResume.setEnabled(false);
+				} else {
+					AzureusCore core = AzureusCoreFactory.getSingleton();
+					itemPause.setEnabled(core.getGlobalManager().canPauseDownloads());
+					itemResume.setEnabled(core.getGlobalManager().canResumeDownloads());
+				}
 			}
 
 			public void menuHidden(MenuEvent menu) {
@@ -116,10 +104,6 @@ public class MenuFactory
 
 	public static MenuItem createViewMenuItem(Menu menuParent) {
 		return createTopLevelMenuItem(menuParent, MENU_ID_VIEW);
-	}
-
-	public static MenuItem createPublishMenuItem(Menu menuParent) {
-		return createTopLevelMenuItem(menuParent, MENU_ID_PUBLISH);
 	}
 
 	public static MenuItem createAdvancedMenuItem(Menu menuParent) {
@@ -137,24 +121,21 @@ public class MenuFactory
 		 */
 		MenuBuildUtils.addMaintenanceListenerForMenu(torrentItem.getMenu(),
 				new MenuBuildUtils.MenuBuilder() {
-					public void buildMenu(Menu menu) {
+					public void buildMenu(Menu menu, MenuEvent menuEvent) {
 						DownloadManager[] current_dls = (DownloadManager[]) torrentItem.getData("downloads");
 						if (current_dls == null) {
 							return;
 						}
-						boolean is_detailed_view = ((Boolean) torrentItem.getData("is_detailed_view")).booleanValue();
-						TableViewSWT tv = (TableViewSWT) torrentItem.getData("TableView");
 
-						TorrentUtil.fillTorrentMenu(menu, current_dls, getCore(),
-								menuParent.getShell(), !is_detailed_view, 0, tv);
+						if (AzureusCoreFactory.isCoreRunning()) {
+							boolean is_detailed_view = ((Boolean) torrentItem.getData("is_detailed_view")).booleanValue();
+							TableViewSWT tv = (TableViewSWT) torrentItem.getData("TableView");
+							AzureusCore core = AzureusCoreFactory.getSingleton();
 
-						/*
-						 * KN: This is a reference to a plugins class from a core class;
-						 * maybe MenuItem should be moved to core?
-						 * 
-						 * AMC: No, because we need to add menu items that plugins have
-						 * registered to add.
-						 */
+							TorrentUtil.fillTorrentMenu(menu, current_dls, core,
+									menuParent.getShell(), !is_detailed_view, 0, tv);
+						}
+
 						org.gudy.azureus2.plugins.ui.menus.MenuItem[] menu_items;
 
 						menu_items = MenuItemManager.getInstance().getAllAsArray(
@@ -236,7 +217,7 @@ public class MenuFactory
 				MENU_ID_PLUGINS);
 		MenuBuildUtils.addMaintenanceListenerForMenu(pluginsMenuItem.getMenu(),
 				new MenuBuildUtils.MenuBuilder() {
-					public void buildMenu(Menu menu) {
+					public void buildMenu(Menu menu, MenuEvent menuEvent) {
 						PluginsMenuHelper.getInstance().buildPluginMenu(menu,
 								menuParent.getShell(), includeGetPluginsMenu);
 					}
@@ -257,7 +238,7 @@ public class MenuFactory
 		MenuItem file_create = addMenuItem(menuParent, MENU_ID_CREATE,
 				new Listener() {
 					public void handleEvent(Event e) {
-						new NewTorrentWizard(getCore(), getDisplay());
+						new NewTorrentWizard(e.display);
 					}
 				});
 		return file_create;
@@ -342,7 +323,7 @@ public class MenuFactory
 		MenuItem file_share_file = addMenuItem(menuParent, MENU_ID_SHARE_FILE,
 				new Listener() {
 					public void handleEvent(Event e) {
-						ShareUtils.shareFile(getCore(), menuParent.getShell());
+						ShareUtils.shareFile(menuParent.getShell());
 					}
 				});
 		return file_share_file;
@@ -352,7 +333,7 @@ public class MenuFactory
 		MenuItem file_share_dir = addMenuItem(menuParent, MENU_ID_SHARE_DIR,
 				new Listener() {
 					public void handleEvent(Event e) {
-						ShareUtils.shareDir(getCore(), menuParent.getShell());
+						ShareUtils.shareDir(menuParent.getShell());
 					}
 				});
 		return file_share_dir;
@@ -362,7 +343,7 @@ public class MenuFactory
 		MenuItem file_share_dircontents = addMenuItem(menuParent,
 				MENU_ID_SHARE_DIR_CONTENT, new Listener() {
 					public void handleEvent(Event e) {
-						ShareUtils.shareDirContents(getCore(), menuParent.getShell(), false);
+						ShareUtils.shareDirContents(menuParent.getShell(), false);
 					}
 				});
 		return file_share_dircontents;
@@ -373,7 +354,7 @@ public class MenuFactory
 		MenuItem file_share_dircontents_rec = addMenuItem(menuParent,
 				MENU_ID_SHARE_DIR_CONTENT_RECURSE, new Listener() {
 					public void handleEvent(Event e) {
-						ShareUtils.shareDirContents(getCore(), menuParent.getShell(), true);
+						ShareUtils.shareDirContents(menuParent.getShell(), true);
 					}
 				});
 		return file_share_dircontents_rec;
@@ -383,7 +364,7 @@ public class MenuFactory
 		MenuItem file_import = addMenuItem(menuParent, MENU_ID_IMPORT,
 				new Listener() {
 					public void handleEvent(Event e) {
-						new ImportTorrentWizard(getCore(), getDisplay());
+						new ImportTorrentWizard();
 					}
 				});
 		return file_import;
@@ -393,7 +374,7 @@ public class MenuFactory
 		MenuItem file_export = addMenuItem(menuParent, MENU_ID_EXPORT,
 				new Listener() {
 					public void handleEvent(Event e) {
-						new ExportTorrentWizard(getCore(), getDisplay());
+						new ExportTorrentWizard();
 					}
 				});
 		return file_export;
@@ -514,9 +495,10 @@ public class MenuFactory
 	}
 
 	public static MenuItem addStartAllMenuItem(Menu menu) {
-		return addMenuItem(menu, MENU_ID_START_ALL_TRANSFERS, new Listener() {
-			public void handleEvent(Event event) {
-				getCore().getGlobalManager().startAllDownloads();
+		return addMenuItem(menu, MENU_ID_START_ALL_TRANSFERS,
+				new ListenerNeedingCoreRunning() {
+					public void handleEvent(AzureusCore core, Event e) {
+						core.getGlobalManager().startAllDownloads();
 				/*
 				 * KN: Not sure why we can not use the call below as opposed to the line above
 				 *  which was the exiting code
@@ -583,6 +565,17 @@ public class MenuFactory
 		});
 	}
 
+	public static MenuItem addClientStatsMenuItem(Menu menu) {
+		return addMenuItem(menu, MENU_ID_CLIENT_STATS, new Listener() {
+			public void handleEvent(Event e) {
+				UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
+				if (uiFunctions != null) {
+					uiFunctions.openView(UIFunctions.VIEW_PEERS_STATS, null);
+				}
+			}
+		});
+	}
+
 	public static MenuItem addMyTrackerMenuItem(Menu menu) {
 		return addMenuItem(menu, MENU_ID_MY_TRACKERS, new Listener() {
 			public void handleEvent(Event e) {
@@ -638,13 +631,13 @@ public class MenuFactory
 
 	public static MenuItem addTransferBarToMenu(final Menu menu) {
 		final MenuItem item = addMenuItem(menu, SWT.CHECK, MENU_ID_TRANSFER_BAR,
-				new Listener() {
-					public void handleEvent(Event e) {
+				new ListenerNeedingCoreRunning() {
+					public void handleEvent(AzureusCore core, Event e) {
 						if (AllTransfersBar.getManager().isOpen(
-								getCore().getGlobalManager())) {
-							AllTransfersBar.close(getCore().getGlobalManager());
+								core.getGlobalManager())) {
+							AllTransfersBar.close(core.getGlobalManager());
 						} else {
-							AllTransfersBar.open(getCore().getGlobalManager(),
+							AllTransfersBar.open(core.getGlobalManager(),
 									menu.getShell());
 						}
 					}
@@ -659,12 +652,9 @@ public class MenuFactory
 	}
 
 	public static MenuItem addBlockedIPsMenuItem(Menu menu) {
-		return addMenuItem(menu, MENU_ID_IP_FILTER, new Listener() {
-			public void handleEvent(Event event) {
-				//				if (MainWindow.isAlreadyDead) {
-				//					return;
-				//				}
-				BlockedIpsWindow.showBlockedIps(getCore(),
+		return addMenuItem(menu, MENU_ID_IP_FILTER, new ListenerNeedingCoreRunning() {
+			public void handleEvent(AzureusCore core, Event e) {
+				BlockedIpsWindow.showBlockedIps(core,
 						getUIFunctionSWT().getMainShell());
 			}
 		});
@@ -703,7 +693,11 @@ public class MenuFactory
 	public static MenuItem addSpeedTestMenuItem(Menu menu) {
 		return addMenuItem(menu, MENU_ID_SPEED_TEST, new Listener() {
 			public void handleEvent(Event e) {
-				new SpeedTestWizard(getCore(), getDisplay());
+				CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+					public void azureusCoreRunning(AzureusCore core) {
+						new SpeedTestWizard();
+					}
+				});
 			}
 		});
 	}
@@ -711,7 +705,7 @@ public class MenuFactory
 	public static MenuItem addConfigWizardMenuItem(Menu menu) {
 		return addMenuItem(menu, MENU_ID_CONFIGURE, new Listener() {
 			public void handleEvent(Event e) {
-				new ConfigureWizard(getCore(), false);
+				new ConfigureWizard(false);
 			}
 		});
 	}
@@ -922,7 +916,7 @@ public class MenuFactory
 	public static MenuItem addAboutMenuItem(Menu menu) {
 		return addMenuItem(menu, MENU_ID_ABOUT, new Listener() {
 			public void handleEvent(Event e) {
-				AboutWindow.show(getDisplay());
+				AboutWindow.show();
 			}
 		});
 	}
@@ -944,16 +938,10 @@ public class MenuFactory
 		});
 	}
 
-	/**
-	 * Add the FAQ menu item to the given menu
-	 * @param menu
-	 * @param faq_url the fully qualified url to the appropriate FAQ (Vuze uses a different url than Classic)
-	 * @return
-	 */
-	public static MenuItem addFAQMenuItem(Menu menu, final String faq_url) {
-		return addMenuItem(menu, MENU_ID_FAQ, new Listener() {
+	public static MenuItem addWikiMenuItem(Menu menu) {
+		return addMenuItem(menu, MENU_ID_COMMUNITY_WIKI, new Listener() {
 			public void handleEvent(Event e) {
-				Utils.launch(faq_url);
+				Utils.launch(Constants.AZUREUS_WIKI);
 			}
 		});
 	}
@@ -978,7 +966,7 @@ public class MenuFactory
 	public static MenuItem addDonationMenuItem(Menu menu) {
 		return addMenuItem(menu, MENU_ID_DONATE, new Listener() {
       public void handleEvent(Event e) {
-        new DonationWindow().show(true);
+        DonationWindow.open(true, "menu");
       }
     });
 	}
@@ -1001,26 +989,23 @@ public class MenuFactory
 	}
 
 	public static MenuItem addCheckUpdateMenuItem(final Menu menu) {
-		return addMenuItem(menu, MENU_ID_UPDATE_CHECK, new Listener() {
-			public void handleEvent(Event e) {
+		return addMenuItem(menu, MENU_ID_UPDATE_CHECK, new ListenerNeedingCoreRunning() {
+			public void handleEvent(AzureusCore core, Event e) {
 				UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
 				if (uiFunctions != null) {
 					uiFunctions.bringToFront();
 				}
-				UpdateMonitor.getSingleton(getCore()).performCheck(true, false, false,
+				UpdateMonitor.getSingleton(core).performCheck(true, false, false,
 						new UpdateCheckInstanceListener() {
 							public void cancelled(UpdateCheckInstance instance) {
 							}
 
 							public void complete(UpdateCheckInstance instance) {
 								if (instance.getUpdates().length == 0) {
-									Utils.execSWTThread(new AERunnable() {
-										public void runSupport() {
-											Utils.openMessageBox(menu.getShell(),
-													SWT.ICON_INFORMATION | SWT.OK,
-													"window.update.noupdates", (String[]) null);
-										}
-									});
+									MessageBoxShell mb = new MessageBoxShell(
+											SWT.ICON_INFORMATION | SWT.OK,
+											"window.update.noupdates", (String[]) null);
+									mb.open(null);
 								}
 							}
 						});
@@ -1029,17 +1014,19 @@ public class MenuFactory
 	}
 
 	public static MenuItem addPluginInstallMenuItem(Menu menuParent) {
-		return addMenuItem(menuParent, MENU_ID_PLUGINS_INSTALL, new Listener() {
-			public void handleEvent(Event e) {
-				new InstallPluginWizard(getCore(), getDisplay());
+		return addMenuItem(menuParent, MENU_ID_PLUGINS_INSTALL,
+				new Listener() {
+					public void handleEvent(Event e) {
+						new InstallPluginWizard();
 			}
 		});
 	}
 
 	public static MenuItem addPluginUnInstallMenuItem(Menu menuParent) {
-		return addMenuItem(menuParent, MENU_ID_PLUGINS_UNINSTALL, new Listener() {
-			public void handleEvent(Event e) {
-				new UnInstallPluginWizard(getCore(), getDisplay());
+		return addMenuItem(menuParent, MENU_ID_PLUGINS_UNINSTALL,
+				new Listener() {
+					public void handleEvent(Event e) {
+						new UnInstallPluginWizard(getDisplay());
 			}
 		});
 	}
@@ -1134,10 +1121,6 @@ public class MenuFactory
 				"No instance of UIFunctionsSWT found; the UIFunctionsManager might not have been initialized properly");
 	}
 
-	private static AzureusCore getCore() {
-		return AzureusCoreFactory.getSingleton();
-	}
-
 	private static Display getDisplay() {
 		return SWTThread.getInstance().getDisplay();
 	}
@@ -1158,6 +1141,8 @@ public class MenuFactory
 				KeyBindings.setAccelerator(item,
 						MessageText.resolveAcceleratorKey(localizationKey));
 				updateMenuText(item.getMenu());
+			} else {
+				Messages.updateLanguageForControl(item);
 			}
 		}
 	}
@@ -1226,6 +1211,10 @@ public class MenuFactory
 	 * @return may return <code>null</code> if not found
 	 */
 	public static MenuItem findMenuItem(Menu menuToStartWith, String idToMatch) {
+		return findMenuItem(menuToStartWith, idToMatch, true);
+	}
+
+	public static MenuItem findMenuItem(Menu menuToStartWith, String idToMatch, boolean deep) {
 		/*
 		 * This is a recursive method; it will start at the given menuToStartWith
 		 * and recursively traverse to all its sub menus until a matching
@@ -1244,12 +1233,14 @@ public class MenuFactory
 				return item;
 			}
 
-			/*
-			 * Go deeper into each child to try and find it
-			 */
-			MenuItem menuItemToFind = findMenuItem(item.getMenu(), idToMatch);
-			if (null != menuItemToFind) {
-				return menuItemToFind;
+			if (deep) {
+  			/*
+  			 * Go deeper into each child to try and find it
+  			 */
+  			MenuItem menuItemToFind = findMenuItem(item.getMenu(), idToMatch);
+  			if (null != menuItemToFind) {
+  				return menuItemToFind;
+  			}
 			}
 		}
 
@@ -1359,8 +1350,6 @@ public class MenuFactory
 		int keys = getEnablementKeys(widget);
 		if (keys <= 0) {
 			return true;
-		} else if (true == isAZ3_ADV) {
-			return ((keys & FOR_AZ3_ADV) != 0);
 		} else if (true == isAZ3) {
 			return ((keys & FOR_AZ3) != 0);
 		} else {

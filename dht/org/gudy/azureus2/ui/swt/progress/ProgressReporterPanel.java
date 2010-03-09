@@ -9,16 +9,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.ui.swt.AZProgressBar;
-import org.gudy.azureus2.ui.swt.ITwistieListener;
-import org.gudy.azureus2.ui.swt.TwistieLabel;
-import org.gudy.azureus2.ui.swt.TwistieSection;
+import org.gudy.azureus2.ui.swt.*;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
@@ -508,6 +502,7 @@ public class ProgressReporterPanel
 			case REPORT_TYPE_RETRY:
 				getDisplay().asyncExec(new Runnable() {
 					public void run() {
+						lastStatusError = null;
 						updateStatusLabel(pReport.getMessage(), false);
 						appendToDetail(
 								MessageText.getString("Progress.reporting.status.retrying"),

@@ -23,14 +23,14 @@ package org.gudy.azureus2.core3.global;
 
 import java.util.List;
 
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerInitialisationAdapter;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.tracker.client.TRTrackerScraper;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
-
 import com.aelitis.azureus.core.AzureusCoreComponent;
+
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.tracker.client.*;
+import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.download.*;
+
+import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTProvider;
 
 /**
  * The GlobalManager contains a list of all the downloads

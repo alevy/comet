@@ -22,20 +22,9 @@
 
 package org.gudy.azureus2.core3.download.impl;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -45,36 +34,15 @@ import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManagerFactory;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerState;
-import org.gudy.azureus2.core3.download.DownloadManagerStateAttributeListener;
-import org.gudy.azureus2.core3.download.DownloadManagerStateEvent;
-import org.gudy.azureus2.core3.download.DownloadManagerStateListener;
+import org.gudy.azureus2.core3.download.*;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.LogRelation;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AENetworkClassifier;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.StringInterner;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.util.CaseSensitiveFileMap;
@@ -144,7 +112,7 @@ DownloadManagerStateImpl
 	
 	private static Map					state_map 					= new HashMap();
 	private static Map					global_state_cache			= new HashMap();
-	private static List					global_state_cache_wrappers	= new ArrayList();
+	private static ArrayList			global_state_cache_wrappers	= new ArrayList();
 	
 	private DownloadManagerImpl			download_manager;
 	
@@ -498,6 +466,7 @@ DownloadManagerStateImpl
 		}
 		
 		global_state_cache_wrappers.clear();
+		global_state_cache_wrappers.trimToSize();
 	}
 
 	protected
@@ -912,6 +881,12 @@ DownloadManagerStateImpl
 		return(( value & flag ) != 0 );
 	}
 	
+	public long 
+	getFlags() 
+	{
+		return( getLongAttribute( AT_FLAGS ));
+	}
+	
 	public boolean parameterExists(String name) {
 		return parameters.containsKey(name);
 	}
@@ -1266,10 +1241,14 @@ DownloadManagerStateImpl
 			if (fileInfo.length > 0) {
 				int idxBiggest = -1;
 				long lBiggest = -1;
-				for (int i = 0; i < fileInfo.length && i < 10; i++) {
-					if (!fileInfo[i].isSkipped() && fileInfo[i].getLength() > lBiggest) {
-						lBiggest = fileInfo[i].getLength();
-						idxBiggest = i;
+				int numChecked = 0;
+				for (int i = 0; i < fileInfo.length && numChecked < 10; i++) {
+					if (!fileInfo[i].isSkipped()) {
+						numChecked++;
+						if (fileInfo[i].getLength() > lBiggest) {
+  						lBiggest = fileInfo[i].getLength();
+  						idxBiggest = i;
+						}
 					}
 				}
 				if (idxBiggest >= 0) {
@@ -2420,6 +2399,12 @@ DownloadManagerStateImpl
 			return( false );
 		}
 		
+		public long 
+		getFlags() 
+		{
+			return 0;
+		}
+		
 		public void
 		setParameterDefault(
 			String	name )
@@ -3299,6 +3284,16 @@ DownloadManagerStateImpl
 	   		return( null );
     	}
     	
+       	public void
+    	setCreatedBy(
+    		byte[]		cb )
+       	{
+	   		if ( fixup()){
+				
+				delegate.setCreatedBy( cb );
+			}
+    	}
+       	
     	public boolean
     	isCreated()
        	{
@@ -3769,6 +3764,26 @@ DownloadManagerStateImpl
    	   		throw( fixup_failure );
        	}
 
+       public void
+       addListener(
+    	  TOTorrentListener		l )
+       {
+    	   if ( fixup()){
+    		   
+    		   delegate.addListener( l );
+    	   }
+       }
+       
+       public void
+       removeListener(
+    	  TOTorrentListener		l )
+       {
+    	   if ( fixup()){
+    		   
+    		   delegate.removeListener( l );
+    	   }
+       }
+       
        public AEMonitor
        getMonitor()
       	{

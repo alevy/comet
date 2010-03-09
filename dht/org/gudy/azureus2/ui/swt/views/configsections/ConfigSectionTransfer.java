@@ -29,35 +29,29 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.ui.swt.components.LinkLabel;
+import org.gudy.azureus2.ui.swt.config.*;
+import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
+import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.impl.TransferSpeedValidator;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
-import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 
 public class ConfigSectionTransfer implements UISWTConfigSection {
 	
-	private AzureusCore	core;
-	
-	public 
-	ConfigSectionTransfer(
-		AzureusCore	_core )
-	{
-		core	= _core;
+	public ConfigSectionTransfer() {
 	}
 	
 	public String configSectionGetParentSection() {
@@ -108,7 +102,6 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 		Messages.setLanguageText(label, "ConfigView.label.maxuploadspeed");
 
 		gridData = new GridData();
-		gridData.widthHint = 35;
 		final IntParameter paramMaxUploadSpeed = new IntParameter(cSection,
 				"Max Upload Speed KBs", 0, -1);
 		paramMaxUploadSpeed.setLayoutData(gridData);
@@ -141,7 +134,6 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 		enable_seeding_rate.setLayoutData(gridData);
 
 		gridData = new GridData();
-		gridData.widthHint = 35;
 		final IntParameter paramMaxUploadSpeedSeeding = new IntParameter(
 				cMaxUploadSpeedOptionsArea, "Max Upload Speed Seeding KBs", 0, -1);
 		paramMaxUploadSpeedSeeding.setLayoutData(gridData);
@@ -173,7 +165,7 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			gridData.horizontalIndent = 10;
 			gridData.horizontalSpan = 2;
 			new LinkLabel(cWiki, gridData, "ConfigView.section.transfer.speeds.wiki",
-					"http://www.azureuswiki.com/index.php/Good_settings");
+					"http://wiki.vuze.com/w/Good_settings");
 		}
 
 		if ( userMode > 1 ){
@@ -184,7 +176,6 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			Messages.setLanguageText(label, "ConfigView.label.maxuploadswhenbusymin" );
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
 			new IntParameter(cSection, "max.uploads.when.busy.inc.min.secs", 0, -1).setLayoutData(gridData);
 		}
 		
@@ -195,12 +186,11 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 		Messages.setLanguageText(label, "ConfigView.label.maxdownloadspeed");
 		
 		gridData = new GridData();
-		gridData.widthHint = 35;
 		final IntParameter paramMaxDownSpeed = new IntParameter(cSection,
 				"Max Download Speed KBs", 0, -1);
 		paramMaxDownSpeed.setLayoutData(gridData);
-		
-		// max upload/download limit dependencies
+				
+			// max upload/download limit dependencies
 		
 		Listener l = new Listener() {
 	
@@ -232,94 +222,131 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 		
 		
 		paramMaxUploadSpeed.addChangeListener(new ParameterChangeAdapter() {
-			
+			ParameterChangeAdapter me = this;
+
 			public void parameterChanged(Parameter p, boolean internal) {
-				if ( paramMaxUploadSpeed.isDisposed()){
-					paramMaxUploadSpeed.removeChangeListener( this );
-					return;
-				}
-				
-					// we don't want to police these limits when auto-speed is running as
-					// they screw things up bigtime
-				
-				if ( TransferSpeedValidator.isAutoSpeedActive( core.getGlobalManager())){
-					
-					return;
-				}
-				
-				int up_val = paramMaxUploadSpeed.getValue();
-				int down_val = paramMaxDownSpeed.getValue();
+				CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
 
-				if (up_val != 0
-						&& up_val < COConfigurationManager.CONFIG_DEFAULT_MIN_MAX_UPLOAD_SPEED) {
+					public void azureusCoreRunning(AzureusCore core) {
+						if (paramMaxUploadSpeed.isDisposed()) {
+							paramMaxUploadSpeed.removeChangeListener(me);
+							return;
+						}
 
-					if ((down_val == 0) || down_val > (up_val * 2)) {
+						// we don't want to police these limits when auto-speed is running as
+						// they screw things up bigtime
 
-						paramMaxDownSpeed.setValue(up_val * 2);
+						if (TransferSpeedValidator.isAutoSpeedActive(core.getGlobalManager())) {
+
+							return;
+						}
+
+						int up_val = paramMaxUploadSpeed.getValue();
+						int down_val = paramMaxDownSpeed.getValue();
+
+						if (up_val != 0
+								&& up_val < COConfigurationManager.CONFIG_DEFAULT_MIN_MAX_UPLOAD_SPEED) {
+
+							if ((down_val == 0) || down_val > (up_val * 2)) {
+
+								paramMaxDownSpeed.setValue(up_val * 2);
+							}
+						} else {
+
+							if (down_val != manual_max_download_speed[0]) {
+
+								paramMaxDownSpeed.setValue(manual_max_download_speed[0]);
+							}
+						}
 					}
-				} else {
 
-					if (down_val != manual_max_download_speed[0]) {
-
-						paramMaxDownSpeed.setValue(manual_max_download_speed[0]);
-					}
-				}
-			}
+				});
+			};
 		});
 
 		paramMaxDownSpeed.addChangeListener(new ParameterChangeAdapter() {
+			ParameterChangeAdapter me = this;
+
 			public void parameterChanged(Parameter p, boolean internal) {
-				
-				if ( paramMaxDownSpeed.isDisposed()){
-					paramMaxDownSpeed.removeChangeListener( this );
-					return;
-				}
-				
-					// we don't want to police these limits when auto-speed is running as
-					// they screw things up bigtime
-				
-				if ( TransferSpeedValidator.isAutoSpeedActive( core.getGlobalManager())){
-					
-					return;
-				}
-				
-				int up_val = paramMaxUploadSpeed.getValue();
-				int down_val = paramMaxDownSpeed.getValue();
+				CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
 
-				manual_max_download_speed[0] = down_val;
+					public void azureusCoreRunning(AzureusCore core) {
+						if (paramMaxDownSpeed.isDisposed()) {
+							paramMaxDownSpeed.removeChangeListener(me);
+							return;
+						}
 
-				if (up_val < COConfigurationManager.CONFIG_DEFAULT_MIN_MAX_UPLOAD_SPEED) {
+						// we don't want to police these limits when auto-speed is running as
+						// they screw things up bigtime
 
-					if (up_val != 0 && up_val < (down_val * 2)) {
+						if (TransferSpeedValidator.isAutoSpeedActive(core.getGlobalManager())) {
 
-						paramMaxUploadSpeed.setValue((down_val + 1) / 2);
+							return;
+						}
 
-					} else if (down_val == 0) {
+						int up_val = paramMaxUploadSpeed.getValue();
+						int down_val = paramMaxDownSpeed.getValue();
 
-						paramMaxUploadSpeed.setValue(0);
+						manual_max_download_speed[0] = down_val;
+
+						if (up_val < COConfigurationManager.CONFIG_DEFAULT_MIN_MAX_UPLOAD_SPEED) {
+
+							if (up_val != 0 && up_val < (down_val * 2)) {
+
+								paramMaxUploadSpeed.setValue((down_val + 1) / 2);
+
+							} else if (down_val == 0) {
+
+								paramMaxUploadSpeed.setValue(0);
+							}
+						}
 					}
-				}
+				});
 			}
 		});
 
 		if (userMode > 0) {
 			
+				// AUTO GROUP
+			
+			Group auto_group = new Group(cSection, SWT.NULL);
+			
+			Messages.setLanguageText(auto_group, "group.auto");
+			
+			GridLayout auto_layout = new GridLayout();
+			
+			auto_layout.numColumns = 2;
+
+			auto_group.setLayout(auto_layout);
+
+			gridData = new GridData(GridData.FILL_HORIZONTAL);
+			gridData.horizontalSpan = 2;
+			auto_group.setLayoutData(gridData);
+
+			BooleanParameter auto_adjust = new BooleanParameter(
+					auto_group, 
+					"Auto Adjust Transfer Defaults",
+					"ConfigView.label.autoadjust" );
+			
+			gridData = new GridData();
+			gridData.horizontalSpan = 2;
+
+			auto_adjust.setLayoutData( gridData );
 
 			// max uploads
 			gridData = new GridData();
-			label = new Label(cSection, SWT.NULL);
+			label = new Label(auto_group, SWT.NULL);
 			label.setLayoutData(gridData);
 			Messages.setLanguageText(label, "ConfigView.label.maxuploads");
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			IntParameter paramMaxUploads = new IntParameter(cSection, "Max Uploads",
+			IntParameter paramMaxUploads = new IntParameter(auto_group, "Max Uploads",
 					2, -1);
 			paramMaxUploads.setLayoutData(gridData);
 
 				// max uploads when seeding
 			
-			final Composite cMaxUploadsOptionsArea = new Composite(cSection, SWT.NULL);
+			final Composite cMaxUploadsOptionsArea = new Composite(auto_group, SWT.NULL);
 			layout = new GridLayout();
 			layout.numColumns = 3;
 			layout.marginWidth = 0;
@@ -342,25 +369,21 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			enable_seeding_uploads.setLayoutData(gridData);
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			IntParameter paramMaxUploadsSeeding = new IntParameter(
+			final IntParameter paramMaxUploadsSeeding = new IntParameter(
 					cMaxUploadsOptionsArea, "Max Uploads Seeding", 2, -1);
 			paramMaxUploadsSeeding.setLayoutData(gridData);
-			enable_seeding_uploads
-					.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(
-							paramMaxUploadsSeeding.getControl()));
+
 			
 			
 			////
 
 			gridData = new GridData();
-			label = new Label(cSection, SWT.NULL);
+			label = new Label(auto_group, SWT.NULL);
 			label.setLayoutData(gridData);
 			Messages.setLanguageText(label, "ConfigView.label.max_peers_per_torrent");
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			IntParameter paramMaxClients = new IntParameter(cSection,
+			IntParameter paramMaxClients = new IntParameter(auto_group,
 					"Max.Peer.Connections.Per.Torrent");
 			paramMaxClients.setLayoutData(gridData);
 
@@ -369,7 +392,7 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			
 				// max peers when seeding
 			
-			final Composite cMaxPeersOptionsArea = new Composite(cSection, SWT.NULL);
+			final Composite cMaxPeersOptionsArea = new Composite(auto_group, SWT.NULL);
 			layout = new GridLayout();
 			layout.numColumns = 3;
 			layout.marginWidth = 0;
@@ -392,37 +415,71 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			enable_max_peers_seeding.setLayoutData(gridData);
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			IntParameter paramMaxPeersSeeding = new IntParameter(
+			final IntParameter paramMaxPeersSeeding = new IntParameter(
 					cMaxPeersOptionsArea, "Max.Peer.Connections.Per.Torrent.When.Seeding", 0, -1);
-			paramMaxPeersSeeding.setLayoutData(gridData);
-			enable_max_peers_seeding
-					.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(
-							paramMaxPeersSeeding.getControl()));
-	
+			paramMaxPeersSeeding.setLayoutData(gridData);	
 			
 			/////
 
 			gridData = new GridData();
-			label = new Label(cSection, SWT.NULL);
+			label = new Label(auto_group, SWT.NULL);
 			label.setLayoutData(gridData);
 			Messages.setLanguageText(label, "ConfigView.label.max_peers_total");
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			IntParameter paramMaxClientsTotal = new IntParameter(cSection,
+			IntParameter paramMaxClientsTotal = new IntParameter(auto_group,
 					"Max.Peer.Connections.Total");
 			paramMaxClientsTotal.setLayoutData(gridData);
 			
 			gridData = new GridData();
-			label = new Label(cSection, SWT.NULL);
+			label = new Label(auto_group, SWT.NULL);
 			label.setLayoutData(gridData);
 			Messages.setLanguageText(label, "ConfigView.label.maxseedspertorrent");
 
 			gridData = new GridData();
-			gridData.widthHint = 35;
-			new IntParameter(cSection,"Max Seeds Per Torrent").setLayoutData(gridData);
+			IntParameter max_seeds_per_torrent = new IntParameter(auto_group,"Max Seeds Per Torrent");
+			max_seeds_per_torrent.setLayoutData(gridData);
 
+			final Parameter[] parameters = {
+					paramMaxUploads, enable_seeding_uploads, paramMaxUploadsSeeding,
+					paramMaxClients, enable_max_peers_seeding, paramMaxPeersSeeding,
+					paramMaxClientsTotal, max_seeds_per_torrent,
+			};
+			
+		    IAdditionalActionPerformer f_enabler =
+		        new GenericActionPerformer( new Control[0])
+		    	{
+		        	public void 
+		        	performAction()
+		        	{
+		        		boolean auto = COConfigurationManager.getBooleanParameter( "Auto Adjust Transfer Defaults" );
+		        		
+		        		for ( Parameter p: parameters ){
+		        			
+		        			Control[] c = p.getControls();
+		        			
+		        			for ( Control x: c ){
+		        				
+		        				x.setEnabled( !auto );
+		        			}
+		        		}
+		        			
+		        		if ( !auto ){
+		        			
+		        			paramMaxUploadsSeeding.getControl().setEnabled( COConfigurationManager.getBooleanParameter( "enable.seedingonly.maxuploads" ));
+		        			
+		        			paramMaxPeersSeeding.getControl().setEnabled(  COConfigurationManager.getBooleanParameter( "Max.Peer.Connections.Per.Torrent.When.Seeding.Enable" ));
+		        		}
+		        	}
+		        };
+			
+		    f_enabler.performAction();
+		    
+			enable_seeding_uploads.setAdditionalActionPerformer( f_enabler );
+			enable_max_peers_seeding.setAdditionalActionPerformer( f_enabler );
+			auto_adjust.setAdditionalActionPerformer( f_enabler );
+			
+				// END AUTO GROUP
 			
 			gridData = new GridData();
 			gridData.horizontalSpan = 2;
@@ -493,18 +550,6 @@ public class ConfigSectionTransfer implements UISWTConfigSection {
 			StringParameter ignore_ports = new StringParameter(cMiniArea,
 					"Ignore.peer.ports", "0");
 			ignore_ports.setLayoutData(gridData);
-	
-			gridData = new GridData();
-			gridData.horizontalSpan = 2;
-			BooleanParameter pauseOnExit = new BooleanParameter(cSection,
-					"Pause Downloads On Exit", "ConfigView.label.pause.downloads.on.exit");
-			pauseOnExit.setLayoutData(gridData);
-	
-			gridData = new GridData();
-			gridData.horizontalSpan = 2;
-			BooleanParameter resumeOnStart = new BooleanParameter(cSection,
-					"Resume Downloads On Start", "ConfigView.label.resume.downloads.on.start");
-			resumeOnStart.setLayoutData(gridData);
 		}
 		
 		return cSection;

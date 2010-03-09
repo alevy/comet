@@ -25,18 +25,13 @@ package org.gudy.azureus2.ui.swt.views;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
@@ -44,41 +39,27 @@ import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.download.DownloadManagerStateAttributeListener;
 import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.logging.LogEvent;
+import org.gudy.azureus2.core3.logging.LogIDs;
+import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.util.AERunnable;
+import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.plugins.ui.tables.TableManager;
-import org.gudy.azureus2.ui.swt.MessageBoxWindow;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.SimpleTextEntryWindow;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 import org.gudy.azureus2.ui.swt.views.file.FileInfoView;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWTMenuFillListener;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.DoneItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.FileExtensionItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.FirstPieceItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.ModeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.NameItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.PathItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.PercentItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.PieceCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.PriorityItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.ProgressGraphItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.RemainingPiecesItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.SizeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.files.StorageTypeItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.files.*;
 import org.gudy.azureus2.ui.swt.views.utils.ManagerUtils;
 
 import com.aelitis.azureus.core.AzureusCoreOperation;
 import com.aelitis.azureus.core.AzureusCoreOperationTask;
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
-import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-import com.aelitis.azureus.ui.common.table.TableRefreshListener;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableSelectedRowsListener;
-import com.aelitis.azureus.ui.common.table.TableSelectionListener;
+import com.aelitis.azureus.ui.common.table.*;
 
 /**
  * @author Olivier
@@ -86,12 +67,13 @@ import com.aelitis.azureus.ui.common.table.TableSelectionListener;
  *         2004/Apr/23: extends TableView instead of IAbstractView
  */
 public class FilesView
-	extends TableViewTab
+	extends TableViewTab<DiskManagerFileInfo>
 	implements TableDataSourceChangedListener, TableSelectionListener,
 	TableViewSWTMenuFillListener, TableRefreshListener, DownloadManagerStateAttributeListener,
 	TableLifeCycleListener
 {
 	boolean refreshing = false;
+  private DragSource dragSource = null;
 
   private static final TableColumnCore[] basicItems = {
     new NameItem(),
@@ -129,26 +111,42 @@ public class FilesView
   
   private MenuItem path_item;
 
-  private TableViewSWT tv;
+  private TableViewSWT<DiskManagerFileInfo> tv;
+	private final boolean allowTabViews;
   
 
   /**
    * Initialize 
    */
 	public FilesView() {
-		tv = new TableViewSWTImpl(TableManager.TABLE_TORRENT_FILES, "FilesView",
-				basicItems, "firstpiece", SWT.MULTI | SWT.FULL_SELECTION | SWT.VIRTUAL);
-		setTableView(tv);
+		super("FilesView");
+		allowTabViews = true;
+	}
+
+	public FilesView(boolean allowTabViews) {
+		super("FilesView");
+		this.allowTabViews = allowTabViews;
+	}
+
+	public TableViewSWT<DiskManagerFileInfo> initYourTableView() {
+		tv = new TableViewSWTImpl<DiskManagerFileInfo>(
+				org.gudy.azureus2.plugins.disk.DiskManagerFileInfo.class,
+				TableManager.TABLE_TORRENT_FILES, getPropertiesPrefix(), basicItems,
+				"firstpiece", SWT.MULTI | SWT.FULL_SELECTION | SWT.VIRTUAL);
 		tv.setRowDefaultIconSize(new Point(16, 16));
-		tv.setEnableTabViews(true);
-		tv.setCoreTabViews(new IView[] { new FileInfoView()
-		});
+		if (allowTabViews) {
+  		tv.setEnableTabViews(true);
+  		tv.setCoreTabViews(new IView[] { new FileInfoView()
+  		});
+		}
 
 		tv.addTableDataSourceChangedListener(this, true);
 		tv.addRefreshListener(this, true);
 		tv.addSelectionListener(this, false);
 		tv.addMenuFillListener(this);
 		tv.addLifeCycleListener(this);
+
+		return tv;
 	}
 
   
@@ -193,9 +191,9 @@ public class FilesView
 	}
 
 	// @see org.gudy.azureus2.ui.swt.views.TableViewSWTMenuFillListener#fillMenu(org.eclipse.swt.widgets.Menu)
-	public void fillMenu(final Menu menu) {
+	public void fillMenu(String sColumnName, final Menu menu) {
 		Shell shell = menu.getShell();
-		Object[] data_sources = tv.getSelectedDataSources();
+		Object[] data_sources = tv.getSelectedDataSources().toArray();
 		boolean hasSelection = (data_sources.length > 0);
 
     final MenuItem itemOpen = new MenuItem(menu, SWT.PUSH);
@@ -210,7 +208,7 @@ public class FilesView
 	Messages.setLanguageText(itemExplore, "MyTorrentsView.menu." + (use_open_containing_folder ? "open_parent_folder" : "explore"));
 	itemExplore.addListener(SWT.Selection, new Listener() {
 		public void handleEvent(Event event) {
-		    Object[] dataSources = tv.getSelectedDataSources();
+		    Object[] dataSources = tv.getSelectedDataSources().toArray();
 		    for (int i = dataSources.length - 1; i >= 0; i--) {
 		    	DiskManagerFileInfo info = (DiskManagerFileInfo)dataSources[i];
 		    	if (info != null) {
@@ -347,9 +345,10 @@ public class FilesView
     
     Listener rename_listener = new Listener() {
     	public void handleEvent(Event event) {
-    		boolean rename_it = ((Boolean)event.widget.getData("rename")).booleanValue();
-    		boolean retarget_it = ((Boolean)event.widget.getData("retarget")).booleanValue();
-    		rename(tv.getSelectedRows(), rename_it, retarget_it);
+    		final boolean rename_it = ((Boolean)event.widget.getData("rename")).booleanValue();
+    		final boolean retarget_it = ((Boolean)event.widget.getData("retarget")).booleanValue();
+				final TableRowCore[] selectedRows = tv.getSelectedRows();
+				rename(selectedRows, rename_it, retarget_it);
     	}
     };
     
@@ -359,8 +358,13 @@ public class FilesView
     
     Listener priorityListener = new Listener() {
 			public void handleEvent(Event event) {
-				changePriority(((Integer) event.widget.getData("Priority")).intValue(),
-						tv.getSelectedRows());
+				final int priority = ((Integer) event.widget.getData("Priority")).intValue();
+				final TableRowCore[] selectedRows = tv.getSelectedRows();
+				Utils.getOffOfSWTThread(new AERunnable(){
+					public void runSupport() {
+						changePriority(priority, selectedRows);
+					}
+				});
 			}
     };
 
@@ -371,9 +375,8 @@ public class FilesView
 	}
 
 	private String askForRenameFilename(DiskManagerFileInfo fileInfo) {
-		SimpleTextEntryWindow dialog = new SimpleTextEntryWindow(Display.getDefault());
-		dialog.setTitle("FilesView.rename.filename.title");
-		dialog.setMessage("FilesView.rename.filename.text");
+		SimpleTextEntryWindow dialog = new SimpleTextEntryWindow(
+				"FilesView.rename.filename.title", "FilesView.rename.filename.text");
 		dialog.setPreenteredText(fileInfo.getFile(true).getName(), false); // false -> it's not "suggested", it's a previous value
 		dialog.allowEmptyInput(false);
 		dialog.prompt();
@@ -399,14 +402,18 @@ public class FilesView
 	}
 	
 	private boolean askCanOverwrite(File file) {
-		return MessageBoxWindow.open( 
-				"FilesView.messagebox.rename.id",
-				SWT.OK | SWT.CANCEL,
-				SWT.OK, true,
-				Display.getDefault(), 
-				MessageBoxWindow.ICON_WARNING,
-				MessageText.getString( "FilesView.rename.confirm.delete.title" ),
-				MessageText.getString( "FilesView.rename.confirm.delete.text", new String[]{ file.toString()})) == SWT.OK;
+		MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.CANCEL,
+				MessageText.getString("FilesView.rename.confirm.delete.title"),
+				MessageText.getString("FilesView.rename.confirm.delete.text",
+						new String[] {
+							file.toString()
+						}));
+		mb.setDefaultButtonUsingStyle(SWT.OK);
+		mb.setRememberOnlyIfButton(0);
+		mb.setRemember("FilesView.messagebox.rename.id", true, null);
+		mb.setLeftImage(SWT.ICON_WARNING);
+		mb.open(null);
+		return mb.waitUntilClosed() == SWT.OK;
 	}
 	
 	// same code is used in tableitems.files.NameItem
@@ -426,10 +433,9 @@ public class FilesView
 		is_changing_links = false;
 
 		if (!result[0]){
-			MessageBox mb = new MessageBox(Utils.findAnyShell(), SWT.ICON_ERROR | SWT.OK);
-			mb.setText(MessageText.getString("FilesView.rename.failed.title"));
-			mb.setMessage(MessageText.getString("FilesView.rename.failed.text"));
-			mb.open();	    					
+			new MessageBoxShell(SWT.ICON_ERROR | SWT.OK, 
+					MessageText.getString("FilesView.rename.failed.title"),
+					MessageText.getString("FilesView.rename.failed.text")).open(null);
 		}
 
 	}
@@ -447,8 +453,8 @@ public class FilesView
 		boolean	paused = false;
 		try {
 			for (int i=0; i<rows.length; i++) {
-				TableRowCore row = rows[i];
-				DiskManagerFileInfo fileInfo = (DiskManagerFileInfo)rows[i].getDataSource(true);
+				final TableRowCore row = rows[i];
+				final DiskManagerFileInfo fileInfo = (DiskManagerFileInfo)rows[i].getDataSource(true);
 				File existing_file = fileInfo.getFile(true);
 				File f_target = null;
 				if (rename_it && retarget_it) {
@@ -486,8 +492,13 @@ public class FilesView
     				// no existing file.
     			}
     					
-    			moveFile(fileInfo, f_target);
-    			row.invalidate();
+    			final File ff_target = f_target;
+  				Utils.getOffOfSWTThread(new AERunnable(){
+  					public void runSupport() {
+  						moveFile(fileInfo, ff_target);
+  	    			row.invalidate();
+  					}
+  				});
 			}
 		}
 		finally {
@@ -579,17 +590,22 @@ public class FilesView
 			if (root_exists) {perform_check = true;}
 			else if (FileUtil.isAncestorOf(save_location, existing_file)) {perform_check = false;}
 			else {perform_check = true;}
-						
+
 			if (perform_check && existing_file.exists()) {
-				if (delete_action) {
-					boolean wants_to_delete = MessageBoxWindow.open( 
-							"FilesView.messagebox.delete.id",
-							SWT.OK | SWT.CANCEL,
-							SWT.OK, true,
-							Display.getDefault(), 
-							MessageBoxWindow.ICON_WARNING,
-							MessageText.getString( "FilesView.rename.confirm.delete.title" ),
-							MessageText.getString( "FilesView.rename.confirm.delete.text", new String[]{ existing_file.toString()})) == SWT.OK;
+					if (delete_action) {
+						MessageBoxShell mb = new MessageBoxShell(SWT.OK | SWT.CANCEL,
+								MessageText.getString("FilesView.rename.confirm.delete.title"),
+								MessageText.getString("FilesView.rename.confirm.delete.text",
+										new String[] {
+											existing_file.toString()
+										}));
+						mb.setDefaultButtonUsingStyle(SWT.OK);
+						mb.setRememberOnlyIfButton(0);
+						mb.setRemember("FilesView.messagebox.delete.id", true, null);
+						mb.setLeftImage(SWT.ICON_WARNING);
+						mb.open(null);
+
+					boolean wants_to_delete = mb.waitUntilClosed() == SWT.OK;
 					
 					if (wants_to_delete) {new_storage_type = DiskManagerFileInfo.ST_COMPACT;}
 				}
@@ -651,29 +667,29 @@ public class FilesView
 	    if (files != null && (this.force_refresh || !doAllExist(files))) {
 	    	this.force_refresh = false;
 
-	    	Object[] datasources = tv.getDataSources();
-	    	if(datasources.length == files.length)
+	    	List<DiskManagerFileInfo> datasources = tv.getDataSources();
+	    	if(datasources.size() == files.length)
 	    	{
 	    		// check if we actually have to replace anything
-	    		ArrayList toAdd = new ArrayList(Arrays.asList(files));
-		    	ArrayList toRemove = new ArrayList();
-		    	for(int i = 0;i < datasources.length;i++)
+	    		ArrayList<DiskManagerFileInfo> toAdd = new ArrayList<DiskManagerFileInfo>(Arrays.asList(files));
+		    	ArrayList<DiskManagerFileInfo> toRemove = new ArrayList<DiskManagerFileInfo>();
+		    	for(int i = 0;i < datasources.size();i++)
 		    	{
-		    		DiskManagerFileInfo info = (DiskManagerFileInfo)datasources[i];
+		    		DiskManagerFileInfo info = datasources.get(i);
 		    		
 		    		if(files[info.getIndex()] == info)
 		    			toAdd.set(info.getIndex(), null);
 		    		else
 		    			toRemove.add(info);
 		    	}
-		    	tv.removeDataSources(toRemove.toArray());
-		    	tv.addDataSources(toAdd.toArray());
+		    	tv.removeDataSources(toRemove.toArray(new DiskManagerFileInfo[toRemove.size()]));
+		    	tv.addDataSources(toAdd.toArray(new DiskManagerFileInfo[toAdd.size()]));
 		    	((TableViewSWTImpl)tv).tableInvalidate();
 	    	} else
 	    	{
 		    	tv.removeAllTableRows();
 	    		
-			    Object filesCopy[] = new Object[files.length]; 
+		    	DiskManagerFileInfo filesCopy[] = new DiskManagerFileInfo[files.length]; 
 			    System.arraycopy(files, 0, filesCopy, 0, files.length);
 
 			    tv.addDataSources(filesCopy);
@@ -717,11 +733,7 @@ public class FilesView
     if (sColumnName.equals("path")) {
       path_item = new MenuItem( menuThisColumn, SWT.CHECK );
       
-      menuThisColumn.addListener( SWT.Show, new Listener() {
-        public void handleEvent(Event e) {
-          path_item.setSelection( show_full_path );
-        }
-      });
+      path_item.setSelection( show_full_path );
       
       Messages.setLanguageText(path_item, "FilesView.fullpath");
       
@@ -754,9 +766,25 @@ public class FilesView
 	  this.force_refresh = true;
   }
   
-  public void tableViewInitialized() {}
+  public void tableViewInitialized() {
+    createDragDrop();
+  }
+  
   public void tableViewDestroyed() {
-	  if (manager != null) {
+  	Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				try {
+					Utils.disposeSWTObjects(new Object[] {
+						dragSource,
+					});
+					dragSource = null;
+				} catch (Exception e) {
+					Debug.out(e);
+				}
+			}
+		});
+
+  	if (manager != null) {
 		  manager.getDownloadState().removeListener(this, DownloadManagerState.AT_FILE_LINKS, DownloadManagerStateAttributeListener.WRITTEN);
 	  }
   }
@@ -768,5 +796,57 @@ public class FilesView
 
 	// @see com.aelitis.azureus.ui.common.table.TableSelectionListener#mouseExit(com.aelitis.azureus.ui.common.table.TableRowCore)
 	public void mouseExit(TableRowCore row) {
+	}
+
+	private void createDragDrop() {
+		try {
+
+			Transfer[] types = new Transfer[] { TextTransfer.getInstance() };
+
+			if (dragSource != null && !dragSource.isDisposed()) {
+				dragSource.dispose();
+			}
+
+			dragSource = tv.createDragSource(DND.DROP_MOVE | DND.DROP_COPY);
+			if (dragSource != null) {
+				dragSource.setTransfer(types);
+				dragSource.addDragListener(new DragSourceAdapter() {
+					private String eventData;
+
+					public void dragStart(DragSourceEvent event) {
+						TableRowCore[] rows = tv.getSelectedRows();
+						if (rows.length != 0 && manager != null
+								&& manager.getTorrent() != null) {
+							event.doit = true;
+						} else {
+							event.doit = false;
+							return;
+						}
+
+						// Build eventData here because on OSX, selection gets cleared
+						// by the time dragSetData occurs
+						Object[] selectedDownloads = tv.getSelectedDataSources().toArray();
+						eventData = "DiskManagerFileInfo\n";
+						TOTorrent torrent = manager.getTorrent();
+						for (int i = 0; i < selectedDownloads.length; i++) {
+							DiskManagerFileInfo fi = (DiskManagerFileInfo) selectedDownloads[i];
+							
+							try {
+								eventData += torrent.getHashWrapper().toBase32String() + ";"
+										+ fi.getIndex() + "\n";
+							} catch (Exception e) {
+							}
+						}
+					}
+
+					public void dragSetData(DragSourceEvent event) {
+						// System.out.println("DragSetData");
+						event.data = eventData;
+					}
+				});
+			}
+		} catch (Throwable t) {
+			Logger.log(new LogEvent(LogIDs.GUI, "failed to init drag-n-drop", t));
+		}
 	}
 }

@@ -21,19 +21,18 @@
 package org.gudy.azureus2.ui.swt.views.configsections;
 
 import org.eclipse.swt.SWT;
+
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 
@@ -112,7 +111,6 @@ public class ConfigSectionTransferLAN implements UISWTConfigSection {
 		
 		IntParameter lan_max_upload = new IntParameter( cSection, "Max LAN Upload Speed KBs" );
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		lan_max_upload.setLayoutData(gridData);
 		Label llmux = new Label(cSection, SWT.NULL);
 		Messages.setLanguageText( llmux, CFG_PREFIX + "uploadrate" );
@@ -120,7 +118,6 @@ public class ConfigSectionTransferLAN implements UISWTConfigSection {
 		
 		IntParameter lan_max_download = new IntParameter( cSection, "Max LAN Download Speed KBs" );
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		lan_max_download.setLayoutData(gridData);
 		Label llmdx = new Label(cSection, SWT.NULL);
 		Messages.setLanguageText( llmdx, CFG_PREFIX + "downloadrate" );

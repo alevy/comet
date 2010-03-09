@@ -23,8 +23,7 @@
 
 package com.aelitis.azureus.core.stats;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public interface 
 AzureusCoreStatsProvider 

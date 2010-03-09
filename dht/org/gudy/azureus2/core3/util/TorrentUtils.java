@@ -26,42 +26,20 @@ package org.gudy.azureus2.core3.util;
  *
  */
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
-import java.util.WeakHashMap;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import com.aelitis.azureus.core.*;
+import com.aelitis.azureus.core.util.CopyOnWriteList;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.disk.DiskManagerFactory;
-import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.download.DownloadManagerState;
-import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.internat.*;
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.util.CopyOnWriteList;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.download.*;
 
 
 public class 
@@ -75,20 +53,23 @@ TorrentUtils
 	private static final String		TORRENT_AZ_PROP_PLUGINS					= "plugins";
 	
 	public static final String		TORRENT_AZ_PROP_OBTAINED_FROM			= "obtained_from";
+	public static final String		TORRENT_AZ_PROP_PEER_CACHE				= "peer_cache";
+	public static final String		TORRENT_AZ_PROP_PEER_CACHE_VALID		= "peer_cache_valid";
 	
 	private static final String		MEM_ONLY_TORRENT_PATH		= "?/\\!:mem_only:!\\/?";
 	
+	private static final long		PC_MARKER = RandomUtils.nextLong();
 	
 	private static final List	created_torrents;
 	private static final Set	created_torrents_set;
 	
-	private static ThreadLocal		tls	= 
-		new ThreadLocal()
+	private static ThreadLocal<Map<String,Object>>		tls	= 
+		new ThreadLocal<Map<String,Object>>()
 		{
-			public Object
+			public Map<String,Object>
 			initialValue()
 			{
-				return( new HashMap());
+				return( new HashMap<String,Object>());
 			}
 		};
 		
@@ -421,9 +402,10 @@ TorrentUtils
 	
 	public static void
 	delete(
-		File 		torrent_file )
+		File 		torrent_file,
+		boolean		force_no_recycle )
 	{
-		if ( !FileUtil.deleteWithRecycle( torrent_file )){
+		if ( !FileUtil.deleteWithRecycle( torrent_file, force_no_recycle )){
 			
     		Debug.out( "TorrentUtils::delete: failed to delete '" + torrent_file + "'" );
     	}
@@ -919,13 +901,13 @@ TorrentUtils
 	setTLSTorrentHash(
 		HashWrapper		hash )
 	{
-		((Map)tls.get()).put( "hash", hash );
+		tls.get().put( "hash", hash );
 	}
 	
 	public static TOTorrent
 	getTLSTorrent()
 	{
-		HashWrapper	hash = (HashWrapper)((Map)tls.get()).get("hash");
+		HashWrapper	hash = (HashWrapper)(tls.get()).get("hash");
 		
 		if ( hash != null ){
 			
@@ -951,13 +933,13 @@ TorrentUtils
 	setTLSDescription(
 		String		desc )
 	{
-		((Map)tls.get()).put( "desc", desc );
+		tls.get().put( "desc", desc );
 	}
 	
 	public static String
 	getTLSDescription()
 	{
-		return((String)((Map)tls.get()).get( "desc" ));
+		return((String)tls.get().get( "desc" ));
 	}
 	
 		/**
@@ -968,16 +950,20 @@ TorrentUtils
 	public static Object
 	getTLS()
 	{
-		return( tls.get());
+		return( new HashMap<String,Object>(tls.get()));
 	}
 	
 	public static void
 	setTLS(
 		Object	obj )
 	{
-		Map	m = (Map)obj;
+		Map<String,Object>	m = (Map<String,Object>)obj;
 		
-		((Map)tls.get()).putAll(m);
+		Map<String,Object> tls_map = tls.get();
+		
+		tls_map.clear();
+		
+		tls_map.putAll(m);
 	}
 	
 	public static URL
@@ -994,19 +980,26 @@ TorrentUtils
 		}
 	}
 	
+	public static URL
+	getDecentralisedURL(
+		TOTorrent	torrent )
+	{
+		try{
+			return( new URL( "dht://" + ByteFormatter.encodeString( torrent.getHash()) + ".dht/announce" ));
+			
+		}catch( Throwable e ){
+			
+			Debug.out( e );
+			
+			return( getDecentralisedEmptyURL());
+		}
+	}
+
 	public static void
 	setDecentralised(
 		TOTorrent	torrent )
 	{
-	   	try{
-	   		byte[]	hash = torrent.getHash();
-	     		
-	   		torrent.setAnnounceURL( new URL( "dht://" + ByteFormatter.encodeString( hash ) + ".dht/announce" ));
-			
-		}catch( Throwable e ){
-			
-			Debug.printStackTrace( e );
-		}
+   		torrent.setAnnounceURL( getDecentralisedURL( torrent ));
 	}
 		
 	public static boolean
@@ -1122,6 +1115,61 @@ TorrentUtils
 			
 				Debug.printStackTrace(e);
 			}
+		}
+		
+		return( null );
+	}
+	
+	public static void
+	setPeerCache(
+		TOTorrent		torrent,
+		Map				pc )
+	{
+		Map	m = getAzureusPrivateProperties( torrent );
+			
+		try{
+			m.put( TORRENT_AZ_PROP_PEER_CACHE, pc );
+						
+		}catch( Throwable e ){
+			
+			Debug.printStackTrace(e);
+		}
+	}
+	
+	public static void
+	setPeerCacheValid(
+		TOTorrent		torrent )
+	{
+		Map	m = getAzureusPrivateProperties( torrent );
+			
+		try{
+			m.put( TORRENT_AZ_PROP_PEER_CACHE_VALID, new Long( PC_MARKER ));
+						
+		}catch( Throwable e ){
+			
+			Debug.printStackTrace(e);
+		}
+	}
+	
+	public static Map
+	getPeerCache(
+		TOTorrent		torrent )
+	{
+		try{
+			Map	m = getAzureusPrivateProperties( torrent );
+	
+			Long value = (Long)m.get( TORRENT_AZ_PROP_PEER_CACHE_VALID );
+			
+			if ( value != null && value == PC_MARKER ){
+			
+				Map	pc = (Map)m.get( TORRENT_AZ_PROP_PEER_CACHE );
+	
+				return( pc );
+			}
+			
+		}catch( Throwable e ){
+			
+			Debug.out( e );
 		}
 		
 		return( null );
@@ -1623,6 +1671,13 @@ TorrentUtils
 			return( delegate.getCreatedBy());
 		}
 		
+	 	public void
+		setCreatedBy(
+			byte[]		cb )
+	   	{
+	  		delegate.setCreatedBy( cb );
+	   	}
+	 	
 		public boolean
 		isCreated()
 		{
@@ -2205,6 +2260,20 @@ TorrentUtils
 			}
 		}
 
+	 	public void
+		addListener(
+			TOTorrentListener		l )
+		{
+	 		delegate.addListener( l );
+		}
+
+		public void
+		removeListener(
+			TOTorrentListener		l )
+		{
+	 		delegate.removeListener( l );
+		}
+		
 		public AEMonitor
 		getMonitor()
 		{
@@ -2487,14 +2556,7 @@ TorrentUtils
 			}
 		}
 	}
-	
-	public static String
-	getMagnetURI(
-		byte[]		hash )
-	{
-		return( "magnet:?xt=urn:btih:" + Base32.encode( hash ));
-	}
-	
+		
 	private static void
 	fireAttributeListener(
 		TOTorrent		torrent,	

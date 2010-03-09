@@ -27,16 +27,14 @@ package org.gudy.azureus2.pluginsimpl.local.torrent;
  *
  */
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.gudy.azureus2.core3.category.Category;
-import org.gudy.azureus2.core3.category.CategoryManager;
-import org.gudy.azureus2.core3.category.CategoryManagerListener;
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.plugins.torrent.TorrentAttributeEvent;
+import org.gudy.azureus2.plugins.torrent.*;
 import org.gudy.azureus2.plugins.utils.StaticUtilities;
+
+import org.gudy.azureus2.core3.category.*;
 
 
 public class TorrentAttributeCategoryImpl extends BaseTorrentAttributeImpl {

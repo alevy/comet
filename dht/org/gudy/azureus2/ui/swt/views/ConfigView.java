@@ -20,94 +20,32 @@
  */
 package org.gudy.azureus2.ui.swt.views;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StackLayout;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.core3.util.Timer;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.config.ConfigSectionSWT;
 import org.gudy.azureus2.pluginsimpl.local.ui.config.ConfigSectionRepository;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionConnection;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionConnectionAdvanced;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionConnectionEncryption;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionConnectionProxy;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionFile;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionFileMove;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionFilePerformance;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionFileTorrents;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionFileTorrentsDecoding;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionIPFilter;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterface;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceAlerts;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceColor;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceDisplay;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceLanguage;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceLegacy;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionInterfaceStart;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionLogging;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionMode;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionPlugins;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionSecurity;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionSharing;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionStats;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTracker;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTrackerClient;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTrackerServer;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTransfer;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTransferAutoSpeed;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTransferAutoSpeedBeta;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTransferAutoSpeedSelect;
-import org.gudy.azureus2.ui.swt.views.configsections.ConfigSectionTransferLAN;
+import org.gudy.azureus2.ui.swt.views.configsections.*;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 
 /**
@@ -117,9 +55,6 @@ import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 public class ConfigView extends AbstractIView {
 	private static final LogIDs LOGID = LogIDs.GUI;
   public static final String sSectionPrefix = "ConfigView.section.";
-  
-  AzureusCore		azureus_core;
-  
   
   Map<TreeItem, ConfigSection> sections = new HashMap<TreeItem, ConfigSection>();
   // Only access on SWT Thread
@@ -145,25 +80,20 @@ public class ConfigView extends AbstractIView {
   public 
   ConfigView() 
   {
-  	this(AzureusCoreFactory.getSingleton());
   }
   
-  /**
-   * Main Initializer
-   * 
-   * @param _azureus_core
-   */
-  public 
-  ConfigView(
-  	AzureusCore		_azureus_core ) 
-  {
-  	azureus_core	= _azureus_core;
-  }
-
   /* (non-Javadoc)
    * @see org.gudy.azureus2.ui.swt.IView#initialize(org.eclipse.swt.widgets.Composite)
    */
-  public void initialize(Composite composite) {
+  public void initialize(final Composite composite) {
+  	// need to initalize composite now, since getComposite can
+  	// be called at any time
+    cConfig = new Composite(composite, SWT.NONE);
+		_initialize(composite);
+  }
+  	
+  public void _initialize(Composite composite) {
+  	
     GridData gridData;
     /*
     /--cConfig-----------------------------------------------------------\
@@ -186,7 +116,6 @@ public class ConfigView extends AbstractIView {
     try {
       Display d = composite.getDisplay();
 
-      cConfig = new Composite(composite, SWT.NONE);
       GridLayout configLayout = new GridLayout();
       configLayout.marginHeight = 0;
       configLayout.marginWidth = 0;
@@ -366,11 +295,14 @@ public class ConfigView extends AbstractIView {
      */
     pluginSections = ConfigSectionRepository.getInstance().getList();
 
-    ConfigSection[] internalSections = { new ConfigSectionConnection(),
+    ConfigSection[] internalSections = { 
+                                         new ConfigSectionMode(),
+                                         new ConfigSectionStartShutdown(),
+                                         new ConfigSectionConnection(),
                                          new ConfigSectionConnectionProxy(),
                                          new ConfigSectionConnectionAdvanced(),
                                          new ConfigSectionConnectionEncryption(),
-                                         new ConfigSectionTransfer(azureus_core),
+                                         new ConfigSectionTransfer(),
                                          new ConfigSectionTransferAutoSpeedSelect(),
                                          new ConfigSectionTransferAutoSpeed(),
                                          new ConfigSectionTransferAutoSpeedBeta(),
@@ -386,14 +318,14 @@ public class ConfigView extends AbstractIView {
                                          new ConfigSectionInterfaceDisplay(),
                                          new ConfigSectionInterfaceColor(),
                                          new ConfigSectionInterfaceAlerts(),
+                                         new ConfigSectionInterfacePassword(),
                                          new ConfigSectionInterfaceLegacy(),
-                                         new ConfigSectionMode(),
-                                         new ConfigSectionIPFilter(azureus_core),
-                                         new ConfigSectionPlugins(this, azureus_core),
+                                         new ConfigSectionIPFilter(),
+                                         new ConfigSectionPlugins(this),
                                          new ConfigSectionStats(),
-                                         new ConfigSectionTracker(azureus_core),
+                                          new ConfigSectionTracker(),
                                          new ConfigSectionTrackerClient(),
-                                         new ConfigSectionTrackerServer(azureus_core),
+                                         new ConfigSectionTrackerServer(),
                                          new ConfigSectionSecurity(),
                                          new ConfigSectionSharing(),
                                          new ConfigSectionLogging()
@@ -437,18 +369,25 @@ public class ConfigView extends AbstractIView {
          	section_key = sSectionPrefix + name;
          }
          
+         String	section_name = MessageText.getString( section_key );
+         
          try {
           TreeItem treeItem;
           String location = section.configSectionGetParentSection();
   
-          if (location.equalsIgnoreCase(ConfigSection.SECTION_ROOT))
-        	  treeItem = new TreeItem(tree, SWT.NULL);
-          else if (location != "") {
+          if ( location.length() == 0 || location.equalsIgnoreCase(ConfigSection.SECTION_ROOT)){
+        	  //int position = findInsertPointFor(section_name, tree);
+        	  //if ( position == -1 ){
+        		  treeItem = new TreeItem(tree, SWT.NULL);
+        	  // }else{
+        	  //	  treeItem = new TreeItem(tree, SWT.NULL, position); 
+        	  //}
+         }else{
         	  TreeItem treeItemFound = findTreeItem(tree, location);
         	  if (treeItemFound != null){
         		  if (location.equalsIgnoreCase(ConfigSection.SECTION_PLUGINS)) {
         			  // Force ordering by name here.
-        			  int position = findInsertPointFor(MessageText.getString(section_key), treeItemFound);
+        			  int position = findInsertPointFor(section_name, treeItemFound);
         			  if (position == -1) {
         				  treeItem = new TreeItem(treeItemFound, SWT.NULL);
         			  }
@@ -462,8 +401,6 @@ public class ConfigView extends AbstractIView {
         	  }else{
         		  treeItem = new TreeItem(tree, SWT.NULL);
         	  }
-          }else{
-        	  treeItem = new TreeItem(tree, SWT.NULL); 
           }
   
           ScrolledComposite sc = new ScrolledComposite(cConfigSection, SWT.H_SCROLL | SWT.V_SCROLL);
@@ -722,14 +659,6 @@ public class ConfigView extends AbstractIView {
 	}
 
 
-  private Composite createConfigSection(String sNameID) {
-    return createConfigSection(null, sNameID, -1, true);
-  }
-
-  private Composite createConfigSection(String sNameID, int position) {
-    return createConfigSection(null, sNameID, position, true);
-  }
-
   public Composite createConfigSection(TreeItem treeItemParent, 
                                         String sNameID, 
                                         int position, 
@@ -812,8 +741,12 @@ public class ConfigView extends AbstractIView {
   }
 
   private TreeItem findTreeItem(Tree tree, String ID) {
-  	if (tree == null)
+  	if (tree == null) {
   		tree = this.tree;
+  	}
+  	if (tree == null) {
+  		return null;
+  	}
     TreeItem[] items = tree.getItems();
     for (int i = 0; i < items.length; i++) {
       String itemID = (String)items[i].getData("ID");

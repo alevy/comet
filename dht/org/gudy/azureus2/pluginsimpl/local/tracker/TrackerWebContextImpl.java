@@ -26,29 +26,24 @@ package org.gudy.azureus2.pluginsimpl.local.tracker;
  *
  */
 
+import java.util.*;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServer;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerException;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerFactory;
-import org.gudy.azureus2.core3.tracker.server.TRTrackerServerListener;
+import org.gudy.azureus2.plugins.tracker.*;
+import org.gudy.azureus2.plugins.tracker.web.*;
+import org.gudy.azureus2.core3.tracker.server.*;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.tracker.Tracker;
-import org.gudy.azureus2.plugins.tracker.TrackerException;
-import org.gudy.azureus2.plugins.tracker.web.TrackerAuthenticationListener;
 
 public class 
 TrackerWebContextImpl 
 	extends		TrackerWCHelper
-	implements 	TRTrackerServerListener
+	implements 	TRTrackerServerListener2, TRTrackerServerAuthenticationListener
 {
 	protected TRTrackerServer		server;
 	
-	protected List					auth_listeners	= new ArrayList();
+	protected List<TrackerAuthenticationListener>			auth_listeners	= new ArrayList<TrackerAuthenticationListener>();
 	
 	public 
 	TrackerWebContextImpl(
@@ -73,7 +68,7 @@ TrackerWebContextImpl
 				server = TRTrackerServerFactory.createSSL( name, TRTrackerServerFactory.PR_TCP, port, bind_ip, false, false );
 			}
 			
-			server.addListener( this );
+			server.addListener2( this );
 			
 		}catch( TRTrackerServerException e ){
 			
@@ -85,6 +80,13 @@ TrackerWebContextImpl
 	getName()
 	{
 		return( server.getName());
+	}
+	
+	public void
+	setEnableKeepAlive(
+		boolean		enable )
+	{
+		server.setEnableKeepAlive( enable );
 	}
 	
 	public URL[]
@@ -113,43 +115,15 @@ TrackerWebContextImpl
 		}
 	}
 	
-	public int
-	getProtocol()
+	public InetAddress 
+	getBindIP() 
 	{
-		return( server.isSSL()?Tracker.PR_HTTPS:Tracker.PR_HTTP );
-	}
-	
-	public String
-	getHostName()
-	{
-		return( server.getHost());
-	}
-	
-	public int
-	getPort()
-	{
-		return( server.getPort());
-	}
-		
-	public boolean
-	permitted(
-		String	originator,
-		byte[]	hash,
-		boolean	explicit )
-	{
-		return( false );
-	}
-	
-	public boolean
-	denied(
-		byte[]	hash,
-		boolean	explicit )
-	{
-		return( false );
+		return( server.getBindIP());
 	}
 	
 	public boolean
 	authenticate(
+		String		headers,
 		URL			resource,
 		String		user,
 		String		password )
@@ -157,7 +131,18 @@ TrackerWebContextImpl
 		for (int i=0;i<auth_listeners.size();i++){
 			
 			try{
-				boolean res = ((TrackerAuthenticationListener)auth_listeners.get(i)).authenticate( resource, user, password );
+				TrackerAuthenticationListener listener = auth_listeners.get(i);
+				
+				boolean res;
+				
+				if ( listener instanceof TrackerAuthenticationAdapter ){
+					
+					res = ((TrackerAuthenticationAdapter)listener).authenticate( headers, resource, user, password );
+					
+				}else{
+					
+					res = listener.authenticate( resource, user, password );
+				}
 				
 				if ( res ){
 					

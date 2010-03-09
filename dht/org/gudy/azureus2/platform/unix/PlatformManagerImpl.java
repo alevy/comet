@@ -29,11 +29,11 @@ import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerCapabilities;
-import org.gudy.azureus2.platform.PlatformManagerListener;
-import org.gudy.azureus2.platform.PlatformManagerPingCallback;
+import org.gudy.azureus2.platform.*;
+
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+
+import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author TuxPaper
@@ -202,6 +202,71 @@ public class PlatformManagerImpl implements PlatformManager
 		// No Listener Functionality
 	}
 
+	public File 
+	getVMOptionFile() 
+	
+		throws PlatformManagerException 
+	{
+		throw new PlatformManagerException(ERR_UNSUPPORTED);
+	}
+	
+	public String[]
+	getExplicitVMOptions()
+	          	
+	 	throws PlatformManagerException
+	{
+		throw new PlatformManagerException(ERR_UNSUPPORTED);
+	}
+	 
+	public void
+	setExplicitVMOptions(
+		String[]		options )
+	          	
+		throws PlatformManagerException
+	{
+		throw new PlatformManagerException(ERR_UNSUPPORTED);
+	}
+	
+  	public boolean 
+  	getRunAtLogin() 
+  	
+  		throws PlatformManagerException 
+  	{
+  		throw new PlatformManagerException(ERR_UNSUPPORTED);
+  	}
+  	
+  	public void 
+  	setRunAtLogin(
+  		boolean run ) 
+  	
+  		throws PlatformManagerException 
+  	{
+  		throw new PlatformManagerException(ERR_UNSUPPORTED);
+   	}
+	  
+	public void
+	startup(
+		AzureusCore		azureus_core )
+	
+		throws PlatformManagerException
+	{	
+	}
+	
+	public int
+	getShutdownTypes()
+	{
+		return( 0 );
+	}
+	
+	public void
+	shutdown(
+		int			type )
+	
+		throws PlatformManagerException
+	{	
+		 throw new PlatformManagerException("Unsupported capability called on platform manager");
+	}
+	
 	// @see org.gudy.azureus2.platform.PlatformManager#setTCPTOSEnabled(boolean)
 	public void setTCPTOSEnabled(boolean enabled) throws PlatformManagerException {
 		throw new PlatformManagerException(ERR_UNSUPPORTED);

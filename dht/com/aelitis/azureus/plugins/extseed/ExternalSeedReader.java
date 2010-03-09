@@ -22,6 +22,7 @@
 
 package com.aelitis.azureus.plugins.extseed;
 
+import java.net.URL;
 import java.util.List;
 
 import org.gudy.azureus2.plugins.peers.Peer;
@@ -49,6 +50,9 @@ ExternalSeedReader
 	public boolean
 	isPermanentlyUnavailable();
 	
+	public URL
+	getURL();
+	
 	public String
 	getIP();
 	
@@ -69,7 +73,7 @@ ExternalSeedReader
 	
 	public void
 	addRequests(
-		List			requests );
+		List<PeerReadRequest>			requests );
 	
 	public void
 	cancelRequest(
@@ -92,10 +96,10 @@ ExternalSeedReader
 	public int
 	getRequestCount();
 	
-	public List
+	public List<PeerReadRequest>
 	getExpiredRequests();
 	
-	public List
+	public List<PeerReadRequest>
 	getRequests();
 	
 	public int

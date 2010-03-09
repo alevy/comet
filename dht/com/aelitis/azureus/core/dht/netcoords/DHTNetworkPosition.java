@@ -22,8 +22,7 @@
 
 package com.aelitis.azureus.core.dht.netcoords;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 public interface 
 DHTNetworkPosition 

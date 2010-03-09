@@ -22,30 +22,16 @@
 
 package com.aelitis.net.udp.mc.impl;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.net.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.plugins.utils.UTTimer;
-import org.gudy.azureus2.plugins.utils.UTTimerEvent;
-import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
-import org.gudy.azureus2.pluginsimpl.local.utils.UTTimerImpl;
+import org.gudy.azureus2.core3.util.AEThread2;
+import org.gudy.azureus2.core3.util.SimpleTimer;
+import org.gudy.azureus2.core3.util.TimerEvent;
+import org.gudy.azureus2.core3.util.TimerEventPerformer;
 
 import com.aelitis.net.udp.mc.MCGroup;
 import com.aelitis.net.udp.mc.MCGroupAdapter;
@@ -169,16 +155,15 @@ MCGroupImpl
 			group_address = new InetSocketAddress(InetAddress.getByName(group_address_str), 0 );
 
 			processNetworkInterfaces( true );
-		
-			UTTimer timer = new UTTimerImpl( "MCGroup:refresher", true );
-			
-			timer.addPeriodicEvent(
+					
+			SimpleTimer.addPeriodicEvent(
+				"MCGroup:refresher",
 				60*1000,
-				new UTTimerEventPerformer()
+				new TimerEventPerformer()
 				{
 					public void 
 					perform(
-						UTTimerEvent event )
+						TimerEvent event )
 					{
 						try{
 							processNetworkInterfaces( false );
@@ -342,10 +327,10 @@ MCGroupImpl
 									}
 								});
 						
-						new AEThread("MCGroup:MCListener", true )
+						new AEThread2("MCGroup:MCListener", true )
 							{
 								public void
-								runSupport()
+								run()
 								{
 									handleSocket( network_interface, ni_address, mc_sock, true );
 								}
@@ -372,10 +357,10 @@ MCGroupImpl
 							// System.out.println( "local port = " + control_port );
 						}
 						
-						new AEThread( "MCGroup:CtrlListener", true )
+						new AEThread2( "MCGroup:CtrlListener", true )
 							{
 								public void
-								runSupport()
+								run()
 								{
 									handleSocket( network_interface, ni_address, control_socket, false );
 								}
@@ -670,7 +655,7 @@ MCGroupImpl
 				byte[] buf = new byte[PACKET_SIZE];
 				
 				DatagramPacket packet = new DatagramPacket(buf, buf.length );
-								
+									
 				socket.receive( packet );
 					
 				successful_accepts++;

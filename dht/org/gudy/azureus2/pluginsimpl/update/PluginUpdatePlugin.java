@@ -27,65 +27,26 @@ package org.gudy.azureus2.pluginsimpl.update;
  *
  */
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.LineNumberReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.util.*;
+import java.util.zip.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.io.*;
 
 import org.gudy.azureus2.core3.html.HTMLUtils;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfig;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginEventListener;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginManager;
+import org.gudy.azureus2.core3.util.*;
+
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.installer.PluginInstaller;
 import org.gudy.azureus2.plugins.installer.StandardPlugin;
-import org.gudy.azureus2.plugins.logging.LoggerChannel;
-import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
-import org.gudy.azureus2.plugins.ui.UIManager;
+import org.gudy.azureus2.plugins.logging.*;
+import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
+import org.gudy.azureus2.plugins.ui.*;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
-import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
-import org.gudy.azureus2.plugins.update.UpdatableComponent;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
-import org.gudy.azureus2.plugins.update.UpdateException;
-import org.gudy.azureus2.plugins.update.UpdateInstaller;
-import org.gudy.azureus2.plugins.update.UpdateManager;
-import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
-import org.gudy.azureus2.plugins.update.UpdateManagerListener;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
-import org.gudy.azureus2.pluginsimpl.PluginUtils;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetails;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoader;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoaderFactory;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoaderListener;
+import org.gudy.azureus2.plugins.ui.model.*;
+import org.gudy.azureus2.pluginsimpl.*;
+import org.gudy.azureus2.pluginsimpl.update.sf.*;
 import org.gudy.azureus2.update.CorePatchChecker;
 
 import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
@@ -417,7 +378,13 @@ PluginUpdatePlugin
 				
 				if ( pi.getPluginState().isDisabled()){
 					
-					continue;
+						// if it is disabled because it failed to load, carry on and check for updates as the newer version
+						// may be there to fix the load failure!
+					
+					if ( !pi.getPluginState().hasFailed()){
+						
+						continue;
+					}
 				}
 				
 				String	mand = pi.getPluginProperties().getProperty( "plugin.mandatory");
@@ -893,7 +860,7 @@ PluginUpdatePlugin
 					// to use an installer + restart to copy the files (as the restart can elevate
 					// permissions)
 				
-				if ( Constants.isWindowsVista ){
+				if ( Constants.isWindowsVistaOrHigher ){
 					
 						// test with .dll as this will fail write to virtual-store as required
 					
@@ -1202,10 +1169,14 @@ PluginUpdatePlugin
 														
 										if ( origin.exists()){
 											
-											if ( 	file_name.toLowerCase().endsWith(".properties") ||
-													file_name.toLowerCase().endsWith(".config" )){
+											if ( 	file_name.indexOf( '/' ) == -1 &&
+													(	file_name.toLowerCase(MessageText.LOCALE_ENGLISH).endsWith(".properties") ||
+														file_name.toLowerCase(MessageText.LOCALE_ENGLISH).endsWith(".config" ))){
 												
-												is_plugin_properties	= file_name.toLowerCase().equals("plugin.properties");
+													// don't trash properties and config files in root as users may well
+													// have modified them
+												
+												is_plugin_properties	= file_name.toLowerCase(MessageText.LOCALE_ENGLISH).equals("plugin.properties");
 												
 												String	old_file_name = file_name;
 												
@@ -1608,16 +1579,20 @@ PluginUpdatePlugin
 				}	
 			}
 			
-			String msg =   "Version " + version + " of plugin '" + update.getName() + "' " +
-							"installed successfully";
-
-			if ( update_txt_found ){
-				
-				msg += " - See update log for details";
-			}
+			Boolean b_disable = (Boolean)update.getCheckInstance().getProperty( UpdateCheckInstance.PT_UI_DISABLE_ON_SUCCESS_SLIDEY );
 			
-			log.logAlertRepeatable( update_txt_found?LoggerChannel.LT_WARNING:LoggerChannel.LT_INFORMATION, msg );			
-
+			if ( update_txt_found || b_disable == null || !b_disable ){
+				
+				String msg =   "Version " + version + " of plugin '" + update.getName() + "' " +
+								"installed successfully";
+	
+				if ( update_txt_found ){
+					
+					msg += " - See update log for details";
+				}
+				
+				log.logAlertRepeatable( update_txt_found?LoggerChannel.LT_WARNING:LoggerChannel.LT_INFORMATION, msg );			
+			}
 		}catch( Throwable e ){
 					
 			String msg =   "Version " + version + " of plugin '" + 	update.getName() + "' " +

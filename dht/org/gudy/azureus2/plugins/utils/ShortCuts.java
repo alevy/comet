@@ -27,10 +27,7 @@ package org.gudy.azureus2.plugins.utils;
  *
  */
 
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
-import org.gudy.azureus2.plugins.download.DownloadStats;
+import org.gudy.azureus2.plugins.download.*;
 
 public interface 
 ShortCuts 

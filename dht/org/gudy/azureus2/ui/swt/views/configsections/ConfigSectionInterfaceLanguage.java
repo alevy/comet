@@ -30,17 +30,17 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringListParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 /**
  *
@@ -82,7 +82,7 @@ public class ConfigSectionInterfaceLanguage implements UISWTConfigSection {
     label.setLayoutData(gridData);
     Messages.setLanguageText( label, "MainWindow.menu.language" );  //old name path, but already translated
 
-    Locale[] locales = MessageText.getLocales();
+    Locale[] locales = MessageText.getLocales(true);
     
     String[] drop_labels = new String[ locales.length ];
     String[] drop_values = new String[ locales.length ];

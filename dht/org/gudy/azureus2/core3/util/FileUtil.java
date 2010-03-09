@@ -22,30 +22,16 @@
 
 package org.gudy.azureus2.core3.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
@@ -53,6 +39,7 @@ import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
@@ -182,7 +169,33 @@ public class FileUtil {
     
     return( true );
   }
-  
+
+  public static boolean recursiveDeleteNoCheck(File f) {
+    try {
+      if (f.isDirectory()) {
+        File[] files = f.listFiles();
+        for (int i = 0; i < files.length; i++) {
+          if ( !recursiveDeleteNoCheck(files[i])){
+        	  
+        	  return( false );
+          }
+        }
+        if ( !f.delete()){
+        	
+        	return( false );
+        }
+      }
+      else {
+        if ( !f.delete()){
+        	
+        	return( false );
+        }
+      }
+    } catch (Exception ignore) {/*ignore*/}
+    
+    return( true );
+  }  
+ 
   public static long
   getFileOrDirectorySize(
   	File		file )
@@ -412,6 +425,15 @@ public class FileUtil {
 	  writeResilientFile( file.getParentFile(), file.getName(), data, false );
   }
   
+  public static boolean
+  writeResilientFileWithResult(
+    File		parent_dir,
+  	String		file_name,
+	Map			data )
+  {
+	  return( writeResilientFile( parent_dir, file_name, data ));
+  }
+  
   public static void
   writeResilientFile(
     File		parent_dir,
@@ -445,63 +467,92 @@ public class FileUtil {
   
   	// synchronise it to prevent concurrent attempts to write the same file
   
-  private static void
+  private static boolean
   writeResilientFile(
 	File		parent_dir,
   	String		file_name,
 	Map			data )
   {
-  	try{
-  		class_mon.enter();
-  	
-	  	try{
-	  		getReservedFileHandles();
-	      File temp = new File(  parent_dir, file_name + ".saving");
-		    BufferedOutputStream	baos = null;
-		    
-		    try{
-		    	byte[] encoded_data = BEncoder.encode(data);
-		    	FileOutputStream tempOS = new FileOutputStream( temp, false );
-		    	baos = new BufferedOutputStream( tempOS, 8192 );
-		    	baos.write( encoded_data );
-		    	baos.flush();
-		    	tempOS.getFD().sync();
-	        baos.close();
-	        baos = null;
-	           
-	        //only use newly saved file if it got this far, i.e. it saved successfully
-	        if ( temp.length() > 1L ) {
-	        	File file = new File( parent_dir, file_name );
-	        	if ( file.exists() ){
-	        		file.delete();
-	        	}
-	        	temp.renameTo( file );
-	        }
-	
-		    }catch (Exception e) {
-		    	Logger.log(new LogAlert(LogAlert.UNREPEATABLE, "Save of '"
-							+ file_name + "' fails", e));
-		    	
-		    }finally{
-		    	
-		    	try {
-		    		if (baos != null){
-		    			
-		    			baos.close();
-		    		}
-		    	}catch( Exception e){
-		    		Logger.log(new LogAlert(LogAlert.UNREPEATABLE, "Save of '"
-								+ file_name + "' fails", e)); 
-		    	}
-		    }
-	  	}finally{
-	  		
-	  		releaseReservedFileHandles();
-	  	}
-  	}finally{
-  		
-  		class_mon.exit();
-  	}
+	  try{
+		  class_mon.enter();
+
+		  try{
+			  getReservedFileHandles();
+			  File temp = new File(  parent_dir, file_name + ".saving");
+			  BufferedOutputStream	baos = null;
+
+			  try{
+				  byte[] encoded_data = BEncoder.encode(data);
+				  FileOutputStream tempOS = new FileOutputStream( temp, false );
+				  baos = new BufferedOutputStream( tempOS, 8192 );
+				  baos.write( encoded_data );
+				  baos.flush();
+				  
+				  	// thinking about removing this - just do so for CVS for the moment
+				  
+				  if ( !Constants.isCVSVersion()){
+					  
+					  tempOS.getFD().sync();
+				  }
+				  
+				  baos.close();
+				  baos = null;
+
+				  	//only use newly saved file if it got this far, i.e. it saved successfully
+				  
+				  if ( temp.length() > 1L ){
+					  
+					  File file = new File( parent_dir, file_name );
+					  
+					  if ( file.exists()){
+						  
+						  if ( !file.delete()){
+							  
+							  Debug.out( "Save of '" + file_name + "' fails - couldn't delete " + file.getAbsolutePath());
+						  }
+					  }
+					  
+					  if ( temp.renameTo( file )){
+						  
+						  return( true );
+						  
+					  }else{
+						  
+						 Debug.out( "Save of '" + file_name + "' fails - couldn't rename " + temp.getAbsolutePath() + " to " + file.getAbsolutePath());
+
+					  }
+				  }
+					  
+				  return( false );
+
+			  }catch( Throwable e ){
+				  
+				  Debug.out( "Save of '" + file_name + "' fails", e );
+
+				  return( false );
+				  
+			  }finally{
+
+				  try{
+					  if (baos != null){
+
+						  baos.close();
+					  }
+				  }catch( Exception e){
+					  
+					  Debug.out( "Save of '" + file_name + "' fails", e ); 
+					  
+					  return( false );
+				  }
+			  }
+		  }finally{
+
+			  releaseReservedFileHandles();
+		  }
+	  }finally{
+
+		  class_mon.exit();
+	  }
   }
   
   	public static boolean
@@ -553,7 +604,7 @@ public class FileUtil {
 	readResilientFile(
 		File		file )
 	{
-		return( readResilientFile( file.getParentFile(),file.getName(),false));
+		return( readResilientFile( file.getParentFile(),file.getName(),false, true));
 	}
 	
  	public static Map
@@ -561,6 +612,16 @@ public class FileUtil {
 		File		parent_dir,
 		String		file_name,
 		boolean		use_backup )
+ 	{
+ 		return readResilientFile(parent_dir, file_name, use_backup, true);
+ 	}
+ 	
+ 	public static Map
+	readResilientFile(
+		File		parent_dir,
+		String		file_name,
+		boolean		use_backup,
+		boolean		intern_keys )
  	{
 		File	backup_file = new File( parent_dir, file_name + ".bak" );
 		 
@@ -572,19 +633,17 @@ public class FileUtil {
  			// if we've got a backup, don't attempt recovery here as the .bak file may be
  			// fully OK
  		
- 		Map	res = readResilientFileSupport( parent_dir, file_name, !use_backup );
+ 		Map	res = readResilientFileSupport( parent_dir, file_name, !use_backup, intern_keys );
  		
  		if ( res == null && use_backup ){
  				
  				// try backup without recovery
  			
- 		 	res = readResilientFileSupport( parent_dir, file_name + ".bak", false );
+ 		 	res = readResilientFileSupport( parent_dir, file_name + ".bak", false, intern_keys );
  		 		
 	 		if ( res != null ){
 	 			
-	 			Logger.log(new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_WARNING,
-						"Backup file '" + backup_file
-								+ "' has been used for recovery purposes"));
+	 			Debug.out( "Backup file '" + backup_file + "' has been used for recovery purposes" );
 				
 					// rewrite the good data, don't use backups here as we want to
 					// leave the original backup in place for the moment
@@ -595,7 +654,7 @@ public class FileUtil {
 	 			
 	 				// neither main nor backup file ok, retry main file with recovery
 	 			
-	 			res = readResilientFileSupport( parent_dir, file_name, true );
+	 			res = readResilientFileSupport( parent_dir, file_name, true, true );
 	 		}
  		}
  		
@@ -613,7 +672,8 @@ public class FileUtil {
 	readResilientFileSupport(
 		File		parent_dir,
 		String		file_name,
-		boolean		attempt_recovery )
+		boolean		attempt_recovery,
+		boolean		intern_keys )
 	{
    		try{
   			class_mon.enter();
@@ -624,7 +684,7 @@ public class FileUtil {
 	  			Map	res = null;
 	  			
 	  			try{
-	  				res = readResilientFile( file_name, parent_dir, file_name, 0, false );
+	  				res = readResilientFile( file_name, parent_dir, file_name, 0, false, intern_keys );
 	  			
 	  			}catch( Throwable e ){
 	  				
@@ -633,12 +693,11 @@ public class FileUtil {
 	  			
 	  			if ( res == null && attempt_recovery ){
 	  				
-	  				res = readResilientFile( file_name, parent_dir, file_name, 0, true );
+	  				res = readResilientFile( file_name, parent_dir, file_name, 0, true, intern_keys );
 	  				
 	  				if ( res != null ){
-	  					Logger.log(new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_WARNING,
-								"File '" + file_name + "' has been partially recovered, "
-										+ "information may have been lost!"));
+	  					
+	  					Debug.out( "File '" + file_name + "' has been partially recovered, information may have been lost!" );
 	  				}
 	  			}
 	  			
@@ -666,7 +725,8 @@ public class FileUtil {
 		File		parent_dir,
 		String		file_name,
 		int			fail_count,
-		boolean		recovery_mode )
+		boolean		recovery_mode,
+		boolean		skip_key_intern)
 	{	  
 			// logging in here is only done during "non-recovery" mode to prevent subsequent recovery
 			// attempts logging everything a second time.
@@ -686,10 +746,8 @@ public class FileUtil {
   					
 	  				if ( fail_count == 1 ){
 	  					
-	  					// we only alert the user if at least one file was found and failed
-	  					// otherwise it could be start of day when neither file exists yet
-	  					Logger.log(new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_ERROR,
-								"Load of '" + original_file_name + "' fails, no usable file or backup"));
+	  					Debug.out( "Load of '" + original_file_name + "' fails, no usable file or backup" );
+	  					
 	  				}else{
 	  					// drop this log, it doesn't really help to inform about the failure to 
 	  					// find a .saving file
@@ -713,7 +771,7 @@ public class FileUtil {
 //								+ file_name + "' failed, " + "file not found or 0-sized."));
   			}
   			
-  			return( readResilientFile( original_file_name, parent_dir, file_name + ".saving", 0, recovery_mode ));
+  			return( readResilientFile( original_file_name, parent_dir, file_name + ".saving", 0, recovery_mode, true ));
   		}
 
   		BufferedInputStream bin = null;
@@ -749,13 +807,11 @@ public class FileUtil {
   				decoder.setRecoveryMode( true );
   			}
   			
-	    	Map	res = decoder.decodeStream(bin);
+	    	Map	res = decoder.decodeStream(bin, !skip_key_intern);
 	    	
 	    	if ( using_backup && !recovery_mode ){
   		
-	    		Logger.log(
-	    				new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_WARNING,
-						"Load of '" + original_file_name + "' had to revert to backup file")); 
+	    		Debug.out( "Load of '" + original_file_name + "' had to revert to backup file" ); 
 	    	}
 	    	
 	    	return( res );
@@ -814,14 +870,14 @@ public class FileUtil {
 	    	if ( using_backup ){
 		
 	    		if ( !recovery_mode ){
-	    			Logger.log(new LogAlert(LogAlert.UNREPEATABLE, LogAlert.AT_ERROR,
-							"Load of '" + original_file_name + "' fails, no usable file or backup")); 
+	    			
+	    			Debug.out( "Load of '" + original_file_name + "' fails, no usable file or backup" ); 
 	    		}
 	    			
 	    		return( null );
 	    	}
 	    	
-	    	return( readResilientFile( original_file_name, parent_dir, file_name + ".saving", 1, recovery_mode ));
+	    	return( readResilientFile( original_file_name, parent_dir, file_name + ".saving", 1, recovery_mode, true ));
  			 
 	    }finally{
 	    	
@@ -999,6 +1055,10 @@ public class FileUtil {
       }
     }
     
+    public static void copyFileWithException( final File _source, final File _dest ) throws IOException{
+         copyFile( new FileInputStream( _source ), new FileOutputStream( _dest ) );
+    }
+    
     public static boolean copyFile( final File _source, final OutputStream _dest, boolean closeInputStream ) {
         try {
           copyFile( new FileInputStream( _source ), _dest, closeInputStream );
@@ -1041,6 +1101,42 @@ public class FileUtil {
     		
        		try{
     			if(close_input){
+    				_source.close();
+    			}
+    		}catch( IOException e ){
+     		}
+    		
+    		if ( dest != null ){
+    			
+    			dest.close();
+    		}
+    	}
+    }
+    
+    public static void 
+    copyFile( 
+    	final InputStream 	_source, 
+    	final File 			_dest,
+    	boolean				_close_input_stream )
+    
+    	throws IOException
+    {
+    	FileOutputStream	dest = null;
+        	
+    	boolean	close_input = _close_input_stream;
+    	
+    	try{
+    		dest = new FileOutputStream(_dest);
+       		
+    		close_input = false;
+    		
+    		copyFile( _source, dest, close_input );
+    		
+    	}finally{
+    		
+       		try{
+    			if( close_input ){
+    				
     				_source.close();
     			}
     		}catch( IOException e ){
@@ -1283,10 +1379,8 @@ public class FileUtil {
     ) {
     
     	if ( !from_file.exists()){
-    		Logger
-					.log(new LogAlert(LogAlert.REPEATABLE, LogAlert.AT_ERROR,
-							"renameFile: source file '" + from_file
-									+ "' doesn't exist, failing"));
+    		
+    		Debug.out( "renameFile: source file '" + from_file + "' doesn't exist, failing" );
     		
     		return( false );
     	}
@@ -1295,8 +1389,8 @@ public class FileUtil {
          * If the destination exists, we only fail if requested.
          */
         if (to_file.exists() && (fail_on_existing_directory || from_file.isFile() || to_file.isFile())) {
-            Logger.log(new LogAlert(LogAlert.REPEATABLE, LogAlert.AT_ERROR,
-                    "renameFile: target file '" + to_file + "' already exists, failing"));
+            
+        	Debug.out( "renameFile: target file '" + to_file + "' already exists, failing" );
 
             return( false );
         }
@@ -1336,9 +1430,8 @@ public class FileUtil {
     				}
     			}catch( Throwable e ){
     				
-    				Logger.log(new LogAlert(LogAlert.REPEATABLE,
-							"renameFile: failed to rename file '" + ff.toString() + "' to '"
-									+ tf.toString() + "'", e));
+    				Debug.out( "renameFile: failed to rename file '" + ff.toString() + "' to '"
+									+ tf.toString() + "'", e );
 
     				break;
     			}
@@ -1352,9 +1445,8 @@ public class FileUtil {
     				// This might be important or not. We'll make it a debug message if we had a filter,
     				// or log it normally otherwise.
     				if (file_filter == null) {
-    					Logger.log(new LogAlert(LogAlert.REPEATABLE, LogAlert.AT_ERROR,
-							"renameFile: files remain in '" + from_file.toString()
-									+ "', not deleting"));
+    					Debug.out( "renameFile: files remain in '" + from_file.toString()
+									+ "', not deleting");
     				}
     				else {
     					/* Should we log this? How should we log this? */
@@ -1364,8 +1456,7 @@ public class FileUtil {
     			}else{
     				
     				if ( !from_file.delete()){
-    					Logger.log(new LogAlert(LogAlert.REPEATABLE, LogAlert.AT_ERROR,
-								"renameFile: failed to delete '" + from_file.toString() + "'"));
+    					Debug.out( "renameFile: failed to delete '" + from_file.toString() + "'" );
     				}
     			}
     			
@@ -1382,14 +1473,12 @@ public class FileUtil {
     			try{
     				// null - We don't want to use the file filter, it only refers to source paths.
                     if ( !renameFile( tf, ff, false, null )){
-    					Logger.log(new LogAlert(LogAlert.REPEATABLE, LogAlert.AT_ERROR,
-								"renameFile: recovery - failed to move file '" + tf.toString()
-										+ "' to '" + ff.toString() + "'"));
+    					Debug.out( "renameFile: recovery - failed to move file '" + tf.toString()
+										+ "' to '" + ff.toString() + "'" );
     				}
     			}catch( Throwable e ){
-    				Logger.log(new LogAlert(LogAlert.REPEATABLE,
-							"renameFile: recovery - failed to move file '" + tf.toString()
-									+ "' to '" + ff.toString() + "'", e));
+    				Debug.out("renameFile: recovery - failed to move file '" + tf.toString()
+									+ "' to '" + ff.toString() + "'", e);
    	   			    				
     			}
       		}
@@ -1439,9 +1528,8 @@ public class FileUtil {
 					fis = null;
 					
 					if ( !from_file.delete()){
-						Logger.log(new LogAlert(LogAlert.REPEATABLE,
-								LogAlert.AT_ERROR, "renameFile: failed to delete '"
-										+ from_file.toString() + "'"));
+						Debug.out( "renameFile: failed to delete '"
+										+ from_file.toString() + "'" );
 						
 						throw( new Exception( "Failed to delete '" + from_file.toString() + "'"));
 					}
@@ -1452,9 +1540,8 @@ public class FileUtil {
 					
 				}catch( Throwable e ){		
 	
-					Logger.log(new LogAlert(LogAlert.REPEATABLE,
-							"renameFile: failed to rename '" + from_file.toString()
-									+ "' to '" + to_file.toString() + "'", e));
+					Debug.out( "renameFile: failed to rename '" + from_file.toString()
+									+ "' to '" + to_file.toString() + "'", e );
 					
 					return( false );
 					
@@ -1492,7 +1579,21 @@ public class FileUtil {
     	}
     }
     
-    
+    public static boolean
+    writeStringAsFile(
+    	File		file,
+    	String		text )
+    {
+    	try{
+    		return( writeBytesAsFile2( file.getAbsolutePath(), text.getBytes( "UTF-8" )));
+    		
+    	}catch( Throwable e ){
+    		
+    		Debug.out( e );
+    		
+    		return( false );
+    	}
+    }
     
     public static void 
     writeBytesAsFile( 
@@ -1535,9 +1636,10 @@ public class FileUtil {
     
 	public static boolean
 	deleteWithRecycle(
-		File		file )
+		File		file,
+		boolean		force_no_recycle )
 	{
-		if ( COConfigurationManager.getBooleanParameter("Move Deleted Data To Recycle Bin" )){
+		if ( COConfigurationManager.getBooleanParameter("Move Deleted Data To Recycle Bin" ) && !force_no_recycle ){
 			
 			try{
 			    final PlatformManager	platform  = PlatformManagerFactory.getPlatformManager();
@@ -1842,5 +1944,92 @@ public class FileUtil {
 		{
 			return -1;
 		}		
+	}
+	
+	public static boolean
+	canReallyWriteToAppDirectory()
+	{		
+		if ( !FileUtil.getApplicationFile("bogus").getParentFile().canWrite()){
+			
+			return( false );
+		}
+		
+			// handle vista+ madness
+		
+		if ( Constants.isWindowsVistaOrHigher ){
+			
+			try{
+				File write_test = FileUtil.getApplicationFile( "_az_.dll" );
+					
+					// should fail if no perms, but sometimes it's created in
+					// virtualstore (if ran from java(w).exe for example)
+				
+				FileOutputStream fos = new FileOutputStream( write_test );
+				
+				fos.write(32);
+				
+				fos.close();
+
+				write_test.delete();
+
+					// look for a file to try and rename. Unfortunately someone renamed License.txt to GPL.txt and screwed this up in 3020...
+			
+				File rename_test = FileUtil.getApplicationFile( "License.txt" );
+			
+				if ( !rename_test.exists()){
+					
+					rename_test = FileUtil.getApplicationFile( "GPL.txt" );
+				}
+				
+				if ( !rename_test.exists()){
+					
+					File[] files = write_test.getParentFile().listFiles();
+					
+					if ( files != null ){
+						
+						for ( File f: files ){
+							
+							String name = f.getName();
+							
+							if ( name.endsWith( ".txt" ) || name.endsWith( ".log" )){
+								
+								rename_test = f;
+								
+								break;
+							}
+						}
+					}
+				}
+				
+				if ( rename_test.exists()){
+					
+					File target = new File( rename_test.getParentFile(), rename_test.getName() + ".bak" );
+					
+					target.delete();
+					
+					rename_test.renameTo( target );
+
+					if ( rename_test.exists()){
+						
+						return( false );
+					}
+
+					target.renameTo( rename_test );
+					
+				}else{
+					
+					Debug.out( "Failed to find a suitable file for the rename test" );
+					
+						// let's assume we can't to be on the safe side
+					
+					return( false );
+				}
+			}catch ( Throwable e ){
+				
+				return( false );
+			}
+		}
+		
+		return( true );
 	}
 }

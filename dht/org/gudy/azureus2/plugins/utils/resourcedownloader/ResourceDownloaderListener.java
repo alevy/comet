@@ -26,7 +26,7 @@ package org.gudy.azureus2.plugins.utils.resourcedownloader;
  *
  */
 
-import java.io.InputStream;
+import java.io.*;
 
 public interface 
 ResourceDownloaderListener 

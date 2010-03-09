@@ -27,10 +27,9 @@ package org.gudy.azureus2.core3.util.jar;
  *
  */
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 
-import org.gudy.azureus2.core3.security.SESecurityManager;
+import org.gudy.azureus2.core3.security.*;
 import org.gudy.azureus2.core3.util.Debug;
 
 public class 

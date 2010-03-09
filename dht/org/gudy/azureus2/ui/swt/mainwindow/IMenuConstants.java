@@ -31,11 +31,6 @@ public interface IMenuConstants
 	public static int FOR_AZ3 = 1 << 1;
 
 	/**
-	 * Bit mask for az3 advanced
-	 */
-	public static int FOR_AZ3_ADV = 1 << 2;
-
-	/**
 	 * A key used to store key/value pairs for menu ids;
 	 * currently used for setting the menu id for menus and menu items.
 	 * <p><b>NOTE:</b> This is not a localization key
@@ -55,8 +50,6 @@ public interface IMenuConstants
 	public static final String MENU_ID_TRANSFERS = "MainWindow.menu.transfers";
 
 	public static final String MENU_ID_VIEW = "MainWindow.menu.view";
-
-	public static final String MENU_ID_CONTENT_NETWORKS = "v3.MainWindow.menu.contentnetworks";
 
 	public static final String MENU_ID_TORRENT = "MainWindow.menu.torrent";
 
@@ -120,6 +113,8 @@ public interface IMenuConstants
 
 	public static final String MENU_ID_ALL_PEERS = "MainWindow.menu.view.allpeers";
 
+	public static final String MENU_ID_CLIENT_STATS = "MainWindow.menu.view.clientstats";
+
 	public static final String MENU_ID_MY_TRACKERS = "MainWindow.menu.view.mytracker";
 
 	public static final String MENU_ID_MY_SHARES = "MainWindow.menu.view.myshares";
@@ -141,6 +136,8 @@ public interface IMenuConstants
 	public static final String MENU_ID_CONFIGURE = "MainWindow.menu.file.configure";
 
 	public static final String MENU_ID_OPTIONS = "MainWindow.menu.view.configuration";
+
+	public static final String MENU_ID_PAIRING = "MainWindow.menu.pairing";
 
 	public static final String MENU_ID_WINDOW_MINIMIZE = "MainWindow.menu.window.minimize";
 
@@ -186,10 +183,6 @@ public interface IMenuConstants
 	
 	public static final String MENU_ID_COMMUNITY_WIKI = "MainWindow.menu.community.wiki";
 
-	public static final String MENU_ID_COMMUNITY_ADD_FRIENDS = "MainWindow.menu.community.add_friends";
-	
-	public static final String MENU_ID_PUBLISH = "v3.MainWindow.menu.publish";
-	
 	public static final String MENU_ID_HELP_SUPPORT = "MainWindow.menu.help.support";
 	
 	public static final String MENU_ID_DONATE = "MainWindow.menu.help.donate";

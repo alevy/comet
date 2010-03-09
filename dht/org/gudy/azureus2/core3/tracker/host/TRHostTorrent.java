@@ -26,7 +26,7 @@ package org.gudy.azureus2.core3.tracker.host;
  *
  */
 
-import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.tracker.server.TRTrackerServerTorrent;
 
 public interface 

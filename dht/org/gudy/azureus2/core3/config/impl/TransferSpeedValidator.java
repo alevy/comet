@@ -22,11 +22,11 @@ package org.gudy.azureus2.core3.config.impl;
  *
  */
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
+import org.gudy.azureus2.core3.config.*;
 import org.gudy.azureus2.core3.global.GlobalManager;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.speedmanager.SpeedManager;
 
 /**
  * Provides validation for transfer speed settings
@@ -57,19 +57,34 @@ public final class TransferSpeedValidator
     private final String configKey;
     private final Number configValue;
 
+    private static boolean auto_upload_enabled;
+		private static boolean auto_upload_seeding_enabled;
+
     private static boolean seeding_upload_enabled;
     
     static{
     	    		
-    	COConfigurationManager.addAndFireParameterListener(
-    			UPLOAD_SEEDING_ENABLED_CONFIGKEY,
-    			new ParameterListener()
+    	COConfigurationManager.addAndFireParameterListeners(
+    			new String[] {
+    				UPLOAD_SEEDING_ENABLED_CONFIGKEY,
+    				AUTO_UPLOAD_ENABLED_CONFIGKEY,
+    				AUTO_UPLOAD_SEEDING_ENABLED_CONFIGKEY
+    			},
+    			new PriorityParameterListener()
         		{
         			public void 
         			parameterChanged(
         				String parameterName)
         			{
-        				seeding_upload_enabled = COConfigurationManager.getBooleanParameter( parameterName );
+        				if (parameterName == null || parameterName.equals(UPLOAD_SEEDING_ENABLED_CONFIGKEY)) {
+        					seeding_upload_enabled = COConfigurationManager.getBooleanParameter( UPLOAD_SEEDING_ENABLED_CONFIGKEY );
+        				}
+        				if (parameterName == null || parameterName.equals(AUTO_UPLOAD_ENABLED_CONFIGKEY)) {
+        					auto_upload_enabled = COConfigurationManager.getBooleanParameter(AUTO_UPLOAD_ENABLED_CONFIGKEY);
+        				}
+        				if (parameterName == null || parameterName.equals(AUTO_UPLOAD_SEEDING_ENABLED_CONFIGKEY)) {
+        					auto_upload_seeding_enabled = COConfigurationManager.getBooleanParameter(AUTO_UPLOAD_SEEDING_ENABLED_CONFIGKEY);
+        				}
         			}
         		});	
     }
@@ -192,35 +207,39 @@ public final class TransferSpeedValidator
     isAutoUploadAvailable(
     	AzureusCore	core )
     {
-    	return( core.getSpeedManager().isAvailable());
-    }
-    
-    public static String
-    getActiveAutoUploadParameter(
-    	GlobalManager	gm )
-    {
-    		// if downloading+seeding is set then we always use this regardless of
-    		// only seeding status
-    	
-    	if ( COConfigurationManager.getBooleanParameter(TransferSpeedValidator.AUTO_UPLOAD_ENABLED_CONFIGKEY)){
-    		
-    		return( TransferSpeedValidator.AUTO_UPLOAD_ENABLED_CONFIGKEY );
-    	}
-    	
-    	if ( gm.isSeedingOnly()){
-        	
-        	return( TransferSpeedValidator.AUTO_UPLOAD_SEEDING_ENABLED_CONFIGKEY );
-        	
-      	}else{
-      		
-      		return( TransferSpeedValidator.AUTO_UPLOAD_ENABLED_CONFIGKEY );
-      	}
+    	SpeedManager speedManager = core.getSpeedManager();
+    	return speedManager == null ? false : speedManager.isAvailable();
     }
     
     public static boolean
     isAutoSpeedActive(
-    	GlobalManager	gm )
-    {
-    	return( COConfigurationManager.getBooleanParameter( getActiveAutoUploadParameter( gm )));
+    		GlobalManager gm )
+    {    	
+  		// if downloading+seeding is set then we always use this regardless of
+  		// only seeding status
+
+    	if (auto_upload_enabled) {
+    		return auto_upload_enabled;
+    	}
+
+    	if ( gm.isSeedingOnly()){
+      	
+    		return auto_upload_seeding_enabled;
+      	
+    	}else{
+    		
+    		return auto_upload_enabled;
+    	}
     }
+
+		public static String 
+		getActiveAutoUploadParameter(
+				GlobalManager gm) 
+		{
+			if (!auto_upload_enabled && gm.isSeedingOnly()) {
+				return AUTO_UPLOAD_SEEDING_ENABLED_CONFIGKEY;
+			}
+			return AUTO_UPLOAD_ENABLED_CONFIGKEY;
+		}
+    
 }

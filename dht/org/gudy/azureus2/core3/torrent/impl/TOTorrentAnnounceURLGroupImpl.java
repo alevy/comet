@@ -23,8 +23,7 @@ package org.gudy.azureus2.core3.torrent.impl;
 
 import java.net.URL;
 
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
+import org.gudy.azureus2.core3.torrent.*;
 
 public class 
 TOTorrentAnnounceURLGroupImpl
@@ -53,6 +52,8 @@ TOTorrentAnnounceURLGroupImpl
 		new_sets[new_sets.length-1] = set;
 		
 		sets = new_sets;
+		
+		torrent.fireChanged( TOTorrentListener.CT_ANNOUNCE_URLS );
 	}
 	
 	public TOTorrentAnnounceURLSet[]
@@ -66,6 +67,8 @@ TOTorrentAnnounceURLGroupImpl
 		TOTorrentAnnounceURLSet[]	_sets )
 	{
 		sets = _sets;	
+		
+		torrent.fireChanged( TOTorrentListener.CT_ANNOUNCE_URLS );
 	}
 		
 	

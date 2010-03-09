@@ -24,6 +24,7 @@
 package org.gudy.azureus2.ui.swt.views.utils;
 
 import java.io.File;
+import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -34,23 +35,36 @@ import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.global.GlobalManagerDownloadRemovalVetoException;
 import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.logging.LogAlert;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
 import org.gudy.azureus2.core3.tracker.host.TRHostException;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AERunnableBoolean;
-import org.gudy.azureus2.core3.util.AEThread;
+import org.gudy.azureus2.core3.util.AsyncDispatcher;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+import org.gudy.azureus2.plugins.sharing.ShareManager;
+import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.plugins.sharing.ShareResourceDir;
+import org.gudy.azureus2.plugins.sharing.ShareResourceFile;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
+import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
 import org.gudy.azureus2.ui.swt.Alerts;
 import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT.TriggerInThread;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 
 /**
  * @author Olivier
@@ -299,26 +313,22 @@ public class ManagerUtils {
 	        numSeeds--;
 	      
 	      if (numSeeds == 0) {
-	  			stopme = Utils.execSWTThreadWithBool("stopSeeding",
-	  					new AERunnableBoolean() {
-	  						public boolean runSupport() {
-	  							String title = MessageText.getString("Content.alert.notuploaded.title");
-	  							String text = MessageText.getString("Content.alert.notuploaded.text",
-	  									new String[] {
-	  										dm.getDisplayName(),
-	  										MessageText.getString("Content.alert.notuploaded.stop")
-	  									});
+					String title = MessageText.getString("Content.alert.notuploaded.title");
+					String text = MessageText.getString("Content.alert.notuploaded.text",
+							new String[] {
+								dm.getDisplayName(),
+								MessageText.getString("Content.alert.notuploaded.stop")
+							});
 
-	  							MessageBoxShell mb = new MessageBoxShell(Utils.findAnyShell(),
-	  									title, text, new String[] {
-	  										MessageText.getString("Content.alert.notuploaded.button.stop"),
-	  										MessageText.getString("Content.alert.notuploaded.button.continue")
-	  									}, 1, null, null, false, 0);
-	  							mb.setRelatedObject(dm);
+					MessageBoxShell mb = new MessageBoxShell(
+							title, text, new String[] {
+								MessageText.getString("Content.alert.notuploaded.button.stop"),
+								MessageText.getString("Content.alert.notuploaded.button.continue")
+							}, 1);
+					mb.setRelatedObject(dm);
 
-	  							return mb.open() == 0;
-	  						}
-	  					});
+					mb.open(null);
+					stopme = mb.waitUntilClosed() == 0;
 	      }
 			}
 		}
@@ -345,16 +355,14 @@ public class ManagerUtils {
 						+ dm.getDisplayName() + " :\n" + dm.getTorrentFileName()
 						+ MessageText.getString("deletetorrent.message2");
 
-				MessageBoxShell mb = new MessageBoxShell(shell, title, text,
-						new String[] {
-							MessageText.getString("Button.yes"),
-							MessageText.getString("Button.no"),
-						}, 1);
+				MessageBoxShell mb = new MessageBoxShell(SWT.YES | SWT.NO, title, text);
+				mb.setDefaultButtonUsingStyle(SWT.NO);
 				mb.setRelatedObject(dm);
 				mb.setLeftImage(SWT.ICON_WARNING);
 
-				int result = mb.open();
-				if (result != 0) {
+				mb.open(null);
+				int result = mb.waitUntilClosed();
+				if (result != SWT.YES) {
 					if (deleteFailed != null) {
 						deleteFailed.runSupport();
 					}
@@ -374,17 +382,17 @@ public class ManagerUtils {
 							dm.getDisplayName()
 						});
 						
-				MessageBoxShell mb = new MessageBoxShell(shell, title, text,
-						new String[] {
-							MessageText.getString("Button.yes"),
-							MessageText.getString("Button.no"),
-						}, 1,"deletedata.noconfirm.key2",MessageText.getString("deletedata.noprompt"),false,0);
+				MessageBoxShell mb = new MessageBoxShell(SWT.YES | SWT.NO, title, text);
+				mb.setDefaultButtonUsingStyle(SWT.NO);
+				mb.setRemember("deletedata.noconfirm.key2", false,
+						MessageText.getString("deletedata.noprompt"));
 				mb.setRememberOnlyIfButton(0);
 				mb.setRelatedObject(dm);
 				mb.setLeftImage(SWT.ICON_WARNING);
 
-				int result = mb.open();
-				if (result != 0) {
+				mb.open(null);
+				int result = mb.waitUntilClosed();
+				if (result != SWT.YES) {
 					if (deleteFailed != null) {
 						deleteFailed.runSupport();
 					}
@@ -397,21 +405,92 @@ public class ManagerUtils {
 				bDeleteData, deleteFailed);
 	}
   
+  private static AsyncDispatcher async = new AsyncDispatcher(2000);
+  
   public static void asyncStopDelete(final DownloadManager dm,
 			final int stateAfterStopped, final boolean bDeleteTorrent,
 			final boolean bDeleteData, final AERunnable deleteFailed) {
 
-		new AEThread("asyncStop", true) {
+	  
+	async.dispatch(new AERunnable() {
 			public void runSupport() {
 
 				try {
 					dm.getGlobalManager().removeDownloadManager(dm, bDeleteTorrent,
 							bDeleteData);
 				} catch (GlobalManagerDownloadRemovalVetoException f) {
+					
+						// see if we can delete a corresponding share as users frequently share
+						// stuff by mistake and then don't understand how to delete the share
+						// properly
+					
+					try{
+						PluginInterface pi = AzureusCoreFactory.getSingleton().getPluginManager().getDefaultPluginInterface();
+						
+						ShareManager sm = pi.getShareManager();
+						
+						Tracker	tracker = pi.getTracker();
+						
+						ShareResource[] shares = sm.getShares();
+						
+						TOTorrent torrent = dm.getTorrent();
+						
+						byte[] target_hash = torrent.getHash();
+						
+						for ( ShareResource share: shares ){
+							
+							int type = share.getType();
+							
+							byte[] hash;
+							
+							if ( type == ShareResource.ST_DIR ){
+								
+								hash = ((ShareResourceDir)share).getItem().getTorrent().getHash();
+								
+							}else if ( type == ShareResource.ST_FILE ){
+								
+								hash = ((ShareResourceFile)share).getItem().getTorrent().getHash();
+								
+							}else{
+								
+								hash = null;
+							}
+							
+							if ( hash != null ){
+								
+								if ( Arrays.equals( target_hash, hash )){
+									
+									try{
+										dm.stopIt( DownloadManager.STATE_STOPPED, false, false );
+										
+									}catch( Throwable e ){
+									}
+									
+									
+									try{
+						        		TrackerTorrent	tracker_torrent = tracker.getTorrent( PluginCoreUtils.wrap( torrent ));
+
+						        		if ( tracker_torrent != null ){
+						        			
+						        			tracker_torrent.stop();
+						        		}
+									}catch( Throwable e ){
+									}
+									
+									share.delete();
+									
+									return;
+								}
+							}
+						}
+						
+					}catch( Throwable e ){
+						
+					}
+					
 					if (!f.isSilent()) {
-						Alerts.showErrorMessageBoxUsingResourceString(new Object[] {
-							dm
-						}, "globalmanager.download.remove.veto", f, 0 );
+						Logger.log(new LogAlert(dm, false,
+								"{globalmanager.download.remove.veto}", f));
 					}
 					if (deleteFailed != null) {
 						deleteFailed.runSupport();
@@ -423,7 +502,7 @@ public class ManagerUtils {
 					}
 				}
 			}
-		}.start();
+		});
 	}
   
   	public static void
@@ -431,65 +510,48 @@ public class ManagerUtils {
 		final DownloadManager	dm,
 		final int 				stateAfterStopped )
   	{
-    	new AEThread( "asyncStop", true )
-		{
+    	async.dispatch(new AERunnable() {
     		public void
 			runSupport()
     		{
     			dm.stopIt( stateAfterStopped, false, false );
     		}
-		}.start();
+		});
   	}
-  	
-  	public static void
-	asyncStartAll()
-  	{
-     	new AEThread( "asyncStartAll", true )
-		{
-    		public void
-			runSupport()
-    		{
-    			AzureusCoreFactory.getSingleton().getGlobalManager().startAllDownloads();
-    		}
-		}.start();
-  	}
-  	
-  	public static void
-	asyncStopAll()
-  	{
-		new AEThread( "asyncStopAll", true )
-		{
-			public void
-			runSupport()
-			{
-       			AzureusCoreFactory.getSingleton().getGlobalManager().stopAllDownloads();
-			}
-			
-		}.start();
-  	}
-  	
-  	public static void
-	asyncPause()
-  	{
-     	new AEThread( "asyncPause", true )
-		{
-    		public void
-			runSupport()
-    		{
-    			AzureusCoreFactory.getSingleton().getGlobalManager().pauseDownloads();
-    		}
-		}.start();
-  	}
-  	
-  	public static void
-  	asyncResume() {
-     	new AEThread( "asyncResume", true )
-		{
-    		public void
-			runSupport()
-    		{
-    			AzureusCoreFactory.getSingleton().getGlobalManager().resumeDownloads();
-    		}
-		}.start();
-  	}
+
+	public static void asyncStartAll() {
+		CoreWaiterSWT.waitForCore(TriggerInThread.NEW_THREAD,
+				new AzureusCoreRunningListener() {
+					public void azureusCoreRunning(AzureusCore core) {
+						core.getGlobalManager().startAllDownloads();
+					}
+				});
+	}
+
+	public static void asyncStopAll() {
+		CoreWaiterSWT.waitForCore(TriggerInThread.NEW_THREAD,
+				new AzureusCoreRunningListener() {
+					public void azureusCoreRunning(AzureusCore core) {
+						core.getGlobalManager().stopAllDownloads();
+					}
+				});
+	}
+
+	public static void asyncPause() {
+		CoreWaiterSWT.waitForCore(TriggerInThread.NEW_THREAD,
+				new AzureusCoreRunningListener() {
+					public void azureusCoreRunning(AzureusCore core) {
+						core.getGlobalManager().pauseDownloads();
+					}
+				});
+	}
+
+	public static void asyncResume() {
+		CoreWaiterSWT.waitForCore(TriggerInThread.NEW_THREAD,
+				new AzureusCoreRunningListener() {
+					public void azureusCoreRunning(AzureusCore core) {
+						core.getGlobalManager().resumeDownloads();
+					}
+				});
+	}
 }

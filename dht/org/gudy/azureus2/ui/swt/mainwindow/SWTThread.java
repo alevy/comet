@@ -22,38 +22,27 @@
 package org.gudy.azureus2.ui.swt.mainwindow;
 
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Method;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Monitor;
-import org.eclipse.swt.widgets.Shell;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.eclipse.swt.widgets.*;
 
-import com.aelitis.azureus.ui.IUIIntializer;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.ui.swt.UISwitcherListener;
+import org.gudy.azureus2.ui.swt.UISwitcherUtil;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
+
+import com.aelitis.azureus.ui.*;
+import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
+import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 
 /**
  * The main SWT Thread, the only one that should run any GUI code.
  */
 public class SWTThread {
-  private static final int	FREQ_PER_SEC_LIMIT = 10;
-  
   private static SWTThread instance;
   
   public static SWTThread getInstance() {
@@ -64,12 +53,6 @@ public class SWTThread {
     if(instance != null) {
       throw new SWTThreadAlreadyInstanciatedException();
     }
-    
-    // set SWT specific config parameter defaults
-    
-    boolean bGTKTableBug_default = SWT.getPlatform().equals("gtk");
-  
-    COConfigurationManager.setBooleanDefault( "SWT_bGTKTableBug", bGTKTableBug_default );
     
     	//Will only return on termination
     
@@ -84,8 +67,6 @@ public class SWTThread {
   private Thread runner;
   private final IUIIntializer initializer;
   
-  private Map	freq_map = new HashMap();
-
 	private Monitor primaryMonitor;
   
   private 
@@ -95,6 +76,8 @@ public class SWTThread {
     
     this.initializer = app;
 		instance = this;
+    Display.setAppName(Constants.APP_NAME);
+
     try {
       display = Display.getCurrent();
 	  if ( display == null ){
@@ -115,7 +98,7 @@ public class SWTThread {
 			try{
 				String tempDir = System.getProperty ("swt.library.path");
 				if (tempDir == null) {
-					System.getProperty ("java.io.tmpdir");
+					tempDir = System.getProperty ("java.io.tmpdir");
 				}
 				Debug.out("Loading SWT Libraries failed. "
 						+ "Typical causes:\n\n" 
@@ -135,8 +118,6 @@ public class SWTThread {
 			}
 			return;
 		}
-    
-    Display.setAppName(Constants.APP_NAME);
     
     primaryMonitor = display.getPrimaryMonitor();
     
@@ -162,25 +143,94 @@ public class SWTThread {
 			}
 		});
     
-    if ( Constants.isOSX && SWT.getPlatform().equals("carbon") ){
-    	
-    		// use reflection here so we decouple generic SWT from OSX specific stuff to an extent
-    	
-    	 try{
-    	 	
-            Class ehancerClass = Class.forName("org.gudy.azureus2.ui.swt.osx.CarbonUIEnhancer");
-            
-            Constructor constructor = ehancerClass.getConstructor(new Class[]{});
-            
-            constructor.newInstance(new Object[] {});
+    UISwitcherUtil.addListener(new UISwitcherListener() {
+			public void uiSwitched(String ui) {
+				MessageBoxShell mb = new MessageBoxShell(
+						MessageText.getString("dialog.uiswitcher.restart.title"),
+						MessageText.getString("dialog.uiswitcher.restart.text"),
+						new String[] {
+							MessageText.getString("UpdateWindow.restart"),
+							MessageText.getString("UpdateWindow.restartLater"),
+						}, 0);
+				mb.open(new UserPrompterResultListener() {
+					public void prompterClosed(int result) {
+						if (result != 0) {
+							return;
+						}
+						UIFunctions uif = UIFunctionsManager.getUIFunctions();
+						if (uif != null) {
+							uif.dispose(true, false);
+						}
+					}
+				});
+			}
+		});
 
-        } catch (Exception e) {
-        	
-            Debug.printStackTrace(e);
-        }
-    }
-    
-    if (app != null) {
+		display.addListener(SWT.Activate, new Listener() {
+			public void handleEvent(Event event) {
+				if (event.detail != 1) {
+					return;
+				}
+				UIFunctionsSWT uif = UIFunctionsManagerSWT.getUIFunctionsSWT();
+				if (uif != null) {
+					uif.bringToFront(false);
+				}
+			}
+		});
+
+		if (Constants.isOSX) {
+			
+			// On Cocoa, we get a Close trigger on display.  Need to check if all
+			// platforms send this.
+			display.addListener(SWT.Close, new Listener() {
+				public void handleEvent(Event event) {
+					event.doit = UIFunctionsManager.getUIFunctions().dispose(false, false);
+				}
+			});
+
+			String platform = SWT.getPlatform();
+			// use reflection here so we decouple generic SWT from OSX specific stuff to an extent
+
+			if (platform.equals("carbon")) {
+				try {
+
+					Class<?> ehancerClass = Class.forName("org.gudy.azureus2.ui.swt.osx.CarbonUIEnhancer");
+
+					Constructor<?> constructor = ehancerClass.getConstructor(new Class[] {});
+
+					constructor.newInstance(new Object[] {});
+
+				} catch (Throwable e) {
+
+					Debug.printStackTrace(e);
+				}
+			} else if (platform.equals("cocoa")) {
+				try {
+
+					Class<?> ehancerClass = Class.forName("org.gudy.azureus2.ui.swt.osx.CocoaUIEnhancer");
+
+					Method mGetInstance = ehancerClass.getMethod("getInstance", new Class[0]);
+					Object claObj = mGetInstance.invoke(null, new Object[0] );
+
+					Method mHookAppMenu = claObj.getClass().getMethod("hookApplicationMenu", new Class[] {});
+					if (mHookAppMenu != null) {
+						mHookAppMenu.invoke(claObj, new Object[0]);
+					}
+
+					Method mHookDocOpen = claObj.getClass().getMethod("hookDocumentOpen", new Class[] {});
+					if (mHookDocOpen != null) {
+						mHookDocOpen.invoke(claObj, new Object[0]);
+					}
+					
+				} catch (Throwable e) {
+
+					Debug.printStackTrace(e);
+				}
+			}
+		}   
+
+		if (app != null) {
+			app.runInSWTThread();
 			runner = new Thread(new AERunnable() {
 				public void runSupport() {
 					app.run();
@@ -197,18 +247,25 @@ public class SWTThread {
               display.sleep();
         }
         catch (Throwable e) {
-					if (Constants.isOSX && (e instanceof SWTException)
-							&& e.getMessage().endsWith(" is disposed")
-							&& (terminated || Debug.getStackTrace(e).indexOf("DropTarget") > 0)) {
+					if (terminated) {
 						Logger.log(new LogEvent(LogIDs.GUI,
-								"Weird non-critical display disposal in readAndDispatch"));
+								"Weird non-critical error after terminated in readAndDispatch: "
+										+ e.toString()));
 					} else {
-						// Must use printStackTrace() (no params) in order to get 
-						// "cause of"'s stack trace in SWT < 3119
-						if (SWT.getVersion() < 3119)
-							e.printStackTrace();
-						if (Constants.isCVSVersion()) {
-							Logger.log(new LogAlert(LogAlert.UNREPEATABLE,MessageText.getString("SWT.alert.erroringuithread"),e));
+						String stackTrace = Debug.getStackTrace(e);
+						if (Constants.isOSX 
+								&& stackTrace.indexOf("Device.dispose") > 0
+								&& stackTrace.indexOf("DropTarget") > 0) {
+							Logger.log(new LogEvent(LogIDs.GUI,
+									"Weird non-critical display disposal in readAndDispatch"));
+						} else {
+  						// Must use printStackTrace() (no params) in order to get 
+  						// "cause of"'s stack trace in SWT < 3119
+  						if (SWT.getVersion() < 3119)
+  							e.printStackTrace();
+  						if (Constants.isCVSVersion()) {
+  							Logger.log(new LogAlert(LogAlert.UNREPEATABLE,MessageText.getString("SWT.alert.erroringuithread"),e));
+  						}
 						}
 						
 					}
@@ -278,70 +335,6 @@ public class SWTThread {
 
 	public IUIIntializer getInitializer() {
 		return initializer;
-	}
-	
-	public void
-	limitFrequencyAsyncExec(
-		Object		owner,
-		Display		display,
-		AERunnable	target )
-	{
-		if ( display.isDisposed()){
-			
-			return;
-		}
-		
-		int	now = (int)( SystemTime.getCurrentTime()/1000 );
-		
-		boolean	do_it	= true;
-		
-		synchronized( freq_map ){
-			
-			if ( freq_map.size() > 1024 ){
-				
-				Debug.out( "Frequency map is overloaded - check your logic!!!!" );
-				
-			}else{
-				
-				int[]	data = (int[])freq_map.get( owner );
-			
-				if ( data == null ){
-					
-					data = new int[]{ now, 0 };
-					
-					freq_map.put( owner, data );
-				}
-				
-				if ( data[0] == now ){
-					
-					data[1]++;
-					
-					if ( data[1] > FREQ_PER_SEC_LIMIT ){
-						
-						do_it	= false;
-						
-						Debug.out( "SWT frequency limit exceeded for " + owner.getClass());
-					}
-				}else{
-					
-					data[0] = now;
-					data[1] = 1;
-				}
-			}
-		}
-		
-		if ( do_it ){
-			
-			display.asyncExec( target );
-		}
-	}
-	
-	public void removeLimitedFrequencyOwner(Object owner)
-	{
-		synchronized (freq_map)
-		{
-			freq_map.remove(owner);
-		}		
 	}
 
 	public Monitor getPrimaryMonitor() {

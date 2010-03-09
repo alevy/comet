@@ -21,15 +21,12 @@
  */
 package com.aelitis.azureus.core.peermanager.uploadslots;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemTime;
 
-import com.aelitis.azureus.core.peermanager.control.PeerControlInstance;
-import com.aelitis.azureus.core.peermanager.control.PeerControlSchedulerFactory;
+import com.aelitis.azureus.core.peermanager.control.*;
 
 
 
@@ -44,7 +41,9 @@ public class UploadSlotManager {
 	private static final int EXPIRE_SEED				= 6;   //6 rounds = 60sec upload
 	
 	
-	public static boolean AUTO_SLOT_ENABLE = false;	//TODO
+		// change this to true and you'll have to fix the scheduleing code below
+	
+	public static final boolean AUTO_SLOT_ENABLE = false;	//TODO
 	
 	
 	
@@ -75,6 +74,7 @@ public class UploadSlotManager {
 		if( AUTO_SLOT_ENABLE ) {		
 			System.out.println( "UPLOAD_SLOT_MANAGER SCHEDULAR STARTED" );		
 		
+			/* removed pending rework
 			PeerControlSchedulerFactory.getSingleton().register( new PeerControlInstance() {
 				public void schedule() {
 					long now = SystemTime.getCurrentTime();
@@ -93,6 +93,7 @@ public class UploadSlotManager {
 					return 0;
 				}
 			});
+			*/
 		}
 		else {
 			//System.out.println( "AUTO UPLOAD SLOT *DISABLED*" );

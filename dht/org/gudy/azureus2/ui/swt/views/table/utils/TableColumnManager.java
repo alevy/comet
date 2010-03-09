@@ -22,34 +22,19 @@
  
 package org.gudy.azureus2.ui.swt.views.table.utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadTypeComplete;
-import org.gudy.azureus2.plugins.download.DownloadTypeIncomplete;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnCreationListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnExtraInfoListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.views.table.TableColumnCoreCreationListener;
 
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
 import com.aelitis.azureus.ui.common.table.impl.TableColumnImpl;
+
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadTypeComplete;
+import org.gudy.azureus2.plugins.download.DownloadTypeIncomplete;
+import org.gudy.azureus2.plugins.ui.tables.*;
 
 
 /** Holds a list of column definitions (TableColumnCore) for 
@@ -84,11 +69,24 @@ public class TableColumnManager {
    * value = List of TableColumn, indexed in the order they should be removed
    */ 
   private Map autoHideOrder = new LightHashMap();
-	private Map mapTablesConfig; // key = table; value = map of columns
+
+  /**
+   * key = table; value = map of columns
+   * 
+   * Do not access directly.  Use {@link #getTableConfigMap(String)}
+   * or {@link #saveTableConfigs()}
+   */
+	private Map mapTablesConfig;
+	private long lastTableConfigAccess;
 	private static Comparator orderComparator;
 	
-	private Map<String, TableColumnCreationListener> mapColumnIDsToListener = new LightHashMap();
-	private Map<Class, List> mapDataSourceTypeToColumnIDs = new LightHashMap();
+	private Map<String, TableColumnCreationListener> mapColumnIDsToListener = new LightHashMap<String, TableColumnCreationListener>();
+	private Map<Class, List> mapDataSourceTypeToColumnIDs = new LightHashMap<Class, List>();
+
+	/**
+	 * key = TableID; value = table column ids
+	 */
+	private Map<String, String[]> mapTableDefaultColumns = new LightHashMap<String, String[]>();
 
 	static {
 		orderComparator = new Comparator() {
@@ -111,8 +109,6 @@ public class TableColumnManager {
   
   private TableColumnManager() {
    items = new HashMap<String,Map>();
-
-   mapTablesConfig = FileUtil.readResilientConfigFile(CONFIG_FILE);
   }
   
   /** Retrieve the static TableColumnManager instance
@@ -153,9 +149,9 @@ public class TableColumnManager {
 				if (!mTypes.containsKey(name)) {
 					mTypes.put(name, item);
 					Map mapColumnConfig = getTableConfigMap(sTableID);
-					mapTablesConfig.put("Table." + sTableID, mapColumnConfig);
 					((TableColumnCore) item).loadSettings(mapColumnConfig);
 				}
+				
 				if (!item.getColumnAdded()) {
 					item.setColumnAdded(true);
 				}
@@ -236,6 +232,15 @@ public class TableColumnManager {
 		return (TableColumnCore[]) mTypes.values().toArray(
 				new TableColumnCore[mTypes.values().size()]);
 	}
+  
+  public String[] getDefaultColumnNames(String tableID) {
+  	String[] columnNames = mapTableDefaultColumns.get(tableID);
+  	return columnNames;
+  }
+  
+  public void setDefaultColumnNames(String tableID, String[] columnNames) {
+  	mapTableDefaultColumns.put(tableID, columnNames);
+  }
 
   /*
   private Map getAllTableColumnCore(
@@ -379,7 +384,9 @@ public class TableColumnManager {
 						tc = new TableColumnImpl(forDataSourceType, tableID, columnID);
 					}
 
-					l.tableColumnCreated(tc);
+					if (l != null) {
+						l.tableColumnCreated(tc);
+					}
 
 					addColumns(new TableColumnCore[] {
 						tc
@@ -465,10 +472,16 @@ public class TableColumnManager {
   public void setDefaultSortColumnName(String tableID, String columnName) {
   	Map mapTableConfig = getTableConfigMap(tableID);
   	mapTableConfig.put("SortColumn", columnName);
-    FileUtil.writeResilientConfigFile(CONFIG_FILE, mapTablesConfig);
+  	saveTableConfigs();
   }
 
-  /** Saves all the user configurable Table Column settings at once, complete
+  private void saveTableConfigs() {
+		if (mapTablesConfig != null) {
+			FileUtil.writeResilientConfigFile(CONFIG_FILE, mapTablesConfig);
+		}
+	}
+
+	/** Saves all the user configurable Table Column settings at once, complete
    * with a COConfigurationManager.save().
    *
    * @param sTableID Table to save settings for
@@ -482,7 +495,7 @@ public class TableColumnManager {
         if (tcs[i] != null)
           tcs[i].saveSettings(mapTableConfig);
       }
-      FileUtil.writeResilientConfigFile(CONFIG_FILE, mapTablesConfig);
+      saveTableConfigs();
   	} catch (Exception e) {
   		Debug.out(e);
   	}
@@ -491,7 +504,8 @@ public class TableColumnManager {
   public boolean loadTableColumnSettings(Class forDataSourceType, String sTableID) {
   	try {
   		Map mapTableConfig = getTableConfigMap(sTableID);
-  		if (mapTableConfig.isEmpty()) {
+  		int size = mapTableConfig.size();
+  		if (size == 0 || (size == 1 && mapTableConfig.containsKey("SortColumn"))) {
   			return false;
   		}
       TableColumnCore[] tcs = getAllTableColumnCoreAsArray(forDataSourceType,
@@ -507,13 +521,51 @@ public class TableColumnManager {
   }
   
   public Map getTableConfigMap(String sTableID) {
-  	Map mapTableConfig = (Map) mapTablesConfig.get("Table." + sTableID);
-  	if (mapTableConfig == null) {
-  		mapTableConfig = new HashMap();
-  		mapTablesConfig.put("Table." + sTableID, mapTableConfig);
-  	}
-  	return mapTableConfig;
-  }
+		synchronized (this) {
+			lastTableConfigAccess = SystemTime.getMonotonousTime();
+			
+			if (mapTablesConfig == null) {
+				mapTablesConfig = FileUtil.readResilientConfigFile(CONFIG_FILE);
+
+					// Dispose of tableconfigs after XXs.. saves up to 50k
+				
+				SimpleTimer.addEvent(
+						"DisposeTbaleConfigMap",
+						SystemTime.getOffsetTime(30000), 
+						new TimerEventPerformer() 
+						{
+							public void 
+							perform(
+								TimerEvent event ) 
+							{
+								synchronized( TableColumnManager.this ){
+									
+									long	now = SystemTime.getMonotonousTime();
+									
+									if ( now - lastTableConfigAccess > 25000 ){
+									
+										mapTablesConfig = null;
+										
+									}else{
+										SimpleTimer.addEvent(
+											"DisposeTbaleConfigMap",
+											SystemTime.getOffsetTime(30000), 
+											this );
+									}
+								}
+							}
+						});
+			}
+
+			Map mapTableConfig = (Map) mapTablesConfig.get("Table." + sTableID);
+			if (mapTableConfig == null) {
+				mapTableConfig = new HashMap();
+				mapTablesConfig.put("Table." + sTableID, mapTableConfig);
+			}
+
+			return mapTableConfig;
+		}
+	}
   
   public void setAutoHideOrder(String sTableID, String[] autoHideOrderColumnIDs) {
   	ArrayList autoHideOrderList = new ArrayList(autoHideOrderColumnIDs.length);
@@ -582,21 +634,37 @@ public class TableColumnManager {
 	 */
 	public void registerColumn(Class forDataSourceType, String columnID,
 			TableColumnCreationListener listener) {
-  	mapColumnIDsToListener.put(forDataSourceType + "." + columnID, listener);
-		List list = (List) mapDataSourceTypeToColumnIDs.get(forDataSourceType);
-		if (list == null) {
-			list = new ArrayList(1);
-			mapDataSourceTypeToColumnIDs.put(forDataSourceType, list);
+		if (listener != null) {
+			mapColumnIDsToListener.put(forDataSourceType + "." + columnID, listener);
 		}
-		list.add(columnID);
+		try {
+			items_mon.enter();
+
+  		List list = (List) mapDataSourceTypeToColumnIDs.get(forDataSourceType);
+  		if (list == null) {
+  			list = new ArrayList(1);
+  			mapDataSourceTypeToColumnIDs.put(forDataSourceType, list);
+  		}
+  		if (!list.contains(columnID)) {
+  			list.add(columnID);
+  		}
+		} finally {
+			items_mon.exit();
+		}
 	}
 	
 	public void unregisterColumn(Class forDataSourceType, String columnID,
 			TableColumnCreationListener listener) {
-		mapColumnIDsToListener.remove(forDataSourceType + "." + columnID);
-		List list = (List) mapDataSourceTypeToColumnIDs.get(forDataSourceType);
-		if (list != null) {
-			list.remove(columnID);
+		try {
+			items_mon.enter();
+
+			mapColumnIDsToListener.remove(forDataSourceType + "." + columnID);
+			List list = (List) mapDataSourceTypeToColumnIDs.get(forDataSourceType);
+			if (list != null) {
+				list.remove(columnID);
+			}
+		} finally {
+			items_mon.exit();
 		}
 	}
 

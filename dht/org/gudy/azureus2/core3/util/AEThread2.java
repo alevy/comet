@@ -33,8 +33,8 @@ AEThread2
 {
 	public static final boolean TRACE_TIMES = false;
 	
-	private static final int MIN_RETAINED	= 2;
-	private static final int MAX_RETAINED	= 16;
+	private static final int MIN_RETAINED	= Math.max(Runtime.getRuntime().availableProcessors(),2);
+	private static final int MAX_RETAINED	= Math.max(MIN_RETAINED*4, 16);
 	
 	private static final int THREAD_TIMEOUT_CHECK_PERIOD	= 10*1000;
 	private static final int THREAD_TIMEOUT					= 60*1000;
@@ -57,6 +57,13 @@ AEThread2
 	private boolean				daemon;
 	private int					priority	= Thread.NORM_PRIORITY;
 	private volatile JoinLock	lock		= new JoinLock();
+	
+	public
+	AEThread2(
+		String		_name )
+	{
+		this( _name, true );
+	}
 	
 	public
 	AEThread2(
@@ -204,15 +211,47 @@ AEThread2
 		AEThread.setOurThread( thread );
 	}
 	
+	public static void
+	setDebug(
+		Object		debug )
+	{
+		Thread current = Thread.currentThread();
+		
+		if ( current instanceof threadWrapper ){
+			
+			((threadWrapper)current).setDebug( debug );
+		}
+	}
+	
+		/**
+		 * entry 0 is debug object, 1 is Long mono-time it was set
+		 * @param t
+		 * @return
+		 */
+	
+	public static Object[]
+	getDebug(
+		Thread		t )
+	{
+		if ( t instanceof threadWrapper ){
+			
+			return(((threadWrapper)t).getDebug());
+		}
+		
+		return( null );
+	}
+	
 	protected static class
 	threadWrapper
 		extends Thread
 	{
-		private AESemaphore sem;
-		private AEThread2	target;
-		private JoinLock	currentLock;
+		private AESemaphore2	sem;
+		private AEThread2		target;
+		private JoinLock		currentLock;
 		
 		private long		last_active_time;
+		
+		private Object[]		debug;
 		
 		protected
 		threadWrapper(
@@ -263,6 +302,8 @@ AEThread2
 						
 						target = null;
 
+						debug	= null;
+						
 						currentLock.released = true;
 						
 						currentLock.notifyAll();						
@@ -337,7 +378,7 @@ AEThread2
 			
 			if ( sem == null ){
 				
-				 sem = new AESemaphore( "AEThread2" );
+				 sem = new AESemaphore2( "AEThread2" );
 				 
 				 super.start();
 				 
@@ -351,6 +392,19 @@ AEThread2
 		retire()
 		{			
 			sem.release();
+		}
+		
+		protected void
+		setDebug(
+			Object	d )
+		{
+			debug	= new Object[]{ d, SystemTime.getMonotonousTime() };
+		}
+		
+		protected Object[]
+		getDebug()
+		{
+			return( debug );
 		}
 	}
 	

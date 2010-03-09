@@ -30,15 +30,10 @@ package org.gudy.azureus2.pluginsimpl.local.installer;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
@@ -47,36 +42,21 @@ import org.gudy.azureus2.core3.util.AsyncDispatcher;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.installer.FilePluginInstaller;
-import org.gudy.azureus2.plugins.installer.InstallablePlugin;
-import org.gudy.azureus2.plugins.installer.PluginInstaller;
-import org.gudy.azureus2.plugins.installer.PluginInstallerListener;
-import org.gudy.azureus2.plugins.installer.StandardPlugin;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.installer.*;
 import org.gudy.azureus2.plugins.ui.UIManager;
 import org.gudy.azureus2.plugins.ui.UIManagerEvent;
-import org.gudy.azureus2.plugins.update.UpdatableComponent;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
-import org.gudy.azureus2.plugins.update.UpdateInstaller;
-import org.gudy.azureus2.plugins.update.UpdateListener;
-import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.plugins.update.*;
 import org.gudy.azureus2.plugins.utils.StaticUtilities;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
 import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
 import org.gudy.azureus2.pluginsimpl.local.FailedPlugin;
+import org.gudy.azureus2.pluginsimpl.local.update.UpdateCheckInstanceImpl;
 import org.gudy.azureus2.pluginsimpl.local.update.UpdateManagerImpl;
+import org.gudy.azureus2.pluginsimpl.update.sf.*;
+
 import org.gudy.azureus2.pluginsimpl.update.PluginUpdatePlugin;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetails;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsException;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoader;
-import org.gudy.azureus2.pluginsimpl.update.sf.SFPluginDetailsLoaderFactory;
 
 import com.aelitis.azureus.core.vuzefile.VuzeFile;
 import com.aelitis.azureus.core.vuzefile.VuzeFileComponent;
@@ -222,10 +202,17 @@ PluginInstallerImpl
 														new InstallablePlugin[]{ installer }, 
 														false, 
 														true,
-														new installListener()
+														null,
+														new PluginInstallationListener()
 														{											
 															public void 
-															done() 
+															completed() 
+															{
+																done_sem.release();
+															}
+															
+															public void 
+															cancelled() 
 															{
 																done_sem.release();
 															}
@@ -451,15 +438,28 @@ PluginInstallerImpl
 	
 		throws PluginException
 	{
-		install( plugins, shared, false, null );
+		install( plugins, shared, false, null, null );
+	}
+	
+	public void
+	install(
+		InstallablePlugin[]					plugins,
+		boolean								shared,
+		Map<Integer,Object>					properties,
+		final PluginInstallationListener	listener )
+	
+		throws PluginException
+	{
+		install( plugins, shared, false, properties, listener );
 	}
 	
 	protected void
 	install(
-		InstallablePlugin[]			plugins,
-		boolean						shared,
-		boolean						low_noise,
-		final installListener		listener )
+		InstallablePlugin[]					plugins,
+		boolean								shared,
+		boolean								low_noise,
+		Map<Integer,Object>					properties,
+		final PluginInstallationListener	listener )
 	
 		throws PluginException
 	{
@@ -467,11 +467,19 @@ PluginInstallerImpl
 		
 		UpdateManagerImpl	uman = (UpdateManagerImpl)manager.getDefaultPluginInterface().getUpdateManager();
 		
-		UpdateCheckInstance	inst = 
+		UpdateCheckInstanceImpl	inst = 
 			uman.createEmptyUpdateCheckInstance( 
 					UpdateCheckInstance.UCI_INSTALL,
 					"update.instance.install",
 					low_noise );
+		
+		if ( properties != null ){
+			
+			for ( Map.Entry<Integer,Object> entry: properties.entrySet()){
+				
+				inst.setProperty( entry.getKey(), entry.getValue());
+			}
+		}
 		
 		if ( listener != null ){
 			
@@ -482,7 +490,7 @@ PluginInstallerImpl
 					cancelled(
 						UpdateCheckInstance		instance )
 					{
-						listener.failed( new PluginException( "Installation cancelled" ));
+						listener.cancelled();
 					}
 					
 					public void
@@ -533,11 +541,11 @@ PluginInstallerImpl
 											
 											if ( cancelled ){
 												
-												listener.failed( new PluginException( "Installation cancelled" ));
+												listener.cancelled();
 												
 											}else{
 												
-												listener.done();
+												listener.completed();
 											}
 										}
 									});
@@ -896,16 +904,5 @@ PluginInstallerImpl
 		PluginInstallerListener		l )
 	{
 		listeners.remove( l );
-	}
-	
-	protected interface
-	installListener
-	{
-		public void
-		done();
-		
-		public void
-		failed(
-			PluginException	e );
 	}
 }

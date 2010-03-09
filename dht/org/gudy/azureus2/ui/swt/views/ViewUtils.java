@@ -27,17 +27,13 @@ package org.gudy.azureus2.ui.swt.views;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
 import org.gudy.azureus2.ui.swt.Messages;
+import org.gudy.azureus2.ui.swt.SimpleTextEntryWindow;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.shells.InputShell;
 
 /**
  * @author parg
@@ -300,8 +296,9 @@ ViewUtils
 		
 		String set_num_str = MessageText.getString("MyTorrentsView.dialog.setNumber." +
 				((for_download) ? "download" : "upload"));
-		
-		InputShell is = new InputShell(
+
+		SimpleTextEntryWindow entryWindow = new SimpleTextEntryWindow();
+		entryWindow.initTexts(
 				"MyTorrentsView.dialog.setSpeed.title",
 				new String[] {set_num_str},
 				"MyTorrentsView.dialog.setNumber.text",
@@ -310,12 +307,23 @@ ViewUtils
 						set_num_str
 				});
 
-		String sReturn = is.open();
+		entryWindow.prompt();
+		if (!entryWindow.hasSubmittedInput()) {
+			return -1;
+		}
+		String sReturn = entryWindow.getSubmittedInput();
+		
 		if (sReturn == null)
 			return -1;
 
 		try {
 			int result = (int) (Double.valueOf(sReturn).doubleValue() * 1024);
+			
+			if ( DisplayFormatters.isRateUsingBits()){
+				
+				result /= 8;
+			}
+			
 			if (result <= 0) {throw new NumberFormatException("non-positive number entered");}
 			return result;
 		} catch (NumberFormatException er) {

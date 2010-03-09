@@ -21,26 +21,22 @@
 package org.gudy.azureus2.ui.systray;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Tray;
-import org.eclipse.swt.widgets.TrayItem;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.internat.MessageText.MessageTextListener;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.common.util.MenuItemManager;
 import org.gudy.azureus2.ui.swt.MenuBuildUtils;
 import org.gudy.azureus2.ui.swt.Messages;
@@ -51,6 +47,7 @@ import org.gudy.azureus2.ui.swt.views.utils.ManagerUtils;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.ui.common.updater.UIUpdatableAlways;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
@@ -61,8 +58,10 @@ import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
  *
  */
 public class SystemTraySWT
-	implements UIUpdatableAlways
+	implements UIUpdatableAlways, MessageTextListener
 {
+
+	protected static AzureusCore core = null;
 
 	Display display;
 
@@ -78,7 +77,42 @@ public class SystemTraySWT
 	Image imgAzureusGray;
 	Image imgAzureusWhite;
 
+	protected GlobalManager gm = null;
+
+	private String seedingKeyVal;
+	private String downloadingKeyVal;
+
+	private String dlAbbrKeyVal;
+
+	protected String ulAbbrKeyVal;
+	
+	long interval = 0;
+
+	protected boolean enableTooltip;
+
 	public SystemTraySWT() {
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				SystemTraySWT.core = core;
+				gm = core.getGlobalManager();
+			}
+		});
+		
+		COConfigurationManager.addAndFireParameterListener(
+				"ui.systray.tooltip.enable", new ParameterListener() {
+					public void parameterChanged(String parameterName) {
+						enableTooltip = COConfigurationManager.getBooleanParameter(parameterName);
+						if (enableTooltip) {
+							MessageText.addAndFireListener(SystemTraySWT.this);
+						} else {
+							MessageText.removeListener(SystemTraySWT.this);
+							if (trayItem != null && !trayItem.isDisposed()) {
+								trayItem.setToolTipText(null);
+							}
+						}
+					}
+				});
+
 		uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
 		display = SWTThread.getInstance().getDisplay();
 
@@ -109,7 +143,7 @@ public class SystemTraySWT
 		});
 		
 		MenuBuildUtils.addMaintenanceListenerForMenu(menu, new MenuBuildUtils.MenuBuilder() {
-			public void buildMenu(Menu menu) {
+			public void buildMenu(Menu menu, MenuEvent menuEvent) {
 				fillMenu(menu);
 			}
 		});
@@ -207,7 +241,10 @@ public class SystemTraySWT
 
 		itemStartAll.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event arg0) {
-				AzureusCoreFactory.getSingleton().getGlobalManager().startAllDownloads();
+				if (gm == null) {
+					return;
+				}
+				gm.startAllDownloads();
 			}
 		});
 
@@ -225,13 +262,15 @@ public class SystemTraySWT
 
 		itemResume.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event arg0) {
-				AzureusCoreFactory.getSingleton().getGlobalManager().resumeDownloads();
+				if (gm == null) {
+					return;
+				}
+				gm.resumeDownloads();
 			}
 		});
 
-		GlobalManager gm = AzureusCoreFactory.getSingleton().getGlobalManager();
-		itemPause.setEnabled(gm.canPauseDownloads());
-		itemResume.setEnabled(gm.canResumeDownloads());
+		itemPause.setEnabled(gm != null && gm.canPauseDownloads());
+		itemResume.setEnabled(gm != null && gm.canResumeDownloads());
 
 		itemCloseAll.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event arg0) {
@@ -253,7 +292,14 @@ public class SystemTraySWT
 		
 		itemExit.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event arg0) {
-    		uiFunctions.dispose(false, false);
+				// User got a stack overflow (all SWT code) because of this dispose,
+				// so execute it outside of the selection trigger and hope it doesn't
+				// overflow there.
+				Utils.execSWTThreadLater(0, new AERunnable() {
+					public void runSupport() {
+						uiFunctions.dispose(false, false);
+					}
+				});
 			}
 		});
 	}
@@ -263,6 +309,9 @@ public class SystemTraySWT
 	 * @param parent The system tray contextual menu
 	 */
 	private final void createUploadLimitMenu(final Menu parent) {
+		if (core == null) {
+			return;
+		}
 		final MenuItem uploadSpeedItem = new MenuItem(parent, SWT.CASCADE);
 		uploadSpeedItem.setText(MessageText.getString("GeneralView.label.maxuploadspeed"));
 
@@ -271,9 +320,8 @@ public class SystemTraySWT
 
 		uploadSpeedMenu.addListener(SWT.Show, new Listener() {
 			public void handleEvent(Event event) {
-				AzureusCore core = AzureusCoreFactory.getSingleton();
 				SelectableSpeedMenu.generateMenuItems(uploadSpeedMenu, core,
-						core.getGlobalManager(), true);
+						gm, true);
 			}
 		});
 
@@ -293,9 +341,8 @@ public class SystemTraySWT
 
 		downloadSpeedMenu.addListener(SWT.Show, new Listener() {
 			public void handleEvent(Event event) {
-				AzureusCore core = AzureusCoreFactory.getSingleton();
 				SelectableSpeedMenu.generateMenuItems(downloadSpeedMenu, core,
-						core.getGlobalManager(), false);
+						gm, false);
 			}
 		});
 
@@ -323,56 +370,52 @@ public class SystemTraySWT
 
 	// @see com.aelitis.azureus.ui.common.updater.UIUpdatable#updateUI()
 	public void updateUI() {
+		if (interval++ % 10 > 0) {
+			return;
+		}
 		if (trayItem.isDisposed()) {
 			uiFunctions.getUIUpdater().removeUpdater(this);
 			return;
 		}
-		List managers = AzureusCoreFactory.getSingleton().getGlobalManager().getDownloadManagers();
-		//StringBuffer toolTip = new StringBuffer("Azureus - ");//$NON-NLS-1$
-		StringBuffer toolTip = new StringBuffer();
-		int seeding = 0;
-		int downloading = 0;
-
-		for (int i = 0; i < managers.size(); i++) {
-			DownloadManager manager = (DownloadManager) managers.get(i);
-			int state = manager.getState();
-			if (state == DownloadManager.STATE_DOWNLOADING)
-				downloading++;
-			if (state == DownloadManager.STATE_SEEDING)
-				seeding++;
+		if (core == null || !core.isStarted()) {
+			return;
 		}
 
-		// something went funny here across Java versions, leading " " got lost
+		if (enableTooltip) {
+  		GlobalManagerStats stats = gm.getStats();
+  		List<?> managers = gm.getDownloadManagers();
 
-		String seeding_text = MessageText.getString("SystemTray.tooltip.seeding").replaceAll(
-				"%1", "" + seeding);
-		String downloading_text = MessageText.getString(
-				"SystemTray.tooltip.downloading").replaceAll("%1", "" + downloading);
-
-		/*	if ( !seeding_text.startsWith(" " )){
-		 seeding_text = " " + seeding_text;
-		 }*/
-		if (!downloading_text.startsWith(" ")) {
-			downloading_text = " " + downloading_text;
+  		StringBuffer toolTip = new StringBuffer();
+  		int seeding = 0;
+  		int downloading = 0;
+  
+  		// OMG this must be slow on 10k lists
+  		for (int i = 0; i < managers.size(); i++) {
+  			DownloadManager manager = (DownloadManager) managers.get(i);
+  			int state = manager.getState();
+  			if (state == DownloadManager.STATE_DOWNLOADING)
+  				downloading++;
+  			if (state == DownloadManager.STATE_SEEDING)
+  				seeding++;
+  		}
+  
+  		String seeding_text = seedingKeyVal.replaceAll("%1", "" + seeding);
+  		String downloading_text = downloadingKeyVal.replaceAll("%1", "" + downloading);
+  
+  		toolTip.append(seeding_text).append(downloading_text).append("\n");
+  		toolTip.append(dlAbbrKeyVal).append(
+  				" ");
+  
+  		toolTip.append(DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
+  				stats.getDataReceiveRate(), stats.getProtocolReceiveRate()));
+  		
+  		toolTip.append(", ").append(ulAbbrKeyVal).append(" ");
+  		toolTip.append(DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
+  				stats.getDataSendRate(), stats.getProtocolSendRate()));
+  		
+  		
+  		trayItem.setToolTipText(toolTip.toString());
 		}
-
-		GlobalManager gm = AzureusCoreFactory.getSingleton().getGlobalManager();
-		GlobalManagerStats stats = gm.getStats();
-
-		toolTip.append(seeding_text).append(downloading_text).append("\n");
-		toolTip.append(MessageText.getString("ConfigView.download.abbreviated")).append(
-				" ");
-
-		toolTip.append(DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
-				stats.getDataReceiveRate(), stats.getProtocolReceiveRate()));
-		
-		toolTip.append(", ").append(
-				MessageText.getString("ConfigView.upload.abbreviated")).append(" ");
-		toolTip.append(DisplayFormatters.formatDataProtByteCountToKiBEtcPerSec(
-				stats.getDataSendRate(), stats.getProtocolSendRate()));
-		
-		
-		trayItem.setToolTipText(toolTip.toString());
 
 		//Why should we refresh the image? it never changes ...
 		//and is a memory bottleneck for some non-obvious reasons.
@@ -395,5 +438,16 @@ public class SystemTraySWT
 	// @see com.aelitis.azureus.ui.common.updater.UIUpdatable#getUpdateUIName()
 	public String getUpdateUIName() {
 		return "SystemTraySWT";
+	}
+
+	public void localeChanged(Locale oldLocale, Locale newLocale) {
+		seedingKeyVal = MessageText.getString("SystemTray.tooltip.seeding");
+		downloadingKeyVal = MessageText.getString("SystemTray.tooltip.downloading");
+		if (!downloadingKeyVal.startsWith(" ")) {
+			downloadingKeyVal = " " + downloadingKeyVal;
+		}
+
+		dlAbbrKeyVal = MessageText.getString("ConfigView.download.abbreviated");
+		ulAbbrKeyVal = MessageText.getString("ConfigView.upload.abbreviated");
 	}
 }

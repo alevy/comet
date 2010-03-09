@@ -26,29 +26,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.eclipse.swt.widgets.Display;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.ipfilter.IpFilterManager;
-import org.gudy.azureus2.core3.logging.ILogEventListener;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DelayedEvent;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.PluginEvent;
 import org.gudy.azureus2.plugins.utils.DelayedTask;
 import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
 import org.gudy.azureus2.ui.common.util.UserAlerts;
-import org.gudy.azureus2.ui.swt.Alerts;
-import org.gudy.azureus2.ui.swt.LocaleUtilSWT;
-import org.gudy.azureus2.ui.swt.StartServer;
-import org.gudy.azureus2.ui.swt.UIConfigDefaultsSWT;
-import org.gudy.azureus2.ui.swt.UISwitcherUtil;
+import org.gudy.azureus2.ui.swt.*;
 import org.gudy.azureus2.ui.swt.auth.AuthenticatorWindow;
 import org.gudy.azureus2.ui.swt.auth.CertificateTrustWindow;
 import org.gudy.azureus2.ui.swt.auth.CryptoWindow;
@@ -59,13 +48,7 @@ import org.gudy.azureus2.ui.swt.update.UpdateMonitor;
 import org.gudy.azureus2.ui.swt.updater2.PreUpdateChecker;
 import org.gudy.azureus2.ui.swt.updater2.SWTUpdateChecker;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreException;
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
-import com.aelitis.azureus.core.AzureusCoreListener;
-import com.aelitis.azureus.core.AzureusCoreOperation;
+import com.aelitis.azureus.core.*;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 import com.aelitis.azureus.launcher.Launcher;
 import com.aelitis.azureus.ui.IUIIntializer;
@@ -143,36 +126,19 @@ Initializer
 	}
 	
 
-  public void 
-  run() 
-  {
+  public void run() {
 
   	try{
-  		String uiMode = UISwitcherUtil.openSwitcherWindow(false);
-  		
-  		if (uiMode.equals("az3")) {
+  		if (initializer != null) {
+  			
   			try {
-  				final Class az3Class = Class.forName("com.aelitis.azureus.ui.swt.Initializer");
-
-  				final Constructor constructor = az3Class.getConstructor(new Class[] {
-  						AzureusCore.class,
-  						Boolean.TYPE,
-  						String[].class
-  				});
-
-  				IUIIntializer initializer = (IUIIntializer) constructor.newInstance(new Object[] {
-  						azureus_core,
-  						new Boolean(false),
-  						args
-  				});
-
   				initializer.run();
-  				return;
   			} catch (Throwable t) {
   				// use print stack trace because we don't want to introduce logger
   				t.printStackTrace();
   				// Ignore and use AZ2
   			}
+  			return;
   		}
   		// else AZ2UI
   		
@@ -200,7 +166,7 @@ Initializer
 			UIConfigDefaultsSWT.initialize();
 			
 	    //Splash Window is not always shown
-	    if (COConfigurationManager.getBooleanParameter("Show Splash", true)) {
+	    if (COConfigurationManager.getBooleanParameter("Show Splash")) {
 	      SplashWindow.create(display,this);
 	    }
 	    	    
@@ -524,6 +490,7 @@ Initializer
   private int currentTask = 0;
   private int currentPercent = 0;
   private int lastTaskPercent = 0;
+	private IUIIntializer initializer;
   
   private void setNbTasks(int _nbTasks) {
     currentTask = 0;
@@ -570,5 +537,35 @@ Initializer
 
  	new Initializer( core, null,args);
   }
+
+	public void runInSWTThread() {
+  		String uiMode = UISwitcherUtil.calcUIMode();
+  		
+  		if (uiMode.equals("az3")) {
+  			try {
+  				final Class az3Class = Class.forName("com.aelitis.azureus.ui.swt.Initializer");
+
+  				final Constructor constructor = az3Class.getConstructor(new Class[] {
+  						AzureusCore.class,
+  						Boolean.TYPE,
+  						String[].class
+  				});
+
+  				initializer = (IUIIntializer) constructor.newInstance(new Object[] {
+  						azureus_core,
+  						new Boolean(false),
+  						args
+  				});
+
+  				initializer.runInSWTThread();
+  				return;
+  			} catch (Throwable t) {
+  				// use print stack trace because we don't want to introduce logger
+  				t.printStackTrace();
+  				// Ignore and use AZ2
+  			}
+  		}
+  		// else AZ2UI
+	}
  
 }

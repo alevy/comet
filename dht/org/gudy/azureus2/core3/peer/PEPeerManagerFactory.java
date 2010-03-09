@@ -26,8 +26,8 @@ package org.gudy.azureus2.core3.peer;
  *
  */
 
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.peer.impl.PEPeerControlFactory;
+import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.peer.impl.*;
 
 public class 
 PEPeerManagerFactory 
@@ -38,6 +38,16 @@ PEPeerManagerFactory
 		PEPeerManagerAdapter	adapter,
 	  	DiskManager 			diskManager )
 	{
-  		return( PEPeerControlFactory.create( peer_id, adapter, diskManager ));
+  		return( create( peer_id, adapter, diskManager, 0 ));
+	}
+	
+	public static PEPeerManager
+	create(
+		byte[]					peer_id,
+		PEPeerManagerAdapter	adapter,
+	  	DiskManager 			diskManager,
+	  	int						id )
+	{
+  		return( PEPeerControlFactory.create( peer_id, adapter, diskManager, id ));
 	}
 }

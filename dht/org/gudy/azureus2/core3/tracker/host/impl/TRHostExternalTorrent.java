@@ -26,25 +26,13 @@ package org.gudy.azureus2.core3.tracker.host.impl;
  *
  */
 
-import java.io.File;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.net.*;
+import java.io.*;
 
-import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtilEncodingException;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.internat.*;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
 
 public class 
 TRHostExternalTorrent 
@@ -124,6 +112,12 @@ TRHostExternalTorrent
 		return( null );
 	}
 	
+ 	public void
+	setCreatedBy(
+		byte[]		cb )
+   	{
+   	}
+ 	
 	public boolean
 	isCreated()
 	{
@@ -450,6 +444,18 @@ TRHostExternalTorrent
 		throw( new TOTorrentException("External Torrent", TOTorrentException.RT_WRITE_FAILS ));
 	}
 
+ 	public void
+	addListener(
+		TOTorrentListener		l )
+	{
+	}
+
+	public void
+	removeListener(
+		TOTorrentListener		l )
+	{
+	}
+	
    	public AEMonitor
 	getMonitor()
    	{

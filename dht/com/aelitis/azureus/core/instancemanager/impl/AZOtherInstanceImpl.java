@@ -24,11 +24,10 @@ package com.aelitis.azureus.core.instancemanager.impl;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.core3.util.SystemTime;
 
 
@@ -50,7 +49,20 @@ AZOtherInstanceImpl
 		Long	l_udp_other = (Long)map.get("dp2" );
 		
 		int		udp_other	= l_udp_other==null?udp:l_udp_other.intValue();
+		
+		byte[]	app_id_bytes = (byte[])map.get( "ai" );
+		
+		String app_id;
+		
+		if ( app_id_bytes == null ){
 			
+			app_id = SystemProperties.AZ_APP_ID + "_4.2.0.2";	// we dont know, but this is most likely
+			
+		}else{
+			
+			app_id = new String( app_id_bytes );
+		}
+		
 		try{
 			if ( !int_ip.equals("0.0.0.0")){
 				
@@ -63,7 +75,7 @@ AZOtherInstanceImpl
 			
 			if ( internal_address instanceof Inet4Address == external_address instanceof Inet4Address ){
 				
-				return( new AZOtherInstanceImpl(id, internal_address, external_address, tcp, udp, udp_other ));
+				return( new AZOtherInstanceImpl(id, app_id, internal_address, external_address, tcp, udp, udp_other ));
 			}
 			
 			return( null );
@@ -77,6 +89,7 @@ AZOtherInstanceImpl
 	}
 	
 	private String					id;
+	private String					app_id;
 	private List					internal_addresses	= new ArrayList();
 	private InetAddress				external_address;
 	private int						tcp_port;
@@ -89,6 +102,7 @@ AZOtherInstanceImpl
 	protected
 	AZOtherInstanceImpl(
 		String					_id,
+		String					_app_id,
 		InetAddress				_internal_address,
 		InetAddress				_external_address,
 		int						_tcp_port,
@@ -96,6 +110,7 @@ AZOtherInstanceImpl
 		int						_udp_non_data_port )
 	{
 		id					= _id;
+		app_id				= _app_id;
 		
 		internal_addresses.add( _internal_address );
 		
@@ -145,6 +160,12 @@ AZOtherInstanceImpl
 	getID()
 	{
 		return( id );
+	}
+	
+	public String
+	getApplicationID()
+	{
+		return( app_id );
 	}
 	
 	public InetAddress

@@ -22,9 +22,8 @@
 package org.gudy.azureus2.ui.swt.views;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.download.DownloadManagerPeerListener;
 import org.gudy.azureus2.core3.internat.MessageText;
@@ -32,6 +31,7 @@ import org.gudy.azureus2.core3.ipfilter.IpFilterManagerFactory;
 import org.gudy.azureus2.core3.peer.PEPeer;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.util.Debug;
+
 import org.gudy.azureus2.plugins.peers.Peer;
 import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.ui.swt.Messages;
@@ -41,56 +41,9 @@ import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWTMenuFillListener;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ASItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ChokedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ChokingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ClientIdentificationItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ClientItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.ConnectedTimeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.DLedFromOthersItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.DiscardedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.DownItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.DownSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.DownSpeedLimitItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.EncryptionItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.GainItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.HandshakeReservedBytesItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.HostNameItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.IncomingRequestCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.InterestedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.InterestingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.IpItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.LANItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.MessagingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.OptimisticUnchokeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.OutgoingRequestCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PeerByteIDItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PeerIDItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PeerSourceItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PercentItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PieceItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PiecesItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.PortItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.SnubbedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.StatUpItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.StateItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.TimeToSendPieceItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.TimeUntilCompleteItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.TotalDownSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.TypeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UniquePieceItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UpDownRatioItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UpItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UpRatioItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UpSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.peers.UpSpeedLimitItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.peers.*;
 
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableDataSourceChangedListener;
-import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableSelectedRowsListener;
-import com.aelitis.azureus.ui.common.table.TableView;
+import com.aelitis.azureus.ui.common.table.*;
 
 /**
  * @author Olivier
@@ -168,9 +121,14 @@ public class PeersView
    *
    */
   public PeersView() {
-		tv = new TableViewSWTImpl(TableManager.TABLE_TORRENT_PEERS, "PeersView",
-				basicItems, "pieces", SWT.MULTI | SWT.FULL_SELECTION | SWT.VIRTUAL);
-		setTableView(tv);
+  	super("PeersView");
+  }
+  
+  // @see org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab#initYourTableView()
+  public TableViewSWT initYourTableView() {
+		tv = new TableViewSWTImpl(Peer.class, TableManager.TABLE_TORRENT_PEERS,
+				getPropertiesPrefix(), basicItems, "pieces", SWT.MULTI | SWT.FULL_SELECTION
+						| SWT.VIRTUAL);
 		tv.setRowDefaultHeight(16);
 		tv.setEnableTabViews(true);
 		tv.setCoreTabViews(new IView[] {
@@ -181,7 +139,7 @@ public class PeersView
 		tv.addTableDataSourceChangedListener(this, true);
 		tv.addLifeCycleListener(this);
 		tv.addMenuFillListener(this);
-		tv.setDataSourceType(Peer.class);
+		return tv;
 	}
   
 	public void tableDataSourceChanged(Object newDataSource) {
@@ -219,11 +177,11 @@ public class PeersView
   	}
 	}
 	
-	public void fillMenu(Menu menu) {fillMenu(menu, tv, shell, true);}
+	public void fillMenu(String sColumnName, Menu menu) {fillMenu(menu, tv, shell, true);}
 
 	public static void fillMenu(final Menu menu, final TableView tv, final Shell shell, boolean download_specific) {
 		
-		Object[] peers = tv.getSelectedDataSources();
+		Object[] peers = tv.getSelectedDataSources().toArray();
 		
 		boolean hasSelection = (peers.length > 0);
 
@@ -369,7 +327,7 @@ public class PeersView
 	}
 
 	private static void setSelectedPeersUpSpeed(int speed, TableView tv) {      
-		Object[] peers = tv.getSelectedDataSources();
+		Object[] peers = tv.getSelectedDataSources().toArray();
 		if(peers.length > 0) {            
 			for (int i = 0; i < peers.length; i++) {
 				try {
@@ -383,7 +341,7 @@ public class PeersView
 	}
 
 	private static void setSelectedPeersDownSpeed(int speed, TableView tv) {      
-		Object[] peers = tv.getSelectedDataSources();
+		Object[] peers = tv.getSelectedDataSources().toArray();
 		if(peers.length > 0) {            
 			for (int i = 0; i < peers.length; i++) {
 				try {

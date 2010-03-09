@@ -31,32 +31,14 @@ import java.util.Map;
 
 import org.gudy.azureus2.plugins.disk.DiskManager;
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadActivationEvent;
-import org.gudy.azureus2.plugins.download.DownloadActivationListener;
-import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
-import org.gudy.azureus2.plugins.download.DownloadAttributeListener;
-import org.gudy.azureus2.plugins.download.DownloadCompletionListener;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadListener;
-import org.gudy.azureus2.plugins.download.DownloadPeerListener;
-import org.gudy.azureus2.plugins.download.DownloadPropertyListener;
-import org.gudy.azureus2.plugins.download.DownloadRemovalVetoException;
-import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
-import org.gudy.azureus2.plugins.download.DownloadStats;
-import org.gudy.azureus2.plugins.download.DownloadTrackerListener;
-import org.gudy.azureus2.plugins.download.DownloadWillBeRemovedListener;
-import org.gudy.azureus2.plugins.download.savelocation.SaveLocationChange;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.download.savelocation.*;
 import org.gudy.azureus2.plugins.peers.PeerManager;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.pluginsimpl.remote.RPException;
-import org.gudy.azureus2.pluginsimpl.remote.RPObject;
-import org.gudy.azureus2.pluginsimpl.remote.RPReply;
-import org.gudy.azureus2.pluginsimpl.remote.RPRequest;
-import org.gudy.azureus2.pluginsimpl.remote.RPRequestDispatcher;
+import org.gudy.azureus2.plugins.torrent.*;
+
+import org.gudy.azureus2.pluginsimpl.remote.*;
 import org.gudy.azureus2.pluginsimpl.remote.disk.RPDiskManagerFileInfo;
-import org.gudy.azureus2.pluginsimpl.remote.torrent.RPTorrent;
+import org.gudy.azureus2.pluginsimpl.remote.torrent.*;
 
 
 public class 
@@ -343,6 +325,14 @@ RPDownload
 		notSupported();
 		
 		return( false );
+	}
+	
+	public long
+	getFlags()
+	{
+		notSupported();
+		
+		return( 0 );
 	}
 	
 	public int

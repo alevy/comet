@@ -25,11 +25,8 @@ package org.gudy.azureus2.pluginsimpl.local.installer;
 import java.util.Properties;
 
 import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
-import org.gudy.azureus2.plugins.PluginManager;
+import org.gudy.azureus2.plugins.*;
+//import org.gudy.azureus2.plugins.installer.PluginInstaller;
 
 /**
  * @author parg

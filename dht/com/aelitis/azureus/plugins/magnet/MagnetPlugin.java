@@ -24,27 +24,30 @@ package com.aelitis.azureus.plugins.magnet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.net.InetSocketAddress;
 import org.eclipse.swt.graphics.Image;
+import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;
+import org.gudy.azureus2.core3.util.BEncoder;
 import org.gudy.azureus2.core3.util.Base32;
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DelayedEvent;
 import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
+import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabaseContact;
 import org.gudy.azureus2.plugins.ddb.DistributedDatabaseEvent;
@@ -57,18 +60,23 @@ import org.gudy.azureus2.plugins.download.DownloadException;
 import org.gudy.azureus2.plugins.torrent.Torrent;
 import org.gudy.azureus2.plugins.ui.UIInstance;
 import org.gudy.azureus2.plugins.ui.UIManagerListener;
+import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.plugins.ui.menus.MenuItem;
 import org.gudy.azureus2.plugins.ui.menus.MenuItemListener;
+import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
 import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
 import org.gudy.azureus2.plugins.ui.tables.TableManager;
 import org.gudy.azureus2.plugins.ui.tables.TableRow;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
 import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
 
 import com.aelitis.azureus.core.util.CopyOnWriteList;
-import com.aelitis.net.magneturi.MagnetURIHandler;
-import com.aelitis.net.magneturi.MagnetURIHandlerException;
-import com.aelitis.net.magneturi.MagnetURIHandlerListener;
-import com.aelitis.net.magneturi.MagnetURIHandlerProgressListener;
+import com.aelitis.azureus.core.util.FeatureAvailability;
+import com.aelitis.net.magneturi.*;
 
 /**
  * @author parg
@@ -78,17 +86,28 @@ import com.aelitis.net.magneturi.MagnetURIHandlerProgressListener;
 public class 
 MagnetPlugin
 	implements Plugin
-{
+{	
+	private static final String	SECONDARY_LOOKUP 			= "http://magnet.vuze.com/";
+	private static final int	SECONDARY_LOOKUP_DELAY		= 20*1000;
+	private static final int	SECONDARY_LOOKUP_MAX_TIME	= 2*60*1000;
+	
+	private static final String	PLUGIN_NAME				= "Magnet URI Handler";
+	private static final String PLUGIN_CONFIGSECTION_ID = "plugins.magnetplugin";
+
 	private PluginInterface		plugin_interface;
 		
 	private CopyOnWriteList		listeners = new CopyOnWriteList();
+	
+	private boolean			first_download	= true;
+	
+	private BooleanParameter secondary_lookup;
 	
 	public static void
 	load(
 		PluginInterface		plugin_interface )
 	{
 		plugin_interface.getPluginProperties().setProperty( "plugin.version", 	"1.0" );
-		plugin_interface.getPluginProperties().setProperty( "plugin.name", 		"Magnet URI Handler" );
+		plugin_interface.getPluginProperties().setProperty( "plugin.name", PLUGIN_NAME );
 	}
 	
 	public void
@@ -96,6 +115,12 @@ MagnetPlugin
 		PluginInterface	_plugin_interface )
 	{
 		plugin_interface	= _plugin_interface;
+		
+		BasicPluginConfigModel	config = 
+			plugin_interface.getUIManager().createBasicPluginConfigModel( ConfigSection.SECTION_PLUGINS, 
+					PLUGIN_CONFIGSECTION_ID);
+		
+		secondary_lookup = config.addBooleanParameter2( "MagnetPlugin.use.lookup.service", "MagnetPlugin.use.lookup.service", true );
 		
 		MenuItemListener	listener = 
 			new MenuItemListener()
@@ -227,6 +252,7 @@ MagnetPlugin
 				download(
 					final MagnetURIHandlerProgressListener		muh_listener,
 					final byte[]								hash,
+					final String								args,
 					final InetSocketAddress[]					sources,
 					final long									timeout )
 				
@@ -280,8 +306,15 @@ MagnetPlugin
 									InetSocketAddress	address )
 								{
 								}
+								
+								public boolean 
+								verbose() 
+								{
+									return( muh_listener.verbose());
+								}
 							},
 							hash,
+							args,
 							sources,
 							timeout ));
 				}
@@ -436,16 +469,121 @@ MagnetPlugin
 	
 	public byte[]
 	download(
+		MagnetPluginProgressListener		listener,
+		byte[]								hash,
+		String								args,
+		InetSocketAddress[]					sources,
+		long								timeout )
+	
+		throws MagnetURIHandlerException
+	{
+		byte[]	torrent_data = downloadSupport( listener, hash, args, sources, timeout );
+		
+		if ( args != null ){
+			
+			String[] bits = args.split( "&" );
+			
+			List<String>	new_web_seeds = new ArrayList<String>();
+
+			for ( String bit: bits ){
+				
+				String[] x = bit.split( "=" );
+				
+				if ( x.length == 2 ){
+					
+					if ( x[0].equalsIgnoreCase( "ws" )){
+						
+						try{
+							new_web_seeds.add( new URL( UrlUtils.decode( x[1] )).toExternalForm());
+							
+						}catch( Throwable e ){							
+						}
+					}
+				}
+			}
+			
+			if ( new_web_seeds.size() > 0 ){
+				
+				try{
+					TOTorrent torrent = TOTorrentFactory.deserialiseFromBEncodedByteArray( torrent_data );
+	
+					Object obj = torrent.getAdditionalProperty( "url-list" );
+					
+					List<String> existing = new ArrayList<String>();
+					
+					if ( obj instanceof byte[] ){
+		                
+						try{
+							new_web_seeds.remove( new URL( new String((byte[])obj, "UTF-8" )).toExternalForm());
+							
+						}catch( Throwable e ){							
+						}
+					}else if ( obj instanceof List ){
+						
+						List<byte[]> l = (List<byte[]>)obj;
+						
+						for ( byte[] b: l ){
+							
+							try{
+								existing.add( new URL( new String((byte[])b, "UTF-8" )).toExternalForm());
+								
+							}catch( Throwable e ){							
+							}
+						}
+					}
+					
+					boolean update = false;
+					
+					for ( String e: new_web_seeds ){
+						
+						if ( !existing.contains( e )){
+							
+							existing.add( e );
+							
+							update = true;
+						}
+					}
+					
+					if ( update ){
+					
+						List<byte[]>	l = new ArrayList<byte[]>();
+						
+						for ( String s: existing ){
+							
+							l.add( s.getBytes( "UTF-8" ));
+						}
+						
+						torrent.setAdditionalProperty( "url-list", l );
+						
+						torrent_data = BEncoder.encode( torrent.serialiseToMap());
+					}
+					
+				}catch( Throwable e ){
+				}
+			}
+		}
+		
+		return( torrent_data );
+	}
+	
+	private byte[]
+	downloadSupport(
 		final MagnetPluginProgressListener		listener,
 		final byte[]							hash,
+		final String							args,
 		final InetSocketAddress[]				sources,
 		final long								timeout )
 	
 		throws MagnetURIHandlerException
 	{
 		try{
-			listener.reportActivity( getMessageText( "report.waiting_ddb" ));
-
+			if ( first_download ){
+			
+				listener.reportActivity( getMessageText( "report.waiting_ddb" ));
+				
+				first_download = false;
+			}
+			
 			final DistributedDatabase db = plugin_interface.getDistributedDatabase();
 			
 			final List			potential_contacts 		= new ArrayList();
@@ -494,6 +632,8 @@ MagnetPlugin
 						}else if (	type == DistributedDatabaseEvent.ET_OPERATION_COMPLETE ||
 									type == DistributedDatabaseEvent.ET_OPERATION_TIMEOUT ){
 								
+							listener.reportActivity( getMessageText( "report.found", String.valueOf( found_set.size())));
+							
 								// now inject any explicit sources
 
 							addExplicitSources();
@@ -543,8 +683,11 @@ MagnetPlugin
 							found_set.add( key );
 						}
 						
-						listener.reportActivity( getMessageText( "report.found", contact.getName()));
-				
+						if ( listener.verbose()){
+						
+							listener.reportActivity( getMessageText( "report.found", contact.getName()));
+						}
+						
 						try{
 							potential_contacts_mon.enter();													
 
@@ -555,17 +698,22 @@ MagnetPlugin
 							potential_contacts_mon.exit();
 						}
 						
-						AEThread2 t = 
-							new AEThread2( "MagnetPlugin:HitHandler", true )
+						contact.isAlive(
+							20*1000,
+							new DistributedDatabaseListener()
 							{
-								public void
-								run()
+								public void 
+								event(
+									DistributedDatabaseEvent event) 
 								{
 									try{
-										boolean	alive = contact.isAlive(20*1000);
-																						
-										listener.reportActivity( 
+										boolean	alive = event.getType() == DistributedDatabaseEvent.ET_OPERATION_COMPLETE;
+											
+										if ( listener.verbose()){
+										
+											listener.reportActivity( 
 												getMessageText( alive?"report.alive":"report.dead",	contact.getName()));
+										}
 										
 										try{
 											potential_contacts_mon.enter();
@@ -615,9 +763,7 @@ MagnetPlugin
 										potential_contacts_sem.release();
 									}
 								}
-							};
-													
-						t.start();
+							});
 					}
 				};
 				
@@ -628,6 +774,15 @@ MagnetPlugin
 				DistributedDatabase.OP_EXHAUSTIVE_READ | DistributedDatabase.OP_PRIORITY_HIGH );
 			
 			long	remaining	= timeout;
+			
+			long 	overall_start 			= SystemTime.getMonotonousTime();
+			boolean	sl_enabled				= secondary_lookup.getValue() && FeatureAvailability.isMagnetSLEnabled();
+
+			long	secondary_lookup_time 	= -1;
+			
+			long last_found = -1;
+			
+			final Object[] secondary_result = { null };
 			
 			while( remaining > 0 ){
 					
@@ -644,12 +799,68 @@ MagnetPlugin
 					
 					potential_contacts_mon.exit();
 				}
+								
 				
-				long start = SystemTime.getCurrentTime();
+				while( remaining > 0 ){
 				
-				potential_contacts_sem.reserve( remaining );
+					long wait_start = SystemTime.getMonotonousTime();
+
+					boolean got_sem = potential_contacts_sem.reserve( 1000 );
+		
+					long now = SystemTime.getMonotonousTime();
+					
+					remaining -= ( now - wait_start );
 				
-				remaining -= ( SystemTime.getCurrentTime() - start );
+					if ( got_sem ){
+					
+						last_found = now;
+						
+						break;
+						
+					}else{
+						
+						if ( sl_enabled ){
+							
+							if ( secondary_lookup_time == -1 ){
+							
+								long	base_time;
+								
+								if ( last_found == -1 || now - overall_start > 60*1000 ){
+									
+									base_time = overall_start;
+									
+								}else{
+									
+									base_time = last_found;
+								}
+								
+								long	time_so_far = now - base_time;
+								
+								if ( time_so_far > SECONDARY_LOOKUP_DELAY ){
+									
+									secondary_lookup_time = SystemTime.getMonotonousTime();
+									
+									doSecondaryLookup( listener, secondary_result, hash, args );
+								}
+							}else{
+								
+								try{
+									byte[] torrent = getSecondaryLookupResult( secondary_result );
+									
+									if ( torrent != null ){
+										
+										return( torrent );
+									}
+								}catch( ResourceDownloaderException e ){
+									
+									// ignore, we just continue processing
+								}
+							}
+						}
+
+						continue;
+					}
+				}
 				
 				DistributedDatabaseContact	contact;
 				boolean						live_contact;
@@ -724,9 +935,27 @@ MagnetPlugin
 										
 					if ( value != null ){
 						
-						listener.reportContributor( contact.getAddress());
+							// let's verify the torrent
 						
-						return( (byte[])value.getValue(byte[].class));
+						byte[]	data = (byte[])value.getValue(byte[].class);
+
+						try{
+							TOTorrent torrent = TOTorrentFactory.deserialiseFromBEncodedByteArray( data );
+							
+							if ( Arrays.equals( hash, torrent.getHash())){
+							
+								listener.reportContributor( contact.getAddress());
+						
+								return( data );
+								
+							}else{
+								
+								listener.reportActivity( getMessageText( "report.error", "torrent invalid (hash mismatch)" ));
+							}
+						}catch( Throwable e ){
+							
+							listener.reportActivity( getMessageText( "report.error", "torrent invalid (decode failed)" ));
+						}
 					}
 				}catch( Throwable e ){
 					
@@ -736,6 +965,34 @@ MagnetPlugin
 				}
 			}
 		
+			if ( sl_enabled ){
+				
+				if ( secondary_lookup_time == -1 ){
+					
+					secondary_lookup_time = SystemTime.getMonotonousTime();
+					
+					doSecondaryLookup(listener, secondary_result, hash, args );
+				}
+				
+				while( SystemTime.getMonotonousTime() - secondary_lookup_time < SECONDARY_LOOKUP_MAX_TIME ){
+					
+					try{
+						byte[] torrent = getSecondaryLookupResult( secondary_result );
+						
+						if ( torrent != null ){
+							
+							return( torrent );
+						}
+						
+						Thread.sleep( 500 );
+						
+					}catch( ResourceDownloaderException e ){
+						
+						break;
+					}
+				}
+			}
+			
 			return( null );		// nothing found
 			
 		}catch( Throwable e ){
@@ -746,6 +1003,98 @@ MagnetPlugin
 
 			throw( new MagnetURIHandlerException( "MagnetURIHandler failed", e ));
 		}
+	}
+	
+	protected void
+	doSecondaryLookup(
+		final MagnetPluginProgressListener		listener,
+		final Object[]							result,
+		byte[]									hash,
+		String									args )
+	{
+		listener.reportActivity( getMessageText( "report.secondarylookup", null ));
+		
+		try{
+			ResourceDownloaderFactory rdf = plugin_interface.getUtilities().getResourceDownloaderFactory();
+		
+			URL sl_url = new URL( SECONDARY_LOOKUP + "magnetLookup?hash=" + Base32.encode( hash ) + (args.length()==0?"":("&args=" + UrlUtils.encode( args ))));
+			
+			ResourceDownloader rd = rdf.create( sl_url );
+			
+			rd.addListener(
+				new ResourceDownloaderAdapter()
+				{
+					public boolean
+					completed(
+						ResourceDownloader	downloader,
+						InputStream			data )
+					{
+						listener.reportActivity( getMessageText( "report.secondarylookup.ok", null ));
+
+						synchronized( result ){
+						
+							result[0] = data;
+						}
+						
+						return( true );
+					}
+					
+					public void
+					failed(
+						ResourceDownloader			downloader,
+						ResourceDownloaderException e )
+					{
+						synchronized( result ){
+							
+							result[0] = e;
+						}
+						
+						listener.reportActivity( getMessageText( "report.secondarylookup.fail" ));
+					}
+				});
+			
+			rd.asyncDownload();
+			
+		}catch( Throwable e ){
+			
+			listener.reportActivity( getMessageText( "report.secondarylookup.fail", Debug.getNestedExceptionMessage( e ) ));
+		}
+	}
+	
+	protected byte[]
+	getSecondaryLookupResult(
+		final Object[]	result )
+	
+		throws ResourceDownloaderException
+	{
+		Object x;
+		
+		synchronized( result ){
+			
+			x = result[0];
+			
+			result[0] = null;
+		}
+			
+		if ( x instanceof InputStream ){
+			
+			InputStream is = (InputStream)x;
+				
+			try{
+				TOTorrent t = TOTorrentFactory.deserialiseFromBEncodedInputStream( is );
+				
+				TorrentUtils.setPeerCacheValid( t );
+		
+				return( BEncoder.encode( t.serialiseToMap()));
+				
+			}catch( Throwable e ){							
+			}
+		}else if ( x instanceof ResourceDownloaderException ){
+			
+			throw((ResourceDownloaderException)x);
+		}
+		
+		return( null );
 	}
 	
 	protected String

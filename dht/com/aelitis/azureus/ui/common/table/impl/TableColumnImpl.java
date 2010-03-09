@@ -22,41 +22,26 @@
 
 package com.aelitis.azureus.ui.common.table.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.plugins.ui.UIRuntimeException;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellAddedListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellDisposeListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellLightRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseEvent;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseMoveListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellToolTipListener;
-import org.gudy.azureus2.plugins.ui.tables.TableCellVisibilityListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnExtraInfoListener;
-import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
-import org.gudy.azureus2.pluginsimpl.local.ui.tables.TableContextMenuItemImpl;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.views.table.utils.TableColumnManager;
 
-import com.aelitis.azureus.ui.common.table.TableCellCore;
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableStructureEventDispatcher;
+import com.aelitis.azureus.ui.common.table.*;
+
+import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.download.DownloadTypeComplete;
+import org.gudy.azureus2.plugins.download.DownloadTypeIncomplete;
+import org.gudy.azureus2.plugins.peers.Peer;
+import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
+import org.gudy.azureus2.plugins.ui.UIRuntimeException;
+import org.gudy.azureus2.plugins.ui.tables.*;
+
+import org.gudy.azureus2.pluginsimpl.local.ui.tables.TableContextMenuItemImpl;
 
 /** 
  * Table Column definition and modification routines.
@@ -89,6 +74,8 @@ public class TableColumnImpl
 
 	private int iWidth;
 
+	private int iDefaultWidth;
+
 	private int iInterval;
 
 	private long lLastSortValueChange;
@@ -120,8 +107,10 @@ public class TableColumnImpl
 	
 	private int iConsecutiveErrCount;
 
-	private ArrayList menuItems;
+	private ArrayList<TableContextMenuItem> menuItemsHeader;
 
+	private ArrayList<TableContextMenuItem> menuItemsColumn;
+	
 	private boolean bObfusticateData;
 
 	protected AEMonitor this_mon = new AEMonitor("TableColumn");
@@ -160,14 +149,34 @@ public class TableColumnImpl
 
 	private boolean removed;
 	
-	private Class forDataSourceType;
+	private Class forPluginDataSourceType;
 
 	/**
 	 * @deprecated
 	 */
-	public TableColumnImpl(String tableID,
-			String columnID) {
-		this(null, tableID, columnID);
+	public TableColumnImpl(String tableID, String columnID) {
+		// Guess forPluginDataSourceType based on tableID
+		Class forPluginDataSourceType = null;
+		if (TableManager.TABLE_MYTORRENTS_ALL_BIG.equals(tableID)
+				|| TableManager.TABLE_MYTORRENTS_UNOPENED.equals(tableID)
+				|| TableManager.TABLE_MYTORRENTS_UNOPENED_BIG.equals(tableID)) {
+			forPluginDataSourceType = Download.class;
+		} else if (TableManager.TABLE_MYTORRENTS_INCOMPLETE_BIG.equals(tableID)
+				|| TableManager.TABLE_MYTORRENTS_INCOMPLETE.equals(tableID)) {
+			forPluginDataSourceType = DownloadTypeIncomplete.class;
+		} else if (TableManager.TABLE_MYTORRENTS_COMPLETE.equals(tableID)
+				|| TableManager.TABLE_MYTORRENTS_COMPLETE_BIG.equals(tableID)) {
+			forPluginDataSourceType = DownloadTypeComplete.class;
+		} else if (TableManager.TABLE_TORRENT_PEERS.equals(tableID)) {
+			forPluginDataSourceType = Peer.class;
+		} else if (TableManager.TABLE_TORRENT_FILES.equals(tableID)) {
+			forPluginDataSourceType = DiskManagerFileInfo.class;
+		} else if (TableManager.TABLE_MYTRACKER.equals(tableID)) {
+			forPluginDataSourceType = TrackerTorrent.class;
+		} else if (TableManager.TABLE_MYSHARES.equals(tableID)) {
+			forPluginDataSourceType = ShareResource.class;
+		}
+		init(forPluginDataSourceType, tableID, columnID);
 	}
 
 	/** Create a column object for the specified table.
@@ -177,7 +186,12 @@ public class TableColumnImpl
 	 */
 	public TableColumnImpl(Class forDataSourceType, String tableID,
 			String columnID) {
-		this.forDataSourceType = forDataSourceType;
+		init(forDataSourceType, tableID, columnID);
+	}
+	
+	private void init(Class forDataSourceType, String tableID,
+			String columnID) {
+		this.forPluginDataSourceType = forDataSourceType;
 		sTableID = tableID;
 		sName = columnID;
 		iType = TYPE_TEXT_ONLY;
@@ -204,7 +218,7 @@ public class TableColumnImpl
 
 		this.iAlignment = iAlignment;
 		setPosition(iPosition);
-		this.iWidth = iWidth;
+		this.iWidth = this.iDefaultWidth = iWidth;
 		this.iMinWidth = 16;
 		this.iInterval = iInterval;
 	}
@@ -217,7 +231,7 @@ public class TableColumnImpl
 
 		this.iAlignment = iAlignment;
 		setPosition(iPosition);
-		this.iWidth = iWidth;
+		this.iWidth = this.iDefaultWidth = iWidth;
 		this.iMinWidth = 16;
 	}
 
@@ -267,6 +281,9 @@ public class TableColumnImpl
 		//		}
 
 		iWidth = width;
+		if (iDefaultWidth == 0) {
+			iDefaultWidth = width;
+		}
 
 		if (bColumnAdded && bVisible) {
 			triggerColumnSizeChange();
@@ -424,6 +441,12 @@ public class TableColumnImpl
 			return null;
 		}
 		return list.toArray();
+	}
+	
+	// @see com.aelitis.azureus.ui.common.table.TableColumnCore#hasCellOtherListeners(java.lang.String)
+	public boolean hasCellOtherListeners(String listenerID) {
+		return mapOtherCellListeners != null
+				&& mapOtherCellListeners.get(listenerID) != null;
 	}
 
 	public List getCellAddedListeners() {
@@ -882,7 +905,7 @@ public class TableColumnImpl
 			
 		TableStructureEventDispatcher tsed = TableStructureEventDispatcher.getInstance(sTableID);
 					
-		tsed.tableStructureChangedSWTThread(true);
+		tsed.tableStructureChanged(true, forPluginDataSourceType);
 	}
 
 	public boolean 
@@ -1009,13 +1032,6 @@ public class TableColumnImpl
 				}
 
 				String sKeyPrefix;
-				// Try a generic one of "TableColumn." + columnid
-				sKeyPrefix = "TableColumn.header.";
-				if (MessageText.keyExists(sKeyPrefix + sName)) {
-					sTitleLanguageKey = sKeyPrefix + sName;
-					return sTitleLanguageKey;
-				}
-
 				// Support "Old Style" language keys, which have a prefix of TableID + "View."
 				// Also, "MySeeders" is actually stored in "MyTorrents"..
 				sKeyPrefix = (sTableID.equals(TableManager.TABLE_MYTORRENTS_COMPLETE)
@@ -1042,7 +1058,15 @@ public class TableColumnImpl
 					}
 				}
 				
+				// Try a generic one of "TableColumn." + columnid
+				sKeyPrefix = "TableColumn.header.";
+				if (MessageText.keyExists(sKeyPrefix + sName)) {
+					sTitleLanguageKey = sKeyPrefix + sName;
+					return sTitleLanguageKey;
+				}
+
 				// another "Old Style"
+				// 99% sure this can be removed now, but why risk it..
 				sKeyPrefix = "MyTorrentsView." + sName;
 				//System.out.println(sKeyPrefix + ";" + MessageText.getString(sKeyPrefix));
 				if (MessageText.keyExists(sKeyPrefix)) {
@@ -1066,30 +1090,52 @@ public class TableColumnImpl
 	}
 
 	public void removeContextMenuItem(TableContextMenuItem menuItem) {
-		if (menuItems == null) {
-			return;
+		if (menuItemsColumn != null) {
+			menuItemsColumn.remove(menuItem);
 		}
-
-		menuItems.remove(menuItem);
+		if (menuItemsHeader != null) {
+			menuItemsColumn.remove(menuItem);
+		}
 	}
 
+	// @see org.gudy.azureus2.plugins.ui.tables.TableColumn#addContextMenuItem(java.lang.String, int)
 	public TableContextMenuItem addContextMenuItem(String key) {
-		if (menuItems == null) {
-			menuItems = new ArrayList();
-		}
+		return addContextMenuItem(key, MENU_STYLE_COLUMN_DATA);
+	}
 
+	public TableContextMenuItem addContextMenuItem(String key, int menuStyle) {
+		ArrayList<TableContextMenuItem> menuItems;		
+		if (menuStyle == MENU_STYLE_COLUMN_DATA) {
+			if (menuItemsColumn == null) {
+				menuItemsColumn = new ArrayList<TableContextMenuItem>();
+			}
+			menuItems = menuItemsColumn;
+		} else {
+			if (menuItemsHeader == null) {
+				menuItemsHeader = new ArrayList<TableContextMenuItem>();
+			}
+			menuItems = menuItemsHeader;
+		}
+		
 		// Hack.. should be using our own implementation..
 		TableContextMenuItemImpl item = new TableContextMenuItemImpl(null,"", key);
 		menuItems.add(item);
 		return item;
 	}
 
-	public TableContextMenuItem[] getContextMenuItems() {
+	public TableContextMenuItem[] getContextMenuItems(int menuStyle) {
+		ArrayList<TableContextMenuItem> menuItems;		
+		if (menuStyle == MENU_STYLE_COLUMN_DATA) {
+			menuItems = menuItemsColumn;
+		} else {
+			menuItems = menuItemsHeader;
+		}
+
 		if (menuItems == null) {
 			return new TableContextMenuItem[0];
 		}
 
-		return (TableContextMenuItem[]) menuItems.toArray(new TableContextMenuItem[0]);
+		return menuItems.toArray(new TableContextMenuItem[0]);
 	}
 
 	public boolean isObfusticated() {
@@ -1397,11 +1443,16 @@ public class TableColumnImpl
 	}
 
 	public Class getForDataSourceType() {
-		return forDataSourceType;
+		return forPluginDataSourceType;
 	}
 
 	public void setForDataSourceType(Class forDataSourceType) {
-		this.forDataSourceType = forDataSourceType;
+		this.forPluginDataSourceType = forDataSourceType;
 	}
 
+	public void reset() {
+		if (iDefaultWidth != 0) {
+			setWidth(iDefaultWidth);
+		}
+	}
 }

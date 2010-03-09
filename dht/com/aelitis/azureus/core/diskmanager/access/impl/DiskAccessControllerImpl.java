@@ -22,14 +22,13 @@
 
 package com.aelitis.azureus.core.diskmanager.access.impl;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessController;
+import com.aelitis.azureus.core.diskmanager.access.DiskAccessControllerStats;
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessRequest;
 import com.aelitis.azureus.core.diskmanager.access.DiskAccessRequestListener;
 import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
@@ -45,6 +44,7 @@ DiskAccessControllerImpl
 	
 	public
 	DiskAccessControllerImpl(
+		String	_name,
 		int		_max_read_threads,
 		int		_max_read_mb,
 		int 	_max_write_threads,
@@ -61,7 +61,7 @@ DiskAccessControllerImpl
 
 		read_dispatcher 	= 
 			new DiskAccessControllerInstance( 
-					"read", 
+					_name + "/" + "read", 
 					enable_read_aggregation, 
 					read_aggregation_request_limit,
 					read_aggregation_byte_limit,
@@ -70,7 +70,7 @@ DiskAccessControllerImpl
 		
 		write_dispatcher 	= 
 			new DiskAccessControllerInstance( 
-					"write", 
+					_name + "/" + "write", 
 					enable_write_aggregation, 
 					write_aggregation_request_limit,
 					write_aggregation_byte_limit,
@@ -258,5 +258,34 @@ DiskAccessControllerImpl
 		write_dispatcher.queueRequest( request );
 		
 		return( request );	
+	}
+	
+	public DiskAccessControllerStats 
+	getStats() 
+	{
+		return(
+			new DiskAccessControllerStats()
+			{
+				long	read_total_req 		= read_dispatcher.getTotalRequests();
+				long	read_total_bytes 	= read_dispatcher.getTotalBytes();
+				
+				public long 
+				getTotalReadRequests() 
+				{
+					return( read_total_req );
+				}
+				
+				public long 
+				getTotalReadBytes() 
+				{
+					return( read_total_bytes );
+				}
+			});
+	}
+	
+	public String
+	getString()
+	{
+		return( "read: " + read_dispatcher.getString() + ", write: " + write_dispatcher.getString());
 	}
 }

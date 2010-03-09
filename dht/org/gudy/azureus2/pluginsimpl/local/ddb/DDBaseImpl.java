@@ -23,9 +23,8 @@
 package org.gudy.azureus2.pluginsimpl.local.ddb;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
@@ -33,17 +32,8 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SHA1Simple;
 import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseContact;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseEvent;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseException;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseKey;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseKeyStats;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseListener;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseProgressListener;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseTransferHandler;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseTransferType;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseValue;
+import org.gudy.azureus2.plugins.ddb.*;
+
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
@@ -104,7 +94,7 @@ DDBaseImpl
 	{
 		azureus_core	= _azureus_core;
 		
-		torrent_transfer =  new DDBaseTTTorrent( _azureus_core, this );
+		torrent_transfer =  new DDBaseTTTorrent( this );
 		
 		grabDHT();
 	}
@@ -289,6 +279,25 @@ DDBaseImpl
 		throwIfNotAvailable();
 	
 		DHTPluginContact	contact = getDHT().importContact( address );
+		
+		if ( contact == null ){
+			
+			throw( new DistributedDatabaseException( "import of '" + address + "' failed" ));
+		}
+		
+		return( new DDBaseContactImpl( this, contact));
+	}
+	
+	public DistributedDatabaseContact
+	importContact(
+		InetSocketAddress				address,
+		byte							version )
+	
+		throws DistributedDatabaseException
+	{
+		throwIfNotAvailable();
+	
+		DHTPluginContact	contact = getDHT().importContact( address, version );
 		
 		if ( contact == null ){
 			
@@ -551,7 +560,34 @@ DDBaseImpl
 		
 		transfer_map.put( type_key, handler );
 		
-		final String	handler_name = type==torrent_transfer?"Torrent Transfer":"Plugin Defined";
+		final String	handler_name;
+		
+		if ( type == torrent_transfer ){
+			
+			handler_name = "Torrent Transfer";
+			
+		}else{
+			
+			String class_name = type.getClass().getName();
+			
+			int	pos = class_name.indexOf( '$' );
+			
+			if ( pos != -1 ){
+				
+				class_name = class_name.substring( pos+1 );
+				
+			}else{
+			
+				pos = class_name.lastIndexOf( '.' );
+				
+				if ( pos != -1 ){
+					
+					class_name = class_name.substring( pos+1 );
+				}
+			}
+			
+			handler_name = "Plugin Defined (" + class_name + ")";
+		}
 		
 		getDHT().registerHandler(
 			type_key.getHash(),

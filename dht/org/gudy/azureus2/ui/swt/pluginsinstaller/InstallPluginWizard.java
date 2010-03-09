@@ -26,17 +26,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Display;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.ui.swt.wizard.Wizard;
+
+import com.aelitis.azureus.core.AzureusCore;
+
 import org.gudy.azureus2.plugins.PluginException;
 import org.gudy.azureus2.plugins.installer.InstallablePlugin;
 import org.gudy.azureus2.plugins.installer.PluginInstallerListener;
 import org.gudy.azureus2.plugins.installer.StandardPlugin;
-import org.gudy.azureus2.ui.swt.wizard.Wizard;
-
-import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author Olivier Chalouhi
@@ -74,7 +76,7 @@ public class InstallPluginWizard extends Wizard {
 							public void
 							run()
 							{
-								new InstallPluginWizard( core, display, reason, (StandardPlugin)plugin );
+								new InstallPluginWizard( reason, (StandardPlugin)plugin );
 							}
 						});
 					
@@ -88,11 +90,9 @@ public class InstallPluginWizard extends Wizard {
   }
   
   
-  public InstallPluginWizard(
-      	AzureusCore	azureus_core,	
- 		Display 	display )
+  public InstallPluginWizard()
 	{
-		super(azureus_core,"installPluginsWizard.title");			
+		super("installPluginsWizard.title");			
 				
 		IPWModePanel mode_panel = new IPWModePanel(this,null);
 	
@@ -101,12 +101,10 @@ public class InstallPluginWizard extends Wizard {
   
   	public 
   	InstallPluginWizard(
-  		AzureusCore			azureus_core,	
-  		Display 			display,
   		String				reason,
   		StandardPlugin		plugin )
   	{
-		super(azureus_core,"installPluginsWizard.title");			
+		super("installPluginsWizard.title");			
 			
 		standard_plugins 	= new StandardPlugin[]{ plugin };
 		list_title_text		= reason;
@@ -120,13 +118,13 @@ public class InstallPluginWizard extends Wizard {
 	}
   	
   	protected StandardPlugin[]
-  	getStandardPlugins()
+  	getStandardPlugins(AzureusCore core)
   	
   		throws PluginException
   	{
   		if ( standard_plugins == null ){
   			
-  			standard_plugins = getAzureusCore().getPluginManager().getPluginInstaller().getStandardPlugins();
+  			standard_plugins = core.getPluginManager().getPluginInstaller().getStandardPlugins();
   		}
   		
   		return( standard_plugins );

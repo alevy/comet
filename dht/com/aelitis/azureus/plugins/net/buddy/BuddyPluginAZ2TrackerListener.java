@@ -21,7 +21,7 @@
 
 package com.aelitis.azureus.plugins.net.buddy;
 
-import java.util.Map;
+import java.util.*;
 
 public interface 
 BuddyPluginAZ2TrackerListener 

@@ -21,11 +21,7 @@
 
 package com.aelitis.azureus.plugins.net.buddy.swt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -50,6 +46,7 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.utils.LocaleUtilities;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 
 import com.aelitis.azureus.plugins.net.buddy.BuddyPlugin;
@@ -83,7 +80,7 @@ BuddyPluginViewChat
 		
 		lu		= plugin.getPluginInterface().getUtilities().getLocaleUtilities();
 		
-		shell = new Shell( _display, SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MIN | SWT.MAX );
+		shell = ShellFactory.createMainShell( SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MIN | SWT.MAX );
 
 		shell.addDisposeListener(
 			new DisposeListener()

@@ -23,17 +23,21 @@
 package org.gudy.azureus2.core3.tracker.client.impl.dht;
 
 import java.net.URL;
+import java.util.Map;
+
 
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerDataProvider;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerException;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerListener;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
+import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerHelper;
 import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerImpl;
 import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerResponseImpl;
 import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerResponsePeerImpl;
@@ -41,10 +45,13 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.TorrentUtils;
 import org.gudy.azureus2.plugins.clientid.ClientIDException;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResultPeer;
 import org.gudy.azureus2.pluginsimpl.local.clientid.ClientIDManagerImpl;
+
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
 
 /**
  * @author parg
@@ -53,10 +60,15 @@ import org.gudy.azureus2.pluginsimpl.local.clientid.ClientIDManagerImpl;
 
 public class 
 TRTrackerDHTAnnouncerImpl
-	extends TRTrackerAnnouncerImpl
+	implements TRTrackerAnnouncerHelper
 {
+	public final static LogIDs LOGID = LogIDs.TRACKER;
+
 	private TOTorrent		torrent;
 	private HashWrapper		torrent_hash;
+	
+	private TRTrackerAnnouncerImpl.Helper		helper;
+	
 	private byte[]			data_peer_id;
 	
 	private String						tracker_status_str;
@@ -70,16 +82,16 @@ TRTrackerDHTAnnouncerImpl
 	
 	public
 	TRTrackerDHTAnnouncerImpl(
-		TOTorrent		_torrent,
-		String[]		_networks,
-		boolean			_manual )
+		TOTorrent						_torrent,
+		String[]						_networks,
+		boolean							_manual,
+		TRTrackerAnnouncerImpl.Helper	_helper )
 	
 		throws TRTrackerAnnouncerException
-	{
-		super( _torrent );
-		
+	{		
 		torrent		= _torrent;
 		manual		= _manual;
+		helper		= _helper;
 		
 		try{
 			torrent_hash	= torrent.getHashWrapper();
@@ -108,8 +120,7 @@ TRTrackerDHTAnnouncerImpl
 	public void
 	setAnnounceDataProvider(
 		TRTrackerAnnouncerDataProvider		provider )
-	{
-		
+	{	
 	}
 	
 	public boolean
@@ -125,31 +136,39 @@ TRTrackerDHTAnnouncerImpl
 	}
 	
 	public URL
-	getTrackerUrl()
+	getTrackerURL()
 	{
-		return( torrent.getAnnounceURL());
+		return( TorrentUtils.getDecentralisedURL( torrent ));
 	}
 	
 	public void
-	setTrackerUrl(
+	setTrackerURL(
 		URL		url )
 	{
-		Debug.out( "setTrackerURL not supported for DHT" );
+		Debug.out( "Not implemented" );
 	}
-		
+	
+	public void
+	setAnnounceSets(
+		TOTorrentAnnounceURLSet[]		_set )
+	{
+		Debug.out( "Not implemented" );
+	}
+	
+	public TOTorrentAnnounceURLSet[]
+	getAnnounceSets()
+	{
+		return( new TOTorrentAnnounceURLSet[]{
+					torrent.getAnnounceURLGroup().createAnnounceURLSet( 
+							new URL[]{ TorrentUtils.getDecentralisedURL( torrent )})} );
+	}
+	
 	public void
 	resetTrackerUrl(
 		boolean	shuffle )
 	{
 	}
-	
-	public void
-	cloneFrom(
-		TRTrackerAnnouncer	other )
-	{
-		data_peer_id	= other.getPeerId();
-	}
-	
+		
 	public void
 	setIPOverride(
 		String		override )
@@ -233,10 +252,34 @@ TRTrackerDHTAnnouncerImpl
 		return( tracker_status_str );
 	}
 	
+	public TRTrackerAnnouncer
+	getBestAnnouncer()
+	{
+		return( this );
+	}
+	
 	public TRTrackerAnnouncerResponse
 	getLastResponse()
 	{
 		return( last_response );
+	}
+	
+	public boolean 
+	isUpdating() 
+	{
+		return( false );
+	}
+	
+	public long
+	getInterval()
+	{
+		return( -1 );
+	}
+	
+	public long
+	getMinInterval()
+	{
+		return( -1 );
 	}
 	
 	public void
@@ -297,7 +340,7 @@ TRTrackerDHTAnnouncerImpl
 									(short)0 );
 			}
 			
-			addToTrackerCache( peers);
+			helper.addToTrackerCache( peers);
 		
 			tracker_status_str = MessageText.getString("PeerManager.status.ok");
 
@@ -306,7 +349,7 @@ TRTrackerDHTAnnouncerImpl
 		
 		last_response = response;
 				
-		listeners.dispatch( LDT_TRACKER_RESPONSE, response );
+		helper.informResponse( this, response );
 	}
 	
 	protected void
@@ -314,15 +357,66 @@ TRTrackerDHTAnnouncerImpl
 	{
 		if ( last_response.getStatus() != TRTrackerAnnouncerResponse.ST_ONLINE ){
 			
-		     TRTrackerAnnouncerResponsePeer[]	cached_peers = getPeersFromCache(100);
+		     TRTrackerAnnouncerResponsePeer[]	cached_peers = helper.getPeersFromCache(100);
 
 		     if ( cached_peers.length > 0 ){
 		     	
 		     	last_response.setPeers( cached_peers );
 		     	
-				listeners.dispatch( LDT_TRACKER_RESPONSE, last_response );
+				helper.informResponse( this, last_response );
 		     }
 		}
+	}
+	
+	public void 
+	addListener(
+		TRTrackerAnnouncerListener l )
+	{
+		helper.addListener( l );
+	}
+	
+	public void 
+	removeListener(
+		TRTrackerAnnouncerListener l )
+	{
+		helper.removeListener( l );
+	}
+	
+	public void 
+	setTrackerResponseCache(
+		Map map	)
+	{
+		helper.setTrackerResponseCache( map );
+	}
+	
+	public void 
+	removeFromTrackerResponseCache(
+		String ip, int tcpPort) 
+	{
+		helper.removeFromTrackerResponseCache( ip, tcpPort );
+	}
+	
+	public Map 
+	getTrackerResponseCache() 
+	{
+		return( helper.getTrackerResponseCache());
+	}
+	
+	public TrackerPeerSource 
+	getTrackerPeerSource(
+		TOTorrentAnnounceURLSet set) 
+	{
+		Debug.out( "not implemented" );
+		
+		return null;
+	}
+	
+	public TrackerPeerSource 
+	getCacheTrackerPeerSource()
+	{
+		Debug.out( "not implemented" );
+		
+		return null;
 	}
 	
 	public void 

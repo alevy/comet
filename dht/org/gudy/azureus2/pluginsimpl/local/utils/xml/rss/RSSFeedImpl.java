@@ -23,8 +23,7 @@
 package org.gudy.azureus2.pluginsimpl.local.utils.xml.rss;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.utils.Utilities;

@@ -21,11 +21,8 @@
 
 package org.gudy.azureus2.core3.util;
 
+import java.util.*;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class 
 DirectByteBufferPoolHeap

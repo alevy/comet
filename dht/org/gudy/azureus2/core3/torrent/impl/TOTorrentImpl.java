@@ -22,36 +22,13 @@
 package org.gudy.azureus2.core3.torrent.impl;
 
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLGroup;
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.StringInterner;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 
@@ -115,6 +92,8 @@ TOTorrentImpl
 	
 	private boolean				created;
 	private boolean				serialising;
+	
+	private List<TOTorrentListener>	listeners;
 	
 	protected AEMonitor this_mon 	= new AEMonitor( "TOTorrent" );
 
@@ -251,8 +230,13 @@ TOTorrentImpl
 			
             bos.flush();
 			
-            fos.getFD().sync();
+		  		// thinking about removing this - just do so for CVS for the moment
+			  
+			if ( !Constants.isCVSVersion()){
             
+				fos.getFD().sync();
+			}
+			
             bos.close();
             
             bos = null;
@@ -432,45 +416,10 @@ TOTorrentImpl
 				
 				TOTorrentFileImpl	file	= files[i];
 				
-				Map	file_map = new HashMap();
+				Map	file_map = file.serializeToMap();
 		
 				meta_files.add( file_map );
 				
-				file_map.put( TK_LENGTH, new Long( file.getLength()));
-				
-				List path = new ArrayList();
-				
-				file_map.put( TK_PATH, path );
-				
-				byte[][]	path_comps = file.getPathComponents();
-				
-				for (int j=0;j<path_comps.length;j++){
-					
-					path.add( path_comps[j]);
-				}
-				
-				if ( file.isUTF8()){
-					
-					List utf8_path = new ArrayList();
-					
-					file_map.put( TK_PATH_UTF8, utf8_path );
-										
-					for (int j=0;j<path_comps.length;j++){
-						
-						utf8_path.add( path_comps[j]);
-					}
-				}
-				
-				Map file_additional_properties = file.getAdditionalProperties();
-				
-				Iterator prop_it = file_additional_properties.keySet().iterator();
-				
-				while( prop_it.hasNext()){
-					
-					String	key = (String)prop_it.next();
-					
-					file_map.put( key, file_additional_properties.get( key ));
-				}
 			}
 		}
 		
@@ -527,6 +476,13 @@ TOTorrentImpl
 		byte[]	_name )
 	{
 		torrent_name	= _name;
+	}
+	
+	protected void
+	setNameUTF8(
+		byte[]	_name )
+	{
+		torrent_name_utf8	= _name;
 	}
 	
 	public boolean
@@ -586,6 +542,9 @@ TOTorrentImpl
 			return false;
 		
 		announce_url	= StringInterner.internURL(newURL);
+		
+		fireChanged( TOTorrentListener.CT_ANNOUNCE_URLS );
+		
 		return true;
 	}
 
@@ -602,7 +561,7 @@ TOTorrentImpl
 		creation_date 	= _creation_date;
 	}
 	
-	protected void
+	public void
 	setCreatedBy(
 		byte[]		_created_by )
 	{
@@ -1258,6 +1217,81 @@ TOTorrentImpl
 		}catch( TOTorrentException e ){
 			
 			Debug.printStackTrace( e );
+		}
+	}
+	
+	protected void
+	fireChanged(
+		int	type )
+	{
+		List<TOTorrentListener> to_fire = null;
+		
+		try{
+			this_mon.enter();
+			
+			if ( listeners != null ){
+				
+				to_fire = new ArrayList<TOTorrentListener>( listeners );
+			}
+		}finally{
+			
+			this_mon.exit();
+		}
+		
+		if ( to_fire != null ){
+			
+			for ( TOTorrentListener l: to_fire ){
+				
+				try{
+					l.torrentChanged( this, type );
+					
+				}catch( Throwable e ){
+					
+					Debug.out(e);
+				}
+			}
+		}
+	}
+	
+ 	public void
+	addListener(
+		TOTorrentListener		l )
+	{
+ 		try{
+			this_mon.enter();
+			
+			if ( listeners == null ){
+				
+				listeners = new ArrayList<TOTorrentListener>();
+			}
+			
+			listeners.add( l );
+			
+		}finally{
+			
+			this_mon.exit();
+		}
+	}
+
+	public void
+	removeListener(
+		TOTorrentListener		l )
+	{
+ 		try{
+			this_mon.enter();
+			
+			if ( listeners != null ){
+				
+				listeners.remove( l );
+				
+				if ( listeners.size() == 0 ){
+					
+					listeners = null;
+				}
+			}
+		}finally{
+			
+			this_mon.exit();
 		}
 	}
 	

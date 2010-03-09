@@ -12,6 +12,6 @@
 	<classpathentry kind="lib" path="lib/log4j.jar"/>
 	<classpathentry kind="lib" path="lib/swt-win32.jar"/>
 	<classpathentry kind="lib" path="lib/swt-xosx.jar"/>
-	<classpathentry kind="lib" path="apps/vanish/lib/Vanish.jar"/>
+	<classpathentry kind="lib" path="lib/Azureus2.jar" sourcepath="newvuze"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

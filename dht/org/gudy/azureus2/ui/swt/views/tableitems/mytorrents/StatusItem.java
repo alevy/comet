@@ -24,17 +24,19 @@
 
 package org.gudy.azureus2.ui.swt.views.tableitems.mytorrents;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellRefreshListener;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnInfo;
-import org.gudy.azureus2.plugins.ui.tables.TableRow;
+import org.gudy.azureus2.core3.util.UrlUtils;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
+import org.gudy.azureus2.ui.swt.views.table.TableCellSWT;
 import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
+
+import org.gudy.azureus2.plugins.download.Download;
+import org.gudy.azureus2.plugins.ui.tables.*;
 
 /**
  *
@@ -43,15 +45,18 @@ import org.gudy.azureus2.ui.swt.views.table.utils.CoreTableColumn;
  */
 public class StatusItem
 	extends CoreTableColumn
-	implements TableCellRefreshListener
+	implements TableCellRefreshListener, TableCellMouseListener
 {
 	public static final Class DATASOURCE_TYPE = Download.class;
 
 	public static final String COLUMN_ID = "status";
+
+	private final static Object CLICK_KEY = new Object();
+	private static final int[] BLUE = Utils.colorToIntArray( Colors.blue );
 	
 	private boolean changeRowFG;
 	private boolean changeCellFG = true;
-
+	
 	private boolean	showTrackerErrors;
 	
 	public StatusItem(String sTableID, boolean changeRowFG) {
@@ -76,26 +81,62 @@ public class StatusItem
 	{
 		DownloadManager dm = (DownloadManager) cell.getDataSource();
 
+		if ( dm == null ){
+			
+			return;
+		}
+		
 		int state = dm.getState();
 		
 		String	text;
 		
-		if ( dm != null && showTrackerErrors && dm.isUnauthorisedOnTracker() && state != DownloadManager.STATE_ERROR ){
+		if ( showTrackerErrors && dm.isUnauthorisedOnTracker() && state != DownloadManager.STATE_ERROR ){
 			
 			text = dm.getTrackerStatus();
 			
 		}else{
 			
-			text = dm == null ? "": DisplayFormatters.formatDownloadStatus(dm);
+			text = DisplayFormatters.formatDownloadStatus(dm);
 		}
 		
 		if ( cell.setText( text ) || !cell.isValid()) {
 			
-			if (!changeCellFG && !changeRowFG) {
+			boolean clickable = false;
+			
+			if ( cell instanceof TableCellSWT ){
+								
+				int cursor_id;
+				
+				if ( text.indexOf( "http://" ) == -1 ){
+									
+					dm.setUserData( CLICK_KEY, null );
+					
+					cursor_id = SWT.CURSOR_ARROW;
+					
+				}else{
+					
+					dm.setUserData( CLICK_KEY, text );
+					
+					cursor_id = SWT.CURSOR_HAND;
+					
+					clickable = true;
+				}
+				
+				((TableCellSWT)cell).setCursorID( cursor_id );
+			}
+			
+			if (!changeCellFG && !changeRowFG){
+				
+					// clickable, make it blue whatever
+				
+				cell.setForeground( clickable?BLUE:null);
+				
 				return;
 			}
+			
 			TableRow row = cell.getTableRow();
-			if (row != null && dm != null) {
+			
+			if (row != null ) {
 				
 				Color color = null;
 				if (state == DownloadManager.STATE_SEEDING) {
@@ -110,9 +151,12 @@ public class StatusItem
 				} else if (changeCellFG) {
 					cell.setForeground(Utils.colorToIntArray(color));
 				}
+				if ( clickable ){
+					cell.setForeground( Utils.colorToIntArray( Colors.blue ));
+				}
+
 			}
 		}
-
 	}
 
 	public boolean isChangeRowFG() {
@@ -136,5 +180,33 @@ public class StatusItem
 		boolean	s )
 	{
 		showTrackerErrors = s;
+	}
+	
+	public void 
+	cellMouseTrigger(
+		TableCellMouseEvent event ) 
+	{
+
+		DownloadManager dm = (DownloadManager) event.cell.getDataSource();
+		if (dm == null) {return;}
+		
+		String clickable = (String)dm.getUserData( CLICK_KEY );
+		
+		if ( clickable == null ){
+			
+			return;
+		}
+		
+		event.skipCoreFunctionality = true;
+		
+		if ( event.eventType == TableCellMouseEvent.EVENT_MOUSEUP ){
+		
+			String url = UrlUtils.getURL( clickable );
+			
+			if ( url != null ){
+				
+				Utils.launch( url );
+			}
+		}
 	}
 }

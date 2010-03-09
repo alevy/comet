@@ -23,22 +23,19 @@ package com.aelitis.azureus.core.clientmessageservice.impl;
 
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.*;
 
-import com.aelitis.azureus.core.clientmessageservice.ClientMessageService;
-import com.aelitis.azureus.core.networkmanager.ConnectionEndpoint;
-import com.aelitis.azureus.core.networkmanager.ProtocolEndpoint;
-import com.aelitis.azureus.core.networkmanager.Transport;
+import com.aelitis.azureus.core.clientmessageservice.*;
+import com.aelitis.azureus.core.networkmanager.*;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.ProtocolEndpointTCP;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportImpl;
 import com.aelitis.azureus.core.peermanager.messaging.MessageException;
-import com.aelitis.azureus.core.peermanager.messaging.azureus.AZMessageFactory;
+import com.aelitis.azureus.core.peermanager.messaging.azureus.*;
 
 
 /**
@@ -108,7 +105,7 @@ public class AEClientService implements ClientMessageService {
     final AESemaphore connect_block = new AESemaphore( "AEClientService:C" );
     
     ce.connectOutbound( false, false, null, null, ProtocolEndpoint.CONNECT_PRIORITY_MEDIUM, new Transport.ConnectListener() {  //NOTE: async operation!
-    	public void connectAttemptStarted() {  /*nothing*/ }
+    	public int connectAttemptStarted( int default_connect_timeout ) { return( default_connect_timeout ); }
       
     	public void connectSuccess(Transport transport, ByteBuffer remaining_initial_data ){
     		conn = new ClientConnection((TCPTransportImpl)transport );

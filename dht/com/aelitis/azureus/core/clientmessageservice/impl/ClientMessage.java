@@ -23,6 +23,8 @@ package com.aelitis.azureus.core.clientmessageservice.impl;
 
 import java.util.Map;
 
+import com.aelitis.azureus.core.clientmessageservice.impl.ClientConnection;
+
 
 
 /**

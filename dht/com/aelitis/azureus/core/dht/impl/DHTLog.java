@@ -28,10 +28,7 @@ package com.aelitis.azureus.core.dht.impl;
  *
  */
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.HashWrapper;
@@ -277,7 +274,7 @@ DHTLog
 				return( "<null>");
 			}
 			
-			return( getString( value.getValue()) + "<" + (value.isLocal()?"local":"remote" ) + ",flags=" + value.getFlags() + ",orig=" + value.getOriginator().getExternalAddress() +">" );
+			return( getString( value.getValue()) + " <" + (value.isLocal()?"loc":"rem" ) + ",flag=" + Integer.toHexString(value.getFlags()) + ",life=" + value.getLifeTimeHours() + ",rep=" + Integer.toHexString( value.getReplicationControl())+",orig=" + value.getOriginator().getExternalAddress() +">" );
 		}else{
 			return( "" );
 		}

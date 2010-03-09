@@ -27,41 +27,50 @@ package org.gudy.azureus2.platform.win32;
  *
  */
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.RandomUtils;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerCapabilities;
-import org.gudy.azureus2.platform.PlatformManagerListener;
-import org.gudy.azureus2.platform.PlatformManagerPingCallback;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.platform.*;
 import org.gudy.azureus2.platform.win32.access.AEWin32Access;
 import org.gudy.azureus2.platform.win32.access.AEWin32AccessListener;
 import org.gudy.azureus2.platform.win32.access.AEWin32Manager;
-import org.gudy.azureus2.plugins.platform.PlatformManagerException;
 
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+import org.gudy.azureus2.plugins.ui.UIManager;
+import org.gudy.azureus2.plugins.ui.UIManagerEvent;
+import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
+import org.gudy.azureus2.plugins.update.UpdateException;
+import org.gudy.azureus2.plugins.update.UpdateInstaller;
+import org.gudy.azureus2.plugins.update.UpdateInstallerListener;
+import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.plugins.update.UpdateManagerListener;
+import org.gudy.azureus2.plugins.utils.StaticUtilities;
+
+import com.aelitis.azureus.core.AzureusCore;
 
 public class 
 PlatformManagerImpl
-	implements PlatformManager, AEWin32AccessListener
+	implements PlatformManager, AEWin32AccessListener, AEDiagnosticsEvidenceGenerator
 {
 	public static final int			RT_NONE		= 0;
 	public static final int			RT_AZ 		= 1;
 	public static final int			RT_OTHER 	= 2;
 	
-	public static final String					DLL_NAME = "aereg";
+	public static String					DLL_NAME = "aereg";
 	
 	public static final String				VUZE_ASSOC		= "Vuze";
 	public static final String				NEW_MAIN_ASSOC	= "Azureus";
@@ -76,6 +85,12 @@ PlatformManagerImpl
 	private final Set capabilitySet = new HashSet();
 
 	private List	listeners = new ArrayList();
+	
+	static {
+		if (System.getProperty("os.arch", "").contains("64")) {
+			DLL_NAME += "64";
+		}
+	}
 	
 	public static PlatformManagerImpl
 	getSingleton()
@@ -174,29 +189,44 @@ PlatformManagerImpl
 	        capabilitySet.add(PlatformManagerCapabilities.SetTCPTOSEnabled);
 	        capabilitySet.add(PlatformManagerCapabilities.ComputerIDAvailability);
 	        
+	        String plugin_version = access.getVersion();
 	        
-	        if ( Constants.compareVersions( access.getVersion(), "1.11" ) >= 0 &&
+	        if ( Constants.compareVersions( plugin_version, "1.11" ) >= 0 &&
 	        		!Constants.isWindows9598ME ){
 	        	
 	            capabilitySet.add(PlatformManagerCapabilities.CopyFilePermissions);
 	            
 	        }
 	        
-	        if ( Constants.compareVersions( access.getVersion(), "1.12" ) >= 0 ){
+	        if ( Constants.compareVersions( plugin_version, "1.12" ) >= 0 ){
 	        	
 	            capabilitySet.add(PlatformManagerCapabilities.TestNativeAvailability);
 	        }
 	        
-	        if ( Constants.compareVersions( access.getVersion(), "1.14" ) >= 0 ){
+	        if ( Constants.compareVersions( plugin_version, "1.14" ) >= 0 ){
 	        	
 	            capabilitySet.add(PlatformManagerCapabilities.TraceRouteAvailability);
 	        }
 
-	        if ( Constants.compareVersions( access.getVersion(), "1.15" ) >= 0 ){
+	        if ( Constants.compareVersions( plugin_version, "1.15" ) >= 0 ){
 	        	
 	            capabilitySet.add(PlatformManagerCapabilities.PingAvailability);
 	        }
 
+	        try{
+	        	getUserDataDirectory();
+	        	
+	        		// if we can access the user dir then we're good to access vmoptions
+	        	
+	        	if ( Constants.compareVersions( plugin_version, "1.19" ) >= 0 ){
+	        	
+	        		capabilitySet.add(PlatformManagerCapabilities.AccessExplicitVMOptions );
+	        	}
+	        }catch( Throwable e ){
+	        }
+	        
+	        capabilitySet.add(PlatformManagerCapabilities.RunAtLogin);
+	        
     	}else{
     		
     			// disabled -> only available capability is that to get the version
@@ -212,7 +242,7 @@ PlatformManagerImpl
 		try{
 			File	exe_loc = getApplicationEXELocation();
 			
-			String	az_exe_string = exe_loc.toString();
+			String	az_exe_string = exe_loc.getAbsolutePath();
 			
 			//int	icon_index = getIconIndex();
 			
@@ -446,6 +476,758 @@ PlatformManagerImpl
 	    	
 	    	return( null );
 	    }
+	}
+	
+	private String
+	getJVMOptionRedirect()
+	{
+		return( "-include-options ${APPDATA}\\" + SystemProperties.getApplicationName() + "\\java.vmoptions" );
+	}
+	
+	private File[]
+	getJVMOptionFiles()
+	{
+		try{
+			File exe = getApplicationEXELocation();
+	
+			File shared_options 		= new File( exe.getParent(), exe.getName() + ".vmoptions" );
+			File local_options 			= new File( SystemProperties.getUserPath(), "java.vmoptions" );
+			
+			return( new File[]{ shared_options, local_options });
+			
+		}catch( Throwable e ){
+			
+			return( new File[0] );
+		}
+	}
+	
+	private File
+	checkAndGetLocalVMOptionFile()
+	
+		throws PlatformManagerException
+	{
+		String vendor = System.getProperty( "java.vendor", "<unknown>" );
+		
+		if ( !vendor.toLowerCase().startsWith( "sun " )){
+			
+			throw( new PlatformManagerException( 
+						MessageText.getString( 
+							"platform.jvmopt.sunonly",
+							new String[]{ vendor })));
+		}
+		
+		File[] option_files = getJVMOptionFiles();
+		
+		if ( option_files.length != 2 ){
+			
+			throw( new PlatformManagerException( 
+					MessageText.getString( "platform.jvmopt.configerror" )));
+		}
+		
+		File shared_options = option_files[0];
+		
+		if ( shared_options.exists()){
+
+			try{
+				String s_options = FileUtil.readFileAsString( shared_options, -1 );
+	
+				if ( s_options.contains( getJVMOptionRedirect() )){
+									
+					File local_options = option_files[1];
+					
+					return( local_options );
+					
+				}else{
+					
+					throw( new PlatformManagerException( MessageText.getString( "platform.jvmopt.nolink" )));
+				}
+			}catch( Throwable e ){
+				
+				throw( new PlatformManagerException( MessageText.getString( "platform.jvmopt.accesserror", new String[]{ Debug.getNestedExceptionMessage(e) } )));
+			}
+		}else{
+			
+			throw( new PlatformManagerException( MessageText.getString( "platform.jvmopt.nolinkfile" )));
+		}			
+	}
+	
+	public File 
+	getVMOptionFile() 
+	
+		throws PlatformManagerException 
+	{
+		checkCapability( PlatformManagerCapabilities.AccessExplicitVMOptions );
+		
+		File local_options = checkAndGetLocalVMOptionFile();
+
+		if ( !local_options.exists()){
+			
+			try{
+				local_options.createNewFile();
+				
+			}catch( Throwable e ){
+			}
+		}
+		
+		return( local_options );
+	}
+	
+	public String[]
+   	getExplicitVMOptions()
+  	          	
+     	throws PlatformManagerException
+  	{
+		checkCapability( PlatformManagerCapabilities.AccessExplicitVMOptions );
+			
+		
+		File local_options = checkAndGetLocalVMOptionFile();
+
+		try{
+					
+			List<String>	list = new ArrayList<String>();
+			
+			if ( local_options.exists()){
+				
+				LineNumberReader lnr = new LineNumberReader( new InputStreamReader( new FileInputStream( local_options ), "UTF-8" ));
+					
+				try{
+					while( true ){
+						
+						String	line = lnr.readLine();
+						
+						if ( line == null ){
+							
+							break;
+						}
+						
+						line = line.trim();
+						
+						if ( line.length() > 0 ){
+							
+							list.add( line );
+						}
+					}
+					
+				}finally{
+					
+					lnr.close();
+				}
+			}
+			
+			return( list.toArray( new String[list.size()]));
+					
+		}catch( Throwable e ){
+			
+			throw( new PlatformManagerException( MessageText.getString( "platform.jvmopt.accesserror", new String[]{ Debug.getNestedExceptionMessage(e) } )));
+		}
+  	}
+  	 
+  	public void
+  	setExplicitVMOptions(
+  		String[]		options )
+  	          	
+  		throws PlatformManagerException
+  	{
+		checkCapability( PlatformManagerCapabilities.AccessExplicitVMOptions );
+
+		File local_options = checkAndGetLocalVMOptionFile();
+
+		try{				
+			List<String>	list = new ArrayList<String>();
+			
+			if ( local_options.exists()){
+				
+				File backup = new File( local_options.getParentFile(), local_options.getName() + ".bak" );
+				
+				if ( backup.exists()){
+					
+					backup.delete();
+				}
+				
+				if ( !local_options.renameTo( backup )){
+				
+					throw( new Exception( "Failed to move " + local_options + " to " + backup ));
+				}
+				
+				boolean	ok = false;
+				
+				try{
+					
+					PrintWriter pw = new PrintWriter( new OutputStreamWriter( new FileOutputStream( local_options ), "UTF-8" ));
+					
+					try{
+						for ( String option: options ){
+							
+							pw.println( option );
+						}
+					
+						ok = true;
+						
+					}finally{
+						
+						pw.close();
+					}
+				}finally{
+					
+					if ( !ok ){
+						
+						local_options.delete();
+						
+						backup.renameTo( local_options );
+					}
+				}
+			}					
+		}catch( Throwable e ){
+			
+			throw( new PlatformManagerException( MessageText.getString( "platform.jvmopt.accesserror", new String[]{ Debug.getNestedExceptionMessage(e) } )));
+		}
+	}
+  	
+ 	public boolean 
+  	getRunAtLogin() 
+  	
+  		throws PlatformManagerException 
+  	{
+		File exe = getApplicationEXELocation();
+
+		if ( exe != null && exe.exists()){
+			
+	 		try{
+				String value = access.readStringValue(
+						AEWin32Access.HKEY_CURRENT_USER,
+						"Software\\Microsoft\\Windows\\CurrentVersion\\Run", app_name );
+				
+				return( value.equals( exe.getAbsolutePath()));
+				
+			}catch( Throwable e ){
+				
+				return( false );
+			}
+		}else{
+			
+			return( false );
+		}
+  	}
+  	
+  	public void 
+  	setRunAtLogin(
+  		boolean run ) 
+  	
+  		throws PlatformManagerException 
+  	{
+  		File exe = getApplicationEXELocation();
+  		
+  		if ( exe != null && exe.exists()){
+ 
+	  		try{
+	  			String key = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+	  			
+	  			if ( run ){
+	  				
+					access.writeStringValue(
+						AEWin32Access.HKEY_CURRENT_USER,
+						key, app_name, exe.getAbsolutePath());
+	  			}else{
+	  				
+	  				access.deleteValue( AEWin32Access.HKEY_CURRENT_USER, key, app_name );
+	  			}
+			}catch( Throwable e ){
+				
+				throw( new PlatformManagerException( "Failed to write 'run at login' key", e ));
+			}
+  		}
+   	}
+  		
+	public int
+	getShutdownTypes()
+	{
+		int	result = SD_SLEEP | SD_SHUTDOWN;
+		
+		if ( canHibernate()){
+			
+			result |= SD_HIBERNATE;
+		}
+		
+		return( result );
+	}
+	
+	private boolean
+	canHibernate()
+	{
+		try{
+			if ( Constants.isWindows7OrHigher ){
+				
+				int enabled = access.readWordValue( AEWin32Access.HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Control\\Power", "HibernateEnabled" );
+				
+				return( enabled != 0 );
+				
+			}else{
+				Process p = Runtime.getRuntime().exec(
+					new String[]{
+						"cmd.exe",
+						"/C",
+						"reg query \"HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\Power\" /v Heuristics"
+						});
+							
+				LineNumberReader lnr = new LineNumberReader( new InputStreamReader( p.getInputStream()));
+				
+				while( true ){
+					
+					String	line = lnr.readLine();
+					
+					if ( line == null ){
+						
+						break;
+					}
+										
+					line = line.trim();
+					
+					if ( line.startsWith( "Heuristics" )){
+												
+						String[] bits =  line.split( "[\\s]+");
+												
+						byte[] value = ByteFormatter.decodeString( bits[2].trim());
+												
+						return(( value[6] & 0x01 ) != 0 );
+					}
+				}
+			}
+			
+			return( false );
+			
+		}catch( Throwable e ){
+						
+			return( false );
+		}
+	}
+	
+	public void
+	startup(
+		final AzureusCore		azureus_core )
+	
+		throws PlatformManagerException
+	{
+		AEDiagnostics.addEvidenceGenerator( this );
+		
+		if ( !hasCapability( PlatformManagerCapabilities.AccessExplicitVMOptions )){
+			
+			return;
+		}
+		
+		if ( COConfigurationManager.getBooleanParameter( "platform.win32.vmo.migrated", false )){
+			
+			try{
+				File local_options = checkAndGetLocalVMOptionFile();
+				
+				if ( local_options.exists()){
+					
+					File last_good = new File( local_options.getParentFile(), local_options.getName() + ".lastgood" );
+					
+					if ( 	!last_good.exists() ||
+							local_options.lastModified() > last_good.lastModified()){
+						
+						FileUtil.copyFile( local_options, last_good );
+					}
+				}
+			}catch( Throwable e ){
+				
+				Debug.out( e );
+			}
+		}else{
+			
+			final int	fail_count = COConfigurationManager.getIntParameter( "platform.win32.vmo.migrated.fails", 0 );
+			
+			if ( fail_count >= 3 ){
+				
+				Debug.out( "Not attempting vmoption migration due to previous failures, please perform a full install to fix this" );
+				
+				return;
+			}
+			
+				// we need an up-to-date version of this to do the migration...
+			
+			PluginInterface pi = azureus_core.getPluginManager().getPluginInterfaceByID( "azupdater" );
+						
+			if ( pi != null && Constants.compareVersions( pi.getPluginVersion(), "1.8.15" ) >= 0 ){
+							
+				new AEThread2( "win32.vmo", true )
+				{
+					public void
+					run()
+					{
+						try{
+							String redirect = getJVMOptionRedirect();
+							
+							File[] option_files = getJVMOptionFiles();
+
+							if ( option_files.length != 2 ){
+								
+								return;
+							}
+							
+							File shared_options 		= option_files[0];
+							File old_shared_options 	= new File( shared_options.getParentFile(), shared_options.getName() + ".old" );
+							File local_options 			= option_files[1];
+
+							if ( shared_options.exists()){
+
+								String options = FileUtil.readFileAsString( shared_options, -1 );
+
+								if ( !options.contains( redirect )){
+
+										// if they're already linking somewhere then abandon
+									
+									if ( !options.contains( "-include-options" )){
+
+										if ( FileUtil.canReallyWriteToAppDirectory()){
+
+											if ( old_shared_options.exists()){
+
+												old_shared_options.delete();
+											}
+
+											if ( shared_options.renameTo( old_shared_options )){
+
+												if ( !local_options.exists()){
+
+													if ( !FileUtil.copyFile( old_shared_options, local_options )){
+
+														Debug.out( "Failed to copy " + old_shared_options + " to " + local_options );
+													}
+												}
+												
+												if ( !FileUtil.writeStringAsFile( shared_options, redirect + "\r\n" )){
+														
+													Debug.out( "Failed to write to " + shared_options );
+												}
+											}else{
+
+												Debug.out( "Rename of " + shared_options + " to " + old_shared_options + " failed" );
+											}
+										}else{
+
+												// insufficient perms
+											
+											UpdateInstaller installer = getInstaller( azureus_core );
+											
+												// retry later
+											
+											if ( installer == null ){
+												
+												return;
+											}
+											
+
+											if ( !informUpdateRequired()){
+												
+												return;
+											}
+
+											if ( old_shared_options.exists()){
+
+												installer.addRemoveAction( old_shared_options.getAbsolutePath());
+											}
+
+											installer.addMoveAction( shared_options.getAbsolutePath(), old_shared_options.getAbsolutePath());
+											
+											if ( !local_options.exists()){
+
+												installer.addResource( "local_options", new ByteArrayInputStream( options.getBytes( "UTF-8" )));
+												
+												installer.addMoveAction( "local_options", local_options.getAbsolutePath());
+											}														
+
+											installer.addResource( "redirect", new ByteArrayInputStream( ( redirect + "\r\n" ).getBytes( "UTF-8" )));
+											
+											installer.addMoveAction( "redirect", shared_options.getAbsolutePath());
+												
+											final AESemaphore sem = new AESemaphore( "vmopt" );
+											
+											final UpdateException[]	error = { null };
+											
+											installer.installNow(
+												new UpdateInstallerListener()
+												{
+													public void
+													reportProgress(
+														String		str )
+													{
+													}
+													
+													public void
+													complete()
+													{														
+														sem.release();
+													}
+													
+													public void
+													failed(
+														UpdateException	e )
+													{
+														error[0] = e;
+														
+														sem.release();
+													}
+												});
+											
+											sem.reserve();
+											
+											if ( error[0] != null ){
+												
+												throw( error[0] );
+											}
+											
+										}
+									}
+								}else{
+										// redirect in place, might be second user so migrate if needed
+
+									if ( old_shared_options.exists() && !local_options.exists()){
+
+										if ( !FileUtil.copyFile( old_shared_options, local_options )){
+
+											Debug.out( "Failed to copy " + old_shared_options + " to " + local_options );
+										}
+									}
+								}
+							}else{
+
+									// no options
+								
+								if ( FileUtil.canReallyWriteToAppDirectory()){
+									
+									if ( !FileUtil.writeStringAsFile( shared_options, redirect + "\r\n" )){
+										
+										Debug.out( "Failed to write to " + shared_options );
+									}
+								}else{
+									
+										// insufficient perms
+																		
+									UpdateInstaller installer = getInstaller( azureus_core );
+								
+										// retry later
+									
+									if ( installer == null ){
+										
+										return;
+									}
+									
+									
+									if ( !informUpdateRequired()){
+										
+										return;
+									}
+
+									installer.addResource( "redirect", new ByteArrayInputStream( ( redirect + "\r\n" ).getBytes( "UTF-8" )));
+									
+									installer.addMoveAction( "redirect", shared_options.getAbsolutePath());
+										
+									final AESemaphore sem = new AESemaphore( "vmopt" );
+									
+									final UpdateException[]	error = { null };
+									
+									installer.installNow(
+										new UpdateInstallerListener()
+										{
+											public void
+											reportProgress(
+												String		str )
+											{
+											}
+											
+											public void
+											complete()
+											{
+												sem.release();
+											}
+											
+											public void
+											failed(
+												UpdateException	e )
+											{
+												error[0] = e;
+												
+												sem.release();
+											}
+										});
+									
+									sem.reserve();
+									
+									if ( error[0] != null ){
+										
+										throw( error[0] );
+									}
+								}
+							}
+							
+							COConfigurationManager.setParameter( "platform.win32.vmo.migrated", true );
+														
+						}catch( Throwable e ){
+							
+							COConfigurationManager.setParameter( "platform.win32.vmo.migrated.fails", fail_count + 1 );
+							
+							Debug.out( "vmoption migration failed", e );
+						}
+					}
+				}.start();
+			}
+		}
+	}
+	
+	private UpdateInstaller
+	getInstaller(
+		AzureusCore		azureus_core )
+	
+		throws Exception
+	{
+			// we don't want our update to interfere with the normal update process so
+			// hang around until it completes
+		
+		PluginInterface pi = azureus_core.getPluginManager().getDefaultPluginInterface();
+		
+		UpdateManager update_manager = pi.getUpdateManager();
+		
+		final List<UpdateCheckInstance>	l_instances = new ArrayList<UpdateCheckInstance>();
+		
+		update_manager.addListener( 
+			new UpdateManagerListener()
+			{
+				public void
+				checkInstanceCreated(
+					UpdateCheckInstance	instance )
+				{
+					synchronized( l_instances ){
+						
+						l_instances.add( instance );
+					}
+				}
+			});
+		
+		UpdateCheckInstance[] instances = update_manager.getCheckInstances();
+		
+		l_instances.addAll( Arrays.asList( instances ));
+		
+		long start = SystemTime.getMonotonousTime();
+		
+		while( true ){
+			
+			if ( SystemTime.getMonotonousTime() - start >= 5*60*1000 ){
+				
+				break;
+			}
+			
+			try{
+				Thread.sleep(5000);
+				
+			}catch( Throwable e ){
+				
+				Debug.out( e );
+				
+				return( null );
+			}
+			
+			if ( l_instances.size() > 0 ){
+			
+				boolean	all_done = true;
+				
+				for ( UpdateCheckInstance instance: l_instances ){
+					
+					if ( !instance.isCompleteOrCancelled()){
+						
+						all_done = false;
+						
+						break;
+					}
+				}
+				
+				if ( all_done ){
+					
+					break;
+				}
+			}
+		}
+		
+		if ( update_manager.getInstallers().length > 0 ){
+			
+			return( null );
+		}
+		
+		UpdateInstaller installer = pi.getUpdateManager().createInstaller();
+	
+		return( installer );
+	}
+	
+	private boolean
+	informUpdateRequired()
+	{
+		UIManager ui_manager = StaticUtilities.getUIManager( 120*1000 );
+
+		long res = ui_manager.showMessageBox(
+				"update.now.title",
+				"update.now.desc",
+				UIManagerEvent.MT_OK | UIManagerEvent.MT_CANCEL );
+		
+		return( res == UIManagerEvent.MT_OK );
+	}
+	
+	public void
+	shutdown(
+		int			type )
+	
+		throws PlatformManagerException
+	{	
+		String windir = System.getenv( "windir" );
+		
+		boolean vista_or_higher = Constants.isWindowsVistaOrHigher;
+		
+		try{
+			if ( type == SD_SLEEP ){
+				
+				Runtime.getRuntime().exec(
+					new String[]{
+						windir + "\\system32\\rundll32.exe",
+						"powrprof.dll,SetSuspendState"	
+					});
+				
+			}else if ( type == SD_HIBERNATE ){
+				
+				if ( vista_or_higher ){
+					
+					Runtime.getRuntime().exec(
+							new String[]{
+								"shutdown",
+								"-h"	
+							});
+					
+				}else{
+					
+					Runtime.getRuntime().exec(
+							new String[]{
+								windir + "system32\\rundll32.exe",
+								"powrprof.dll,SetSuspendState Hibernate"	
+							});
+				}
+			}else if ( type == SD_SHUTDOWN ){
+				
+				Runtime.getRuntime().exec(
+						new String[]{
+							"shutdown",
+							"-s"	
+						});
+			}else{
+				
+				throw new PlatformManagerException("Unsupported capability called on platform manager");
+			}
+			
+		}catch( PlatformManagerException e ){
+			
+			throw( e );
+			
+		}catch( Throwable e ){
+			
+			throw( new PlatformManagerException( "shutdown failed", e ));
+		}
 	}
 	
 	public String
@@ -886,7 +1668,7 @@ PlatformManagerImpl
 		try {
 			access.writeStringValue(AEWin32Access.HKEY_CLASSES_ROOT, subkey, name, value);
 		} catch (Throwable e) {
-			if (!Constants.isWindowsVista) {
+			if (!Constants.isWindowsVistaOrHigher) {
 				Debug.out(e);
 			}
 		}
@@ -1142,6 +1924,18 @@ PlatformManagerImpl
     {
         return capabilitySet.contains(capability);
     }
+    
+    private void
+    checkCapability(
+    	PlatformManagerCapabilities capability )
+    
+    	throws PlatformManagerException
+    {
+    	if ( !hasCapability(capability)){
+    		
+    		throw( new PlatformManagerException( "Capability " + capability + " not supported" ));
+    	}
+    }
 
     /**
      * Does nothing
@@ -1293,5 +2087,41 @@ PlatformManagerImpl
 
 	public void requestUserAttention(int type, Object data) throws PlatformManagerException {
 		throw new PlatformManagerException("Unsupported capability called on platform manager");
+	}
+	
+	public void
+	generate(
+		IndentWriter		writer )
+	{
+		writer.println( "Platform" );
+		
+		try{
+			writer.indent();
+		
+			try{
+				String[] options = getExplicitVMOptions();
+				
+				writer.println( "VM Options" );
+				
+				try{
+					writer.indent();
+					
+					for ( String option: options ){
+						
+						writer.println( option );
+					}
+				}finally{
+					
+					writer.exdent();
+				}
+			}catch( Throwable e ){
+				
+				writer.println( "VM options not available: " + Debug.getNestedExceptionMessage(e));
+			}
+			
+		}finally{
+			
+			writer.exdent();
+		}
 	}
 }

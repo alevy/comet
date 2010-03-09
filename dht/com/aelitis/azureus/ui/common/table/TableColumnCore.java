@@ -25,12 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.plugins.ui.tables.TableCell;
-import org.gudy.azureus2.plugins.ui.tables.TableCellMouseEvent;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnExtraInfoListener;
-import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
-import org.gudy.azureus2.ui.swt.views.table.utils.TableColumnManager;
+
+import org.gudy.azureus2.plugins.ui.tables.*;
 
 /** 
  * Core Table Column functions are those available to plugins plus
@@ -222,7 +218,7 @@ public interface TableColumnCore
 	 *
 	 * @since 2.1.0.0
 	 */
-	public TableContextMenuItem[] getContextMenuItems();
+	public TableContextMenuItem[] getContextMenuItems(int menuStyle);
 
 	/**
 	 * @return
@@ -336,6 +332,14 @@ public interface TableColumnCore
 	Object[] getCellOtherListeners(String listenerID);
 	
 	/**
+	 * @param listenerID
+	 * @return
+	 *
+	 * @since 4.1.0.5
+	 */
+	boolean hasCellOtherListeners(String listenerID);
+
+	/**
 	 * @since 4005
 	 * @return
 	 */
@@ -348,4 +352,6 @@ public interface TableColumnCore
 	 * @since 4.0.0.5
 	 */
 	List<TableColumnExtraInfoListener> getColumnExtraInfoListeners();
+
+	void reset();
 }

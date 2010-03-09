@@ -33,52 +33,7 @@ import org.gudy.azureus2.ui.swt.views.columnsetup.ColumnTC_ChosenColumn;
 import org.gudy.azureus2.ui.swt.views.columnsetup.ColumnTC_NameInfo;
 import org.gudy.azureus2.ui.swt.views.columnsetup.ColumnTC_Sample;
 import org.gudy.azureus2.ui.swt.views.table.TableColumnCoreCreationListener;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.AvailabilityItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.AvgAvailItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.BadAvailTimeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.CategoryItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.CommentIconItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.CommentItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.CompletedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.CompletionItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DateAddedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DateCompletedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DoneItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DownItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DownSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.DownSpeedLimitItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.ETAItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.FilesDoneItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.HealthItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.MaxUploadsItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.NameItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.NetworksItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.OnlyCDing4Item;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.PeerSourcesItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.PeersItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.PiecesItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.RankItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.RemainingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SavePathItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SecondsDownloadingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SecondsSeedingItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SeedToPeerRatioItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SeedsItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.ShareRatioItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SizeItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.StatusItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SwarmAverageCompletion;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.SwarmAverageSpeed;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TimeSinceDownloadItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TimeSinceUploadItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TorrentPathItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TotalSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TrackerNameItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TrackerNextAccessItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.TrackerStatusItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.UpItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.UpSpeedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.UpSpeedLimitItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytorrents.*;
 
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
 
@@ -114,6 +69,8 @@ public class TableColumnCreator
 
 		TableColumnManager tcManager = TableColumnManager.getInstance();
 		Map mapTCs = tcManager.getTableColumnsAsMap(DownloadTypeIncomplete.class, tableID);
+
+		tcManager.setDefaultColumnNames(tableID, defaultVisibleOrder);
 
 		if (!tcManager.loadTableColumnSettings(DownloadTypeIncomplete.class,
 				tableID)
@@ -151,6 +108,8 @@ public class TableColumnCreator
 
 		TableColumnManager tcManager = TableColumnManager.getInstance();
 		Map mapTCs = tcManager.getTableColumnsAsMap(DownloadTypeComplete.class, tableID);
+
+		tcManager.setDefaultColumnNames(tableID, defaultVisibleOrder);
 
 		if (!tcManager.loadTableColumnSettings(DownloadTypeComplete.class,
 				tableID)
@@ -249,6 +208,7 @@ public class TableColumnCreator
 		c.put(SwarmAverageSpeed.COLUMN_ID, new cInfo(SwarmAverageSpeed.class, SwarmAverageSpeed.DATASOURCE_TYPE));
 		c.put(SwarmAverageCompletion.COLUMN_ID, new cInfo(SwarmAverageCompletion.class, SwarmAverageCompletion.DATASOURCE_TYPE));
 		c.put(BadAvailTimeItem.COLUMN_ID, new cInfo(BadAvailTimeItem.class, BadAvailTimeItem.DATASOURCE_TYPE));
+		//c.put(ColumnFiles.COLUMN_ID, new cInfo(ColumnFiles.class, ColumnFiles.DATASOURCE_TYPE));
 
 		c.put(DateCompletedItem.COLUMN_ID, new cInfo(DateCompletedItem.class, DateCompletedItem.DATASOURCE_TYPE));
 		c.put(DateAddedItem.COLUMN_ID, new cInfo(DateAddedItem.class, DateAddedItem.DATASOURCE_TYPE));

@@ -1,8 +1,6 @@
 package org.gudy.azureus2.platform.unix;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.io.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 

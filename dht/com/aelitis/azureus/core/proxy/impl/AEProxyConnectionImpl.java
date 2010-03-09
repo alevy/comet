@@ -22,20 +22,14 @@
 
 package com.aelitis.azureus.core.proxy.impl;
 
-import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemTime;
+import java.nio.channels.*;
 
-import com.aelitis.azureus.core.proxy.AEProxyConnection;
-import com.aelitis.azureus.core.proxy.AEProxyConnectionListener;
-import com.aelitis.azureus.core.proxy.AEProxyHandler;
-import com.aelitis.azureus.core.proxy.AEProxyState;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
+
+import com.aelitis.azureus.core.proxy.*;
 
 /**
  * @author parg

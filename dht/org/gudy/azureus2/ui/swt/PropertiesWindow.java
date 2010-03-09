@@ -29,14 +29,11 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.ui.swt.components.BufferedLabel;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 
 
 public class 
@@ -50,9 +47,7 @@ PropertiesWindow
 		String[]	keys,
 		String[]	values )
 	{	
-		final Shell any_shell = Utils.findAnyShell();
-
-		shell = new Shell( any_shell.getDisplay(),SWT.APPLICATION_MODAL | SWT.TITLE | SWT.CLOSE |SWT.RESIZE );
+		shell = ShellFactory.createMainShell(SWT.APPLICATION_MODAL | SWT.TITLE | SWT.CLOSE |SWT.RESIZE );
 
 		shell.setText( MessageText.getString( "props.window.title", new String[]{ object_name }));
 		
@@ -183,18 +178,17 @@ PropertiesWindow
 				}
 			}
 		});
-
-		 	
-	 	shell.pack();
 	
 	 	int	shell_width = 400;
 	 	
 	 	int	main_height = main.computeSize(shell_width, SWT.DEFAULT).y;
 	 	
-	 	int shell_height = main_height + (shell.getSize().y - scrollable.getSize().y);
+	 	main_height = Math.max( main_height, 250 );
 	 	
-	 	shell_height = Math.min( shell_height, 600 );
-	 	
+	 	main_height = Math.min( main_height, 500 );
+
+	 	int shell_height = main_height + 50;
+	 		
 	 	shell.setSize( shell_width, shell_height );
 
 		Utils.centreWindow( shell );

@@ -25,14 +25,7 @@
 package org.gudy.azureus2.core3.config.impl;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.stats.StatsWriterPeriodic;
@@ -152,6 +145,7 @@ public class ConfigurationDefaults {
     def.put("HTTP.Data.Listen.Port.Override", ZERO);
     def.put("HTTP.Data.Listen.Port.Enable", FALSE );
     
+    def.put("IPV6 Enable Support", FALSE );
     def.put("IPV6 Prefer Addresses",FALSE);
     	
     def.put("max active torrents", new Long(4));
@@ -160,8 +154,8 @@ public class ConfigurationDefaults {
     def.put("Newly Seeding Torrents Get First Priority", TRUE);
     
     def.put("Max.Peer.Connections.Per.Torrent", new Long(COConfigurationManager.CONFIG_DEFAULT_MAX_CONNECTIONS_PER_TORRENT));
-    def.put("Max.Peer.Connections.Per.Torrent.When.Seeding", new Long(COConfigurationManager.CONFIG_DEFAULT_MAX_CONNECTIONS_PER_TORRENT));
-    def.put("Max.Peer.Connections.Per.Torrent.When.Seeding.Enable", FALSE );
+    def.put("Max.Peer.Connections.Per.Torrent.When.Seeding", new Long(COConfigurationManager.CONFIG_DEFAULT_MAX_CONNECTIONS_PER_TORRENT/2));
+    def.put("Max.Peer.Connections.Per.Torrent.When.Seeding.Enable", TRUE );
     def.put("Max.Peer.Connections.Total", new Long(COConfigurationManager.CONFIG_DEFAULT_MAX_CONNECTIONS_GLOBAL));
 
     def.put( "Peer.Fast.Initial.Unchoke.Enabled", FALSE );
@@ -196,6 +190,7 @@ public class ConfigurationDefaults {
     def.put( "AutoSpeed Forced Min KBs", new Long(4));
     def.put( "Auto Upload Speed Debug Enabled", FALSE );
     
+    def.put( "Auto Adjust Transfer Defaults", TRUE );	// modified by config checker if user has set own values
     def.put( "ASN Autocheck Performed Time", ZERO );
 
     
@@ -213,6 +208,10 @@ public class ConfigurationDefaults {
     def.put("Seeding Piece Check Recheck Enable", TRUE );
     def.put("priorityExtensions", "");
     def.put("priorityExtensionsIgnoreCase", FALSE);
+    
+    def.put("Rename Incomplete Files", FALSE );
+    def.put("Rename Incomplete Files Extension", ".az!" );
+    
     def.put("Ip Filter Enabled", TRUE);
     def.put("Ip Filter Allow",FALSE);
     def.put("Ip Filter Enable Banning", TRUE);
@@ -224,18 +223,29 @@ public class ConfigurationDefaults {
     def.put("Ip Filter Autoload File", "");
     def.put("Allow Same IP Peers",FALSE);
     def.put("Use Super Seeding",FALSE);
+    
+    def.put("Start On Login", FALSE );
     def.put("Pause Downloads On Exit", FALSE );
     def.put("Resume Downloads On Start", FALSE );
-        
+    def.put("On Downloading Complete Do", "Nothing" );
+    def.put("On Seeding Complete Do", "Nothing" );
+    def.put("Stop Triggers Auto Reset", TRUE );
+    
     // SWT GUI Settings
     
     def.put("User Mode", ZERO);
     
     //default data location options
     def.put("Use default data dir", FALSE);	
-		String docPath =  SystemProperties.getDocPath();
-		File f = new File(docPath, "Azureus Downloads");
-		def.put("Default save path", f.getAbsolutePath());
+	String docPath =  SystemProperties.getDocPath();
+	File f = new File(docPath, "Azureus Downloads");
+	
+		// switch to Vuze Downloads for new installs
+	if ( !f.exists()){
+		f = new File(docPath, "Vuze Downloads");
+	}
+	
+	def.put("Default save path", f.getAbsolutePath());
     
     def.put("update.start",TRUE);
     def.put("update.periodic",TRUE);
@@ -255,6 +265,7 @@ public class ConfigurationDefaults {
       for (int j = 0; j <= 3; j++)
         def.put("bLog" + logComponents[i] + "-" + j, TRUE);
     def.put("Logger.DebugFiles.Enabled", TRUE);
+    def.put("Logger.DebugFiles.Enabled.Force", FALSE );
     def.put("Logging Enable UDP Transport", FALSE); 
 
     
@@ -308,8 +319,6 @@ public class ConfigurationDefaults {
     def.put( "Popup File Finished", FALSE);
     def.put( "Popup Download Added", FALSE);
     def.put( "Show Timestamp For Alerts", FALSE);
-    def.put( "Use Message Box For Popups", FALSE);
-    def.put( "Suppress Alerts", FALSE);
     
     //default torrent directory option
     def.put( "Save Torrent Files", TRUE );
@@ -382,6 +391,8 @@ public class ConfigurationDefaults {
     def.put( "Tracker TCP NonBlocking", FALSE);
     def.put( "Tracker TCP NonBlocking Restrict Request Types", TRUE);
     def.put( "Tracker TCP NonBlocking Conc Max", new Long(2048));
+    def.put( "Tracker TCP NonBlocking Immediate Close", FALSE );
+    
     def.put( "Tracker Client Scrape Enable", TRUE);
     def.put( "Tracker Client Scrape Total Disable", FALSE );
     def.put( "Tracker Client Scrape Stopped Enable", TRUE);
@@ -390,10 +401,10 @@ public class ConfigurationDefaults {
     def.put( "Tracker Server Not Found Redirect", "" );
     def.put( "Tracker Server Support Experimental Extensions", FALSE );
     
-    def.put( "Network Selection Prompt", TRUE);
-    def.put( "Network Selection Default.Public", TRUE);
-    def.put( "Network Selection Default.I2P", TRUE);
-    def.put( "Network Selection Default.Tor", TRUE);
+    def.put( "Network Selection Prompt", FALSE );
+    def.put( "Network Selection Default.Public", TRUE );
+    def.put( "Network Selection Default.I2P", FALSE );
+    def.put( "Network Selection Default.Tor", FALSE );
     def.put( "Tracker Network Selection Default.Public", TRUE);
     def.put( "Tracker Network Selection Default.I2P", TRUE);
     def.put( "Tracker Network Selection Default.Tor", TRUE);
@@ -405,6 +416,7 @@ public class ConfigurationDefaults {
     def.put( "Peer Source Selection Default.Incoming", TRUE);
     
     def.put( "config.style.useSIUnits", FALSE );
+    def.put( "config.style.forceSIValues", Constants.isOSX_10_6_OrHigher?FALSE:TRUE );
     def.put( "config.style.useUnitsRateBits", FALSE );
     def.put( "config.style.separateProtDataStats", FALSE );
     def.put( "config.style.dataStatsOnly", FALSE );
@@ -473,7 +485,10 @@ public class ConfigurationDefaults {
     def.put( "config.style.table.defaultSortOrder", ZERO);
     def.put( "Ignore.peer.ports", "0" );
     def.put( "Security.JAR.tools.dir", "" );
-    def.put( "network.max.simultaneous.connect.attempts", new Long( Constants.isWindows?8:24 ));
+    
+    boolean	tcp_half_open_limited = Constants.isWindows && !(Constants.isWindowsVistaSP2OrHigher || Constants.isWindows7OrHigher );
+    
+    def.put( "network.max.simultaneous.connect.attempts", new Long( tcp_half_open_limited?8:24 ));
     def.put( "network.tcp.max.connections.outstanding", new Long( 2048 ));
     def.put( "network.tcp.mtu.size", new Long(1500) );
     def.put( "network.udp.mtu.size", new Long(1500) );
@@ -551,31 +566,40 @@ public class ConfigurationDefaults {
     def.put("FileBrowse.usePathFinder", FALSE);
     	
     //temp section for SpeedManagerAlgorithmProviderV2
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DOWNLOAD_MAX_LIMIT, new Long(SMConst.START_DOWNLOAD_RATE_MAX) );
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_UPLOAD_MAX_LIMIT, new Long(SMConst.START_UPLOAD_RATE_MAX) );
-
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_GOOD_SET_POINT, new Long(50) );
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_GOOD_TOLERANCE, new Long(100) );
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_BAD_SET_POINT, new Long(900) );
-    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_BAD_TOLERANCE, new Long(500) );
-
-    	//**** NOTE! This default can be overridden in ConfigurationChecker 
-    def.put(SpeedManagerImpl.CONFIG_VERSION, new Long(2) );	// 1 == classic, 2 == beta
     
-    def.put( SpeedLimitMonitor.DOWNLOAD_CONF_LIMIT_SETTING, SpeedLimitConfidence.NONE.getString() );
-    def.put( SpeedLimitMonitor.UPLOAD_CONF_LIMIT_SETTING, SpeedLimitConfidence.NONE.getString() );
-    def.put( SpeedLimitMonitor.UPLOAD_CHOKE_PING_COUNT, new Long(1) );
-
-    //default V2 algorithm seeding and download mode usage, stored as an Int
-    def.put( SpeedLimitMonitor.USED_UPLOAD_CAPACITY_SEEDING_MODE, new Long(90) );  
-    def.put( SpeedLimitMonitor.USED_UPLOAD_CAPACITY_DOWNLOAD_MODE, new Long(60) );
-
-    def.put( SpeedManagerAlgorithmProviderV2.SETTING_WAIT_AFTER_ADJUST, TRUE );
-    def.put( SpeedManagerAlgorithmProviderV2.SETTING_INTERVALS_BETWEEN_ADJUST, new Long(2) );
+    try{
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DOWNLOAD_MAX_LIMIT, new Long(SMConst.START_DOWNLOAD_RATE_MAX) );
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_UPLOAD_MAX_LIMIT, new Long(SMConst.START_UPLOAD_RATE_MAX) );
+	
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_GOOD_SET_POINT, new Long(50) );
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_GOOD_TOLERANCE, new Long(100) );
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_BAD_SET_POINT, new Long(900) );
+	    def.put(SpeedManagerAlgorithmProviderV2.SETTING_DHT_BAD_TOLERANCE, new Long(500) );
+	
+	    	//**** NOTE! This default can be overridden in ConfigurationChecker 
+	    def.put(SpeedManagerImpl.CONFIG_VERSION, new Long(2) );	// 1 == classic, 2 == beta
+	    
+	    def.put( SpeedLimitMonitor.DOWNLOAD_CONF_LIMIT_SETTING, SpeedLimitConfidence.NONE.getString() );
+	    def.put( SpeedLimitMonitor.UPLOAD_CONF_LIMIT_SETTING, SpeedLimitConfidence.NONE.getString() );
+	    def.put( SpeedLimitMonitor.UPLOAD_CHOKE_PING_COUNT, new Long(1) );
+	
+	    //default V2 algorithm seeding and download mode usage, stored as an Int
+	    def.put( SpeedLimitMonitor.USED_UPLOAD_CAPACITY_SEEDING_MODE, new Long(90) );  
+	    def.put( SpeedLimitMonitor.USED_UPLOAD_CAPACITY_DOWNLOAD_MODE, new Long(60) );
+	
+	    def.put( SpeedManagerAlgorithmProviderV2.SETTING_WAIT_AFTER_ADJUST, TRUE );
+	    def.put( SpeedManagerAlgorithmProviderV2.SETTING_INTERVALS_BETWEEN_ADJUST, new Long(2) );
+	    
+    }catch( Throwable e ){
+    	
+    }
     
     	// subscriptions
     
     def.put( "subscriptions.max.non.deleted.results", new Long( 512 ));
+    def.put( "subscriptions.auto.start.downloads", TRUE );
+    def.put( "subscriptions.auto.start.min.mb", ZERO );
+    def.put( "subscriptions.auto.start.max.mb", ZERO );
 }
   
   protected 

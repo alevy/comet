@@ -21,37 +21,27 @@
  
 package org.gudy.azureus2.pluginsimpl.local.utils.xml.simpleparser;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.Vector;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
+import javax.xml.parsers.*;
+import org.xml.sax.*;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocument;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentAttribute;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentException;
 import org.gudy.azureus2.plugins.utils.xml.simpleparser.SimpleXMLParserDocumentNode;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import org.w3c.dom.*;
+
+import java.io.*;
+import java.util.*;
 
 public class 
 SimpleXMLParserDocumentImpl
 	implements SimpleXMLParserDocument
 {
+	private static DocumentBuilderFactory 		dbf_singleton;
+
 	protected Document							document;
 	protected SimpleXMLParserDocumentNodeImpl	root_node;
+	
 	
 	public
 	SimpleXMLParserDocumentImpl(
@@ -92,31 +82,31 @@ SimpleXMLParserDocumentImpl
 		create( input_stream );
 	}
 	
-	protected void
-	create(
-		InputStream		input_stream )
-		
-		throws SimpleXMLParserDocumentException
+	protected static synchronized DocumentBuilderFactory
+	getDBF()
 	{
-		try{
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			// getting the factory involves a fait bit of work - cache it
+		
+		if ( dbf_singleton == null ){
+		
+			dbf_singleton = DocumentBuilderFactory.newInstance();
 
 			// Set namespaceAware to true to get a DOM Level 2 tree with nodes
 			// containing namesapce information.  This is necessary because the
 			// default value from JAXP 1.0 was defined to be false.
 						
-			dbf.setNamespaceAware(true);
-
+			dbf_singleton.setNamespaceAware(true);
+	
 			// Set the validation mode to either: no validation, DTD
 			// validation, or XSD validation
 					
-			dbf.setValidating( false );
+			dbf_singleton.setValidating( false );
 					
 			// Optional: set various configuration options
 					
-			dbf.setIgnoringComments(true);
-			dbf.setIgnoringElementContentWhitespace(true);
-			dbf.setCoalescing(true);
+			dbf_singleton.setIgnoringComments(true);
+			dbf_singleton.setIgnoringElementContentWhitespace(true);
+			dbf_singleton.setCoalescing(true);
 					
 			// The opposite of creating entity ref nodes is expanding them inline
 			// NOTE that usage of, e.g. "&amp;" in text results in an entity ref. e.g.
@@ -124,8 +114,20 @@ SimpleXMLParserDocumentImpl
 			//		ENT_REF: nodeName="amp"
 			//		TEXT: nodeName="#text" nodeValue="&"
 			
-			dbf.setExpandEntityReferences(true);
-					
+			dbf_singleton.setExpandEntityReferences(true);
+		}
+		
+		return( dbf_singleton );
+	}
+	
+	protected void
+	create(
+		InputStream		input_stream )
+		
+		throws SimpleXMLParserDocumentException
+	{
+		try{
+			DocumentBuilderFactory dbf = getDBF();
 
 			// Step 2: create a DocumentBuilder that satisfies the constraints
 			// specified by the DocumentBuilderFactory

@@ -27,18 +27,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+
 import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntListParameter;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 /** General Queueing options
  * @author TuxPaper
@@ -79,7 +76,6 @@ public class ConfigSectionQueue implements UISWTConfigSection
 		label = new Label(cSection, SWT.NULL);
 		Messages.setLanguageText(label, "ConfigView.label.maxdownloads");
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		final IntParameter maxDLs = new IntParameter(cSection, "max downloads");
 		maxDLs.setLayoutData(gridData);
 
@@ -88,7 +84,6 @@ public class ConfigSectionQueue implements UISWTConfigSection
 		label = new Label(cSection, SWT.NULL);
 		Messages.setLanguageText(label, "ConfigView.label.maxactivetorrents");
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		final IntParameter maxActiv = new IntParameter(cSection,
 				"max active torrents");
 		maxActiv.setLayoutData(gridData);
@@ -118,7 +113,6 @@ public class ConfigSectionQueue implements UISWTConfigSection
 		maxActiveWhenSeedingEnabled.setLayoutData(gridData);
 
 		gridData = new GridData();
-		gridData.widthHint = 40;
 
 		final IntParameter maxActivWhenSeeding = new IntParameter(
 				cMaxActiveOptionsArea, "StartStopManager_iMaxActiveTorrentsWhenSeeding");
@@ -129,7 +123,6 @@ public class ConfigSectionQueue implements UISWTConfigSection
 		label = new Label(cSection, SWT.NULL);
 		Messages.setLanguageText(label, "ConfigView.label.mindownloads");
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		final IntParameter minDLs = new IntParameter(cSection, "min downloads");
 		minDLs.setLayoutData(gridData);
 		minDLs.setMaximumValue(maxDLs.getValue() / 2);

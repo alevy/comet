@@ -23,51 +23,21 @@
 package org.gudy.azureus2.core3.peer.impl.control;
 
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.disk.DiskManager;
-import org.gudy.azureus2.core3.disk.DiskManagerCheckRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerCheckRequestListener;
-import org.gudy.azureus2.core3.disk.DiskManagerPiece;
-import org.gudy.azureus2.core3.disk.DiskManagerReadRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerWriteRequest;
-import org.gudy.azureus2.core3.disk.DiskManagerWriteRequestListener;
-import org.gudy.azureus2.core3.ipfilter.BannedIp;
-import org.gudy.azureus2.core3.ipfilter.IPFilterListener;
-import org.gudy.azureus2.core3.ipfilter.IpFilter;
-import org.gudy.azureus2.core3.ipfilter.IpFilterManager;
-import org.gudy.azureus2.core3.ipfilter.IpFilterManagerFactory;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.peer.PEPeer;
-import org.gudy.azureus2.core3.peer.PEPeerManagerAdapter;
-import org.gudy.azureus2.core3.peer.PEPeerManagerListener;
-import org.gudy.azureus2.core3.peer.PEPeerManagerStats;
-import org.gudy.azureus2.core3.peer.PEPeerSource;
-import org.gudy.azureus2.core3.peer.PEPeerStats;
-import org.gudy.azureus2.core3.peer.PEPiece;
-import org.gudy.azureus2.core3.peer.impl.PEPeerControl;
-import org.gudy.azureus2.core3.peer.impl.PEPeerManagerStatsImpl;
-import org.gudy.azureus2.core3.peer.impl.PEPeerStatsImpl;
-import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
-import org.gudy.azureus2.core3.peer.impl.PEPeerTransportFactory;
-import org.gudy.azureus2.core3.peer.impl.PEPieceImpl;
-import org.gudy.azureus2.core3.peer.impl.PEPieceWriteImpl;
+import org.gudy.azureus2.core3.disk.*;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.ipfilter.*;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.peer.*;
+import org.gudy.azureus2.core3.peer.impl.*;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityDataID;
 import org.gudy.azureus2.core3.peer.util.PeerIdentityManager;
 import org.gudy.azureus2.core3.peer.util.PeerUtils;
@@ -76,22 +46,14 @@ import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AddressUtils;
-import org.gudy.azureus2.core3.util.Average;
-import org.gudy.azureus2.core3.util.BrokenMd5Hasher;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.DirectByteBufferPool;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimeFormatter;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResultPeer;
 import org.gudy.azureus2.plugins.peers.Peer;
 import org.gudy.azureus2.plugins.peers.PeerDescriptor;
 
 import com.aelitis.azureus.core.networkmanager.LimitedRateGroup;
+import com.aelitis.azureus.core.networkmanager.NetworkManager;
+import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPConnectionManager;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
@@ -101,19 +63,16 @@ import com.aelitis.azureus.core.peermanager.control.PeerControlSchedulerFactory;
 import com.aelitis.azureus.core.peermanager.nat.PeerNATInitiator;
 import com.aelitis.azureus.core.peermanager.nat.PeerNATTraversalAdapter;
 import com.aelitis.azureus.core.peermanager.nat.PeerNATTraverser;
-import com.aelitis.azureus.core.peermanager.peerdb.PeerDatabase;
-import com.aelitis.azureus.core.peermanager.peerdb.PeerDatabaseFactory;
-import com.aelitis.azureus.core.peermanager.peerdb.PeerExchangerItem;
-import com.aelitis.azureus.core.peermanager.peerdb.PeerItem;
-import com.aelitis.azureus.core.peermanager.peerdb.PeerItemFactory;
+import com.aelitis.azureus.core.peermanager.peerdb.*;
 import com.aelitis.azureus.core.peermanager.piecepicker.PiecePicker;
 import com.aelitis.azureus.core.peermanager.piecepicker.PiecePickerFactory;
-import com.aelitis.azureus.core.peermanager.unchoker.DownloadingUnchoker;
-import com.aelitis.azureus.core.peermanager.unchoker.SeedingUnchoker;
 import com.aelitis.azureus.core.peermanager.unchoker.Unchoker;
+import com.aelitis.azureus.core.peermanager.unchoker.UnchokerFactory;
 import com.aelitis.azureus.core.peermanager.unchoker.UnchokerUtil;
 import com.aelitis.azureus.core.peermanager.uploadslots.UploadHelper;
 import com.aelitis.azureus.core.peermanager.uploadslots.UploadSlotManager;
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
 import com.aelitis.azureus.core.util.FeatureAvailability;
 import com.aelitis.azureus.core.util.bloom.BloomFilter;
 import com.aelitis.azureus.core.util.bloom.BloomFilterFactory;
@@ -233,7 +192,8 @@ DiskManagerCheckRequestListener, IPFilterListener
 	private PEPeerManagerStats        _stats;
 	//private final TRTrackerAnnouncer _tracker;
 	//  private int _maxUploads;
-	private int		_seeds, _peers,_remotesNoUdpNoLan;
+	private int		_seeds, _peers,_remotesTCPNoLan, _remotesUDPNoLan;
+	private int 	_tcpPendingConnections, _tcpConnectingConnections;
 	private long last_remote_time;
 	private long	_timeStarted;
 	private long	_timeStartedSeeding = -1;
@@ -367,16 +327,20 @@ DiskManagerCheckRequestListener, IPFilterListener
 		}
 	};
 
+	private final int	partition_id;
+	
 	public 
 	PEPeerControlImpl(
 		byte[]					_peer_id,
 		PEPeerManagerAdapter 	_adapter,
-		DiskManager 			diskManager) 
+		DiskManager 			_diskManager,
+		int						_partition_id )
 	{
 		_myPeerId		= _peer_id;
 		adapter 		= _adapter;
-
-		disk_mgr = diskManager;
+		disk_mgr 		= _diskManager;
+		partition_id	= _partition_id;
+		
 		_nbPieces =disk_mgr.getNbPieces();
 		dm_pieces =disk_mgr.getPieces();
 		
@@ -471,7 +435,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 		PeerNATTraverser.getSingleton().register( this );
 
-		PeerControlSchedulerFactory.getSingleton().register(this);
+		PeerControlSchedulerFactory.getSingleton(partition_id).register(this);
 	}
 
 	public void stopAll()
@@ -480,7 +444,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 		UploadSlotManager.getSingleton().deregisterHelper( upload_helper );
 
-		PeerControlSchedulerFactory.getSingleton().unregister(this);
+		PeerControlSchedulerFactory.getSingleton(partition_id).unregister(this);
 
 		PeerNATTraverser.getSingleton().unregister( this );
 
@@ -520,6 +484,12 @@ DiskManagerCheckRequestListener, IPFilterListener
 		is_destroyed = true;
 	}
 
+	public int
+	getPartitionID()
+	{
+		return( partition_id );
+	}
+	
 	public boolean
 	isDestroyed()
 	{
@@ -536,12 +506,24 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 	public String getDisplayName(){ return( adapter.getDisplayName()); }
 
+	public String
+	getName()
+	{
+		return( getDisplayName());
+	}
+	
 	public void
 	schedule()
 	{
-		try {
+		try{
+				// first off update the stats so they can be used by subsequent steps
+			
+			updateStats();
+
 			updateTrackerAnnounceInterval();
+			
 			doConnectionChecks();
+			
 			processPieceChecks();
 
 			// note that seeding_mode -> torrent totally downloaded, not just non-dnd files
@@ -554,8 +536,6 @@ DiskManagerCheckRequestListener, IPFilterListener
 			}
 
 			checkBadPieces();
-
-			updateStats();
 
 			checkInterested();      // see if need to recheck Interested on all peers
 
@@ -683,6 +663,12 @@ DiskManagerCheckRequestListener, IPFilterListener
 		return( result );
 	}
 
+	public int
+	getPendingPeerCount()
+	{
+		return( peer_database.getDiscoveredPeerCount());
+	}
+	
 	public PeerDescriptor[]
   	getPendingPeers()
   	{
@@ -834,7 +820,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 			for( int i=0; i < peer_transports.size(); i++ ) {
 				final PEPeerTransport peer = (PEPeerTransport)peer_transports.get( i );
 
-				PEPeerTransport	reconnected_peer = peer.reconnect(false);
+				PEPeerTransport	reconnected_peer = peer.reconnect(false, false);
 			}
 		}
 	}
@@ -935,7 +921,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 			int	http_port = peer.getHTTPPort();
 
-			if ( http_port != 0 ){
+			if ( http_port != 0 && !seeding_mode ){
 
 				adapter.addHTTPSeed( peer.getAddress(), http_port );
 			}
@@ -1697,13 +1683,13 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 			//determine proper unchoker
 			if( seeding_mode ) {
-				if( unchoker == null || !(unchoker instanceof SeedingUnchoker) ) {
-					unchoker = new SeedingUnchoker();
+				if( unchoker == null || !(unchoker.isSeedingUnchoker()) ) {
+					unchoker = UnchokerFactory.getSingleton().getUnchoker( true );
 				}
 			}
 			else {
-				if( unchoker == null || !(unchoker instanceof DownloadingUnchoker) ) {
-					unchoker = new DownloadingUnchoker();
+				if( unchoker == null || unchoker.isSeedingUnchoker()) {
+					unchoker = UnchokerFactory.getSingleton().getUnchoker( false );
 				}
 			}
 
@@ -1815,29 +1801,60 @@ DiskManagerCheckRequestListener, IPFilterListener
 		}
 
 		//calculate seeds vs peers
-		final ArrayList peer_transports = peer_transports_cow;
+		final ArrayList<PEPeer> peer_transports = peer_transports_cow;
 
+		int	new_pending_tcp_connections 	= 0;
+		int new_connecting_tcp_connections	= 0;
+		
 		int	new_seeds = 0;
 		int new_peers = 0;
-		int newTcpRemotes = 0;
-
-		for (Iterator it=peer_transports.iterator();it.hasNext();){
+		int new_tcp_incoming 	= 0;
+		int new_udp_incoming  	= 0;
+		
+		for ( Iterator<PEPeer> it=peer_transports.iterator();it.hasNext();){
+			
 			final PEPeerTransport pc = (PEPeerTransport) it.next();
-			if (pc.getPeerState() == PEPeer.TRANSFERING) {
+						
+			if ( pc.getPeerState() == PEPeer.TRANSFERING) {
 				if (pc.isSeed())
 					new_seeds++;
 				else
 					new_peers++;
 
-				if(pc.isIncoming() && pc.isTCP() && !pc.isLANLocal()) {
-					newTcpRemotes++;
+				if ( pc.isIncoming() && !pc.isLANLocal()){
+										
+					if ( pc.isTCP() ) {
+				
+						new_tcp_incoming++;
+						
+					}else{
+						
+						new_udp_incoming++;
+					}
+				}
+			}else{				
+				if ( pc.isTCP()){
+					
+					int c_state = pc.getConnectionState();
+
+					if ( c_state == PEPeerTransport.CONNECTION_PENDING ){
+						
+						new_pending_tcp_connections++;
+						
+					}else if ( c_state == PEPeerTransport.CONNECTION_CONNECTING ){
+						
+						new_connecting_tcp_connections++;
+					}
 				}
 			}
 		}
 
 		_seeds = new_seeds;
 		_peers = new_peers;
-		_remotesNoUdpNoLan = newTcpRemotes;
+		_remotesTCPNoLan = new_tcp_incoming;
+		_remotesUDPNoLan = new_udp_incoming;
+		_tcpPendingConnections = new_pending_tcp_connections;
+		_tcpConnectingConnections = new_connecting_tcp_connections;
 	}
 	/**
 	 * The way to unmark a request as being downloaded, or also 
@@ -1848,8 +1865,9 @@ DiskManagerCheckRequestListener, IPFilterListener
 	{
 		final int pieceNumber =request.getPieceNumber();  //get the piece number
 		PEPiece pe_piece = pePieces[pieceNumber];
-		if (pe_piece != null )
+		if (pe_piece != null ){
 			pe_piece.clearRequested(request.getOffset() /DiskManager.BLOCK_SIZE);
+		}
 	}
 
 
@@ -1860,8 +1878,8 @@ DiskManagerCheckRequestListener, IPFilterListener
 	}
 
 	public byte[][]
-	              getSecrets(
-	            		  int	crypto_level )
+	getSecrets(
+		int	crypto_level )
 	{
 		return( adapter.getSecrets( crypto_level ));
 	}
@@ -2248,11 +2266,16 @@ DiskManagerCheckRequestListener, IPFilterListener
 		return _seeds;
 	}
 
-	public int getNbRemoteConnectionsExcludingUDP() 
+	public int getNbRemoteTCPConnections() 
 	{
-		return _remotesNoUdpNoLan;
+		return _remotesTCPNoLan;
 	}
 
+	public int getNbRemoteUDPConnections() 
+	{
+		return _remotesUDPNoLan;
+	}
+	
 	public long getLastRemoteConnectionTime()
 	{
 		return( last_remote_time );
@@ -2328,7 +2351,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 			}else{
 
 				final long averageSpeed = _averageReceptionSpeed.getAverage();
-				long lETA = (averageSpeed == 0) ? Constants.INFINITE_AS_LONG : dataRemaining / averageSpeed;
+				long lETA = (averageSpeed == 0) ? Constants.CRAPPY_INFINITE_AS_LONG : dataRemaining / averageSpeed;
 				// stop the flickering of ETA from "Finished" to "x seconds" when we are 
 				// just about complete, but the data rate is jumpy.
 				if (lETA == 0)
@@ -2393,7 +2416,11 @@ DiskManagerCheckRequestListener, IPFilterListener
 		}
 
 		if( added ) {
-			if ( peer.isIncoming()){
+			boolean incoming = peer.isIncoming();
+			
+			_stats.haveNewConnection( incoming );
+			
+			if ( incoming ){
 				long	connect_time = SystemTime.getCurrentTime();
 
 				if ( connect_time > last_remote_time ){
@@ -2523,6 +2550,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 		boolean	connection_found = false;
 		
 		boolean tcpReconnect = false;
+		boolean ipv6reconnect = false;
 		
 		try{
 			peer_transports_mon.enter();
@@ -2530,15 +2558,29 @@ DiskManagerCheckRequestListener, IPFilterListener
 			int udpPort = peer.getUDPListenPort();
 			
 			boolean canTryUDP = UDPNetworkManager.UDP_OUTGOING_ENABLED && peer.getUDPListenPort() > 0;
+			boolean canTryIpv6 = NetworkAdmin.getSingleton().hasIPV6Potential(true) && peer.getAlternativeIPv6() != null;
 
 			if ( is_running ){
 
 				PeerItem peer_item = peer.getPeerItemIdentity();
 				PeerItem self_item = peer_database.getSelfPeer();
+				
 
 				if ( self_item == null || !self_item.equals( peer_item )){
 
 					String	ip = peer.getIp();
+					boolean wasIPv6;
+					try
+					{
+						wasIPv6 = InetAddress.getByName(ip) instanceof Inet6Address;
+					} catch (UnknownHostException e)
+					{
+						wasIPv6 = false;
+						// something is fishy about the old address, don't try to reconnect with v6
+						canTryIpv6 = false;
+					}
+					
+					//System.out.println("netfail="+network_failed+", connfail="+connect_failed+", can6="+canTryIpv6+", was6="+wasIPv6);
 					
 					String	key = ip + ":" + udpPort;
 
@@ -2551,7 +2593,11 @@ DiskManagerCheckRequestListener, IPFilterListener
 							if ( canTryUDP && udp_fallback_for_failed_connection ){
 								
 								pending_nat_traversals.put(key, peer);
-							}					
+							} else if (canTryIpv6 && !wasIPv6)
+							{
+								tcpReconnect = true;
+								ipv6reconnect = true;
+							}
 						}else if ( 	canTryUDP && 
 									udp_fallback_for_dropped_connection && 
 									network_failed && 
@@ -2615,7 +2661,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 		}
 		
 		if(tcpReconnect)
-			peer.reconnect(false);
+			peer.reconnect(false, ipv6reconnect);
 	}
 
 
@@ -3535,7 +3581,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 		if(selectedPeer.getUploadHint() == 0) {
 			//Set to infinite
-			selectedPeer.setUploadHint(Constants.INFINITY_AS_INT);
+			selectedPeer.setUploadHint(Constants.CRAPPY_INFINITY_AS_INT);
 		}
 
 		//Find a piece
@@ -3645,7 +3691,85 @@ DiskManagerCheckRequestListener, IPFilterListener
 		}
 	}
 
-
+	public int
+	getConnectTimeout(
+		int		ct_def )
+	{
+		if ( ct_def <= 0 ){
+			
+			return( ct_def );
+		}
+		
+		if ( seeding_mode ){
+			
+				// seeding mode connections are already de-prioritised so nothing to do
+			
+			return( ct_def );
+		}
+		
+		int max_sim_con = TCPConnectionManager.MAX_SIMULTANIOUS_CONNECT_ATTEMPTS;
+		
+			// high, let's not mess with things
+		
+		if ( max_sim_con >= 50 ){
+			
+			return( ct_def );
+		}
+		
+			// we have somewhat limited outbound connection limits, see if it makes sense to
+			// reduce the connect timeout to prevent connection stall due to a bunch getting
+			// stuck 'connecting' for a long time and stalling us
+		
+		int	connected			= _seeds + _peers;
+		int	connecting			= _tcpConnectingConnections;
+		int queued				= _tcpPendingConnections;
+		
+		int	not_yet_connected 	= peer_database.getDiscoveredPeerCount();
+		
+		int	max = getMaxConnections();
+		
+		int	potential = connecting + queued + not_yet_connected;
+		
+		/*
+		System.out.println( 
+				"connected=" + connected + 
+				", queued=" + queued +
+				", connecting=" + connecting +
+				", queued=" + queued +
+				", not_yet=" + not_yet_connected +
+				", max=" + max );
+		*/
+		
+			// not many peers -> don't amend
+		
+		int	lower_limit = max/4;
+		
+		if ( potential <= lower_limit || max == lower_limit ){
+		
+			return( ct_def );
+		}
+		
+			// if we got lots of potential, use minimum delay
+		
+		final int MIN_CT = 7500;
+		
+		if ( potential >= max ){
+			
+			return( MIN_CT );
+		}
+	
+			// scale between MIN and ct_def
+		
+		int pos 	= potential - lower_limit;
+		int	scale 	= max - lower_limit;
+			
+		int res =  MIN_CT + ( ct_def - MIN_CT )*(scale - pos )/scale;
+		
+		// System.out.println( "scaled->" + res );
+		
+		return( res );
+	}
+	
 	private void doConnectionChecks() 
 	{
 		//every 1 second
@@ -3835,6 +3959,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 		if ( mainloop_loop_count % MAINLOOP_THIRTY_SECOND_INTERVAL == 0 ) {
 			//if we're at our connection limit, time out the least-useful
 			//one so we can establish a possibly-better new connection
+			optimisticDisconnectCount = 0;
 			if( getMaxNewConnectionsAllowed() == 0 ) {  //we've reached limit        
 				doOptimisticDisconnect( false, false );
 			}
@@ -3859,7 +3984,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 		nextPEXSweepIndex = goal;
 	}
-
+	
 	private void
 	doUDPConnectionChecks(
 		int		number )
@@ -3955,7 +4080,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 							{
 								complete();
 								
-								PEPeerTransport newTransport = peer.reconnect(true);
+								PEPeerTransport newTransport = peer.reconnect(true, false);
 								
 								if( newTransport != null ){
 									
@@ -4001,15 +4126,19 @@ DiskManagerCheckRequestListener, IPFilterListener
 					PEPeerTransport	peer_item = (PEPeerTransport)new_connections.get(i);
 
 						// don't call when holding monitor - deadlock potential
-					peer_item.reconnect(true);
+					peer_item.reconnect(true, false);
 
 				}
 			}
 		}
 	}
+	
+	// counter is reset every 30s by doConnectionChecks()
+	private int optimisticDisconnectCount = 0;
 
 	public boolean doOptimisticDisconnect( boolean	pending_lan_local_peer, boolean force )
 	{
+		
 		final ArrayList peer_transports = peer_transports_cow;
 		PEPeerTransport max_transport = null;
 		PEPeerTransport max_seed_transport		= null;
@@ -4018,6 +4147,9 @@ DiskManagerCheckRequestListener, IPFilterListener
 		long max_time = 0;
 		long max_seed_time 		= 0;
 		long max_non_lan_time	= 0;
+		
+
+		List<Long> activeConnectionTimes = new ArrayList<Long>(peer_transports.size());
 
 		int	lan_peer_count	= 0;
 
@@ -4025,15 +4157,19 @@ DiskManagerCheckRequestListener, IPFilterListener
 			final PEPeerTransport peer = (PEPeerTransport)peer_transports.get( i );
 
 			if( peer.getConnectionState() == PEPeerTransport.CONNECTION_FULLY_ESTABLISHED ) {
-				final long timeSinceSentData =peer.getTimeSinceLastDataMessageSent();
 
+				final long timeSinceConnection =peer.getTimeSinceConnectionEstablished();
+				final long timeSinceSentData =peer.getTimeSinceLastDataMessageSent();				
+				
+				activeConnectionTimes.add(timeSinceConnection);
+				
 				long peerTestTime = 0;
 				if( seeding_mode){
 					if( timeSinceSentData != -1 )
 						peerTestTime = timeSinceSentData;  //ensure we've sent them at least one data message to qualify for drop
 				}else{
 					final long timeSinceGoodData =peer.getTimeSinceGoodDataReceived();
-					final long timeSinceConnection =peer.getTimeSinceConnectionEstablished();
+					
 
 					if( timeSinceGoodData == -1 ) 
 						peerTestTime +=timeSinceConnection;   //never received
@@ -4081,27 +4217,29 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 					PEPeerStats pestats = peer.getStats();
 					// everybody has deserverd a chance of half an MB transferred data
-					if(pestats.getTotalDataBytesReceived()+pestats.getTotalDataBytesSent() < 1024*512 ) {
+					if(pestats.getTotalDataBytesReceived()+pestats.getTotalDataBytesSent() > 1024*512 ) {
+						boolean goodPeer = true;
+						
 						// we don't like snubbed peers with a negative gain
 						if( peer.isSnubbed() && pestats.getTotalDataBytesReceived() < pestats.getTotalDataBytesSent() ) {
 							peerTestTime *= 1.5;
+							goodPeer = false;
 						}
 						// we don't like peers with a very bad ratio (10:1)
 						if( pestats.getTotalDataBytesSent() > pestats.getTotalDataBytesReceived() * 10 ) {
 							peerTestTime *= 2;
+							goodPeer = false;
 						}
 						// modify based on discarded : overall downloaded ratio
-						if( pestats.getTotalDataBytesReceived() > 0  ) {
+						if( pestats.getTotalDataBytesReceived() > 0 && pestats.getTotalBytesDiscarded() > 0 ) {
 							peerTestTime = (long)(peerTestTime *( 1.0+((double)pestats.getTotalBytesDiscarded()/(double)pestats.getTotalDataBytesReceived())));
 						}
+						
+						// prefer peers that do some work, let the churn happen with peers that did nothing
+						if(goodPeer)
+							peerTestTime *= 0.7;							
 					}
 				}
-
-
-
-
-
-
 
 
 				if( peerTestTime > max_time ) {
@@ -4118,7 +4256,24 @@ DiskManagerCheckRequestListener, IPFilterListener
 				}
 			}
 		}
-
+		
+		long medianConnectionTime;
+		
+		if ( activeConnectionTimes.size() > 0 ){
+			Collections.sort(activeConnectionTimes);
+			medianConnectionTime = activeConnectionTimes.get(activeConnectionTimes.size()/2);
+		}else{
+			medianConnectionTime = 0;
+		}
+		
+		// allow 1 disconnect every 30s per 30 peers; 2 at least every 30s
+		int maxOptimistics = Math.max(getMaxConnections()/30,2);
+		
+		// avoid unnecessary churn, e.g. 
+		if(!pending_lan_local_peer && !force && optimisticDisconnectCount >= maxOptimistics && medianConnectionTime < 5*60*1000)
+			return false;
+		
+		
 		// don't boot lan peers if we can help it (unless we have a few of them)
 
 		if ( max_transport != null ){
@@ -4137,11 +4292,13 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 			if( getMaxSeedConnections() > 0 && max_seed_transport != null && max_time > 5*60*1000 ) {
 				closeAndRemovePeer( max_seed_transport, "timed out by doOptimisticDisconnect()", true );
+				optimisticDisconnectCount++;
 				return true;
 			}
 
 			if( max_transport != null && max_time > 5 *60*1000 ) {  //ensure a 5 min minimum test time
 				closeAndRemovePeer( max_transport, "timed out by doOptimisticDisconnect()", true );
+				optimisticDisconnectCount++;
 				return true;
 			}
 
@@ -4149,6 +4306,7 @@ DiskManagerCheckRequestListener, IPFilterListener
 
 			if ( pending_lan_local_peer && lan_peer_count < LAN_PEER_MAX ){
 				closeAndRemovePeer( max_transport, "making space for LAN peer in doOptimisticDisconnect()", true );
+				optimisticDisconnectCount++;
 				return true;
 			}
 			
@@ -4448,6 +4606,43 @@ DiskManagerCheckRequestListener, IPFilterListener
 				Debug.printStackTrace(e);
 			}
 		}
+	}
+	
+	public TrackerPeerSource
+	getTrackerPeerSource()
+	{
+		return(
+			new TrackerPeerSourceAdapter()
+			{
+				public int
+				getType()
+				{
+					return( TP_PEX );
+				}
+				
+				public int
+				getStatus()
+				{
+					return( isPeerExchangeEnabled()?ST_ONLINE:ST_DISABLED );
+				}
+				
+				public String
+				getName()
+				{
+					return( 
+						MessageText.getString( "tps.pex.details", 
+							new String[]{ 
+								String.valueOf( peer_transports_cow.size()), 
+								String.valueOf( peer_database.getExchangedPeerCount()),
+								String.valueOf( peer_database.getDiscoveredPeerCount())}));
+				}
+				
+				public int
+				getPeers()
+				{
+					return( peer_database.getExchangedPeersUsed());
+				}
+			});
 	}
 	
 	public void

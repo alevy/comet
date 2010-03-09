@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.regex.PatternSyntaxException;
 
-import org.gudy.azureus2.plugins.download.Download;
 
 public interface 
 AZInstanceManager 
@@ -44,12 +43,16 @@ AZInstanceManager
 	public AZInstance
 	getMyInstance();
 	
+	public int
+	getOtherInstanceCount();
+	
 	public AZInstance[]
 	getOtherInstances();
 	
 	public AZInstanceTracked[]
 	track(
-		Download		torrent );
+		byte[]								hash,
+		AZInstanceTracked.TrackTarget		target );
 	
 	public InetSocketAddress
 	getLANAddress(

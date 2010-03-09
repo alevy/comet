@@ -32,13 +32,8 @@ import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.global.GlobalManagerListener;
 import org.gudy.azureus2.core3.util.Debug;
 
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.networkmanager.impl.IncomingConnectionManager;
-import com.aelitis.azureus.core.networkmanager.impl.RateControlledEntity;
-import com.aelitis.azureus.core.networkmanager.impl.ReadController;
-import com.aelitis.azureus.core.networkmanager.impl.TransferProcessor;
-import com.aelitis.azureus.core.networkmanager.impl.TransportHelper;
-import com.aelitis.azureus.core.networkmanager.impl.WriteController;
+import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.networkmanager.impl.*;
 import com.aelitis.azureus.core.networkmanager.impl.http.HTTPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
@@ -320,10 +315,10 @@ public class NetworkManager {
 	  }
   }
   
-  public void initialize() {
+  public void initialize(AzureusCore core) {
 	HTTPNetworkManager.getSingleton();  
 	   
-    AzureusCoreFactory.getSingleton().getGlobalManager().addListener( new GlobalManagerListener() {
+    core.getGlobalManager().addListener( new GlobalManagerListener() {
       public void downloadManagerAdded( DownloadManager dm ){}
       public void downloadManagerRemoved( DownloadManager dm ){}
       public void destroyInitiated(){}
@@ -408,18 +403,16 @@ public class NetworkManager {
    * Add an upload entity for write processing.
    * @param entity to add
    */
-  public void addWriteEntity( RateControlledEntity entity ) {
-	  if ( write_controllers.size() == 1 ){
+  public void addWriteEntity( RateControlledEntity entity, int partition_id ) {
+	  if ( write_controllers.size() == 1 || partition_id < 0 ){
+		  
 		  write_controllers.get(0).addWriteEntity(entity);
+		  
 	  }else{
-		  WriteController best = null;
-		  for (WriteController write_controller: write_controllers ){
-			  if ( best == null || write_controller.getEntityCount() < best.getEntityCount()){
-				  
-				  best = write_controller;
-			  }
-		  }
-		  best.addWriteEntity( entity );
+		  
+		  WriteController controller = write_controllers.get((partition_id%(write_controllers.size()-1))+1 );
+
+		  controller.addWriteEntity( entity );
 	  }
   }
   
@@ -443,18 +436,16 @@ public class NetworkManager {
    * Add a download entity for read processing.
    * @param entity to add
    */
-  public void addReadEntity( RateControlledEntity entity ) {
-	  if ( read_controllers.size() == 1 ){
+  public void addReadEntity( RateControlledEntity entity, int partition_id ) {
+	  if ( read_controllers.size() == 1 || partition_id < 0 ){
+		  
 		  read_controllers.get(0).addReadEntity(entity);
+		  
 	  }else{
-		  ReadController best = null;
-		  for (ReadController read_controller: read_controllers ){
-			  if ( best == null || read_controller.getEntityCount() < best.getEntityCount()){
-				  
-				  best = read_controller;
-			  }
-		  }
-		  best.addReadEntity( entity );
+		  
+		  ReadController controller = read_controllers.get((partition_id%(read_controllers.size()-1))+1 );
+
+		  controller.addReadEntity( entity );
 	  }
   }
   
@@ -521,14 +512,14 @@ public class NetworkManager {
    * Upgrade the given connection to high-speed network transfer handling.
    * @param peer_connection to upgrade
    */
-  public void upgradeTransferProcessing( NetworkConnectionBase peer_connection ) {
+  public void upgradeTransferProcessing( NetworkConnectionBase peer_connection, int partition_id ) {
 	  if( lan_upload_processor.isRegistered( peer_connection )) {
-  		lan_upload_processor.upgradePeerConnection( peer_connection );
-  		lan_download_processor.upgradePeerConnection( peer_connection );
+  		lan_upload_processor.upgradePeerConnection( peer_connection, partition_id );
+  		lan_download_processor.upgradePeerConnection( peer_connection, partition_id );
   	}
   	else {
-  		upload_processor.upgradePeerConnection( peer_connection );
-  		download_processor.upgradePeerConnection( peer_connection );
+  		upload_processor.upgradePeerConnection( peer_connection, partition_id );
+  		download_processor.upgradePeerConnection( peer_connection, partition_id );
   	}
   }
 

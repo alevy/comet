@@ -5,8 +5,9 @@ import java.io.PrintStream;
 import org.gudy.azureus2.core3.util.HashWrapper;
 
 import com.aelitis.azureus.core.dht.db.DHTDB;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
+
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 /**
  * @author levya

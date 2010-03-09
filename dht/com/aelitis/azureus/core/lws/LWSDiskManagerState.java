@@ -40,6 +40,8 @@ public class
 LWSDiskManagerState
 	implements DownloadManagerState
 {
+	private long flags = FLAG_LOW_NOISE | FLAG_DISABLE_AUTO_FILE_MOVE;
+	
 	protected
 	LWSDiskManagerState()
 	{
@@ -115,14 +117,22 @@ LWSDiskManagerState
 		long		flag,
 		boolean		set )
 	{
+		flags |= flag;
 	}
 	
 	public boolean
 	getFlag(
 		long		flag )
 	{
-		return( false );
+		return(( flags & flag ) != 0 );
 	}
+	
+	public long 
+	getFlags() 
+	{
+		return( flags );
+	}
+	
 	public boolean 
 	isOurContent() 
 	{

@@ -37,10 +37,10 @@ import com.aelitis.azureus.core.networkmanager.VirtualServerChannelSelector;
 import com.aelitis.azureus.core.networkmanager.VirtualServerChannelSelectorFactory;
 import com.aelitis.azureus.core.networkmanager.VirtualChannelSelector.VirtualSelectorListener;
 import com.aelitis.azureus.core.networkmanager.impl.ProtocolDecoder;
-import com.aelitis.azureus.core.networkmanager.impl.ProtocolDecoderAdapter;
 import com.aelitis.azureus.core.networkmanager.impl.ProtocolDecoderInitial;
-import com.aelitis.azureus.core.networkmanager.impl.TransportHelper;
+import com.aelitis.azureus.core.networkmanager.impl.ProtocolDecoderAdapter;
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilter;
+import com.aelitis.azureus.core.networkmanager.impl.TransportHelper;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPTransportHelper;
 
@@ -404,7 +404,7 @@ PHETester
 	main(
 		String[]	args )
 	{
-		AEDiagnostics.startup();
+		AEDiagnostics.startup( false );
 		
 		// OUTGOING_PLAIN	= true;
 		

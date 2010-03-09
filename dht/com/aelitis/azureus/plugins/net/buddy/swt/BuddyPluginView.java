@@ -27,14 +27,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DisplayFormatters;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.core3.util.TimerEventPeriodic;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
 import org.gudy.azureus2.ui.swt.plugins.UISWTStatusEntry;
@@ -209,13 +202,13 @@ BuddyPluginView
 			
 			status.setImageEnabled( true );
 			
-			status.setVisible( tracker.isEnabled());
-			label.setVisible( tracker.isEnabled());
-		
 			tracker.addListener( this );
 			
 			has_buddies = plugin.getBuddies().size() > 0;
 			
+			status.setVisible( tracker.isEnabled() && has_buddies);
+			label.setVisible( tracker.isEnabled() && has_buddies);
+		
 			/*
 			MenuItem mi = plugin.getPluginInterface().getUIManager().getMenuManager().addMenuItem(
 									status.getMenuContext(),
@@ -351,7 +344,7 @@ BuddyPluginView
 		protected synchronized void
 		updateStatus()
 		{
-			if ( tracker.isEnabled()){
+			if ( tracker.isEnabled() && has_buddies ){
 				
 				status.setVisible( true );
 				label.setVisible( true );

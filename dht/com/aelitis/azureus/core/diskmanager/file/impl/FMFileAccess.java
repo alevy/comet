@@ -31,6 +31,11 @@ import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
 public interface 
 FMFileAccess 
 {
+	public void
+	aboutToOpen()
+	
+		throws FMFileManagerException;
+		
 	public long
 	getLength(
 		RandomAccessFile		raf )
@@ -62,6 +67,14 @@ FMFileAccess
 	
 	public void
 	flush()
+	
+		throws FMFileManagerException;
+	
+	public void
+	setPieceComplete(
+		RandomAccessFile	raf,
+		int					piece_number,
+		DirectByteBuffer	piece_data )
 	
 		throws FMFileManagerException;
 	

@@ -20,11 +20,8 @@
 
 package org.gudy.azureus2.ui.swt.views.table;
 
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
+
 import org.gudy.azureus2.ui.swt.components.BufferedTableItem;
 
 /**
@@ -79,6 +76,8 @@ public interface TableCellSWT extends com.aelitis.azureus.ui.common.table.TableC
 
 	public Rectangle getBounds();
 
+	public Rectangle getBoundsOnDisplay();
+
 	public boolean setGraphic(Image img);
 
 	public Image getGraphicSWT();
@@ -118,4 +117,16 @@ public interface TableCellSWT extends com.aelitis.azureus.ui.common.table.TableC
 	 * @since 3.1.1.1
 	 */
 	void setTextAlpha(int textOpacity);
+	
+		/**
+		 * Sets tooltip to be shown in absence of an explicit one
+		 * @param str
+		 */
+	
+	public void
+	setDefaultToolTip(
+		Object	tt );
+	
+	public Object
+	getDefaultToolTip();
 }

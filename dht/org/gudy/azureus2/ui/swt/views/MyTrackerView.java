@@ -33,14 +33,14 @@ import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.category.Category;
 import org.gudy.azureus2.core3.category.CategoryManager;
 import org.gudy.azureus2.core3.category.CategoryManagerListener;
 import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.logging.LogAlert;
+import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.tracker.host.TRHostListener;
 import org.gudy.azureus2.core3.tracker.host.TRHostTorrent;
@@ -49,50 +49,29 @@ import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AsyncController;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
-import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
-import org.gudy.azureus2.ui.swt.Alerts;
-import org.gudy.azureus2.ui.swt.CategoryAdderWindow;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.*;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
+import org.gudy.azureus2.ui.swt.shells.CoreWaiterSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableRowSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWTMenuFillListener;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewSWTImpl;
 import org.gudy.azureus2.ui.swt.views.table.impl.TableViewTab;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AnnounceCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AverageBytesInItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.AverageBytesOutItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.BadNATCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.CategoryItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.CompletedCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.DateAddedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.DownloadedItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.LeftItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.NameItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.PassiveItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.PeerCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.ScrapeCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.SeedCountItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.StatusItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TotalBytesInItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TotalBytesOutItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.TrackerItem;
-import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.UploadedItem;
+import org.gudy.azureus2.ui.swt.views.tableitems.mytracker.*;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
-import com.aelitis.azureus.ui.common.table.TableColumnCore;
-import com.aelitis.azureus.ui.common.table.TableGroupRowRunner;
-import com.aelitis.azureus.ui.common.table.TableLifeCycleListener;
-import com.aelitis.azureus.ui.common.table.TableRefreshListener;
-import com.aelitis.azureus.ui.common.table.TableRowCore;
-import com.aelitis.azureus.ui.common.table.TableSelectionListener;
+import com.aelitis.azureus.ui.common.table.*;
+
+import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.plugins.tracker.TrackerTorrent;
+import org.gudy.azureus2.plugins.ui.tables.TableManager;
+
+import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
 
 
 /**
@@ -112,17 +91,12 @@ public class MyTrackerView
 	protected static final TorrentAttribute	category_attribute = 
 		TorrentManagerImpl.getSingleton().getAttribute( TorrentAttribute.TA_CATEGORY );
 
-	private AzureusCore	azureus_core;
-
 	private Menu			menuCategory;
 
-	private TableViewSWT tv;
+	private TableViewSWT<TRHostTorrent> tv;
 
 	public MyTrackerView() {
-		this(AzureusCoreFactory.getSingleton());
-	}
-
-	public MyTrackerView(AzureusCore _azureus_core) {
+		super("MyTrackerView");
 		if (basicItems == null) {
 			basicItems = new TableColumnCore[] {
 				new NameItem(),
@@ -147,43 +121,57 @@ public class MyTrackerView
 			};
 		}
 
-		tv = new TableViewSWTImpl(TableManager.TABLE_MYTRACKER, "MyTrackerView",
-				basicItems, "name", SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER
-						| SWT.VIRTUAL);
-		setTableView(tv);
-		azureus_core = _azureus_core;
+		tv = new TableViewSWTImpl<TRHostTorrent>(TrackerTorrent.class,
+				TableManager.TABLE_MYTRACKER, getPropertiesPrefix(), basicItems, "name",
+				SWT.MULTI | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
 		tv.addLifeCycleListener(this);
 		tv.addSelectionListener(this, false);
 		tv.addMenuFillListener(this);
 		tv.addRefreshListener(this, false);
 	}
-	
+
+  public TableViewSWT initYourTableView() {
+  	return tv;
+  }
+
 	// @see com.aelitis.azureus.ui.common.table.TableLifeCycleListener#tableViewInitialized()
 	public void tableViewInitialized() {
-		azureus_core.getTrackerHost().addListener( this );
+		AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				core.getTrackerHost().addListener(MyTrackerView.this);
+			}
+		});
 	}
 	
 	// @see com.aelitis.azureus.ui.common.table.TableLifeCycleListener#tableViewDestroyed()
 	public void tableViewDestroyed() {
-  	azureus_core.getTrackerHost().removeListener( this );
+		try {
+			AzureusCoreFactory.getSingleton().getTrackerHost().removeListener( this );
+		} catch (Exception ignore) {
+		}
 	}
 
 	// @see com.aelitis.azureus.ui.common.table.TableSelectionListener#defaultSelected(com.aelitis.azureus.ui.common.table.TableRowCore[])
 	public void defaultSelected(TableRowCore[] rows, int stateMask) {
-		TRHostTorrent torrent = (TRHostTorrent) tv.getFirstSelectedDataSource();
+		final TRHostTorrent torrent = tv.getFirstSelectedDataSource();
 		if (torrent == null)
 			return;
-		DownloadManager dm = azureus_core.getGlobalManager().getDownloadManager(
-				torrent.getTorrent());
-		if (dm != null) {
-			UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
-			if (uiFunctions != null) {
-				uiFunctions.openView(UIFunctions.VIEW_DM_DETAILS, dm);
+		CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+		
+			public void azureusCoreRunning(AzureusCore core) {
+				DownloadManager dm = core.getGlobalManager().getDownloadManager(
+						torrent.getTorrent());
+				if (dm != null) {
+					UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
+					if (uiFunctions != null) {
+						uiFunctions.openView(UIFunctions.VIEW_DM_DETAILS, dm);
+					}
+				}
 			}
-		}
+		});
 	}
     
-  public void fillMenu(final Menu menu) {	  
+  public void fillMenu(String sColumnName, final Menu menu) {	  
 	    menuCategory = new Menu(getComposite().getShell(), SWT.DROP_DOWN);
 	    final MenuItem itemCategory = new MenuItem(menu, SWT.CASCADE);
 	    Messages.setLanguageText(itemCategory, "MyTorrentsView.menu.setCategory"); //$NON-NLS-1$
@@ -206,7 +194,7 @@ public class MyTrackerView
 	   Messages.setLanguageText(itemRemove, "MyTorrentsView.menu.remove"); //$NON-NLS-1$
 	   Utils.setMenuItemImage(itemRemove, "delete");
 
-	   Object[] hostTorrents = tv.getSelectedDataSources();
+	   Object[] hostTorrents = tv.getSelectedDataSources().toArray();
 
 	   itemStart.setEnabled(false);
 	   itemStop.setEnabled(false);
@@ -365,7 +353,7 @@ public class MyTrackerView
   
   private void computePossibleActions() {
     start = stop = remove = false;
-    Object[] hostTorrents = tv.getSelectedDataSources();
+    Object[] hostTorrents = tv.getSelectedDataSources().toArray();
     if (hostTorrents.length > 0) {
       remove = true;
       for (int i = 0; i < hostTorrents.length; i++) {
@@ -449,9 +437,8 @@ public class MyTrackerView
       		
       	}catch( TRHostTorrentRemovalVetoException f ){
       		
-      		Alerts.showErrorMessageBoxUsingResourceString(
-					new Object[] { torrent },
-      				"globalmanager.download.remove.veto", f, 0 );
+  				Logger.log(new LogAlert(torrent, false,
+  						"{globalmanager.download.remove.veto}", f));
       	}
       }
     });
@@ -551,14 +538,23 @@ public class MyTrackerView
   }
   
   private void assignSelectedToCategory(final Category category) {
+		CoreWaiterSWT.waitForCoreRunning(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(final AzureusCore core) {
+				assignSelectedToCategory(core, category);
+			}
+		});
+  }
+  
+  private void assignSelectedToCategory(final AzureusCore core,
+			final Category category) {
     tv.runForSelectedRows(new TableGroupRowRunner() {
       public void run(TableRowCore row) {
       	
 	    TRHostTorrent	tr_torrent = (TRHostTorrent)row.getDataSource(true);
 		
-		TOTorrent	torrent = tr_torrent.getTorrent();
+		final TOTorrent	torrent = tr_torrent.getTorrent();
 		
-		DownloadManager dm = azureus_core.getGlobalManager().getDownloadManager( torrent );
+		DownloadManager dm = core.getGlobalManager().getDownloadManager( torrent );
 
 		if ( dm != null ){
 			

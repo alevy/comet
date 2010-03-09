@@ -22,17 +22,15 @@
 package org.gudy.azureus2.core3.util.test;
 
 
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Random;
+import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.SHA1;
+import java.security.MessageDigest;
 
 /**
  * 

@@ -21,61 +21,22 @@
  
 package org.gudy.azureus2.pluginsimpl.local;
 
+import java.util.*;
 import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.net.URL; 
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DelayedEvent;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfig;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginEventListener;
-import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginListener;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.PluginState;
-import org.gudy.azureus2.plugins.PluginView;
-import org.gudy.azureus2.plugins.clientid.ClientIDManager;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
-import org.gudy.azureus2.plugins.dht.mainline.MainlineDHTManager;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadManager;
-import org.gudy.azureus2.plugins.ipc.IPCInterface;
-import org.gudy.azureus2.plugins.ipfilter.IPFilter;
+import org.gudy.azureus2.plugins.*;
+import org.gudy.azureus2.plugins.dht.mainline.*;
 import org.gudy.azureus2.plugins.logging.Logger;
 import org.gudy.azureus2.plugins.messaging.MessageManager;
 import org.gudy.azureus2.plugins.network.ConnectionManager;
-import org.gudy.azureus2.plugins.platform.PlatformManager;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareManager;
-import org.gudy.azureus2.plugins.torrent.TorrentManager;
-import org.gudy.azureus2.plugins.tracker.Tracker;
-import org.gudy.azureus2.plugins.ui.UIManager;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.plugins.ui.config.Parameter;
-import org.gudy.azureus2.plugins.ui.config.PluginConfigUIFactory;
-import org.gudy.azureus2.plugins.update.UpdateManager;
-import org.gudy.azureus2.plugins.utils.ShortCuts;
-import org.gudy.azureus2.plugins.utils.Utilities;
+import org.gudy.azureus2.pluginsimpl.local.deprecate.PluginDeprecation;
+import org.gudy.azureus2.pluginsimpl.local.dht.mainline.*;
 import org.gudy.azureus2.pluginsimpl.local.clientid.ClientIDManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.ddb.DDBaseImpl;
-import org.gudy.azureus2.pluginsimpl.local.deprecate.PluginDeprecation;
-import org.gudy.azureus2.pluginsimpl.local.dht.mainline.MainlineDHTManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
+import org.gudy.azureus2.pluginsimpl.local.installer.PluginInstallerImpl;
 import org.gudy.azureus2.pluginsimpl.local.ipc.IPCInterfaceImpl;
 import org.gudy.azureus2.pluginsimpl.local.ipfilter.IPFilterImpl;
 import org.gudy.azureus2.pluginsimpl.local.logging.LoggerImpl;
@@ -83,14 +44,31 @@ import org.gudy.azureus2.pluginsimpl.local.messaging.MessageManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.network.ConnectionManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.sharing.ShareManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentManagerImpl;
-import org.gudy.azureus2.pluginsimpl.local.tracker.TrackerImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
+import org.gudy.azureus2.pluginsimpl.local.tracker.*;
+import org.gudy.azureus2.pluginsimpl.local.ui.*;
 import org.gudy.azureus2.pluginsimpl.local.ui.config.ConfigSectionRepository;
 import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterRepository;
 import org.gudy.azureus2.pluginsimpl.local.ui.config.PluginConfigUIFactoryImpl;
-import org.gudy.azureus2.pluginsimpl.local.update.UpdateManagerImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.ShortCutsImpl;
-import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
+import org.gudy.azureus2.pluginsimpl.local.utils.*;
+import org.gudy.azureus2.pluginsimpl.local.update.*;
+import org.gudy.azureus2.plugins.ipc.IPCInterface;
+import org.gudy.azureus2.plugins.ipfilter.IPFilter;
+import org.gudy.azureus2.plugins.tracker.Tracker;
+import org.gudy.azureus2.plugins.ui.config.Parameter;
+import org.gudy.azureus2.plugins.ui.config.PluginConfigUIFactory;
+import org.gudy.azureus2.plugins.platform.PlatformManager;
+import org.gudy.azureus2.plugins.sharing.*;
+import org.gudy.azureus2.plugins.clientid.ClientIDManager;
+import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.plugins.ui.*;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.plugins.utils.*;
+import org.gudy.azureus2.plugins.update.*;
+
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.logging.*;
 
 import com.aelitis.azureus.core.AzureusCoreComponent;
 import com.aelitis.azureus.core.util.CopyOnWriteList;
@@ -553,7 +531,11 @@ PluginInterfaceImpl
 		  init_complete_fired_set.add( listener );
 	  }
 	  
-	  listener.initializationComplete();
+	  try {
+	  	listener.initializationComplete();
+	  } catch (Exception e) {
+	  	Debug.out(e);
+	  }
   }
   
   protected void

@@ -23,9 +23,8 @@ package org.gudy.azureus2.plugins.peers;
 
 import java.util.Map;
 
-import org.gudy.azureus2.plugins.disk.DiskManager;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadException;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.plugins.disk.*;
 import org.gudy.azureus2.plugins.utils.PooledByteBuffer;
 
 /**

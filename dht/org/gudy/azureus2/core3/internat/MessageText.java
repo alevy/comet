@@ -24,23 +24,7 @@ import java.io.FilenameFilter;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.AccessController;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -54,16 +38,17 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.SystemProperties;
 
-import sun.security.action.GetPropertyAction;
 
 /**
  * @author Arbeiten
  * 
  * @author CrazyAlchemist Added keyExistsForDefaultLocale
  */
+@SuppressWarnings("restriction")
 public class MessageText {
 
-  public static final Locale LOCALE_ENGLISH = new Locale("en", "");
+  public static final Locale LOCALE_ENGLISH = Constants.LOCALE_ENGLISH;
+  
   public static final Locale LOCALE_DEFAULT = new Locale("", ""); // == english
   private static Locale LOCALE_CURRENT = LOCALE_DEFAULT;
   private static final String BUNDLE_NAME = "org.gudy.azureus2.internat.MessagesBundle"; //$NON-NLS-1$
@@ -80,7 +65,7 @@ public class MessageText {
   
   // preload default language w/o plugins
   static{
-	  setResourceBundle( new IntegratedResourceBundle( getResourceBundle( BUNDLE_NAME, LOCALE_DEFAULT, MessageText.class.getClassLoader()), pluginLocalizationPaths ));
+	  setResourceBundle( new IntegratedResourceBundle( getResourceBundle( BUNDLE_NAME, LOCALE_DEFAULT, MessageText.class.getClassLoader()), pluginLocalizationPaths, 4000 ));
   }
 
   	// grab a reference to the default bundle
@@ -332,11 +317,15 @@ public class MessageText {
 
 		String value = RESOURCE_BUNDLE.getString(key);
 
+		return expandValue(value);
+	}
+  
+  public static String expandValue(String value) {
 		// Replace {*} with a lookup of *
 		if (value != null && value.indexOf('}') > 0) {
 			Matcher matcher = PAT_PARAM_ALPHA.matcher(value);
 			while (matcher.find()) {
-				key = matcher.group(1);
+				String key = matcher.group(1);
 		    try {
 		    	String text = getResourceBundleString(key);
 					if (text != null) {
@@ -347,9 +336,8 @@ public class MessageText {
 		    }
 			}
 		}
-
 		return value;
-	}
+  }
 
   /**
    * Gets the localization key suffix for the running platform
@@ -484,7 +472,7 @@ public class MessageText {
     return LOCALE_ENGLISH.equals(locale) ? LOCALE_CURRENT.equals(LOCALE_DEFAULT) : LOCALE_CURRENT.equals(locale);
   }
 
-  public static Locale[] getLocales() {
+  public static Locale[] getLocales(boolean sort) {
     String bundleFolder = BUNDLE_NAME.replace('.', '/');
     final String prefix = BUNDLE_NAME.substring(BUNDLE_NAME.lastIndexOf('.') + 1);
     final String extension = ".properties";
@@ -599,17 +587,19 @@ public class MessageText {
     
     foundLocalesList.toArray( foundLocales );
 
-    try{
-	    Arrays.sort(foundLocales, new Comparator() {
-	      public final int compare (Object a, Object b) {
-	        return ((Locale)a).getDisplayName((Locale)a).compareToIgnoreCase(((Locale)b).getDisplayName((Locale)b));
-	      }
-	    });
-    }catch( Throwable e ){
-    	// user has a problem whereby a null-pointer exception occurs when sorting the
-    	// list - I've done some fixes to the locale list construction but am
-    	// putting this in here just in case
-    	Debug.printStackTrace( e );
+    if (sort) {
+      try{
+  	    Arrays.sort(foundLocales, new Comparator() {
+  	      public final int compare (Object a, Object b) {
+  	        return ((Locale)a).getDisplayName((Locale)a).compareToIgnoreCase(((Locale)b).getDisplayName((Locale)b));
+  	      }
+  	    });
+      }catch( Throwable e ){
+      	// user has a problem whereby a null-pointer exception occurs when sorting the
+      	// list - I've done some fixes to the locale list construction but am
+      	// putting this in here just in case
+      	Debug.printStackTrace( e );
+      }
     }
     return foundLocales;
   }
@@ -689,7 +679,7 @@ public class MessageText {
               !newResourceBundle.getLocale().getLanguage().equals(localeJustLang.getLanguage())) {
             // find first language we have in our list
             System.out.println("changeLocale: Searching for language " + newLocale.getDisplayLanguage() + " in *any* country..");
-            Locale[] locales = getLocales();
+            Locale[] locales = getLocales(false);
             for (int i = 0; i < locales.length; i++) {
               if (locales[i].getLanguage() == newLocale.getLanguage()) {
                 newResourceBundle = getResourceBundle("MessagesBundle", locales[i], 
@@ -715,11 +705,14 @@ public class MessageText {
 					if (sNewLanguage == null || sNewLanguage.trim().equals(""))
 						sNewLanguage = "English (default)";
 					System.out.println("changeLocale: no message properties for Locale '" + newLocale.getDisplayName() + "' (" + newLocale + "), using '" + sNewLanguage + "'");
+					if (newResourceBundle.getLocale().equals(RESOURCE_BUNDLE.getLocale())) {
+						return false;
+					}
 				}
 				newLocale = newResourceBundle.getLocale();
 				Locale.setDefault(newLocale.equals(LOCALE_DEFAULT) ? LOCALE_ENGLISH : newLocale);
 				LOCALE_CURRENT = newLocale;
-				setResourceBundle(new IntegratedResourceBundle(newResourceBundle, pluginLocalizationPaths));
+				setResourceBundle(new IntegratedResourceBundle(newResourceBundle, pluginLocalizationPaths, 3200));
 				if(newLocale.equals(LOCALE_DEFAULT))
 					DEFAULT_BUNDLE = RESOURCE_BUNDLE;
 				return true;
@@ -772,16 +765,16 @@ public class MessageText {
  * Reverts Locale back to default, and removes the config settin. 
  * Notifications of change should be done by the caller.
  */
-  public static void revertToDefaultLocale() {
+  /*
+  @SuppressWarnings("restriction")
+	public static void revertToDefaultLocale() {
   	// Aside from the last 2 lines, this is Sun's code that is run
   	// at startup to determine the locale.  Too bad they didn't provide
   	// a way to call this code explicitly..
     String language, region, country, variant;
-    language = (String) AccessController.doPrivileged(
-                    new GetPropertyAction("user.language", "en"));
+    language = System.getProperty("user.language", "en");
     // for compatibility, check for old user.region property
-    region = (String) AccessController.doPrivileged(
-                    new GetPropertyAction("user.region"));
+    region = System.getProperty("user.region");
     if (region != null) {
         // region can be of form country, country_variant, or _variant
         int i = region.indexOf('_');
@@ -793,14 +786,13 @@ public class MessageText {
             variant = "";
         }
     } else {
-        country = (String) AccessController.doPrivileged(
-                        new GetPropertyAction("user.country", ""));
-        variant = (String) AccessController.doPrivileged(
-                        new GetPropertyAction("user.variant", ""));
+        country = System.getProperty("user.country", "");
+        variant = System.getProperty("user.variant", "");
     }
     changeLocale(new Locale(language, country, variant));
     COConfigurationManager.removeParameter("locale");
   }
+  */
   
   public static interface
   MessageTextListener

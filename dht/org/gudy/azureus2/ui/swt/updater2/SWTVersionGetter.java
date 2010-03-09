@@ -25,17 +25,18 @@ package org.gudy.azureus2.ui.swt.updater2;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.AEVerifier;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
 
 import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
+
+import org.gudy.azureus2.plugins.update.UpdateChecker;
 
 
 /**
@@ -58,38 +59,13 @@ public class SWTVersionGetter {
   SWTVersionGetter(
   		UpdateChecker	_checker ) 
   {
-    this.platform 		= SWT.getPlatform();
+    this.platform 		= COConfigurationManager.getStringParameter("ConfigView.section.style.swt.library.selection");
+    if (this.platform == null || this.platform.length() == 0) {
+    	this.platform = SWT.getPlatform();
+    }
     this.currentVersion = SWT.getVersion();
     
 
-    /**
-     * Hack to make users re-download swt package which is hacked to include
-     * our osx platform jnilib. 
-     */
-    if (currentVersion == 3232 && Constants.isOSX) {
-			PlatformManager p_man = PlatformManagerFactory.getPlatformManager();
-			if (p_man != null
-					&& !p_man.hasCapability(PlatformManagerCapabilities.GetVersion)) {
-				currentVersion = 3231;
-			}
-		}
-    
-    /* hack no longer needed as most (all?) CVS users will have rolled back by now and
-     * we're shipping with 3.1.1
-     
-    if ( currentVersion == 3206 ){
-    	
-    		// problem here with 3.2M2 that we rolled out to CVS users - it doesn't work
-    		// on windows 98 (hangs the app). We therefore decided to fall back to 3.1.1
-    		// which does work. However, to rollback the CVS users we need to make it appear
-    		// that 3206 is < 3.1.1. We do this by hacking the version here
-    	
-    	System.out.println( "Rolling back SWT version 3.2M2 to 3.1.1" );
-    	
-    	currentVersion = 3138;	// 3.1.1 is 3139
-    }
-    */
-    
     this.latestVersion = 0;
     checker	= _checker;
   }
@@ -118,19 +94,70 @@ public class SWTVersionGetter {
 					+ "and url from version check client."));
     
     Map reply = VersionCheckClient.getSingleton().getVersionCheckInfo(VersionCheckClient.REASON_CHECK_SWT);
-    
+
     String msg = "SWT version check received:";
+
+    boolean	done = false;
     
-    byte[] version_bytes = (byte[])reply.get( "swt_version" );
-    if( version_bytes != null ) {
-      latestVersion = Integer.parseInt( new String( version_bytes ) );
-      msg += " version=" + latestVersion;
+    if ( Constants.isOSX_10_5_OrHigher ){
+    
+    	String target_lib = COConfigurationManager.getStringParameter( "ConfigView.section.style.swt.library.selection" );
+    	
+    	String current_lib = SWT.getPlatform();
+    	
+    	if ( target_lib.equalsIgnoreCase( current_lib )){
+    		
+    	    byte[] version_bytes = (byte[])reply.get( "swt_version_" + target_lib );
+    	    
+    	    if ( version_bytes != null ){
+    	    	
+    	    	latestVersion = Integer.parseInt( new String( version_bytes ) );
+    	    	
+    	    	msg += " version=" + latestVersion;
+    	    	
+        		byte[] url_bytes = (byte[])reply.get( "swt_url_" + target_lib );
+
+        		if ( url_bytes != null ){
+
+           			mirrors = new String[] { new String( url_bytes ) };
+        			
+        			msg += " url=" + mirrors[0];
+        		}
+        		
+        		done = true;
+    	    }
+    	}else{
+    		
+    		byte[] url_bytes = (byte[])reply.get( "swt_url_" + target_lib );
+
+    		if ( url_bytes != null ){
+    			
+    			msg += " (platform switch from " + current_lib + " to " + target_lib + ")";
+    			
+    			mirrors = new String[] { new String( url_bytes ) };
+    			
+    			msg += " url=" + mirrors[0];
+    			
+    			latestVersion = Integer.MAX_VALUE;
+    			
+    			done = true;
+    		}
+    	}
     }
     
-    byte[] url_bytes = (byte[])reply.get( "swt_url" );
-    if( url_bytes != null ) {
-      mirrors = new String[] { new String( url_bytes ) };
-      msg += " url=" + mirrors[0];
+    if ( !done ){
+    	
+	    byte[] version_bytes = (byte[])reply.get( "swt_version" );
+	    if( version_bytes != null ) {
+	      latestVersion = Integer.parseInt( new String( version_bytes ) );
+	      msg += " version=" + latestVersion;
+	    }
+	    
+	    byte[] url_bytes = (byte[])reply.get( "swt_url" );
+	    if( url_bytes != null ) {
+	      mirrors = new String[] { new String( url_bytes ) };
+	      msg += " url=" + mirrors[0];
+	    }
     }
     
     byte[] info_bytes = (byte[])reply.get( "swt_info_url" );

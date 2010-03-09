@@ -3,9 +3,11 @@
  */
 package edu.washington.cs.activedht.db;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
@@ -18,12 +20,12 @@ import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBLookupResult;
 import com.aelitis.azureus.core.dht.db.DHTDBStats;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
+import com.aelitis.azureus.core.dht.transport.DHTTransportQueryStoreReply;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.coderunner.ActiveCodeRunner;
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 /**
  * @author levya
@@ -55,7 +57,8 @@ public class ActiveDB implements DHTDB {
 		return result.getValueForRelay(result.getOriginator());
 	}
 
-	private ActiveDHTDBValue get(DHTTransportContact reader, HashWrapper key, HashWrapper readerId, byte[] payload) {
+	private ActiveDHTDBValue get(DHTTransportContact reader, HashWrapper key,
+			HashWrapper readerId, byte[] payload) {
 		ActiveDHTDBValue value = store.get(key);
 		if (value != null) {
 			value = codeRunner.onGet(reader, key, readerId, payload, value);
@@ -75,6 +78,10 @@ public class ActiveDB implements DHTDB {
 
 	public Iterator<HashWrapper> getKeys() {
 		return store.keySet().iterator();
+	}
+
+	public boolean hasKey(HashWrapper key) {
+		return store.containsKey(key);
 	}
 
 	public boolean isEmpty() {
@@ -107,7 +114,8 @@ public class ActiveDB implements DHTDB {
 		this.control = control;
 	}
 
-	public DHTTransportValue store(HashWrapper key, byte[] value, byte flags) {
+	public DHTTransportValue store(HashWrapper key, byte[] value, byte flags,
+			byte lifeHours, byte replicationControl) {
 		DHTTransportContact localContact = control.getTransport()
 				.getLocalContact();
 		DHTTransportValue activeValue = new BasicDHTTransportValue(SystemTime
@@ -123,7 +131,7 @@ public class ActiveDB implements DHTDB {
 			return DHT.DT_NONE;
 		}
 		if (values.length > 1) {
-			throw new IllegalArgumentException(values.length + "");
+			// throw new IllegalArgumentException(values.length + "");
 		}
 
 		DHTTransportValue value = values[0];
@@ -139,7 +147,8 @@ public class ActiveDB implements DHTDB {
 				}
 			} else {
 				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory
-						.create(value.getOriginator(), value, value.isLocal());
+						.get().create(value.getOriginator(), value,
+								value.isLocal());
 				activeValue.registerGlobalState(control, key);
 				if (codeRunner.onStore(sender, key, activeValue) != null) {
 					store.put(key, activeValue);
@@ -156,24 +165,35 @@ public class ActiveDB implements DHTDB {
 	}
 
 	public DHTStorageBlock getKeyBlockDetails(byte[] key) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public boolean isKeyBlocked(byte[] key) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	public DHTStorageBlock keyBlockRequest(DHTTransportContact direct_sender,
 			byte[] request, byte[] signature) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public void print(boolean full) {
-		// TODO Auto-generated method stub
 
+	}
+
+	public DHTTransportQueryStoreReply queryStore(
+			DHTTransportContact originatingContact, final int headerLen,
+			List<Object[]> keys) {
+		return new DHTTransportQueryStoreReply() {
+			
+			public int getHeaderSize() {
+				return headerLen;
+			}
+			
+			public List<byte[]> getEntries() {
+				return new ArrayList<byte[]>();
+			}
+		};
 	}
 
 }

@@ -31,8 +31,8 @@ import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerService;
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerServiceListener;
 import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.ui.swt.wizard.AbstractWizardPanel;
-import org.gudy.azureus2.ui.swt.wizard.IWizardPanel;
+
+import org.gudy.azureus2.ui.swt.wizard.*;
 
 /**
  * @author Olivier

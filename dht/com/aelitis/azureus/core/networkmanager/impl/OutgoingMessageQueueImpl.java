@@ -26,22 +26,15 @@ package com.aelitis.azureus.core.networkmanager.impl;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.TimeFormatter;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.NetworkManager;
 import com.aelitis.azureus.core.networkmanager.OutgoingMessageQueue;
 import com.aelitis.azureus.core.networkmanager.RawMessage;
 import com.aelitis.azureus.core.networkmanager.Transport;
-import com.aelitis.azureus.core.peermanager.messaging.Message;
-import com.aelitis.azureus.core.peermanager.messaging.MessageStreamEncoder;
+import com.aelitis.azureus.core.peermanager.messaging.*;
 
 
 
@@ -137,6 +130,7 @@ OutgoingMessageQueueImpl
     total_size = 0;
     prev_sent.clear();
     listeners = new ArrayList();
+    percent_complete = -1;
     urgent_message = null;
   }
   
@@ -302,6 +296,10 @@ OutgoingMessageQueueImpl
         	}
         }
       }
+      
+      if ( queue.isEmpty()){
+    	  percent_complete = -1;
+      }
     }finally{
       queue_mon.exit();
     }
@@ -364,6 +362,10 @@ OutgoingMessageQueueImpl
           
           break;
         }
+      }
+      
+      if ( queue.isEmpty()){
+    	  percent_complete = -1;
       }
     }finally{
       queue_mon.exit();
@@ -429,6 +431,7 @@ OutgoingMessageQueueImpl
 
 	  ArrayList messages_sent = null;
 
+	  //System.out.println( "deliver: %=" + percent_complete + ", queue=" + queue.size());
 	  try{
 		  queue_mon.enter();
 

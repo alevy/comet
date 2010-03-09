@@ -3,12 +3,12 @@ package edu.washington.cs.activedht.expt;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
+import edu.washington.cs.activedht.db.DHTDBValueFactory;
+
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.serialize.Serializer;
-
-import com.aelitis.azureus.core.dht.db.impl.DHTDBValueFactory.FactoryInterface;
 
 /**
  * @author levya
@@ -41,7 +41,7 @@ public class LuaNodeMicrobenchmark extends NodeMicrobenchmark {
 		int localPort = 1234;
 		String localHostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
-		FactoryInterface valueFactory = ActivePeer.NA_VALUE_FACTORY_INTERFACE;
+		DHTDBValueFactory valueFactory = ActivePeer.NA_VALUE_FACTORY_INTERFACE;
 		PrintStream out = System.out;
 
 		for (int i = 0; i < args.length; ++i) {

@@ -26,43 +26,32 @@ package org.gudy.azureus2.pluginsimpl.local.utils.resourcedownloader;
  *
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
+import com.aelitis.azureus.core.util.Java15Utils;
+
+import java.io.*;
+import java.net.*;
+
+
+import javax.net.ssl.*;
 import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-
-import org.gudy.azureus2.core3.security.SEPasswordListener;
-import org.gudy.azureus2.core3.security.SESecurityManager;
 import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
 import org.gudy.azureus2.core3.util.AEThread2;
 import org.gudy.azureus2.core3.util.AddressUtils;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderCancelledException;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderException;
+import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.security.*;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 import com.aelitis.azureus.core.util.DeleteFileOnCloseInputStream;
-import com.aelitis.azureus.core.util.Java15Utils;
 
 public class 
 ResourceDownloaderURLImpl
@@ -299,7 +288,7 @@ ResourceDownloaderURLImpl
 															
 							getRequestProperties( con );
 							
-							return( con.getContentLength());
+							return( UrlUtils.getContentLength( con ));
 							
 						}catch( SSLException e ){
 							
@@ -313,7 +302,23 @@ ResourceDownloaderURLImpl
 								}
 							}
 
-							throw( e );							
+							throw( e );
+							
+						}catch( IOException e ){
+							
+							if ( i == 0 ){
+								
+					      		URL retry_url = UrlUtils.getIPV4Fallback( url );
+				      			
+					      		if ( retry_url != null ){
+					      				
+					      			url = retry_url;
+					      			
+					      			continue;
+					      		}
+							}
+							
+							throw( e );
 						}
 					}
 					
@@ -347,6 +352,8 @@ ResourceDownloaderURLImpl
 				rde = (ResourceDownloaderException)e;
 				
 			}else{
+				
+				Debug.out(e);
 				
 				rde = new ResourceDownloaderException( "Unexpected error", e );
 			}
@@ -486,7 +493,7 @@ redirect_label:
 						
 						follow_redirect = false;
 					
-						for (int ssl_loop=0;ssl_loop<2;ssl_loop++){
+						for (int connect_loop=0;connect_loop<2;connect_loop++){
 					
 							File					temp_file	= null;
 	
@@ -620,7 +627,7 @@ redirect_label:
 								try{
 									byte[] buf = new byte[BUFFER_SIZE];
 									
-									int	total_read	= 0;
+									long	total_read	= 0;
 									
 										// unfortunately not all servers set content length
 									
@@ -633,9 +640,9 @@ redirect_label:
 											the length of the incoming data from the client and not the
 											byte count of the decompressed data stream.
 									 */
-									int size = compressed ? -1 : con.getContentLength();					
+									long size = compressed ? -1 : UrlUtils.getContentLength( con );					
 									
-									baos = size>0?new ByteArrayOutputStream(size>MAX_IN_MEM_READ_SIZE?MAX_IN_MEM_READ_SIZE:size):new ByteArrayOutputStream();
+									baos = size>0?new ByteArrayOutputStream(size>MAX_IN_MEM_READ_SIZE?MAX_IN_MEM_READ_SIZE:(int)size):new ByteArrayOutputStream();
 									
 									while( !cancel_download ){
 										
@@ -669,7 +676,7 @@ redirect_label:
 											
 											if ( size > 0){
 												
-												informPercentDone(( 100 * total_read ) / size );
+												informPercentDone((int)(( 100 * total_read ) / size ));
 											}
 										}else{
 											
@@ -737,7 +744,7 @@ redirect_label:
 		
 							}catch( SSLException e ){
 								
-								if ( ssl_loop == 0 ){
+								if ( connect_loop == 0 ){
 									
 									if ( SESecurityManager.installServerCertificates( url ) != null ){
 										
@@ -751,7 +758,7 @@ redirect_label:
 								
 							}catch( ZipException e ){
 								
-								if ( ssl_loop == 0 ){
+								if ( connect_loop == 0 ){
 									
 									use_compression = false;
 									
@@ -759,13 +766,13 @@ redirect_label:
 								}
 							}catch( IOException e ){
 								
-								if ( ssl_loop == 0 ){
+								if ( connect_loop == 0 ){
 									
 									String	msg = e.getMessage();
 									
 									if ( msg != null ){
 										
-										msg = msg.toLowerCase();
+										msg = msg.toLowerCase( MessageText.LOCALE_ENGLISH );
 										
 										if ( msg.indexOf( "gzip" ) != -1 ){
 								
@@ -774,6 +781,15 @@ redirect_label:
 											continue;
 										}
 									}
+															      			
+						      		URL retry_url = UrlUtils.getIPV4Fallback( url );
+						      			
+						      		if ( retry_url != null ){
+						      				
+						      			url = retry_url;
+						      			
+						      			continue;
+						      		}
 								}
 								
 								throw( e );
@@ -818,6 +834,7 @@ redirect_label:
 				rde = (ResourceDownloaderException)e;
 				
 			}else{
+				Debug.out(e);
 				
 				rde = new ResourceDownloaderException( "Unexpected error", e );
 			}

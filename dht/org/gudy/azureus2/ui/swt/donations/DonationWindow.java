@@ -17,41 +17,28 @@
  */
 
 package org.gudy.azureus2.ui.swt.donations;
-
+ 
 import java.util.Locale;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.LocationEvent;
-import org.eclipse.swt.browser.LocationListener;
-import org.eclipse.swt.browser.StatusTextEvent;
-import org.eclipse.swt.browser.StatusTextListener;
-import org.eclipse.swt.browser.TitleEvent;
-import org.eclipse.swt.browser.TitleListener;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.ShellAdapter;
-import org.eclipse.swt.events.ShellEvent;
-import org.eclipse.swt.events.TraverseEvent;
-import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.browser.*;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.stats.transfer.OverallStats;
 import org.gudy.azureus2.core3.stats.transfer.StatsFactory;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
+import com.aelitis.azureus.core.security.CryptoManagerFactory;
 
 /**
  * @author TuxPaper
@@ -67,25 +54,40 @@ public class DonationWindow
 
 	private static int initialAskHours = 48;
 
-	private boolean pageLoadedOk = false;
+	private static boolean pageLoadedOk = false;
 
-	private Shell shell;
+	private static Shell shell = null;
 
-	private Browser browser;
+	private static Browser browser;
 
 	public static void checkForDonationPopup() {
-		//Check if user has already donated first
-		boolean alreadyDonated = COConfigurationManager.getBooleanParameter(
-				"donations.donated", false);
-		if (alreadyDonated) {
+		if (shell != null) {
 			if (DEBUG) {
-				Utils.openMessageBox(null, SWT.OK, "Donations Test",
-						"Already Donated! I like you.");
+				new MessageBoxShell(SWT.OK, "Donations Test", "Already Open").open(null);
 			}
 			return;
 		}
 
-		long upTime = StatsFactory.getStats().getTotalUpTime();
+		long maxDate = COConfigurationManager.getLongParameter("donations.maxDate", 0);
+		boolean force = maxDate > 0 && SystemTime.getCurrentTime() > maxDate ? true : false;	
+		
+		//Check if user has already donated first
+		boolean alreadyDonated = COConfigurationManager.getBooleanParameter(
+				"donations.donated", false);
+		if (alreadyDonated && !force) {
+			if (DEBUG) {
+				new MessageBoxShell(SWT.OK, "Donations Test",
+						"Already Donated! I like you.").open(null);
+			}
+			return;
+		}
+		
+		OverallStats stats = StatsFactory.getStats();
+		if (stats == null) {
+			return;
+		}
+
+		long upTime = stats.getTotalUpTime();
 		int hours = (int) (upTime / (60 * 60)); //secs * mins
 
 		//Ask every DONATIONS_ASK_AFTER hours.
@@ -98,16 +100,16 @@ public class DonationWindow
 					+ initialAskHours);
 			COConfigurationManager.save();
 			if (DEBUG) {
-				Utils.openMessageBox(null, SWT.OK, "Donations Test",
-						"Newbie. You're active for " + hours + ".");
+				new MessageBoxShell(SWT.OK, "Donations Test",
+						"Newbie. You're active for " + hours + ".").open(null);
 			}
 			return;
 		}
 
-		if (hours < nextAsk) {
+		if (hours < nextAsk && !force) {
 			if (DEBUG) {
-				Utils.openMessageBox(null, SWT.OK, "Donations Test", "Wait "
-						+ (nextAsk - hours) + ".");
+				new MessageBoxShell(SWT.OK, "Donations Test", "Wait "
+						+ (nextAsk - hours) + ".").open(null);
 			}
 			return;
 		}
@@ -116,9 +118,9 @@ public class DonationWindow
 				0);
 		if (minDate > 0 && minDate > SystemTime.getCurrentTime()) {
 			if (DEBUG) {
-				Utils.openMessageBox(null, SWT.OK, "Donation Test", "Wait "
+				new MessageBoxShell(SWT.OK, "Donation Test", "Wait "
 						+ ((SystemTime.getCurrentTime() - minDate) / 1000 / 3600 / 24)
-						+ " days");
+						+ " days").open(null);
 			}
 			return;
 		}
@@ -129,12 +131,23 @@ public class DonationWindow
 
 		Utils.execSWTThread(new AERunnable() {
 			public void runSupport() {
-				new DonationWindow().show(false);
+				open(false, "check");
 			}
 		});
 	}
 
-	public void show(final boolean showNoLoad) {
+	public static void open(final boolean showNoLoad, final String sourceRef) {
+		Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				_open(showNoLoad, sourceRef);
+			}
+		});
+	}
+
+	public static void _open(final boolean showNoLoad, final String sourceRef) {
+		if (shell != null && !shell.isDisposed()) {
+			return;
+		}
 		final Shell parentShell = Utils.findAnyShell();
 		shell = ShellFactory.createShell(parentShell, SWT.BORDER
 				| SWT.APPLICATION_MODAL | SWT.TITLE);
@@ -162,18 +175,21 @@ public class DonationWindow
 				if (parentShell != null) {
 					parentShell.setCursor(e.display.getSystemCursor(SWT.CURSOR_ARROW));
 				}
+				shell = null;
 			}
 		});
 
-		try {
-			browser = new Browser(shell, Utils.getInitialBrowserStyle(SWT.NONE));
-		} catch (Throwable t) {
+		browser = Utils.createSafeBrowser(shell, SWT.NONE);
+		if (browser == null) {
 			shell.dispose();
 			return;
 		}
 
 		browser.addTitleListener(new TitleListener() {
 			public void changed(TitleEvent event) {
+				if (shell == null || shell.isDisposed()) {
+					return;
+				}
 				shell.setText(event.title);
 			}
 		});
@@ -182,6 +198,10 @@ public class DonationWindow
 			String last = null;
 
 			public void changed(StatusTextEvent event) {
+				if (shell == null || shell.isDisposed()) {
+					return;
+				}
+
 				String text = event.text.toLowerCase();
 				if (last != null && last.equals(text)) {
 					return;
@@ -209,7 +229,11 @@ public class DonationWindow
 				} else if (text.contains("never-ask-again")) {
 					neverAskAgain();
 				} else if (text.contains("close")) {
-					shell.dispose();
+					Utils.execSWTThreadLater(0, new AERunnable() {	
+						public void runSupport() {
+							shell.dispose();
+						}
+					});
 				} else if (text.startsWith("open-url")) {
 					String url = event.text.substring(9);
 					Utils.launch(url);
@@ -239,15 +263,17 @@ public class DonationWindow
 
 		long upTime = StatsFactory.getStats().getTotalUpTime();
 		int upHours = (int) (upTime / (60 * 60)); //secs * mins
+		String azid = Base32.encode(CryptoManagerFactory.getSingleton().getSecureID());
 		final String url = "http://"
 				+ System.getProperty("platform_address", "www.vuze.com") + ":"
 				+ System.getProperty("platform_port", "80") + "/"
 				+ "donate.start?locale=" + Locale.getDefault().toString() + "&azv="
 				+ Constants.AZUREUS_VERSION + "&count="
 				+ COConfigurationManager.getLongParameter("donations.count", 1)
-				+ "&uphours=" + upHours;
+				+ "&uphours=" + upHours + "&azid=" + azid + "&sourceref="
+				+ UrlUtils.encode(sourceRef);
 
-		SimpleTimer.addEvent("donation.pageload", SystemTime.getOffsetTime(5000),
+		SimpleTimer.addEvent("donation.pageload", SystemTime.getOffsetTime(6000),
 				new TimerEventPerformer() {
 					public void perform(TimerEvent event) {
 						if (!pageLoadedOk) {
@@ -256,12 +282,12 @@ public class DonationWindow
 									Debug.out("Page Didn't Load:" + url);
 									shell.dispose();
 									if (showNoLoad) {
-  									Utils.openMessageBox(shell, SWT.OK,
+										new MessageBoxShell(SWT.OK,
   											MessageText.getString("DonationWindow.noload.title"),
   											MessageText.getString("DonationWindow.noload.text",
 														new String[] {
 															url
-														}));
+														})).open(null);
 									}
 								}
 							});
@@ -277,8 +303,9 @@ public class DonationWindow
 	 *
 	 * @since 4.0.0.5
 	 */
-	protected void neverAskAgain() {
+	protected static void  neverAskAgain() {
 		COConfigurationManager.setParameter("donations.donated", true);
+		updateMinDate();
 		COConfigurationManager.save();
 	}
 
@@ -296,21 +323,22 @@ public class DonationWindow
 		int hours = (int) (upTime / (60 * 60)); //secs * mins
 		int nextAsk = hours + askEveryHours;
 		COConfigurationManager.setParameter("donations.nextAskHours", nextAsk);
-		COConfigurationManager.setParameter("donations.lastVersion",
-				Constants.AZUREUS_VERSION);
+		COConfigurationManager.setParameter("donations.lastVersion", Constants.AZUREUS_VERSION);
+		updateMinDate();
 		COConfigurationManager.save();
 	}
 
 	public static void updateMinDate() {
-		COConfigurationManager.setParameter("donations.minDate",
-				SystemTime.getOffsetTime(1000l * 3600 * 24 * 30));
-		COConfigurationManager.save();
+		COConfigurationManager.setParameter("donations.minDate", SystemTime.getOffsetTime(1000 * 3600 * 24 * 30));  //30d ahead
+		COConfigurationManager.setParameter("donations.maxDate", SystemTime.getOffsetTime(1000 * 3600 * 24 * 120));  //4mo ahead
+		//COConfigurationManager.save();
 	}
-
-	public static void setMinDate(long timestamp) {
-		COConfigurationManager.setParameter("donations.minDate", timestamp);
-		COConfigurationManager.save();
-	}
+	
+   //unused
+	//public static void setMinDate(long timestamp) {
+	//	COConfigurationManager.setParameter("donations.minDate", timestamp);
+	//	COConfigurationManager.save();
+	//}
 
 	public static int getInitialAskHours() {
 		return initialAskHours;
@@ -324,7 +352,7 @@ public class DonationWindow
 		try {
 			AzureusCoreFactory.create().start();
 			//checkForDonationPopup();
-			new DonationWindow().show(true);
+			open(true, "test");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

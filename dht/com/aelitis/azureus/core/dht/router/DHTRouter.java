@@ -27,7 +27,7 @@ package com.aelitis.azureus.core.dht.router;
  *
  */
 
-import java.util.List;
+import java.util.*;
 
 public interface 
 DHTRouter 
@@ -103,7 +103,7 @@ DHTRouter
 		 * Returns num_to_return or a few more closest contacts, unordered
 		 */
 	
-	public List
+	public List<DHTRouterContact>
 	findClosestContacts(
 		byte[]		node_id,
 		int			num_to_return,
@@ -130,7 +130,7 @@ DHTRouter
 		 * @return
 		 */
 	
-	public List
+	public List<DHTRouterContact>
 	findBestContacts(
 		int		max );
 	
@@ -139,7 +139,7 @@ DHTRouter
 		 * @return
 		 */
 	
-	public List
+	public List<DHTRouterContact>
 	getAllContacts();
 	
 	public DHTRouterStats

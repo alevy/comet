@@ -23,11 +23,13 @@
 
 package com.aelitis.azureus.core.networkmanager.admin;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.UnsupportedAddressTypeException;
 
 import org.gudy.azureus2.core3.util.IndentWriter;
 
+import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.networkmanager.admin.impl.NetworkAdminImpl;
 
 public abstract class 
@@ -84,6 +86,21 @@ NetworkAdmin
 	public abstract InetAddress
 	guessRoutableBindAddress();
 	
+		/**
+		 * Returns the list of current addresses that can successfully be bound
+		 * to with an ephemeral port
+		 * @return
+		 */
+	
+	public abstract InetAddress[]
+	getBindableAddresses();
+	
+	public abstract int
+	getBindablePort(
+		int		preferred_port )
+	
+		throws IOException;
+	
 	public abstract NetworkAdminNetworkInterface[]
 	getInterfaces();
 	
@@ -96,10 +113,12 @@ NetworkAdmin
 	hasIPV6Potential(boolean forNIO);
 	
 	public abstract NetworkAdminProtocol[]
-	getOutboundProtocols();
+	getOutboundProtocols(
+			AzureusCore azureus_core);
 	
 	public abstract NetworkAdminProtocol[]
-	getInboundProtocols();
+	getInboundProtocols(
+			AzureusCore azureus_core );
 	
 	public abstract InetAddress
 	testProtocol(
@@ -114,7 +133,8 @@ NetworkAdmin
 	getHTTPProxy();
 	
 	public abstract NetworkAdminNATDevice[]
-	getNATDevices();
+	getNATDevices(
+			AzureusCore azureus_core);
 	
 		/**
 		 * Only call if the supplied address is believed to be the current public address
@@ -176,6 +196,10 @@ NetworkAdmin
 	public abstract InetAddress
 	getDefaultPublicAddress();
 	
+	public abstract InetAddress getDefaultPublicAddressV6();
+	
+	public abstract boolean	hasDHTIPV6();
+	
 	public abstract void
 	addPropertyChangeListener(
 		NetworkAdminPropertyChangeListener	listener );
@@ -189,7 +213,8 @@ NetworkAdmin
 		NetworkAdminPropertyChangeListener	listener );
 	
 	public abstract void
-	runInitialChecks();
+	runInitialChecks(
+			AzureusCore azureus_core);
 	
 	public abstract void
 	logNATStatus(

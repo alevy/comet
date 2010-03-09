@@ -29,11 +29,8 @@ import java.io.File;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Constants;
@@ -41,16 +38,12 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.DirectoryParameter;
-import org.gudy.azureus2.ui.swt.config.IntListParameter;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 	private final static String MSG_PREFIX = "ConfigView.section.style.";
@@ -77,6 +70,7 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 
 	public Composite configSectionCreate(final Composite parent) {
     int userMode = COConfigurationManager.getIntParameter("User Mode");
+		boolean isAZ3 = COConfigurationManager.getStringParameter("ui").equals("az3");
 
     // "Display" Sub-Section:
 		// ----------------------
@@ -94,8 +88,10 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 		new BooleanParameter(cLook, "Show Download Basket", MSG_PREFIX
 				+ "showdownloadbasket");
 
-		new BooleanParameter(cLook, "IconBar.enabled", MSG_PREFIX
-				+ "showiconbar");
+		if (!isAZ3) {
+  		new BooleanParameter(cLook, "IconBar.enabled", MSG_PREFIX
+  				+ "showiconbar");
+		}
 
 		Composite cStatusBar = new Composite(cLook, SWT.NULL);
 		layout = new GridLayout();
@@ -168,12 +164,6 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 			});
 		}
 
-		if (Utils.isGTK) {
-			// See Eclipse Bug #42416 ([Platform Inconsistency] GC(Table) has wrong origin)
-			new BooleanParameter(cLook, "SWT_bGTKTableBug", MSG_PREFIX
-					+ "verticaloffset");
-		}
-
 		if (Constants.isOSX) {
 			new BooleanParameter(cLook, "enable_small_osx_fonts", MSG_PREFIX
 					+ "osx_small_fonts");
@@ -184,20 +174,19 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
   				+ "alternateTablePainting");
 		}
 
-		if (userMode > 0) {
-  		new BooleanParameter(cLook, "config.style.useSIUnits", MSG_PREFIX
-  				+ "useSIUnits");
-  		new BooleanParameter(cLook, "config.style.useUnitsRateBits",
-  				MSG_PREFIX + "useUnitsRateBits");
-  		new BooleanParameter(cLook, "config.style.doNotUseGB", MSG_PREFIX
-  				+ "doNotUseGB");
+	if (userMode > 0) {
+  		new BooleanParameter(cLook, "config.style.useSIUnits", MSG_PREFIX + "useSIUnits");
+  		
+  		new BooleanParameter(cLook, "config.style.forceSIValues", MSG_PREFIX + "forceSIValues");
+  		
+  		new BooleanParameter(cLook, "config.style.useUnitsRateBits", MSG_PREFIX + "useUnitsRateBits");
+  		
+  		new BooleanParameter(cLook, "config.style.doNotUseGB", MSG_PREFIX + "doNotUseGB");
   
-  		new BooleanParameter(cLook, "config.style.dataStatsOnly", MSG_PREFIX
-  				+ "dataStatsOnly");
+  		new BooleanParameter(cLook, "config.style.dataStatsOnly", MSG_PREFIX + "dataStatsOnly");
   
-  		new BooleanParameter(cLook, "config.style.separateProtDataStats", MSG_PREFIX
-  				+ "separateProtDataStats");
-		}
+  		new BooleanParameter(cLook, "config.style.separateProtDataStats", MSG_PREFIX + "separateProtDataStats");
+	}
 		
 		
     if( userMode > 1 ) {
@@ -227,21 +216,18 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 		label = new Label(cArea, SWT.NULL);
 		Messages.setLanguageText(label, MSG_PREFIX + "inactiveUpdate");
 		gridData = new GridData();
-		gridData.widthHint = 15;
 		IntParameter inactiveUpdate = new IntParameter(cArea, "Refresh When Inactive", 1,	-1);
 		inactiveUpdate.setLayoutData(gridData);
 
 		label = new Label(cArea, SWT.NULL);
 		Messages.setLanguageText(label, MSG_PREFIX + "graphicsUpdate");
 		gridData = new GridData();
-		gridData.widthHint = 15;
 		IntParameter graphicUpdate = new IntParameter(cArea, "Graphics Update", 1,	-1);
 		graphicUpdate.setLayoutData(gridData);
 
 		label = new Label(cArea, SWT.NULL);
 		Messages.setLanguageText(label, MSG_PREFIX + "reOrderDelay");
 		gridData = new GridData();
-		gridData.widthHint = 15;
 		IntParameter reorderDelay = new IntParameter(cArea, "ReOrder Delay");
 		reorderDelay.setLayoutData(gridData);
 
@@ -261,6 +247,8 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 		new BooleanParameter(cLook, "DND Always In Incomplete", MSG_PREFIX
 				+ "DNDalwaysInIncomplete");
 		
+		new BooleanParameter(cLook, "MyTorrentsView.alwaysShowHeader", "ConfigView.label.alwaysShowLibraryHeader");
+		
 		// Reuse the labels of the other menu actions.
 		if (PlatformManagerFactory.getPlatformManager().hasCapability(PlatformManagerCapabilities.ShowFileInBrowser)) {
 			BooleanParameter bp = new BooleanParameter(cLook, "MyTorrentsView.menu.show_parent_folder_enabled", MSG_PREFIX
@@ -274,6 +262,23 @@ public class ConfigSectionInterfaceDisplay implements UISWTConfigSection {
 				new BooleanParameter(cLook, "FileBrowse.usePathFinder", 
 						MSG_PREFIX + "usePathFinder");
 			}
+		}
+		
+		if ( Constants.isOSX_10_5_OrHigher ){
+			
+			Composite cSWT = new Composite(cLook, SWT.NULL);
+			layout = new GridLayout();
+			layout.marginHeight = 0;
+			layout.marginWidth = 0;
+			layout.numColumns = 2;
+			cSWT.setLayout(layout);
+			cSWT.setLayoutData(new GridData());
+			
+			label = new Label(cSWT, SWT.NULL);
+			label.setText( "SWT Library" );
+			String[] swtLibraries = { "carbon", "cocoa" };
+					
+			new StringListParameter(cSWT, MSG_PREFIX + "swt.library.selection", swtLibraries, swtLibraries);
 		}
 		
 		return cLook;

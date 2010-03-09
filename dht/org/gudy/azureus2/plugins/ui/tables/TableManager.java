@@ -50,6 +50,9 @@ public interface TableManager
   public static final String TABLE_TORRENT_PIECES        = "Pieces";
   /** Visible for Torrent Files table */
   public static final String TABLE_TORRENT_FILES         = "Files";
+  
+  public static final String TABLE_TORRENT_TRACKERS      = "Trackers";
+
   /** Visible for My Tracker table */
   public static final String TABLE_MYTRACKER             = "MyTracker";
   /** Visible for My Shares table */
@@ -65,7 +68,7 @@ public interface TableManager
    * some TableColumn functions are not available or act differently after the 
    * column had been added.
    * <p>
-   * In order to the plugin to display correctly the column name, your are 
+   * In order to the plugin to display correctly the column name, you are 
    * required to create a key in your language file consisting of the
    * {@link TableManager} Table ID of the table you are adding the column to,
    * plus ".column." plus the logical name of your column. 

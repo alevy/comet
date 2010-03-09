@@ -27,18 +27,14 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 
-import com.aelitis.azureus.core.networkmanager.NetworkManager;
-import com.aelitis.azureus.core.networkmanager.Transport;
-import com.aelitis.azureus.core.networkmanager.TransportEndpoint;
+import com.aelitis.azureus.core.networkmanager.*;
 import com.aelitis.azureus.core.networkmanager.impl.ProtocolDecoder;
+import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilter;
 import com.aelitis.azureus.core.networkmanager.impl.TransportCryptoManager;
 import com.aelitis.azureus.core.networkmanager.impl.TransportHelper;
-import com.aelitis.azureus.core.networkmanager.impl.TransportHelperFilter;
 import com.aelitis.azureus.core.networkmanager.impl.TransportImpl;
 
 
@@ -180,8 +176,9 @@ public class TCPTransportImpl extends TransportImpl implements Transport {
     final InetSocketAddress	address = protocol_endpoint.getAddress();
     
     TCPConnectionManager.ConnectListener connect_listener = new TCPConnectionManager.ConnectListener() {
-      public void connectAttemptStarted() {
-        listener.connectAttemptStarted();
+      public int connectAttemptStarted(
+    		  int default_connect_timeout ) {
+        return( listener.connectAttemptStarted( default_connect_timeout ));
       }
       
       public void connectSuccess( final SocketChannel channel ) {

@@ -31,29 +31,18 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AEThread;
 import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.ui.swt.ImageRepository;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ButtonParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 import org.gudy.azureus2.ui.swt.shells.MessageSlideShell;
 
@@ -426,44 +415,13 @@ public class ConfigSectionInterfaceAlerts implements UISWTConfigSection
 		// Auto-hide popup setting.
 		Label label = new Label(cArea, SWT.WRAP);
 		Messages.setLanguageText(label, LBLKEY_PREFIX + "popup.autohide");
-		label.setLayoutData(Utils.getWrappableLabelGridData(1, 0));
+		label.setLayoutData(new GridData());
 		IntParameter auto_hide_alert = new IntParameter(cArea,
 				"Message Popup Autoclose in Seconds", 0, 86400);
 		gridData = new GridData();
 		gridData.horizontalSpan = 1;
-		gridData.widthHint = 30;
 		auto_hide_alert.setLayoutData(gridData);
 		
-		// Use popup boxes rather than Mr Slidey.
-		BooleanParameter use_popup_boxes = new BooleanParameter(cArea,
-				"Use Message Box For Popups", LBLKEY_PREFIX + "popup.use_message_boxes");
-		gridData = new GridData();
-		gridData.horizontalSpan = 2;
-		use_popup_boxes.setLayoutData(gridData);
-		
-		// Suppress alerts.
-		BooleanParameter suppress_alerts = new BooleanParameter(cArea,
-				"Suppress Alerts", LBLKEY_PREFIX + "popup.suppress_alerts");
-		gridData = new GridData();
-		gridData.horizontalSpan = 2;
-		suppress_alerts.setLayoutData(gridData);
-		
-		// Show alerts.
-		label = new Label(cArea, SWT.NULL);
-		Messages.setLanguageText(label, LBLKEY_PREFIX + "popup.show");
-		ButtonParameter show_alerts = new ButtonParameter(cArea, LBLKEY_PREFIX + "popup.show.button");
-		show_alerts.addChangeListener(new ParameterChangeAdapter() {
-			public void parameterChanged(Parameter p, boolean b) {
-				Display display = parent.getDisplay();
-				if (display.isDisposed()) {return;}
-				MessageSlideShell.displayLastMessage(display, true);
-			}
-		});
-		gridData = new GridData();
-		gridData.horizontalSpan = 1;
-		gridData.widthHint = 60;
-		show_alerts.setLayoutData(gridData);
-
 		return cSection;
 	}
 }

@@ -24,52 +24,34 @@
 
 package org.gudy.azureus2.ui.swt.views.configsections;
 
-import java.util.HashMap;
-
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
+import org.gudy.azureus2.core3.config.impl.StringListImpl;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.config.impl.StringListImpl;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.TrackersUtil;
 import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.GenericActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
-import org.gudy.azureus2.ui.swt.config.PasswordParameter;
-import org.gudy.azureus2.ui.swt.config.StringListParameter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+import org.gudy.azureus2.core3.util.TrackersUtil;
+
+import java.util.HashMap;
 
 public class ConfigSectionInterface implements UISWTConfigSection {
 	private final static String KEY_PREFIX = "ConfigView.section.interface.";
 
 	private final static String LBLKEY_PREFIX = "ConfigView.label.";
-
-	Label passwordMatch;
 
 	private ParameterListener decisions_parameter_listener;
 
@@ -114,12 +96,15 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		layout.marginHeight = 0;
 		cDisplay.setLayout(layout);
 
-		/////////////
-    Group gAutoOpen = new Group(cDisplay, SWT.NULL);
-    Messages.setLanguageText(gAutoOpen, LBLKEY_PREFIX + "autoopen");
-    layout = new GridLayout(3, false);
-    gAutoOpen.setLayout(layout);
-    gAutoOpen.setLayoutData(new GridData());
+		final PlatformManager platform = PlatformManagerFactory.getPlatformManager();
+		
+			// ***** auto open group
+		
+		Group gAutoOpen = new Group(cDisplay, SWT.NULL);
+		Messages.setLanguageText(gAutoOpen, LBLKEY_PREFIX + "autoopen");
+		layout = new GridLayout(3, false);
+		gAutoOpen.setLayout(layout);
+		gAutoOpen.setLayoutData(new GridData( GridData.FILL_HORIZONTAL ));
 
 
 		label = new Label(gAutoOpen, SWT.NULL);
@@ -135,32 +120,32 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		new BooleanParameter(gAutoOpen, "Open Bar Incomplete", LBLKEY_PREFIX + "autoopen.dl");
 		new BooleanParameter(gAutoOpen, "Open Bar Complete", LBLKEY_PREFIX + "autoopen.cd");
 		
-		/////////////
+			// **** 
 		
 		new BooleanParameter(cDisplay, "Remember transfer bar location", LBLKEY_PREFIX + "transferbar.remember_location");
 
-		if (!Constants.isOSX || SWT.getVersion() >= 3300) {
+		Group gSysTray = new Group(cDisplay, SWT.NULL);
+		Messages.setLanguageText(gSysTray, LBLKEY_PREFIX + "systray");
+		layout = new GridLayout();
+		gSysTray.setLayout(layout);
+		gSysTray.setLayoutData(new GridData( GridData.FILL_HORIZONTAL ));
 
-	    Group gSysTray = new Group(cDisplay, SWT.NULL);
-	    Messages.setLanguageText(gSysTray, LBLKEY_PREFIX + "systray");
-	    layout = new GridLayout();
-	    gSysTray.setLayout(layout);
-	    gSysTray.setLayoutData(new GridData());
+		BooleanParameter est = new BooleanParameter(gSysTray, "Enable System Tray",
+				KEY_PREFIX + "enabletray");
 
-			BooleanParameter est = new BooleanParameter(gSysTray,
-					"Enable System Tray", KEY_PREFIX + "enabletray");
+		BooleanParameter ctt = new BooleanParameter(gSysTray, "Close To Tray",
+				LBLKEY_PREFIX + "closetotray");
+		BooleanParameter mtt = new BooleanParameter(gSysTray, "Minimize To Tray",
+				LBLKEY_PREFIX + "minimizetotray");
+		BooleanParameter esttt = new BooleanParameter(gSysTray, "ui.systray.tooltip.enable",
+				"ConfigView.label.enableSystrayToolTip");
 
-			BooleanParameter ctt = new BooleanParameter(gSysTray, "Close To Tray",
-					LBLKEY_PREFIX + "closetotray");
-			BooleanParameter mtt = new BooleanParameter(gSysTray, "Minimize To Tray",
-					LBLKEY_PREFIX + "minimizetotray");
-
-			est.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(ctt
-					.getControls()));
-			est.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(mtt
-					.getControls()));
-
-		}
+		est.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(
+				ctt.getControls()));
+		est.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(
+				mtt.getControls()));
+		est.setAdditionalActionPerformer(new ChangeSelectionActionPerformer(
+				esttt.getControls()));
 		
         /**
          * Default download / upload limits available in the UI.
@@ -205,7 +190,7 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		cArea.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		
 		new LinkLabel(cArea, LBLKEY_PREFIX + "version.info.link",
-				"http://www.azureuswiki.com/index.php/Version.azureusplatform.com");
+				"http://wiki.vuze.com/w/Version.azureusplatform.com");
 
 		if (!Constants.isOSX) {
 
@@ -301,48 +286,6 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		COConfigurationManager.addParameterListener("MessageBoxWindow.decisions",
 				decisions_parameter_listener);
 
-		// password
-
-		label = new Label(cArea, SWT.NULL);
-		Messages.setLanguageText(label, LBLKEY_PREFIX + "password");
-
-		gridData = new GridData();
-		gridData.widthHint = 150;
-		PasswordParameter pw1 = new PasswordParameter(cArea, "Password");
-		pw1.setLayoutData(gridData);
-		Text t1 = (Text) pw1.getControl();
-
-		//password confirm
-
-		label = new Label(cArea, SWT.NULL);
-		Messages.setLanguageText(label, LBLKEY_PREFIX + "passwordconfirm");
-		gridData = new GridData();
-		gridData.widthHint = 150;
-		PasswordParameter pw2 = new PasswordParameter(cArea, "Password Confirm");
-		pw2.setLayoutData(gridData);
-		Text t2 = (Text) pw2.getControl();
-
-		// password activated
-
-		label = new Label(cArea, SWT.NULL);
-		Messages.setLanguageText(label, LBLKEY_PREFIX + "passwordmatch");
-		passwordMatch = new Label(cArea, SWT.NULL);
-		gridData = new GridData();
-		gridData.widthHint = 150;
-		passwordMatch.setLayoutData(gridData);
-		refreshPWLabel();
-
-		t1.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				refreshPWLabel();
-			}
-		});
-		t2.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				refreshPWLabel();
-			}
-		});
-
 		// drag-drop
 
 		label = new Label(cArea, SWT.NULL);
@@ -363,14 +306,35 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		}
 		new StringListParameter(cArea, "config.style.dropdiraction",
 				dropLabels, dropValues);
+		
+		// double-click
+		
+    if (COConfigurationManager.getStringParameter("ui").equals("az3")) {
+  		label = new Label(cArea, SWT.NULL);
+  		Messages.setLanguageText(label, LBLKEY_PREFIX + "dm.dblclick");
+  
+  		String[] dblclickOptions = {
+  			"ConfigView.option.dm.dblclick.play",
+  			"ConfigView.option.dm.dblclick.details",
+  			"ConfigView.option.dm.dblclick.show",
+  		};
+  
+  		String dblclickLabels[] = new String[dblclickOptions.length];
+  		String dblclickValues[] = new String[dblclickOptions.length];
+  
+  		for (int i = 0; i < dblclickOptions.length; i++) {
+  
+  			dblclickLabels[i] = MessageText.getString(dblclickOptions[i]);
+  			dblclickValues[i] = "" + i;
+  		}
+  		new StringListParameter(cArea, "list.dm.dblclick", dblclickLabels,
+  				dblclickValues);
+    }
+		
 
 		// reset associations
 
-		final PlatformManager platform = PlatformManagerFactory
-				.getPlatformManager();
-
-		if (platform
-				.hasCapability(PlatformManagerCapabilities.RegisterFileAssociations)) {
+		if (platform.hasCapability(PlatformManagerCapabilities.RegisterFileAssociations)) {
 
 			Composite cResetAssoc = new Composite(cArea, SWT.NULL);
 			layout = new GridLayout();
@@ -406,40 +370,6 @@ public class ConfigSectionInterface implements UISWTConfigSection {
 		}
 
 		return cDisplay;
-	}
-
-	private void refreshPWLabel() {
-
-		if (passwordMatch == null || passwordMatch.isDisposed())
-			return;
-		byte[] password = COConfigurationManager.getByteParameter("Password", ""
-				.getBytes());
-		COConfigurationManager.setParameter("Password enabled", false);
-		if (password.length == 0) {
-			passwordMatch.setText(MessageText.getString(LBLKEY_PREFIX
-					+ "passwordmatchnone"));
-		} else {
-			byte[] confirm = COConfigurationManager.getByteParameter(
-					"Password Confirm", "".getBytes());
-			if (confirm.length == 0) {
-				passwordMatch.setText(MessageText.getString(LBLKEY_PREFIX
-						+ "passwordmatchno"));
-			} else {
-				boolean same = true;
-				for (int i = 0; i < password.length; i++) {
-					if (password[i] != confirm[i])
-						same = false;
-				}
-				if (same) {
-					passwordMatch.setText(MessageText.getString(LBLKEY_PREFIX
-							+ "passwordmatchyes"));
-					COConfigurationManager.setParameter("Password enabled", true);
-				} else {
-					passwordMatch.setText(MessageText.getString(LBLKEY_PREFIX
-							+ "passwordmatchno"));
-				}
-			}
-		}
 	}
 
 }

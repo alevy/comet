@@ -1,63 +1,104 @@
 package org.gudy.azureus2.ui.swt.views.table.impl;
 
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Menu;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.IndentWriter;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;
+import org.gudy.azureus2.ui.swt.views.IViewExtension;
 import org.gudy.azureus2.ui.swt.views.table.TableViewSWT;
 
-public class TableViewTab extends AbstractIView
+public abstract class TableViewTab<DATASOURCETYPE>
+	extends AbstractIView
+	implements IViewExtension
 {
-	private TableViewSWT tv;
+	private TableViewSWT<DATASOURCETYPE> tv;
+	private Object parentDataSource;
+	private final String propertiesPrefix;
+	private Composite composite;
 
-	public void setTableView(TableViewSWT tv) {
-		this.tv = tv;
+	
+	public TableViewTab(String propertiesPrefix) {
+		this.propertiesPrefix = propertiesPrefix;
 	}
 	
-	public TableViewSWT getTableView() {
+	public TableViewSWT<DATASOURCETYPE> getTableView() {
 		return tv;
 	}
 
 	public final void initialize(Composite composite) {
-		tv.initialize(composite);
+		tv = initYourTableView();
+		Composite parent = initComposite(composite);
+		tv.initialize(parent);
+		if (parent != composite) {
+			this.composite = composite;
+		} else {
+			this.composite = tv.getComposite();
+		}
+		
+		tableViewTabInitComplete();
+		if (parentDataSource != null) {
+			tv.setParentDataSource(parentDataSource);
+		}
+	}
+	
+	public void tableViewTabInitComplete() {
 	}
 
+	public Composite initComposite(Composite composite) {
+		return composite;
+	}
+
+	public abstract TableViewSWT<DATASOURCETYPE> initYourTableView();
+
 	public final void dataSourceChanged(Object newDataSource) {
-		tv.setParentDataSource(newDataSource);
+		this.parentDataSource = newDataSource;
+		if (tv != null) {
+			tv.setParentDataSource(newDataSource);
+		}
 	}
 
 	public void updateLanguage() {
 		super.updateLanguage();
-		tv.updateLanguage();
+		if (tv != null) {
+			tv.updateLanguage();
+		}
 	}
 
 	public final void refresh() {
-		tv.refreshTable(false);
+		if (tv != null) {
+			tv.refreshTable(false);
+		}
 	}
 
 	// @see org.gudy.azureus2.ui.swt.views.AbstractIView#delete()
 	public final void delete() {
-		tv.delete();
+		if (tv != null) {
+			tv.delete();
+		}
 		super.delete();
 	}
 
 	// @see org.gudy.azureus2.ui.swt.views.AbstractIView#getData()
 	public final String getData() {
-		return tv.getPropertiesPrefix() + ".title.short";
+		return getPropertiesPrefix() + ".title.short";
 	}
 
 	public final String getFullTitle() {
-		return MessageText.getString(tv.getPropertiesPrefix() + ".title.full");
+		return MessageText.getString(getPropertiesPrefix() + ".title.full");
 	}
 
 	// @see org.gudy.azureus2.ui.swt.views.AbstractIView#generateDiagnostics(org.gudy.azureus2.core3.util.IndentWriter)
 	public final void generateDiagnostics(IndentWriter writer) {
-		tv.generate(writer);
+		if (tv != null) {
+			tv.generate(writer);
+		}
 	}
 	
 	// @see org.gudy.azureus2.ui.swt.views.AbstractIView#getComposite()
 	public Composite getComposite() {
-		return tv.getComposite();
+		return composite;
 	}
 	
 	public void itemActivated(String itemKey) {
@@ -72,5 +113,26 @@ public class TableViewTab extends AbstractIView
 		if (itemKey.equals("editcolumns")) {return true;}
 		return false;
 	}
-		
+
+	public String getPropertiesPrefix() {
+		return propertiesPrefix;
+	}
+	
+	public Menu getPrivateMenu() {
+		return null;
+	}
+	
+	public void viewActivated() {
+		// cheap hack.. calling isVisible freshens table's visible status (and
+		// updates subviews)
+		if (tv instanceof TableViewSWTImpl) {
+			((TableViewSWTImpl)tv).isVisible();
+		}
+	}
+	
+	public void viewDeactivated() {
+		if (tv instanceof TableViewSWTImpl) {
+			((TableViewSWTImpl)tv).isVisible();
+		}
+	}
 }

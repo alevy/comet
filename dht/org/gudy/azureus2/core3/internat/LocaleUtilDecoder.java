@@ -28,7 +28,7 @@ package org.gudy.azureus2.core3.internat;
  *
  */
 
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 
 public interface 
 LocaleUtilDecoder

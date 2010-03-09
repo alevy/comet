@@ -28,33 +28,15 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerListener;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginEvent;
-import org.gudy.azureus2.plugins.PluginException;
-import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.PluginManagerDefaults;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.pluginsimpl.local.launch.PluginLauncherImpl;
 import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
 import org.gudy.azureus2.pluginsimpl.local.update.UpdateManagerImpl;
@@ -63,10 +45,7 @@ import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl.runnableWithExcep
 import org.gudy.azureus2.update.UpdaterUpdateChecker;
 import org.gudy.azureus2.update.UpdaterUtils;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
-import com.aelitis.azureus.core.AzureusCoreOperation;
+import com.aelitis.azureus.core.*;
 
 
 
@@ -188,6 +167,12 @@ PluginInitializer
 					"com.aelitis.azureus.plugins.net.buddy.BuddyPlugin", 
 					"azbuddy", 
 					"azbuddy",
+					"true",
+					"false"},
+			{	 PluginManagerDefaults.PID_RSS, 
+					"com.aelitis.azureus.core.rssgen.RSSGeneratorPlugin", 
+					"azintrss", 
+					"azintrss",
 					"true",
 					"false"},
 			/* disable until we can get some tracker admins to work on this
@@ -441,6 +426,24 @@ PluginInitializer
     UpdateManagerImpl.getSingleton( azureus_core );	// initialise the update manager
        
     plugin_manager = PluginManagerImpl.getSingleton( this );
+    
+    String	dynamic_plugins = System.getProperty( "azureus.dynamic.plugins", null );
+    
+    if ( dynamic_plugins != null ){
+    	
+    	String[]	classes = dynamic_plugins.split( ";" );
+    	
+    	for ( String c: classes ){
+    		
+    		try{
+    			queueRegistration( Class.forName( c ));
+    			
+    		}catch( Throwable e ){
+    			
+    			Debug.out( "Registration of dynamic plugin '" + c + "' failed", e );
+    		}
+    	}
+    }
     
     UpdaterUtils.checkBootstrapPlugins();
   }
@@ -1079,6 +1082,33 @@ PluginInitializer
 	      
 	      String pid = plugin_id[0]==null?directory.getName():plugin_id[0];
 	      
+	      if ( pid.endsWith( "_v" )){
+	    	  
+	    	  	// re-verify jar files
+	    	  
+	    	  log( "Re-verifying " + pid );
+	    	  
+	    	  for( int i = 0 ; i < pluginContents.length ; i++){
+	    	    	
+	    	    	File	jar_file = pluginContents[i];
+	    	    	
+	    	    	if ( jar_file.getName().endsWith( ".jar" )){
+	    	    		
+	    	    		try{
+	    	    			log( "    verifying " + jar_file );
+	    	    			
+	    	    			AEVerifier.verifyData( jar_file );
+	    	    			
+	    	    			log( "    OK" );
+	    	    		}catch( Throwable e ){
+	    	    			
+	    	    			log( "    Failed" );
+	    	    			
+	    	    			throw( e );
+	    	    		}
+	    	    	}
+	    	   }
+	      }
 	      Plugin plugin = PluginLauncherImpl.getPreloadedPlugin( plugin_class );
 	      
 	      if ( plugin == null ){
@@ -1191,6 +1221,15 @@ PluginInitializer
     	
     	throw( new PluginException( msg, e ));
     }
+  }
+  
+  private void
+  log(
+	String	str )
+  {
+	if (Logger.isEnabled()){
+		Logger.log(new LogEvent(LOGID, str ));
+	}
   }
   
   public void 
@@ -1784,12 +1823,16 @@ PluginInitializer
   	return( azureus_core.getGlobalManager() );
   }
   
-  public static PluginInterface
-  getDefaultInterface()
-  {
+	public static PluginInterface
+	getDefaultInterface()
+	{
+  	if (singleton == null) {
+  		throw new AzureusCoreException(
+					"PluginInitializer not instantiated by AzureusCore.create yet");
+  	}
   	return( singleton.getDefaultInterfaceSupport());
-  }
-  
+	}
+
   protected PluginInterface
   getDefaultInterfaceSupport()
   {
@@ -2080,4 +2123,5 @@ PluginInitializer
 			writer.exdent();
 		}
 	}
+
 }

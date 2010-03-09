@@ -23,12 +23,12 @@ package org.gudy.azureus2.ui.swt.components;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.views.utils.VerticalAligner;
+import org.gudy.azureus2.ui.swt.components.BufferedTableRow;
 
 /** Draws an image at a column in a row of a table using direct paints to the 
  *  table.
@@ -40,7 +40,6 @@ import org.gudy.azureus2.ui.swt.views.utils.VerticalAligner;
  * Cons:
  *  - Bug - overpainting of table causing our cell to redraw everytime any other cell redraws
  *          (New for Windows since SWT3.0M8, always been there for linux)
- *  - Bug - incorrect drawing location on linux (new to SWT3.0M8)
  *  - other bugs
  *
  * @see BufferedGraphicTable2
@@ -163,13 +162,17 @@ public abstract class BufferedGraphicTableItem1 extends BufferedTableItemImpl
     }
 
     Rectangle tableBounds = table.getClientArea();
-    if (bounds.y + bounds.height - tableBounds.y < table.getHeaderHeight()
-				|| bounds.y > tableBounds.height) {
-//    	System.out.println("doPnt#" + row.getIndex() + ": "
-//					+ (bounds.y + bounds.height - tableBounds.y) + "<" + tableBounds.y
-//					+ " || " + bounds.y + " > " + tableBounds.height);
-      return;
-    }
+		// Cocoa calls paintitem while row is below tablearea, and painting there
+		// is valid!
+		if (!Utils.isCocoa) {
+      if (bounds.y + bounds.height - tableBounds.y < table.getHeaderHeight()
+  				|| bounds.y > tableBounds.height) {
+      	//System.out.println("doPnt#" + row.getIndex() + ": "
+  			//		+ (bounds.y + bounds.height - tableBounds.y) + "<" + tableBounds.y
+  			//		+ " || " + bounds.y + " > " + tableBounds.height);
+        return;
+      }
+		}
     
     boolean fits = (imageBounds.width == bounds.width
 				&& imageBounds.height == bounds.height);
@@ -183,11 +186,6 @@ public abstract class BufferedGraphicTableItem1 extends BufferedTableItemImpl
           gc = new GC(table);
         }
         if (gc != null) {
-          int iAdj = VerticalAligner.getTableAdjustVerticalBy(table);
-          bounds.y += iAdj;
-          iAdj = VerticalAligner.getTableAdjustHorizontallyBy(table);
-          bounds.x += iAdj;
-
           gc.drawImage(image, bounds.x, bounds.y);
           if (ourGC) {
             gc.dispose();
@@ -232,23 +230,6 @@ public abstract class BufferedGraphicTableItem1 extends BufferedTableItemImpl
       //System.out.println(row.getIndex() + " clipping="+clipping + ";" + iMinY + ";" + iMaxY + ";tca=" + tableBounds);
       return;
     }
-
-    // See Eclipse Bug 42416
-    // "[Platform Inconsistency] GC(Table) has wrong origin"
-    // Notes/Questions:
-    // - GTK's "new GC(table)" starts under header, instead of above
-    //   -- so, adjust bounds up
-    // - Appears to apply to new GC(table) AND GC passed by PaintEvent from a Table PaintListener
-    // - Q) .height may be effected (smaller than it should be).  How does this effect clipping?
-    // - Q) At what version does this bug start appearing?
-    //   A) Reports suggest at least 2.1.1
-    int iAdj = VerticalAligner.getTableAdjustVerticalBy(table);
-    bounds.y += iAdj;
-    clipping.y += iAdj;
-    // New: GTK M8+ has a bounds.x bug.. works fine in M7, but assume people have M8 or higher (3.0final)
-    iAdj = VerticalAligner.getTableAdjustHorizontallyBy(table);
-    bounds.x += iAdj;
-    clipping.x += iAdj;
 
     boolean ourGC = (gc == null);
     if (ourGC) {

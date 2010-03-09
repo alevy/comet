@@ -26,20 +26,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerPiece;
@@ -478,7 +469,7 @@ public class PieceInfoView
 				}
 
 				if (oldBlockInfo != null && i < oldBlockInfo.length
-						&& oldBlockInfo[i].equals(newBlockInfo[i])) {
+						&& oldBlockInfo[i].sameAs(newBlockInfo[i])) {
 					iCol++;
 					continue;
 				}
@@ -663,9 +654,7 @@ public class PieceInfoView
 			haveWidth = -1;
 		}
 		
-		// @see java.lang.Object#equals(java.lang.Object)
-		public boolean equals(Object obj) {
-			BlockInfo otherBlockInfo = (BlockInfo) obj;
+		public boolean sameAs(BlockInfo otherBlockInfo) {
 			return haveWidth == otherBlockInfo.haveWidth
 					&& availNum == otherBlockInfo.availNum
 					&& availDotted == otherBlockInfo.availDotted

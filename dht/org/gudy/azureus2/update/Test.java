@@ -27,11 +27,7 @@ package org.gudy.azureus2.update;
  *
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 import org.gudy.azureus2.core3.util.Debug;
 

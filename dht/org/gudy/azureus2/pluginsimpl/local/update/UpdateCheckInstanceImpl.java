@@ -27,35 +27,22 @@ package org.gudy.azureus2.pluginsimpl.local.update;
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.update.UpdatableComponent;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstanceListener;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
-import org.gudy.azureus2.plugins.update.UpdateException;
-import org.gudy.azureus2.plugins.update.UpdateInstaller;
-import org.gudy.azureus2.plugins.update.UpdateManager;
-import org.gudy.azureus2.plugins.update.UpdateManagerDecisionListener;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.logging.*;
+
+import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 public class 
 UpdateCheckInstanceImpl
 	implements UpdateCheckInstance
 {
 	private static final LogIDs LOGID = LogIDs.CORE;
-	private List	listeners			= new ArrayList();
-	private List	updates 			= new ArrayList();
-	private List	decision_listeners	= new ArrayList();
+	private List<UpdateCheckInstanceListener>	listeners			= new ArrayList<UpdateCheckInstanceListener>();
+	private List<UpdateImpl>					updates 			= new ArrayList<UpdateImpl>();
+	private List<UpdateManagerDecisionListener>	decision_listeners	= new ArrayList<UpdateManagerDecisionListener>();
 	
 
 	private AESemaphore	sem 	= new AESemaphore("UpdateCheckInstance");
@@ -74,6 +61,12 @@ UpdateCheckInstanceImpl
 	private boolean		low_noise	= false;
 	
 	protected AEMonitor this_mon 	= new AEMonitor( "UpdateCheckInstance" );
+	
+	private Map<Integer,Object>	properties = new HashMap<Integer, Object>();
+	
+	{
+		properties.put( PT_UI_STYLE, PT_UI_STYLE_DEFAULT );
+	}
 	
 	protected
 	UpdateCheckInstanceImpl(
@@ -165,6 +158,21 @@ UpdateCheckInstanceImpl
 		return( low_noise );
 	}
 	
+	public Object
+	getProperty(
+		int		property_name )
+	{
+		return( properties.get( property_name ));
+	}
+	
+	public void
+	setProperty(
+		int		property_name,
+		Object	value )
+	{
+		properties.put( property_name, value );
+	}
+	
 	public void
 	start()
 	{
@@ -229,7 +237,7 @@ UpdateCheckInstanceImpl
 						}
 					}
 					
-					List	target_updates = new ArrayList();
+					List<UpdateImpl>	target_updates = new ArrayList<UpdateImpl>();
 					
 						// if any mandatory checks failed then we can't do any more
 					
@@ -353,6 +361,19 @@ UpdateCheckInstanceImpl
 		return( manager.createInstaller());
 	}
 	
+	public boolean 
+	isCompleteOrCancelled() 
+	{
+		try{
+			this_mon.enter();
+
+			return( completed || cancelled );
+			
+		}finally{
+			
+			this_mon.exit();
+		}
+	}
 	public void
 	cancel()
 	{

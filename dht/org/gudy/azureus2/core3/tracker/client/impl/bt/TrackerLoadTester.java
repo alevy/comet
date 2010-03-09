@@ -1,5 +1,5 @@
 /*
- * Created on 1 fevr. 2005
+ * Created on 1 févr. 2005
  * Created by Olivier Chalouhi
  * 
  * Copyright (C) 2004, 2005, 2006 Aelitis SAS, All rights Reserved
@@ -25,7 +25,6 @@ package org.gudy.azureus2.core3.tracker.client.impl.bt;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-
 import org.gudy.azureus2.core3.util.Constants;
 
 /**

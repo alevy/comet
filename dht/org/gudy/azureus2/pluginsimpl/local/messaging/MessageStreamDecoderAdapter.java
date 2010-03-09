@@ -28,8 +28,7 @@ package org.gudy.azureus2.pluginsimpl.local.messaging;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.gudy.azureus2.plugins.messaging.Message;
-import org.gudy.azureus2.plugins.messaging.MessageStreamDecoder;
+import org.gudy.azureus2.plugins.messaging.*;
 import org.gudy.azureus2.pluginsimpl.local.network.TransportImpl;
 
 

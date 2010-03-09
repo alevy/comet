@@ -21,6 +21,7 @@
 package org.gudy.azureus2.ui.swt.views.table.utils;
 
 import org.eclipse.swt.SWT;
+
 import org.gudy.azureus2.plugins.ui.tables.TableColumn;
 
 /**

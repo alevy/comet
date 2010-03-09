@@ -27,9 +27,11 @@ package org.gudy.azureus2.platform.win32.access.impl;
  *
  */
 
-import org.gudy.azureus2.platform.win32.PlatformManagerImpl;
-import org.gudy.azureus2.platform.win32.access.AEWin32Access;
-import org.gudy.azureus2.platform.win32.access.AEWin32AccessException;
+import java.util.List;
+import java.util.Map;
+
+import org.gudy.azureus2.platform.win32.access.*;
+import org.gudy.azureus2.platform.win32.*;
 import org.gudy.azureus2.update.UpdaterUtils;
 
 public class 
@@ -246,5 +248,14 @@ AEWin32AccessInterface
 		String 		file,
 		String 		parameters )
 	
+		throws AEWin32AccessExceptionImpl;
+	
+	
+	public static native List
+	getAvailableDrives()
+		throws AEWin32AccessExceptionImpl;
+
+	public static native Map
+	getDriveInfo(char driveLetter)
 		throws AEWin32AccessExceptionImpl;
 }

@@ -22,11 +22,11 @@
 
 package com.aelitis.azureus.core.proxy.impl;
 
+import java.util.*;
+
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.AEMonitor;

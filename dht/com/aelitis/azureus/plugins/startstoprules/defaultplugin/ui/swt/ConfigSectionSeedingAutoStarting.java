@@ -31,11 +31,7 @@ import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntListParameter;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.RadioParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.plugins.startstoprules.defaultplugin.StartStopRulesDefaultPlugin;
@@ -70,7 +66,6 @@ public class ConfigSectionSeedingAutoStarting implements UISWTConfigSection {
     Label label;
 
     Composite gQR = new Composite(parent, SWT.NULL);
-    gQR.addControlListener(new Utils.LabelWrapControlListener());
 
     layout = new GridLayout();
     layout.numColumns = 1;
@@ -126,7 +121,6 @@ public class ConfigSectionSeedingAutoStarting implements UISWTConfigSection {
     Messages.setLanguageText(label, "ConfigView.label.seeding.rankType.seed.fallback");
 
     gridData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
-    gridData.widthHint = 20;
     IntParameter intParamFallBack = new IntParameter(gSeedCount, "StartStopManager_iRankTypeSeedFallback");
     intParamFallBack.setLayoutData(gridData);
 

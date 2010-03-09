@@ -27,33 +27,23 @@ package org.gudy.azureus2.pluginsimpl.local.ui.model;
  *
  */
 
-import java.util.ArrayList;
-import java.util.Properties;
+import java.util.*;
 
-import org.gudy.azureus2.plugins.PluginInterface;
+
+
 import org.gudy.azureus2.plugins.ui.config.ActionParameter;
 import org.gudy.azureus2.plugins.ui.config.InfoParameter;
 import org.gudy.azureus2.plugins.ui.config.LabelParameter;
 import org.gudy.azureus2.plugins.ui.config.Parameter;
 import org.gudy.azureus2.plugins.ui.config.ParameterGroup;
-import org.gudy.azureus2.plugins.ui.model.BasicPluginConfigModel;
+
 import org.gudy.azureus2.pluginsimpl.local.PluginConfigImpl;
 import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ActionParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.BooleanParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ColorParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.DirectoryParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.FileParameter;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.HyperlinkParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.InfoParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.IntParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.LabelParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterGroupImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.ParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.PasswordParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.StringListParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.StringParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.UIParameterImpl;
+import org.gudy.azureus2.pluginsimpl.local.ui.config.*;
+
+import org.gudy.azureus2.plugins.*;
+
+import org.gudy.azureus2.plugins.ui.model.*;
 
 public class 
 BasicPluginConfigModelImpl
@@ -61,10 +51,10 @@ BasicPluginConfigModelImpl
 {
 	private UIManagerImpl		ui_manager;
 	
-	private String				parent_section;
-	private String				section;
-	private PluginInterface		pi;
-	private ArrayList			parameters = new ArrayList();
+	private String					parent_section;
+	private String					section;
+	private PluginInterface			pi;
+	private ArrayList<Parameter>	parameters = new ArrayList<Parameter>();
 	
 	private String				key_prefix;
 	
@@ -129,7 +119,7 @@ BasicPluginConfigModelImpl
 		String 		resource_name,
 		boolean 	defaultValue )
 	{
-		BooleanParameterImpl res = new BooleanParameterImpl(configobj, key_prefix + key, resource_name, defaultValue );
+		BooleanParameterImpl res = new BooleanParameterImpl(configobj, resolveKey(key), resource_name, defaultValue );
 		
 		parameters.add( res );
 		
@@ -151,7 +141,7 @@ BasicPluginConfigModelImpl
 		String 		resource_name,
 		String  	defaultValue )
 	{
-		StringParameterImpl res = new StringParameterImpl(configobj, key_prefix + key, resource_name, defaultValue );
+		StringParameterImpl res = new StringParameterImpl(configobj, resolveKey(key), resource_name, defaultValue );
 	
 		parameters.add( res );
 		
@@ -165,7 +155,7 @@ BasicPluginConfigModelImpl
 		String[]	values,
 		String	 	defaultValue )
 	{
-		StringListParameterImpl res = new StringListParameterImpl(configobj, key_prefix + key, resource_name, defaultValue, values, values );
+		StringListParameterImpl res = new StringListParameterImpl(configobj, resolveKey(key), resource_name, defaultValue, values, values );
 		
 		parameters.add( res );
 			
@@ -181,7 +171,7 @@ BasicPluginConfigModelImpl
 		String	 	defaultValue )
 	{
 		StringListParameterImpl res = new StringListParameterImpl(configobj,
-				key_prefix + key, resource_name, defaultValue,
+				resolveKey(key), resource_name, defaultValue,
 				values, labels);
 
 		parameters.add(res);
@@ -196,7 +186,7 @@ BasicPluginConfigModelImpl
 		int			encoding_type,	
 		byte[]	 	defaultValue )
 	{
-		PasswordParameterImpl res = new PasswordParameterImpl(configobj, key_prefix + key, resource_name, encoding_type, defaultValue );
+		PasswordParameterImpl res = new PasswordParameterImpl(configobj, resolveKey(key), resource_name, encoding_type, defaultValue );
 		
 		parameters.add( res );
 			
@@ -209,7 +199,7 @@ BasicPluginConfigModelImpl
 		String 		resource_name,
 		int	 		defaultValue )
 	{
-		IntParameterImpl res = new IntParameterImpl(configobj, key_prefix + key, resource_name, defaultValue );
+		IntParameterImpl res = new IntParameterImpl(configobj, resolveKey(key), resource_name, defaultValue );
 		
 		parameters.add( res );
 		
@@ -224,7 +214,7 @@ BasicPluginConfigModelImpl
 		int         min_value,
 		int         max_value)
 	{
-		IntParameterImpl res = new IntParameterImpl(configobj, key_prefix + key, resource_name, defaultValue, min_value, max_value );
+		IntParameterImpl res = new IntParameterImpl(configobj, resolveKey(key), resource_name, defaultValue, min_value, max_value );
 		parameters.add( res );
 		return( res );	
 	}
@@ -235,7 +225,7 @@ BasicPluginConfigModelImpl
 		String 		resource_name,
 		String 		defaultValue )
 	{
-		DirectoryParameterImpl res = new DirectoryParameterImpl(configobj, key_prefix + key, resource_name, defaultValue );
+		DirectoryParameterImpl res = new DirectoryParameterImpl(configobj, resolveKey(key), resource_name, defaultValue );
 		
 		parameters.add( res );
 		
@@ -256,7 +246,7 @@ BasicPluginConfigModelImpl
 			String 		resource_name,
 			String 		defaultValue,
 		    String[]    file_extensions) {
-		FileParameter res = new FileParameter(configobj, key_prefix + key, resource_name, defaultValue, file_extensions);
+		FileParameter res = new FileParameter(configobj, resolveKey(key), resource_name, defaultValue, file_extensions);
 		parameters.add(res);
 		return res;
 	}
@@ -278,7 +268,7 @@ BasicPluginConfigModelImpl
 		String		resource_name,
 		String		value )
 	{
-		InfoParameterImpl res = new InfoParameterImpl(configobj, key_prefix, resource_name, value );
+		InfoParameterImpl res = new InfoParameterImpl(configobj, resolveKey(resource_name), resource_name, value );
 		
 		parameters.add( res );
 		
@@ -294,7 +284,7 @@ BasicPluginConfigModelImpl
 
 	public org.gudy.azureus2.plugins.ui.config.ColorParameter
 	addColorParameter2(String key, String resource_name, int r, int g, int b) {
-		ColorParameterImpl res = new ColorParameterImpl(configobj, key_prefix + key, resource_name, r, g, b);
+		ColorParameterImpl res = new ColorParameterImpl(configobj, resolveKey(key), resource_name, r, g, b);
 		parameters.add(res);
 		return res;
 	}
@@ -327,7 +317,12 @@ BasicPluginConfigModelImpl
 		
 		for (int i=0;i<_parameters.length;i++){
 			
-			((ParameterImpl)_parameters[i]).setGroup( pg );
+			ParameterImpl parameter = (ParameterImpl)_parameters[i];
+			
+			if ( parameter != null ){
+			
+				parameter.setGroup( pg );
+			}
 		}
 		
 		return( pg );
@@ -350,4 +345,15 @@ BasicPluginConfigModelImpl
 		this.pi.getUtilities().getLocaleUtilities().integrateLocalisedMessageBundle(props);
 	}
 	
+	protected String
+	resolveKey(
+		String	key )
+	{
+		if ( key.startsWith("!") && key.endsWith( "!" )){
+			
+			return( key.substring(1, key.length()-1 ));
+		}
+		
+		return( key_prefix + key );
+	}
 }

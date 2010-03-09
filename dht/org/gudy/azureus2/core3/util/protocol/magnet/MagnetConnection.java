@@ -28,6 +28,7 @@ import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.net.URL;
 
+
 import org.gudy.azureus2.core3.util.Debug;
 
 import com.aelitis.net.magneturi.MagnetURIHandler;
@@ -41,11 +42,11 @@ public class
 MagnetConnection
 	extends HttpURLConnection
 {
-	protected Socket	socket;
+	private Socket	socket;
 	
-	protected static final String	NL			= "\015\012";
+	private static final String	NL			= "\r\n";
 
-	protected String	status = "";
+	private String	status = "";
 	
 	protected
 	MagnetConnection(
@@ -61,7 +62,7 @@ MagnetConnection
 	{
 		socket = new Socket( "127.0.0.1", MagnetURIHandler.getSingleton().getPort());
 						
-		String	get = "GET " + "/download/" + getURL().toString().substring( 7 ) + " HTTP/1.0\r\n";
+		String	get = "GET " + "/download/" + getURL().toString().substring( 7 ) + " HTTP/1.0" + NL + NL;
 		
 		socket.getOutputStream().write( get.getBytes());
 		

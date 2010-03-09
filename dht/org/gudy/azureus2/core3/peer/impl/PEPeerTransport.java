@@ -185,6 +185,8 @@ PEPeerTransport
   public long getTimeSinceLastDataMessageSent();
   
   
+  public long getUnchokedForMillis();
+  
   /**
    * Do any peer exchange processing/updating.
    */
@@ -222,11 +224,12 @@ PEPeerTransport
 		/**
 		 * Attempts to reconnect to the same peer
 		 * @param tryUDP try to initate a UDP connection if true, just reestablish the previous state otherwise
+		 * @param tryIPv6 TODO
 		 * @return null if reconnect not possible, reconnected peer otherwise
 		 */
 	
 	public PEPeerTransport
-	reconnect(boolean tryUDP);
+	reconnect(boolean tryUDP, boolean tryIPv6);
 	
 	/**
 	 * This method is called to check if it is safe to reconnect to a peer, i.e. avoid hammering

@@ -29,13 +29,7 @@ package org.gudy.azureus2.pluginsimpl.local.sharing;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationListener;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
@@ -43,34 +37,12 @@ import org.gudy.azureus2.core3.config.ParameterListener;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentCreator;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
-import org.gudy.azureus2.core3.torrent.TOTorrentProgressListener;
+import org.gudy.azureus2.core3.torrent.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareManager;
-import org.gudy.azureus2.plugins.sharing.ShareManagerListener;
-import org.gudy.azureus2.plugins.sharing.ShareResource;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDeletionVetoException;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDir;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDirContents;
-import org.gudy.azureus2.plugins.sharing.ShareResourceFile;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
-import org.gudy.azureus2.plugins.torrent.TorrentException;
-import org.gudy.azureus2.plugins.torrent.TorrentManager;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.sharing.*;
+import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 import org.gudy.azureus2.pluginsimpl.local.torrent.TorrentImpl;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
@@ -123,12 +95,12 @@ ShareManagerImpl
 	private URL[]				announce_urls;
 	private ShareConfigImpl		config;
 	
-	private Map					shares 		= new HashMap();
+	private Map<String,ShareResourceImpl>	shares 		= new HashMap<String, ShareResourceImpl>();
 	
 	private shareScanner		current_scanner;
 	private boolean				scanning;
 	
-	private List				listeners	= new ArrayList();
+	private List<ShareManagerListener>				listeners	= new ArrayList<ShareManagerListener>();
 	
 	protected
 	ShareManagerImpl()
@@ -175,11 +147,11 @@ ShareManagerImpl
 										
 					}finally{
 					
-						Iterator it = shares.values().iterator();
+						Iterator<ShareResourceImpl> it = shares.values().iterator();
 						
 						while(it.hasNext()){
 						
-							ShareResourceImpl	resource = (ShareResourceImpl)it.next();
+							ShareResourceImpl	resource = it.next();
 							
 							if ( resource.getType() == ShareResource.ST_DIR_CONTENTS ){
 					
@@ -187,7 +159,7 @@ ShareManagerImpl
 									
 									try{
 										
-										((ShareManagerListener)listeners.get(i)).resourceAdded( resource );
+										listeners.get(i).resourceAdded( resource );
 										
 									}catch( Throwable e ){
 										
@@ -285,11 +257,11 @@ ShareManagerImpl
 	{
 			// copy set for iteration as consistency check can delete resource
 		
-		Iterator	it = new HashSet(shares.values()).iterator();
+		Iterator<ShareResourceImpl>	it = new HashSet<ShareResourceImpl>(shares.values()).iterator();
 		
 		while(it.hasNext()){
 			
-			ShareResourceImpl	resource = (ShareResourceImpl)it.next();
+			ShareResourceImpl	resource = it.next();
 			
 			try{
 				resource.checkConsistency();
@@ -322,7 +294,7 @@ ShareManagerImpl
 			
 			if ( new_resource != null ){
 				
-				ShareResourceImpl	old_resource = (ShareResourceImpl)shares.get(new_resource.getName());
+				ShareResourceImpl	old_resource = shares.get(new_resource.getName());
 				
 				if ( old_resource != null ){
 					
@@ -558,7 +530,7 @@ ShareManagerImpl
 					+ file.toString() + "'"));
 
 		try{
-			return( (ShareResourceFile)addFileOrDir( parent, file, ShareResource.ST_FILE, false ));
+			return( (ShareResourceFile)addFileOrDir( parent, file, ShareResource.ST_FILE ));
 			
 		}catch( ShareException e ){
 			
@@ -600,7 +572,7 @@ ShareManagerImpl
 		try{
 			this_mon.enter();
 			
-			return( (ShareResourceDir)addFileOrDir( parent, dir, ShareResource.ST_DIR, false ));
+			return( (ShareResourceDir)addFileOrDir( parent, dir, ShareResource.ST_DIR ));
 			
 		}catch( ShareException e ){
 			
@@ -627,8 +599,7 @@ ShareManagerImpl
 	addFileOrDir(
 		ShareResourceDirContentsImpl	parent,
 		File							file,
-		int								type,
-		boolean							modified )
+		int								type )
 	
 		throws ShareException, ShareResourceDeletionVetoException
 	{
@@ -637,11 +608,13 @@ ShareManagerImpl
 		
 			String	name = file.getCanonicalFile().toString();
 			
-			ShareResource	old_resource = (ShareResource)shares.get(name);
+			ShareResourceImpl	old_resource = shares.get(name);
 			
-			if ( old_resource != null ){
+			boolean	modified = old_resource != null;
+			
+			if ( modified ){
 		
-				old_resource.delete();
+				old_resource.delete( true, false );
 			}
 			
 			ShareResourceImpl new_resource;
@@ -669,7 +642,7 @@ ShareManagerImpl
 					
 					if ( modified ){
 						
-						((ShareManagerListener)listeners.get(i)).resourceModified( new_resource );
+						((ShareManagerListener)listeners.get(i)).resourceModified( old_resource, new_resource );
 					
 					}else{
 						
@@ -717,10 +690,10 @@ ShareManagerImpl
 			
 			if ( old_resource != null ){
 				
-				old_resource.delete();
+				old_resource.delete( true );
 			}
 
-			ShareResourceDirContents new_resource = new ShareResourceDirContentsImpl( this, dir, recursive, true );
+			ShareResourceDirContentsImpl new_resource = new ShareResourceDirContentsImpl( this, dir, recursive, true );
 						
 			shares.put( name, new_resource );
 			
@@ -760,7 +733,8 @@ ShareManagerImpl
 	
 	protected void
 	delete(
-		ShareResourceImpl	resource )
+		ShareResourceImpl	resource,
+		boolean				fire_listeners )
 	
 		throws ShareException
 	{
@@ -777,15 +751,18 @@ ShareManagerImpl
 			
 			config.saveConfig();
 			
-			for (int i=0;i<listeners.size();i++){
+			if ( fire_listeners ){
 				
-				try{
+				for (int i=0;i<listeners.size();i++){
 					
-					((ShareManagerListener)listeners.get(i)).resourceDeleted( resource );
-					
-				}catch( Throwable e ){
-					
-					Debug.printStackTrace( e );
+					try{
+						
+						((ShareManagerListener)listeners.get(i)).resourceDeleted( resource );
+						
+					}catch( Throwable e ){
+						
+						Debug.printStackTrace( e );
+					}
 				}
 			}
 		}finally{
@@ -949,8 +926,17 @@ ShareManagerImpl
 			}
 			
 			Iterator	it = share_map.iterator();
+	
+			// We don't need GlobalManager, so isCoreRunning isn't needed
+			// Hopefully all the things we need are avail on core create
+			if (!AzureusCoreFactory.isCoreAvailable()) {
+				// could probably log some stuff below, but for now
+				// be safe and lazy and just exit
+				writer.println("No Core");
+				return;
+			}
 			
-			TorrentManager tm = AzureusCoreFactory.getSingleton().getPluginManager().getDefaultPluginInterface().getTorrentManager();
+			TorrentManager tm = PluginInitializer.getDefaultInterface().getTorrentManager();
 
 			TorrentAttribute	category_attribute 	= tm.getAttribute( TorrentAttribute.TA_CATEGORY );
 			TorrentAttribute	props_attribute 	= tm.getAttribute( TorrentAttribute.TA_SHARE_PROPERTIES );

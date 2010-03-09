@@ -22,7 +22,8 @@
 
 package com.aelitis.azureus.core.instancemanager.impl;
 
-import java.util.Map;
+import java.util.*;
+
 
 import com.aelitis.azureus.core.instancemanager.AZInstance;
 
@@ -37,10 +38,12 @@ AZInstanceImpl
 		
 	protected void
 	encode(
-		Map		map )
+		Map<String,Object>		map )
 	{
 		map.put( "id", getID().getBytes());				
-
+					
+		map.put( "ai", getApplicationID().getBytes());
+		
 		map.put( "iip", getInternalAddress().getHostAddress().getBytes());
 		
 		map.put( "eip", getExternalAddress().getHostAddress().getBytes());
@@ -62,8 +65,12 @@ AZInstanceImpl
 			id = id.substring(0,8) + "...";
 		}
 		
-		return( "id=" + id + ",int=" + getInternalAddress().getHostAddress() + ",ext=" + 
-				getExternalAddress().getHostAddress() +	",tcp=" + getTCPListenPort() + ",udp=" + getUDPListenPort() +
+		return( "id=" + id + 
+				",ap=" + getApplicationID() + 
+				",int=" + getInternalAddress().getHostAddress() + 
+				",ext=" + getExternalAddress().getHostAddress() +	
+				",tcp=" + getTCPListenPort() + 
+				",udp=" + getUDPListenPort() +
 				",udp2=" + getUDPNonDataListenPort());
 	}
 }

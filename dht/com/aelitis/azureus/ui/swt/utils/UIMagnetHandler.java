@@ -24,19 +24,18 @@ import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.ui.swt.UISwitcherUtil;
 import org.gudy.azureus2.ui.swt.Utils;
 
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreFactory;
-import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
+import com.aelitis.azureus.core.*;
 import com.aelitis.azureus.plugins.magnet.MagnetPlugin;
 import com.aelitis.azureus.plugins.magnet.MagnetPluginListener;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
+import com.aelitis.azureus.ui.UserPrompterResultListener;
 import com.aelitis.net.magneturi.MagnetURIHandler;
+
+import org.gudy.azureus2.plugins.PluginInterface;
 
 /**
  * @author TuxPaper
@@ -89,12 +88,12 @@ public class UIMagnetHandler
 												public void componentCreated(AzureusCore core,
 														AzureusCoreComponent component) {
 													if (component instanceof UIFunctions) {
-														uiswitch((UIFunctions) component);
+														uiswitch(core, (UIFunctions) component);
 													}
 												}
 											});
 										} else {
-											uiswitch(uif);
+											uiswitch(core, uif);
 										}
 
 										return true;
@@ -113,22 +112,23 @@ public class UIMagnetHandler
 		});
 	}
 
-	private static void uiswitch(final UIFunctions uif) {
+	private static void uiswitch(final AzureusCore core, final UIFunctions uif) {
 		Utils.execSWTThreadLater(0, new AERunnable() {
 			public void runSupport() {
 				uif.bringToFront();
-				int i = uif.promptUser(MessageText.getString("dialog.uiswitch.title"),
+				uif.promptUser(MessageText.getString("dialog.uiswitch.title"),
 						MessageText.getString("dialog.uiswitch.text"), new String[] {
 							MessageText.getString("dialog.uiswitch.button"),
-						}, 0, null, null, false, 0);
-				if (i == 0) {
-					COConfigurationManager.setParameter("ui", "az3");
-					COConfigurationManager.save();
-					AzureusCore core = AzureusCoreFactory.getSingleton();
-					if (core != null) {
-						core.requestRestart();
-					}
-				}
+						}, 0, null, null, false, 0, new UserPrompterResultListener() {
+							public void prompterClosed(int returnVal) {
+								if (returnVal != 0) {
+									return;
+								}
+								COConfigurationManager.setParameter("ui", "az3");
+								COConfigurationManager.save();
+								core.requestRestart();
+							}
+						});
 			}
 		});
 	}

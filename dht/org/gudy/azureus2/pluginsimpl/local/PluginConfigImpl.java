@@ -22,26 +22,19 @@
 package org.gudy.azureus2.pluginsimpl.local;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationListener;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.impl.ConfigurationDefaults;
-import org.gudy.azureus2.core3.config.impl.StringListImpl;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.config.impl.*;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
+
 import org.gudy.azureus2.plugins.PluginConfig;
 import org.gudy.azureus2.plugins.PluginConfigListener;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.config.ConfigParameter;
 import org.gudy.azureus2.plugins.config.PluginConfigSource;
-import org.gudy.azureus2.pluginsimpl.local.config.ConfigParameterImpl;
-import org.gudy.azureus2.pluginsimpl.local.config.PluginConfigSourceImpl;
+import org.gudy.azureus2.pluginsimpl.local.config.*;
 
 import com.aelitis.net.magneturi.MagnetURIHandler;
 
@@ -50,7 +43,7 @@ PluginConfigImpl
 	implements PluginConfig 
 {
 
-	protected static Map	external_to_internal_key_map = new HashMap();
+	protected static Map<String,String>	external_to_internal_key_map = new HashMap<String,String>();
 	private PluginConfigSourceImpl external_source = null;
 
 	static{
@@ -67,7 +60,8 @@ PluginConfigImpl
 		external_to_internal_key_map.put( CORE_PARAM_INT_MAX_UPLOADS_SEEDING, "Max Uploads Seeding");
 		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_MAX_UPLOAD_SPEED_SEEDING, "enable.seedingonly.upload.rate");
 		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_MAX_ACTIVE_SEEDING, "StartStopManager_bMaxActiveTorrentsWhenSeedingEnabled");
-		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_AUTO_SPEED_ON, "Auto Upload Speed Enabled");
+		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_AUTO_SPEED_ON, CORE_PARAM_BOOLEAN_AUTO_SPEED_ON);
+		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_AUTO_SPEED_SEEDING_ON, CORE_PARAM_BOOLEAN_AUTO_SPEED_SEEDING_ON );
 		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_SOCKS_PROXY_NO_INWARD_CONNECTION, 	"Proxy.Data.SOCKS.inform" );
 		external_to_internal_key_map.put( CORE_PARAM_BOOLEAN_NEW_SEEDS_START_AT_TOP, 			CORE_PARAM_BOOLEAN_NEW_SEEDS_START_AT_TOP );
 		external_to_internal_key_map.put( CORE_PARAM_STRING_LOCAL_BIND_IP, 						"Bind IP" );

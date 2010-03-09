@@ -22,7 +22,7 @@
  */
 package com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.impl;
 
-import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.Coordinates;
+import com.aelitis.azureus.core.dht.netcoords.vivaldi.ver1.*;
 
 public class HeightCoordinatesImpl implements Coordinates {
   

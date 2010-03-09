@@ -36,18 +36,8 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.List;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
@@ -57,20 +47,24 @@ import org.gudy.azureus2.core3.logging.impl.FileLogging;
 import org.gudy.azureus2.core3.util.AEDiagnostics;
 import org.gudy.azureus2.core3.util.AEThread2;
 import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IAdditionalActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntListParameter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.mainwindow.ClipboardCopy;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
+import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.stats.AzureusCoreStats;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginManager;
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
+import org.gudy.azureus2.plugins.update.UpdateException;
+import org.gudy.azureus2.plugins.update.UpdateInstaller;
+import org.gudy.azureus2.plugins.update.UpdateInstallerListener;
+import org.gudy.azureus2.plugins.utils.StaticUtilities;
 
 public class ConfigSectionLogging implements UISWTConfigSection {
   private static final LogIDs LOGID = LogIDs.GUI;
@@ -430,6 +424,61 @@ public class ConfigSectionLogging implements UISWTConfigSection {
 					Logger.log( new LogEvent(LOGID, "Evidence Generation:\n" + evidence));
 				}
 			});
+	
+	if ( false ){
+		Button test_button = new Button(gLogging, SWT.PUSH);
+	
+		test_button.setText( "Test" );
+	
+		test_button.addListener(
+				SWT.Selection, 
+				new Listener() 
+				{
+					public void 
+					handleEvent(Event event) 
+					{
+						try{
+							PluginInterface pi = AzureusCoreFactory.getSingleton().getPluginManager().getDefaultPluginInterface();
+							
+							UpdateInstaller installer = pi.getUpdateManager().createInstaller();
+						
+							installer.addMoveAction(
+								"C:\\temp\\file1", "C:\\temp\\file2" );
+						
+							installer.installNow(
+								new UpdateInstallerListener()
+								{
+									public void
+									reportProgress(
+										String		str )
+									{
+										System.out.println( str );
+									}
+									
+									public void
+									complete()
+									{
+										System.out.println( "complete" );
+									}
+									
+									public void
+									failed(
+										UpdateException	e )
+									{
+										System.out.println( "failed" );
+										
+										e.printStackTrace();
+										
+									}
+								});
+							
+						}catch( Throwable e ){
+							
+							e.printStackTrace();
+						}
+					}
+				});
+	}
 	
     return gLogging;
   }

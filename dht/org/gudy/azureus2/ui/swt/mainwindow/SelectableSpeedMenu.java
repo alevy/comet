@@ -24,11 +24,8 @@ package org.gudy.azureus2.ui.swt.mainwindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MenuItem;
-import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.impl.TransferSpeedValidator;
 import org.gudy.azureus2.core3.global.GlobalManager;
@@ -36,12 +33,13 @@ import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
+import org.gudy.azureus2.plugins.ui.UIInputReceiver;
+import org.gudy.azureus2.plugins.ui.UIInputReceiverListener;
 import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.shells.InputShell;
+import org.gudy.azureus2.ui.swt.SimpleTextEntryWindow;
 import org.gudy.azureus2.ui.swt.shells.SpeedScaleShell;
 
 import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreFactory;
 
 public class SelectableSpeedMenu {
 
@@ -85,7 +83,7 @@ public class SelectableSpeedMenu {
             final String configAutoKey = 
             		TransferSpeedValidator.getActiveAutoUploadParameter(globalManager);
      
-	        auto = COConfigurationManager.getBooleanParameter( configAutoKey );
+	        auto = TransferSpeedValidator.isAutoSpeedActive(globalManager);
 	        
 	        	// auto
 	        final MenuItem auto_item = new MenuItem(parent,SWT.CHECK);
@@ -139,50 +137,58 @@ public class SelectableSpeedMenu {
 			public void widgetSelected(SelectionEvent e) {
 				String kbps_str = MessageText.getString("MyTorrentsView.dialog.setNumber.inKbps",
 						new String[]{ DisplayFormatters.getRateUnit(DisplayFormatters.UNIT_KB ) });
-				
-				InputShell is = new InputShell(
-						"MyTorrentsView.dialog.setSpeed.title",
-						new String[] { MessageText.getString(up_menu?"MyTorrentsView.dialog.setNumber.upload":"MyTorrentsView.dialog.setNumber.download") },
-						"MyTorrentsView.dialog.setNumber.text",
+
+				SimpleTextEntryWindow entryWindow = new SimpleTextEntryWindow();
+				entryWindow.initTexts("MyTorrentsView.dialog.setSpeed.title",
 						new String[] {
-								kbps_str,
-								MessageText.getString(up_menu?"MyTorrentsView.dialog.setNumber.upload":"MyTorrentsView.dialog.setNumber.download") });
+							MessageText.getString(up_menu
+									? "MyTorrentsView.dialog.setNumber.upload"
+									: "MyTorrentsView.dialog.setNumber.download")
+						}, "MyTorrentsView.dialog.setNumber.text", new String[] {
+							kbps_str,
+							MessageText.getString(up_menu
+									? "MyTorrentsView.dialog.setNumber.upload"
+									: "MyTorrentsView.dialog.setNumber.download")
+						});
 
-				String sReturn = is.open();
-				if (sReturn == null)
-					return;
+				entryWindow.prompt(new UIInputReceiverListener() {
+					public void UIInputReceiverClosed(UIInputReceiver entryWindow) {
+						if (!entryWindow.hasSubmittedInput()) {
+							return;
+						}
+						String sReturn = entryWindow.getSubmittedInput();
 
-				int newSpeed;
-				try {
-					newSpeed = (int) (Double.valueOf(sReturn).doubleValue());
-				} catch (NumberFormatException er) {
-					MessageBox mb = new MessageBox(parent.getShell(),
-							SWT.ICON_ERROR | SWT.OK);
-					mb.setText(MessageText
-							.getString("MyTorrentsView.dialog.NumberError.title"));
-					mb.setMessage(MessageText
-							.getString("MyTorrentsView.dialog.NumberError.text"));
+						if (sReturn == null)
+							return;
 
-					mb.open();
-					return;
-				}
-				
-			    if ( up_menu ){	   
-			    }
-			    
-                if ( up_menu ){
-                    
-                	String configAutoKey = 
-                		TransferSpeedValidator.getActiveAutoUploadParameter(globalManager);
-     
-                	COConfigurationManager.setParameter( configAutoKey, false );
-                }
-                
-                final int cValue = ((Integer)new TransferSpeedValidator(configKey, new Integer(newSpeed)).getValue()).intValue();
-                
-                COConfigurationManager.setParameter(configKey, cValue);
-                
-                COConfigurationManager.save();
+						int newSpeed;
+						try {
+							newSpeed = (int) (Double.valueOf(sReturn).doubleValue());
+						} catch (NumberFormatException er) {
+							MessageBox mb = new MessageBox(parent.getShell(), SWT.ICON_ERROR
+									| SWT.OK);
+							mb.setText(MessageText.getString("MyTorrentsView.dialog.NumberError.title"));
+							mb.setMessage(MessageText.getString("MyTorrentsView.dialog.NumberError.text"));
+
+							mb.open();
+							return;
+						}
+
+						if (up_menu) {
+
+							String configAutoKey = TransferSpeedValidator.getActiveAutoUploadParameter(globalManager);
+
+							COConfigurationManager.setParameter(configAutoKey, false);
+						}
+
+						final int cValue = ((Integer) new TransferSpeedValidator(configKey,
+								new Integer(newSpeed)).getValue()).intValue();
+
+						COConfigurationManager.setParameter(configKey, cValue);
+
+						COConfigurationManager.save();
+					}
+				});
 			}
 		});
     }
@@ -310,12 +316,12 @@ public class SelectableSpeedMenu {
 	/**
 	 * @since 3.0.1.7
 	 */
-	public static void invokeSlider(boolean isUpSpeed) {
+	public static void invokeSlider(AzureusCore core, boolean isUpSpeed) {
 		final String prefix = MessageText.getString(isUpSpeed
 				? "GeneralView.label.maxuploadspeed"
 				: "GeneralView.label.maxdownloadspeed");
 
-		GlobalManager gm = AzureusCoreFactory.getSingleton().getGlobalManager();
+		GlobalManager gm = core.getGlobalManager();
 
 		final String configAutoKey = TransferSpeedValidator.getActiveAutoUploadParameter(gm);
 		boolean auto = COConfigurationManager.getBooleanParameter(configAutoKey);

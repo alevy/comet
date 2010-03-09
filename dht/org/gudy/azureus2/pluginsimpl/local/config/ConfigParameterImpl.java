@@ -27,13 +27,11 @@ package org.gudy.azureus2.pluginsimpl.local.config;
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.plugins.config.ConfigParameter;
-import org.gudy.azureus2.plugins.config.ConfigParameterListener;
+import org.gudy.azureus2.plugins.config.*;
 
 public class 
 ConfigParameterImpl

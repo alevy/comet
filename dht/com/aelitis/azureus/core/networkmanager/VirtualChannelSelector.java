@@ -22,22 +22,15 @@
 
 package com.aelitis.azureus.core.networkmanager;
 
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelectableChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.Debug;
+
 
 import com.aelitis.azureus.core.networkmanager.impl.tcp.VirtualChannelSelectorImpl;
 
@@ -64,13 +57,13 @@ public class VirtualChannelSelector {
   private volatile boolean	destroyed;
   
   //ONLY USED IN FAULTY MODE
-  private HashMap selectors;
-  private HashSet selectors_keyset_cow;
+  private HashMap<VirtualChannelSelectorImpl,ArrayList<AbstractSelectableChannel>> selectors;
+  private HashSet<VirtualChannelSelectorImpl> selectors_keyset_cow;
   private AEMonitor selectors_mon;
   private final int op;
   private final boolean pause;
   
-  
+  private boolean randomise_keys;
 
   
   /**
@@ -87,7 +80,7 @@ public class VirtualChannelSelector {
       initSafeMode();
     }
     else {
-      selector_impl = new VirtualChannelSelectorImpl( this, op, pause );
+      selector_impl = new VirtualChannelSelectorImpl( this, op, pause, randomise_keys );
       selectors = null;
       selectors_keyset_cow	= null;
       selectors_mon = null;
@@ -108,10 +101,10 @@ public class VirtualChannelSelector {
     }
     
     selector_impl = null;
-    selectors = new HashMap();
+    selectors = new HashMap<VirtualChannelSelectorImpl,ArrayList<AbstractSelectableChannel>>();
     selectors_mon = new AEMonitor( "VirtualChannelSelector:FM" );
-    selectors.put( new VirtualChannelSelectorImpl( this, op, pause ), new ArrayList() );
-    selectors_keyset_cow = new HashSet( selectors.keySet());
+    selectors.put( new VirtualChannelSelectorImpl( this, op, pause, randomise_keys ), new ArrayList<AbstractSelectableChannel>() );
+    selectors_keyset_cow = new HashSet<VirtualChannelSelectorImpl>( selectors.keySet());
   }
   
   
@@ -138,10 +131,10 @@ public class VirtualChannelSelector {
     if( SAFE_SELECTOR_MODE_ENABLED ) {
       try{  selectors_mon.enter();
       	//System.out.println( "register - " + channel.hashCode()  + " - " + Debug.getCompressedStackTrace());
-        for( Iterator it = selectors.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry entry = (Map.Entry)it.next();          
-          VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)entry.getKey();
-          ArrayList channels = (ArrayList)entry.getValue();
+        for( Map.Entry<VirtualChannelSelectorImpl, ArrayList<AbstractSelectableChannel>> entry: selectors.entrySet()) {
+              
+          VirtualChannelSelectorImpl 			sel 		= entry.getKey();
+          ArrayList<AbstractSelectableChannel> 	channels 	= entry.getValue();
           
           if( channels.size() >= ( TEST_SAFE_MODE?0:MAX_CHANNELS_PER_SAFE_SELECTOR )) { 
         	  
@@ -149,11 +142,11 @@ public class VirtualChannelSelector {
         	  // but not cancelled on close. As an interim fix scan channels and remove any
         	  // closed ones
         	  
-        	  Iterator	chan_it = channels.iterator();
+        	  Iterator<AbstractSelectableChannel>	chan_it = channels.iterator();
         	  
         	  while( chan_it.hasNext()){
         		  
-        		  AbstractSelectableChannel	chan = (AbstractSelectableChannel)chan_it.next();
+        		  AbstractSelectableChannel	chan = chan_it.next();
         		  
         		  if ( !chan.isOpen()){
         			  
@@ -190,12 +183,17 @@ public class VirtualChannelSelector {
       	  return;
         }
 
-        VirtualChannelSelectorImpl sel = new VirtualChannelSelectorImpl( this, op, pause );
-        ArrayList chans = new ArrayList();
+        VirtualChannelSelectorImpl sel = new VirtualChannelSelectorImpl( this, op, pause , randomise_keys);
+        
+        ArrayList<AbstractSelectableChannel> chans = new ArrayList<AbstractSelectableChannel>();
+        
         selectors.put( sel, chans );
+        
         sel.register( channel, listener, attachment );
+        
         chans.add( channel );
-        selectors_keyset_cow = new HashSet( selectors.keySet());
+        
+        selectors_keyset_cow = new HashSet<VirtualChannelSelectorImpl>( selectors.keySet());
       }
       finally{ selectors_mon.exit();  }
     }
@@ -214,10 +212,10 @@ public class VirtualChannelSelector {
     if( SAFE_SELECTOR_MODE_ENABLED ) {
       try{  selectors_mon.enter();
       	//System.out.println( "pause - " + channel.hashCode() + " - " + Debug.getCompressedStackTrace());
-        for( Iterator it = selectors.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry entry = (Map.Entry)it.next();          
-          VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)entry.getKey();
-          ArrayList channels = (ArrayList)entry.getValue();
+      for( Map.Entry<VirtualChannelSelectorImpl, ArrayList<AbstractSelectableChannel>> entry: selectors.entrySet()) {
+          
+          VirtualChannelSelectorImpl 			sel 		= entry.getKey();
+          ArrayList<AbstractSelectableChannel> 	channels 	= entry.getValue();
           
           if( channels.contains( channel ) ) {
             sel.pauseSelects( channel );
@@ -244,10 +242,10 @@ public class VirtualChannelSelector {
     if( SAFE_SELECTOR_MODE_ENABLED ) {
       try{  selectors_mon.enter();
       	//System.out.println( "resume - " + channel.hashCode() + " - " + Debug.getCompressedStackTrace());
-        for( Iterator it = selectors.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry entry = (Map.Entry)it.next();          
-          VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)entry.getKey();
-          ArrayList channels = (ArrayList)entry.getValue();
+      for( Map.Entry<VirtualChannelSelectorImpl, ArrayList<AbstractSelectableChannel>> entry: selectors.entrySet()) {
+          
+          VirtualChannelSelectorImpl 			sel 		= entry.getKey();
+          ArrayList<AbstractSelectableChannel> 	channels 	= entry.getValue();
           
           if( channels.contains( channel ) ) {
             sel.resumeSelects( channel );
@@ -274,10 +272,10 @@ public class VirtualChannelSelector {
     if( SAFE_SELECTOR_MODE_ENABLED ) {
       try{  selectors_mon.enter();
       	//System.out.println( "cancel - " + channel.hashCode()  + " - " + Debug.getCompressedStackTrace());
-        for( Iterator it = selectors.entrySet().iterator(); it.hasNext(); ) {
-          Map.Entry entry = (Map.Entry)it.next();          
-          VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)entry.getKey();
-          ArrayList channels = (ArrayList)entry.getValue();
+      for( Map.Entry<VirtualChannelSelectorImpl, ArrayList<AbstractSelectableChannel>> entry: selectors.entrySet()) {
+          
+          VirtualChannelSelectorImpl 			sel 		= entry.getKey();
+          ArrayList<AbstractSelectableChannel> 	channels 	= entry.getValue();
           
           if( channels.remove( channel ) ) {
             sel.cancel( channel );
@@ -292,7 +290,24 @@ public class VirtualChannelSelector {
     }
   }
 
-  
+  public void 
+  setRandomiseKeys(
+	boolean	_rk )
+  {
+	  randomise_keys = _rk;
+	  
+	    if( SAFE_SELECTOR_MODE_ENABLED ) {
+	      try{  selectors_mon.enter();
+	        for( VirtualChannelSelectorImpl sel: selectors.keySet()){
+	        	sel.setRandomiseKeys( randomise_keys );
+	        }
+	      }
+	      finally{ selectors_mon.exit();  }
+	    }
+	    else {
+	      if( selector_impl != null )  selector_impl.setRandomiseKeys( randomise_keys );
+	    }
+	  }
   
   /**
    * Run a virtual select() operation, with the given selection timeout value;
@@ -308,10 +323,8 @@ public class VirtualChannelSelector {
       try{	
 	      int count = 0;
 	      
-	      for( Iterator it = selectors_keyset_cow.iterator(); it.hasNext(); ){
-	    	  
-	        VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)it.next();
-	        
+	      for( VirtualChannelSelectorImpl sel: selectors_keyset_cow ){
+	    	  	        
 	        count += sel.select( timeout );
 	      }
 	      
@@ -327,7 +340,7 @@ public class VirtualChannelSelector {
    				 selectors_mon.enter();
 
 	 		     selectors.clear();
-			     selectors_keyset_cow = new HashSet();
+			     selectors_keyset_cow = new HashSet<VirtualChannelSelectorImpl>();
 			     
    			 }finally{
    				 selectors_mon.exit();
@@ -345,10 +358,8 @@ public class VirtualChannelSelector {
 	  
 	  if ( SAFE_SELECTOR_MODE_ENABLED ){
 				      
-	     for( Iterator it = selectors_keyset_cow.iterator(); it.hasNext(); ) {
-	    	 
-	        VirtualChannelSelectorImpl sel = (VirtualChannelSelectorImpl)it.next();
-	        
+	      for( VirtualChannelSelectorImpl sel: selectors_keyset_cow ){
+	    	 	        
 	        sel.destroy();
 	     }
 	  }else{

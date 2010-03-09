@@ -22,11 +22,15 @@
 
 package org.gudy.azureus2.plugins.ui.model;
 
-import org.gudy.azureus2.plugins.logging.LoggerChannel;
-import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
-import org.gudy.azureus2.plugins.ui.components.UIProgressBar;
-import org.gudy.azureus2.plugins.ui.components.UITextArea;
-import org.gudy.azureus2.plugins.ui.components.UITextField;
+import org.gudy.azureus2.plugins.logging.*;
+
+/**
+ * @author parg
+ *
+ * <p><b>Note:</b> Only for implementation by Azureus, not plugins.</p>
+ */
+
+import org.gudy.azureus2.plugins.ui.components.*;
 
 public interface
 BasicPluginViewModel

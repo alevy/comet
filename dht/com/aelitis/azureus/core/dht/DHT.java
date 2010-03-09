@@ -22,9 +22,7 @@
 
 package com.aelitis.azureus.core.dht;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDB;
@@ -54,15 +52,21 @@ DHT
 	public static final String	PR_ORIGINAL_REPUBLISH_INTERVAL			= "OriginalRepublishInterval";
 	public static final String	PR_CACHE_REPUBLISH_INTERVAL				= "CacheRepublishInterval";
 
-	public static final byte		FLAG_SINGLE_VALUE	= 0x00;
-	public static final byte		FLAG_DOWNLOADING	= 0x01;
-	public static final byte		FLAG_SEEDING		= 0x02;
-	public static final byte		FLAG_MULTI_VALUE	= 0x04;
-	public static final byte		FLAG_STATS			= 0x08;
-	public static final byte		FLAG_ANON			= 0x10;
-	public static final byte		FLAG_PRECIOUS		= 0x20;
-	
+	public static final byte		FLAG_SINGLE_VALUE		= 0x00;
+	public static final byte		FLAG_DOWNLOADING		= 0x01;
+	public static final byte		FLAG_SEEDING			= 0x02;
+	public static final byte		FLAG_MULTI_VALUE		= 0x04;
+	public static final byte		FLAG_STATS				= 0x08;
+	public static final byte		FLAG_ANON				= 0x10;
+	public static final byte		FLAG_PRECIOUS			= 0x20;
+	public static final byte		FLAG_PUT_AND_FORGET		= 0x40;				// local only
+	public static final byte		FLAG_OBFUSCATE_LOOKUP	= (byte)0x80;		// local only
 
+	public static final int 	MAX_VALUE_SIZE		= 512;
+
+	public static final byte	REP_FACT_NONE			= 0;
+	public static final byte	REP_FACT_DEFAULT		= (byte)0xff;
+	
 		// diversification types, don't change as serialised!!!!
 	
 	public static final byte	DT_NONE			= 1;
@@ -100,6 +104,27 @@ DHT
 		String					description,
 		byte[]					value,
 		byte					flags,
+		boolean					high_priority,
+		DHTOperationListener	listener );
+	
+	public void
+	put(
+		byte[]					key,
+		String					description,
+		byte[]					value,
+		byte					flags,
+		byte					life_hours,
+		boolean					high_priority,
+		DHTOperationListener	listener );
+
+	public void
+	put(
+		byte[]					key,
+		String					description,
+		byte[]					value,
+		byte					flags,
+		byte					life_hours,
+		byte					replication_control,	// 4 bits 1->14 republish hours; 0=vuze default | 4 bits 0->15 maintain replicas; [ff=no replication control-use default]
 		boolean					high_priority,
 		DHTOperationListener	listener );
 	

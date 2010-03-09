@@ -26,20 +26,12 @@ package org.gudy.azureus2.core3.tracker.util;
  *
  */
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.*;
+import java.net.*;
+import java.io.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationListener;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.ParameterListener;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerAnnouncerImpl;
 import org.gudy.azureus2.core3.tracker.client.impl.bt.TRTrackerBTAnnouncerImpl;
 import org.gudy.azureus2.core3.tracker.host.TRHost;
 import org.gudy.azureus2.core3.util.AENetworkClassifier;
@@ -66,7 +58,8 @@ TRTrackerUtils
 	private static int[]		BLACKLISTED_PORTS	= 
 		{ 81 };
 
-	private static String		tracker_ip;
+	private static String			tracker_ip;
+	private static Set<String>		tracker_ip_aliases;
 	
 	private static Map			override_map;
 	
@@ -325,9 +318,31 @@ TRTrackerUtils
 	static void
 	readConfig()
 	{
-		tracker_ip 		= COConfigurationManager.getStringParameter("Tracker IP", "");
+		tracker_ip 	= COConfigurationManager.getStringParameter("Tracker IP", "");
 	
-		tracker_ip = UrlUtils.expandIPV6Host( tracker_ip );
+		tracker_ip 	= UrlUtils.expandIPV6Host( tracker_ip );
+		
+		String	aliases = COConfigurationManager.getStringParameter("Tracker IP Aliases", "");
+		
+		if ( aliases.length() > 0 ){
+			
+			tracker_ip_aliases = new HashSet<String>();
+			
+			String[] bits = aliases.split(",");
+			
+			for (String b: bits ){
+				
+				b = b.trim();
+				
+				if ( b.length() > 0 ){
+					
+					tracker_ip_aliases.add( b );
+				}
+			}
+		}else{
+			
+			tracker_ip_aliases = null;
+		}
 		
 		String override_ips		= COConfigurationManager.getStringParameter("Override Ip", "");
 		
@@ -363,8 +378,23 @@ TRTrackerUtils
 	isHosting(
 		URL		url_in )
 	{
-		return( tracker_ip.length() > 0  &&
-				UrlUtils.expandIPV6Host(url_in.getHost()).equalsIgnoreCase( tracker_ip ));
+		if ( tracker_ip.length() > 0  ){
+			
+			String host = UrlUtils.expandIPV6Host(url_in.getHost());
+			
+			boolean	result = host.equalsIgnoreCase( tracker_ip );
+			
+			if ( !result && tracker_ip_aliases != null ){
+			
+				result = tracker_ip_aliases.contains( host );
+			}
+		
+			return( result );
+			
+		}else{
+			
+			return( false );
+		}
 	}
 	
 	public static String
@@ -508,6 +538,8 @@ TRTrackerUtils
 	
 			if ( bind_ip.length() < 7 ){
 					
+					// TODO: this won't work in a pure IPv6 setup
+				
 				url += "127.0.0.1";
 					
 			}else{
@@ -558,17 +590,8 @@ TRTrackerUtils
 				target_ip	= tracker_ip;
 			}
 			
-			if ( host_in.equals( "127.0.0.1")){
-				
-				//System.out.println( "adjustHostFromHosting: " + host_in + " -> " + tracker_ip );
-				
-				return( target_ip );
-			}
-			
-			if ( host_in.equals( bind_ip )){
-				
-				//System.out.println( "adjustHostFromHosting: " + host_in +  " -> " + tracker_ip );
-
+			if ( isLoopback( host_in )){
+								
 				return( target_ip );
 			}
 		}
@@ -580,7 +603,10 @@ TRTrackerUtils
 	isLoopback(
 		String	host )
 	{
-		return( host.equals( "127.0.0.1")  || host.equals( bind_ip ));
+		return( 
+			host.equals( "127.0.0.1" ) || 
+			host.equals( "0:0:0:0:0:0:0:1" ) || host.equals( "::1" ) ||  
+			host.equals( bind_ip ));
 	}
 	
 	
@@ -606,7 +632,7 @@ TRTrackerUtils
 		Map		map1,
 		Map		map2 )
 	{
-		return( TRTrackerBTAnnouncerImpl.mergeResponseCache( map1, map2 ));
+		return( TRTrackerAnnouncerImpl.mergeResponseCache( map1, map2 ));
 	}
 		
  	public static String

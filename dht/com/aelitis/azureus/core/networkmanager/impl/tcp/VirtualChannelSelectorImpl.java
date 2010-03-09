@@ -22,24 +22,12 @@
 package com.aelitis.azureus.core.networkmanager.impl.tcp;
 
 
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.channels.spi.AbstractSelectableChannel;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.VirtualChannelSelector;
 
@@ -52,6 +40,84 @@ public class VirtualChannelSelectorImpl {
 	
 	private static final LogIDs LOGID = LogIDs.NWMAN;
 
+	private static final boolean MAYBE_BROKEN_SELECT;
+	
+	static{
+	
+			// freebsd 7.x and diablo 1.6 no works as selector returns none ready even though
+			// there's a bunch readable
+		
+			// Seems to not just be diablo java, but general 7.1 problem
+		
+		String jvm_name = System.getProperty( "java.vm.name", "" );
+		
+		boolean is_diablo = jvm_name.startsWith( "Diablo" );
+		
+		boolean is_freebsd_7_or_higher = false;
+		
+			// hack for 10.6 - will switch to not doing System.setProperty( "java.nio.preferSelect", "true" ); later
+		
+		boolean	is_osx_16	= false;
+		
+		try{
+				// unfortunately the package maintainer has set os.name to Linux for FreeBSD...
+			
+			if ( Constants.isFreeBSD || Constants.isLinux ){
+			
+				String os_type = System.getenv( "OSTYPE" );
+				
+				if ( os_type != null && os_type.equals( "FreeBSD" )){
+					
+					String os_version = System.getProperty( "os.version", "" );
+					
+					String	digits = "";
+						
+					for ( int i=0;i<os_version.length();i++){
+						
+						char c = os_version.charAt(i);
+						
+						if ( Character.isDigit(c)){
+							
+							digits += c;
+							
+						}else{
+							
+							break;
+						}
+					}
+					
+					if ( digits.length() > 0 ){
+					
+						is_freebsd_7_or_higher = Integer.parseInt(digits) >= 7;
+					}	
+				}
+			}else if ( Constants.isOSX ){
+				
+				String os_version = System.getProperty( "os.version", "" );
+				
+				if ( os_version.startsWith( "10.6" )){
+					
+					is_osx_16 = true;
+				}
+			}
+		}catch( Throwable e ){
+			
+			e.printStackTrace();
+		}
+			
+		MAYBE_BROKEN_SELECT = is_freebsd_7_or_higher || is_diablo || is_osx_16;
+		
+		if ( MAYBE_BROKEN_SELECT ){
+			
+			System.out.println( "Enabling broken select detection: diablo=" + is_diablo + ", freebsd 7+=" + is_freebsd_7_or_higher + ", osx 10.6=" + is_osx_16 );
+		}
+	}
+	
+	private boolean select_is_broken;
+	private int		select_looks_broken_count;
+	private boolean	logged_broken_select;
+	
+	
 	/*
 	static boolean	rm_trace 	= false;
 	static boolean	rm_test_fix = false;
@@ -79,14 +145,14 @@ public class VirtualChannelSelectorImpl {
     protected Selector selector;
     private final SelectorGuard selector_guard;
     
-    private final LinkedList 	register_cancel_list 		= new LinkedList();
-    private final AEMonitor 	register_cancel_list_mon	= new AEMonitor( "VirtualChannelSelector:RCL");
+    private final LinkedList<Object> 	register_cancel_list 		= new LinkedList<Object>();
+    private final AEMonitor 			register_cancel_list_mon	= new AEMonitor( "VirtualChannelSelector:RCL");
 
-    private final HashMap paused_states = new HashMap();
+    private final HashMap<AbstractSelectableChannel, Boolean> paused_states = new HashMap<AbstractSelectableChannel, Boolean>();
     
     private final int 		INTEREST_OP;
     private final boolean	pause_after_select;
-
+    
     protected final VirtualChannelSelector parent;
     
     
@@ -95,18 +161,22 @@ public class VirtualChannelSelectorImpl {
     
     private volatile boolean	destroyed;
     
+    private boolean	randomise_keys;
     
+    private int		next_select_loop_pos = 0;
+
     private static final int WRITE_SELECTOR_DEBUG_CHECK_PERIOD	= 10000;
     private static final int WRITE_SELECTOR_DEBUG_MAX_TIME		= 20000;
     
     private long last_write_select_debug;
     private long last_select_debug;
     
-    public VirtualChannelSelectorImpl( VirtualChannelSelector _parent, int _interest_op, boolean _pause_after_select ) {	
+    public VirtualChannelSelectorImpl( VirtualChannelSelector _parent, int _interest_op, boolean _pause_after_select, boolean _randomise_keys ) {	
       this.parent = _parent;
       INTEREST_OP = _interest_op;
-      
+     
       pause_after_select	= _pause_after_select;
+      randomise_keys		= _randomise_keys;
       
       String type;
       switch( INTEREST_OP ) {
@@ -187,7 +257,12 @@ public class VirtualChannelSelectorImpl {
     }
     
     
-    
+    public void
+    setRandomiseKeys(
+    	boolean		r )
+    {
+    	randomise_keys = r;
+    }
     
    
      
@@ -279,7 +354,7 @@ public class VirtualChannelSelectorImpl {
     			// ensure that there's only one operation outstanding for a given channel
     			// at any one time (the latest operation requested )
     		
-    		for (Iterator it = register_cancel_list.iterator();it.hasNext();){
+    		for (Iterator<Object> it = register_cancel_list.iterator();it.hasNext();){
     			
     			Object	obj = it.next();
     			  		   				
@@ -331,7 +406,7 @@ public class VirtualChannelSelectorImpl {
     			// ensure that there's only one operation outstanding for a given channel
     			// at any one time (the latest operation requested )
     		
-    		for (Iterator it = register_cancel_list.iterator();it.hasNext();){
+    		for (Iterator<Object> it = register_cancel_list.iterator();it.hasNext();){
     			
     			Object	obj = it.next();
     			
@@ -513,7 +588,42 @@ public class VirtualChannelSelectorImpl {
  	    	
  	    return( 0 );
  	  }
- 	   	  
+ 	  
+ 	 if ( 	MAYBE_BROKEN_SELECT && 
+ 			!select_is_broken && 
+ 			( INTEREST_OP == VirtualChannelSelector.OP_READ || INTEREST_OP == VirtualChannelSelector.OP_WRITE )){
+ 		 
+ 		 if ( selector.selectedKeys().size() == 0 ){
+ 			 
+ 	 		 Set<SelectionKey> keys = selector.keys();
+
+	 		 for ( SelectionKey key: keys ){
+
+	 			 if (( key.readyOps() & INTEREST_OP ) != 0 ){
+	 				 
+	 				select_looks_broken_count++;
+	 				
+	 				break;
+	 			 }
+	 		 }
+	 		 
+	 		 if ( select_looks_broken_count >= 5 ){
+	 			 
+	 			 select_is_broken = true;
+	 			 
+	 			 if ( !logged_broken_select ){
+	 				 
+	 				logged_broken_select = true;
+	 				 
+	 				Debug.outNoStack( "Select operation looks broken, trying workaround" );
+	 			 }
+	 		 }
+ 		 }else{
+ 			 
+ 			 select_looks_broken_count = 0;
+ 		 }
+ 	 }
+ 	 
       /*
       if( INTEREST_OP == VirtualChannelSelector.OP_READ ) {  //TODO
       	select_counts[ round ] = count;
@@ -546,7 +656,7 @@ public class VirtualChannelSelectorImpl {
       
       	// debug handling for channels stuck pending write select for long periods
       
-      Set	non_selected_keys = null;
+      Set<SelectionKey>	non_selected_keys = null;
       
       if ( INTEREST_OP == VirtualChannelSelector.OP_WRITE ){
     	  
@@ -555,16 +665,51 @@ public class VirtualChannelSelectorImpl {
     		  
     		  last_write_select_debug = now;
     		  
-    		  non_selected_keys = new HashSet( selector.keys());
+    		  non_selected_keys = new HashSet<SelectionKey>( selector.keys());
     	  }
       }
       
-      for( Iterator i = selector.selectedKeys().iterator(); i.hasNext(); ) {
+      List<SelectionKey> ready_keys;
+      
+      if ( MAYBE_BROKEN_SELECT && select_is_broken ){
+    		   	
+    	  Set<SelectionKey> all_keys = selector.keys();
+    	  
+    	  ready_keys = new ArrayList<SelectionKey>();
+    	  
+    	  for ( SelectionKey key: all_keys ){
+    		  
+    		  if (( key.readyOps() & INTEREST_OP ) != 0 ){
+    			  
+    			  ready_keys.add( key );
+    		  }
+    	  }
+      }else{
+    	  
+    	  ready_keys = new ArrayList<SelectionKey>( selector.selectedKeys());
+      }
+            
+      boolean	randy = randomise_keys;
+      
+      if ( randy ){
+    	        
+    	  Collections.shuffle( ready_keys );
+      }
+      
+      Set<SelectionKey>	selected_keys = selector.selectedKeys();
+      
+      final int ready_key_size	= ready_keys.size();;
+      final int	start_pos 		= next_select_loop_pos++;
+      final int	end_pos			= start_pos + ready_key_size;
+      
+      for ( int i=start_pos; i<end_pos; i++ ){
+    	  
+    	SelectionKey key = ready_keys.get( i % ready_key_size );
     	  
     	total_key_count++;
+    	   		
+    	selected_keys.remove( key );
     	
-        SelectionKey key = (SelectionKey)i.next();
-        i.remove();
         RegistrationData data = (RegistrationData)key.attachment();
 
         if ( non_selected_keys != null ){
@@ -654,9 +799,9 @@ public class VirtualChannelSelectorImpl {
       
       if ( non_selected_keys != null ){
     	  
-    	  for( Iterator i = non_selected_keys.iterator(); i.hasNext(); ) {
+    	  for( Iterator<SelectionKey> i = non_selected_keys.iterator(); i.hasNext(); ) {
     	    	     	    	
-    		  SelectionKey key = (SelectionKey)i.next();
+    		  SelectionKey key = i.next();
     	    
     	      RegistrationData data = (RegistrationData)key.attachment();
  
@@ -772,8 +917,8 @@ public class VirtualChannelSelectorImpl {
     }
     
     protected void closeExistingSelector() {
-      for( Iterator i = selector.keys().iterator(); i.hasNext(); ) {
-        SelectionKey key = (SelectionKey)i.next();
+      for( Iterator<SelectionKey> i = selector.keys().iterator(); i.hasNext(); ) {
+        SelectionKey key = i.next();
         RegistrationData data = (RegistrationData)key.attachment();
         parent.selectFailure(data.listener, data.channel, data.attachment, new Throwable( "selector destroyed" ) );
       }

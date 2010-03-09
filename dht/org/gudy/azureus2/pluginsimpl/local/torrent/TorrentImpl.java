@@ -21,34 +21,26 @@
 
 package org.gudy.azureus2.pluginsimpl.local.torrent;
 
-import java.io.File;
-import java.net.URL;
+import java.net.*;
+
+/**
+ * @author parg
+ *
+ */
+
 import java.util.Map;
+import java.io.File;
 
 import org.gudy.azureus2.core3.download.DownloadManagerState;
 import org.gudy.azureus2.core3.download.DownloadManagerStateFactory;
-import org.gudy.azureus2.core3.internat.LocaleTorrentUtil;
-import org.gudy.azureus2.core3.internat.LocaleUtilDecoder;
-import org.gudy.azureus2.core3.internat.LocaleUtilEncodingException;
+import org.gudy.azureus2.core3.internat.*;
 import org.gudy.azureus2.core3.logging.LogRelation;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.torrent.TOTorrentException;
-import org.gudy.azureus2.core3.torrent.TOTorrentFactory;
-import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.TorrentUtils;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.PluginInterface;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.torrent.Torrent;
-import org.gudy.azureus2.plugins.torrent.TorrentAnnounceURLList;
-import org.gudy.azureus2.plugins.torrent.TorrentEncodingException;
-import org.gudy.azureus2.plugins.torrent.TorrentException;
-import org.gudy.azureus2.plugins.torrent.TorrentFile;
-import org.gudy.azureus2.pluginsimpl.local.download.DownloadImpl;
-import org.gudy.azureus2.pluginsimpl.local.download.DownloadManagerImpl;
+import org.gudy.azureus2.plugins.torrent.*;
+import org.gudy.azureus2.plugins.download.*;
+import org.gudy.azureus2.pluginsimpl.local.download.*;
 import org.gudy.azureus2.pluginsimpl.local.utils.UtilitiesImpl;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;

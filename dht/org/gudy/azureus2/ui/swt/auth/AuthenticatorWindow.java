@@ -26,39 +26,27 @@ package org.gudy.azureus2.ui.swt.auth;
  *
  */
 
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.net.*;
+import java.util.*;
 
-import org.bouncycastle.util.encoders.Base64;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.security.SEPasswordListener;
-import org.gudy.azureus2.core3.security.SESecurityManager;
-import org.gudy.azureus2.core3.torrent.TOTorrent;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.eclipse.swt.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.security.*;
+
+import org.bouncycastle.util.encoders.Base64;
+
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
+import com.aelitis.azureus.ui.common.RememberedDecisionsManager;
 
 public class 
 AuthenticatorWindow 
@@ -402,7 +390,19 @@ AuthenticatorWindow
 				return;
 			}
 			
-	 		shell = new Shell (display,SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+			final String ignore_key = "IgnoreAuth:" + realm + ":" + target + ":" + details;
+			
+			if ( RememberedDecisionsManager.getRememberedDecision( ignore_key ) == 1 ){
+				
+				Debug.out( "Authentication for " + realm + "/" + target + "/" + details + " ignored as told not to ask again" );
+				
+				sem.release();
+				
+				return;
+			}
+			
+				
+	 		shell = ShellFactory.createMainShell(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 	 	
 	 		Utils.setShellIcon(shell);
 		 	Messages.setLanguageText(shell, "authenticator.title");
@@ -505,11 +505,22 @@ AuthenticatorWindow
 		    final Button checkBox = new Button(shell, SWT.CHECK);
 		    checkBox.setText(MessageText.getString( "authenticator.savepassword" ));
 			gridData = new GridData(GridData.FILL_BOTH);
-			gridData.horizontalSpan = 2;
+			gridData.horizontalSpan = 1;
 			checkBox.setLayoutData(gridData);
 			checkBox.addListener(SWT.Selection,new Listener() {
 		  		public void handleEvent(Event e) {
 			 		persist = checkBox.getSelection();
+		   		}
+			 });
+			
+		    final Button dontAsk = new Button(shell, SWT.CHECK);
+		    dontAsk.setText(MessageText.getString( "general.dont.ask.again" ));
+			gridData = new GridData(GridData.FILL_BOTH);
+			gridData.horizontalSpan = 1;
+			dontAsk.setLayoutData(gridData);
+			dontAsk.addListener(SWT.Selection,new Listener() {
+		  		public void handleEvent(Event e) {
+		  			RememberedDecisionsManager.setRemembered( ignore_key, dontAsk.getSelection()?1:0 );
 		   		}
 			 });
 			

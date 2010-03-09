@@ -22,22 +22,8 @@
 
 package org.gudy.azureus2.plugins.ui.model;
 
-import org.gudy.azureus2.plugins.ui.config.ActionParameter;
-import org.gudy.azureus2.plugins.ui.config.BooleanParameter;
-import org.gudy.azureus2.plugins.ui.config.ColorParameter;
-import org.gudy.azureus2.plugins.ui.config.DirectoryParameter;
+import org.gudy.azureus2.plugins.ui.config.*;
 import org.gudy.azureus2.plugins.ui.config.FileParameter;
-import org.gudy.azureus2.plugins.ui.config.HyperlinkParameter;
-import org.gudy.azureus2.plugins.ui.config.InfoParameter;
-import org.gudy.azureus2.plugins.ui.config.IntParameter;
-import org.gudy.azureus2.plugins.ui.config.LabelParameter;
-import org.gudy.azureus2.plugins.ui.config.Parameter;
-import org.gudy.azureus2.plugins.ui.config.ParameterGroup;
-import org.gudy.azureus2.plugins.ui.config.PasswordParameter;
-import org.gudy.azureus2.plugins.ui.config.StringListParameter;
-import org.gudy.azureus2.plugins.ui.config.StringParameter;
-import org.gudy.azureus2.plugins.ui.config.UIParameter;
-import org.gudy.azureus2.plugins.ui.config.UIParameterContext;
 
 /**
  * This object represents a configuration section.

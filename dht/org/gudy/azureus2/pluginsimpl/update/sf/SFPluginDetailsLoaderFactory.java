@@ -27,7 +27,7 @@ package org.gudy.azureus2.pluginsimpl.update.sf;
  *
  */
 
-import org.gudy.azureus2.pluginsimpl.update.sf.impl2.SFPluginDetailsLoaderImpl;
+import org.gudy.azureus2.pluginsimpl.update.sf.impl2.*;
 
 public class 
 SFPluginDetailsLoaderFactory 

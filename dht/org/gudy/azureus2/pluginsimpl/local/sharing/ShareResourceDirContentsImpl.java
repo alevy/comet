@@ -26,23 +26,13 @@ package org.gudy.azureus2.pluginsimpl.local.sharing;
  *
  */
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareResource;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDeletionVetoException;
-import org.gudy.azureus2.plugins.sharing.ShareResourceDirContents;
-import org.gudy.azureus2.plugins.sharing.ShareResourceListener;
-import org.gudy.azureus2.plugins.sharing.ShareResourceWillBeDeletedListener;
+import org.gudy.azureus2.plugins.sharing.*;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.internat.*;
 
 public class 
 ShareResourceDirContentsImpl
@@ -197,7 +187,7 @@ ShareResourceDirContentsImpl
 				
 			}else{
 			
-				manager.delete( this );
+				manager.delete( this, true );
 			}
 		}else{
 					
@@ -450,7 +440,7 @@ ShareResourceDirContentsImpl
 			throw( new ShareResourceDeletionVetoException( MessageText.getString("plugin.sharing.remove.veto")));
 		}
 		
-		protected void
+		public void
 		delete(
 			boolean	force )
 		
@@ -466,7 +456,6 @@ ShareResourceDirContentsImpl
 				}else{
 					
 					((shareNode)o).delete(force);
-
 				}
 			}
 		}

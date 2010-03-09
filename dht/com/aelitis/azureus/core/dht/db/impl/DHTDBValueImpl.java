@@ -24,6 +24,7 @@ package com.aelitis.azureus.core.dht.db.impl;
 
 import org.gudy.azureus2.core3.util.SystemTime;
 
+import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -45,7 +46,9 @@ DHTDBValueImpl
 	private DHTTransportContact	originator;
 	private DHTTransportContact	sender;
 	private boolean				local;
-	private int					flags;
+	private byte				flags;
+	private byte				life_hours;
+	private byte				rep_control;
 	private int					version;
 	
 	private long				store_time;
@@ -60,7 +63,7 @@ DHTDBValueImpl
 		 * @param _flags
 		 */
 	
-	public
+	protected
 	DHTDBValueImpl(
 		long				_creation_time,
 		byte[]				_value,
@@ -68,7 +71,9 @@ DHTDBValueImpl
 		DHTTransportContact	_originator,
 		DHTTransportContact	_sender,
 		boolean				_local,
-		int					_flags )
+		int					_flags,
+		int					_life_hours,
+		byte				_rep_control )
 	{
 		creation_time	= _creation_time;
 		value			= _value;
@@ -76,7 +81,9 @@ DHTDBValueImpl
 		originator		= _originator;
 		sender			= _sender;
 		local			= _local;
-		flags			= _flags;
+		flags			= (byte)_flags;
+		life_hours		= (byte)_life_hours;
+		rep_control		= _rep_control;
 		
 			// we get quite a few zero length values - optimise mem usage
 		
@@ -108,10 +115,12 @@ DHTDBValueImpl
 				_other.getOriginator(),
 				_sender,
 				_local,
-				_other.getFlags());
+				_other.getFlags(),
+				_other.getLifeTimeHours(),
+				_other.getReplicationControl());
 	}
 	
-	public void
+	protected void
 	reset()
 	{
 		store_time	= SystemTime.getCurrentTime();
@@ -130,20 +139,20 @@ DHTDBValueImpl
 		return( creation_time );
 	}
 	
-	public void
+	protected void
 	setCreationTime()
 	{
 		creation_time = SystemTime.getCurrentTime();
 	}
 	
-	public void
+	protected void
 	setStoreTime(
 		long	l )
 	{
 		store_time	= l;
 	}
 	
-	public long
+	protected long
 	getStoreTime()
 	{
 		return( store_time );
@@ -159,12 +168,6 @@ DHTDBValueImpl
 	getValue()
 	{
 		return( value );
-	}
-	
-	public void
-	setValue(byte[] _value)
-	{
-		this.value = _value;
 	}
 	
 	public int
@@ -184,10 +187,11 @@ DHTDBValueImpl
 	{
 		return( sender );
 	}
+	
 	public int
 	getFlags()
 	{
-		return( flags );
+		return( flags&0xff );
 	}
 	
 	public void
@@ -197,31 +201,50 @@ DHTDBValueImpl
 		flags = _flags;
 	}
 	
-	public void
-	setOriginator(
+	public int 
+	getLifeTimeHours() 
+	{
+		return( life_hours&0xff );
+	}
+	
+	public byte
+	getReplicationControl()
+	{
+		return( rep_control );
+	}
+	
+	public byte 
+	getReplicationFactor() 
+	{
+		return( rep_control == DHT.REP_FACT_DEFAULT?DHT.REP_FACT_DEFAULT:(byte)(rep_control&0x0f));
+	}
+	
+	public byte 
+	getReplicationFrequencyHours() 
+	{
+		return( rep_control == DHT.REP_FACT_DEFAULT?DHT.REP_FACT_DEFAULT:(byte)((rep_control&0xf0)>>4));
+	}
+	
+	protected void
+	setOriginatorAndSender(
 		DHTTransportContact	_originator )
 	{
 		originator	= _originator;
-	}
-	
-	public void setSender(DHTTransportContact _sender) {
-		sender = _sender;
+		sender		= _originator;
 	}
 	
 	public DHTDBValue
 	getValueForRelay(
 		DHTTransportContact	_sender )
 	{
-		return( DHTDBValueFactory.create( _sender, this, local ) );
+		return( new DHTDBValueImpl( _sender, this, local ));
 	}
 	
 	public DHTDBValue
 	getValueForDeletion(
 		int		_version )
 	{
-		DHTDBValueImpl	res = (DHTDBValueImpl)DHTDBValueFactory.create( originator,
-				this,
-				local );
+		DHTDBValueImpl	res = new DHTDBValueImpl( originator, this, local );
 		
 		res.value = ZERO_LENGTH_BYTE_ARRAY;	// delete -> 0 length value
 		
@@ -238,7 +261,7 @@ DHTDBValueImpl
 		long	now = SystemTime.getCurrentTime();
 		
 		return( DHTLog.getString( value ) + " - " + new String(value) + "{v=" + version + ",f=" + 
-				Integer.toHexString(flags) +",ca=" + (now - creation_time ) + ",sa=" + (now-store_time)+
+				Integer.toHexString(flags) + ",l=" + life_hours + ",r=" + Integer.toHexString( rep_control ) + ",ca=" + (now - creation_time ) + ",sa=" + (now-store_time)+
 				",se=" + sender.getString() + ",or=" + originator.getString() +"}" );
 	}
 }

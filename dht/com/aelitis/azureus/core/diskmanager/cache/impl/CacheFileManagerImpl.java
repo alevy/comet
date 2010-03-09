@@ -28,14 +28,7 @@ package com.aelitis.azureus.core.diskmanager.cache.impl;
  */
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.logging.LogEvent;
@@ -43,29 +36,10 @@ import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 
-import com.aelitis.azureus.core.diskmanager.cache.CacheFile;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFileManager;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFileManagerException;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFileManagerStats;
-import com.aelitis.azureus.core.diskmanager.cache.CacheFileOwner;
-import com.aelitis.azureus.core.diskmanager.file.FMFile;
-import com.aelitis.azureus.core.diskmanager.file.FMFileManager;
-import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
-import com.aelitis.azureus.core.diskmanager.file.FMFileManagerFactory;
-import com.aelitis.azureus.core.diskmanager.file.FMFileOwner;
+import com.aelitis.azureus.core.diskmanager.cache.*;
+import com.aelitis.azureus.core.diskmanager.file.*;
 import com.aelitis.azureus.core.util.CaseSensitiveFileMap;
 
 public class 
@@ -84,6 +58,42 @@ CacheFileManagerImpl
 		if ( DEBUG ){
 			
 			System.out.println( "**** Cache consistency debugging on ****" );
+		}
+	}
+	
+	protected static int
+	convertCacheToFileType(
+		int	cache_type )
+	{
+		if ( cache_type == CacheFile.CT_LINEAR ){
+			
+			return( FMFile.FT_LINEAR );
+			
+		}else if ( cache_type == CacheFile.CT_COMPACT ){
+			
+			return( FMFile.FT_COMPACT );
+			
+		}else{
+			
+			return( FMFile.FT_PIECE_REORDER );
+		}
+	}
+	
+	protected static int
+	convertFileToCacheType(
+		int	file_type )
+	{
+		if ( file_type == FMFile.FT_LINEAR ){
+			
+			return( CacheFile.CT_LINEAR );
+			
+		}else if ( file_type == FMFile.FT_COMPACT ){
+			
+			return( CacheFile.CT_COMPACT );
+			
+		}else{
+			
+			return( CacheFile.CT_PIECE_REORDER );
 		}
 	}
 	
@@ -229,6 +239,8 @@ CacheFileManagerImpl
 			this_mon.exit();
 		}
 		
+		int	fm_type = convertCacheToFileType( type );
+		
 		try{
 			FMFile	fm_file	= 
 				file_manager.createFile(
@@ -249,8 +261,7 @@ CacheFileManagerImpl
 						{
 							return( owner.getCacheFileControlFileDir( ));
 						}
-					}, file,
-					type==CacheFile.CT_LINEAR?FMFile.FT_LINEAR:FMFile.FT_COMPACT );
+					}, file, fm_type );
 				
 			TOTorrentFile	tf = owner.getCacheFileTorrentFile();
 			

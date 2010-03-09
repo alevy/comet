@@ -26,9 +26,7 @@ package org.gudy.azureus2.core3.util.protocol.socks5;
  *
  */
 
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
+import java.net.*;
 
 public class 
 Handler 

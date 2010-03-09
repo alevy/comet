@@ -26,9 +26,9 @@ package org.gudy.azureus2.pluginsimpl.local.ipfilter;
  *
  */
 
-import org.gudy.azureus2.core3.ipfilter.IpRange;
-import org.gudy.azureus2.plugins.ipfilter.IPFilter;
-import org.gudy.azureus2.plugins.ipfilter.IPRange;
+import org.gudy.azureus2.plugins.ipfilter.*;
+
+import org.gudy.azureus2.core3.ipfilter.*;
 
 public class 
 IPRangeImpl 

@@ -27,31 +27,21 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.ByteFormatter;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
-import org.gudy.azureus2.ui.swt.sharing.ShareUtils;
-
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreComponent;
-import com.aelitis.azureus.core.AzureusCoreLifecycleAdapter;
+import com.aelitis.azureus.core.*;
 import com.aelitis.azureus.core.impl.AzureusCoreSingleInstanceClient;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
+
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.plugins.update.UpdateInstaller;
+import org.gudy.azureus2.plugins.update.UpdateManager;
+import org.gudy.azureus2.ui.swt.mainwindow.TorrentOpener;
+import org.gudy.azureus2.ui.swt.sharing.ShareUtils;
 
 /**
  * @author Olivier
@@ -116,7 +106,7 @@ StartServer
 					{
 						if ( component instanceof UIFunctionsSWT ){
 		    			
-							openQueuedTorrents( azureus_core );
+							openQueuedTorrents();
 						}
 		    		}
 				});
@@ -141,7 +131,7 @@ StartServer
     
   private void 
   pollForConnectionsSupport(
-	AzureusCore		azureus_core ) 
+		 final AzureusCore		core )
   {
     bContinue = true;
     while (bContinue) {
@@ -166,7 +156,7 @@ StartServer
         			  debug_str += " ; " + args[i];
         		  }
         		  Logger.log(new LogEvent(LOGID, "Main::startServer: decoded to '" + debug_str + "'"));
-        		  processArgs(azureus_core,args);
+        		  processArgs(core,args);
         	  }
           }
         }
@@ -210,7 +200,7 @@ StartServer
   
   protected void 
   processArgs(
-	AzureusCore		azureus_core,
+    AzureusCore		core,
    	String 			args[]) 
   {
     if (args.length < 1 || !args[0].equals( "args" )){
@@ -218,10 +208,8 @@ StartServer
     	return;
     }
     
-    if (args.length == 1
-				|| !COConfigurationManager.getBooleanParameter("add_torrents_silently")) {
-			showMainWindow();
-		}
+    boolean addSilent = COConfigurationManager.getBooleanParameter("add_torrents_silently");
+    boolean showMainWindow = !addSilent || args.length == 1;
 
     boolean	open	= true;
     
@@ -233,8 +221,25 @@ StartServer
     		
 	  	    if ( arg.equalsIgnoreCase( "--closedown" )){
 	
+	  	    		// discard any pending updates as we need to shutdown immediately (this
+	  	    		// is called from installer to close running instance)
+	  	    	
+	  	    	try{
+	  	    		UpdateManager um = core.getPluginManager().getDefaultPluginInterface().getUpdateManager();
+	  	    		
+	  	    		UpdateInstaller[] installers = um.getInstallers();
+	  	    		
+	  	    		for ( UpdateInstaller installer: installers ){
+	  	    			
+	  	    			installer.destroy();
+	  	    		}
+	  	    	}catch( Throwable e ){
+	  	    	}
+	  	    	
 	  	    	UIFunctions uiFunctions = UIFunctionsManager.getUIFunctions();
-	  	    	if (uiFunctions != null) {
+	  	    	
+	  	    	if ( uiFunctions != null ){
+	  	    		
 	  	    		uiFunctions.dispose(false, false);
 	  	    	}
 	  	    	
@@ -242,10 +247,14 @@ StartServer
 	  	    	
 	  	    }else if ( arg.equalsIgnoreCase( "--open" )){
 	  	    	
+	  	    	showMainWindow = true;
+
 	  	    	continue;
 	  	    	
 	  	    }else if ( arg.equalsIgnoreCase( "--share" )){
 	  	    	
+	  	    	showMainWindow = true;
+
 	  	    	open	= false;
 	  	    	
 	  	    	continue;
@@ -258,41 +267,12 @@ StartServer
         
         if ( !file.exists() && !isURI( file_name )){
         	
-        		// handle hex info hashes
-	        
-	        if ( file_name.length() == 40 ){
-	        
-	        	byte[]	hash = null;
-	        	
-	        	try{
-	        		hash = ByteFormatter.decodeString( file_name );
-	        		
-	        	}catch( Throwable e ){
-	        	}
-	        	
-	        	if ( hash != null && hash.length == 20 ){
-	        		
-	        		file_name = "magnet:?xt=urn:btih:" + Base32.encode( hash );
-	        	}
-	        }
-	        
-	        	// handle base32 info hash
-	       
-	        if ( file_name.length() == 32 ){
-	            
-	        	byte[]	hash = null;
-	        	
-	        	try{
-	        		hash = Base32.decode( file_name );
-	        		
-	        	}catch( Throwable e ){
-	        	}
-	        	
-	        	if ( hash != null && hash.length == 20 ){
-	        		
-	        		file_name = "magnet:?xt=urn:btih:" +file_name;
-	        	}
-	        }
+        	String	magnet_uri = UrlUtils.normaliseMagnetURI( file_name );
+        	
+        	if ( magnet_uri != null ){
+        		
+        		file_name = magnet_uri;
+        	}
         }
         
         if ( isURI( file_name )) {
@@ -342,9 +322,13 @@ StartServer
 
         if ( !queued ){
  
-        	handleFile( azureus_core, file_name, open );
+        	handleFile( file_name, open );
         }
       }
+
+    if (showMainWindow) {
+			showMainWindow();
+		}
   }
   
   protected boolean
@@ -361,7 +345,6 @@ StartServer
   
   protected void
   handleFile(
-	AzureusCore	azureus_core,
 	String		file_name,
 	boolean		open )
   {
@@ -377,11 +360,11 @@ StartServer
       		
       		if ( f.isDirectory()){
       			
-      			ShareUtils.shareDir( azureus_core, file_name );
+      			ShareUtils.shareDir( file_name );
       			
       		}else{
       			
-         		ShareUtils.shareFile( azureus_core, file_name );            		 
+         		ShareUtils.shareFile( file_name );            		 
       		}
       	}
       } catch (Throwable e) {
@@ -391,8 +374,7 @@ StartServer
   }
   
   protected void
-  openQueuedTorrents(
-	AzureusCore		azureus_core )
+  openQueuedTorrents()
   {
     try{
       	this_mon.enter();
@@ -411,7 +393,7 @@ StartServer
     	String	file_name 	= (String)entry[0];
     	boolean	open		= ((Boolean)entry[1]).booleanValue();
     	
-    	handleFile( azureus_core, file_name, open );
+    	handleFile( file_name, open );
     }
   }
   

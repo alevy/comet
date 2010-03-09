@@ -24,20 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.net.*;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -56,30 +44,9 @@ import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperClientResolver;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
 import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerScraperImpl;
 import org.gudy.azureus2.core3.tracker.client.impl.TRTrackerScraperResponseImpl;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyConnect;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyError;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyScrape;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketReplyScrape2;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestConnect;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketRequestScrape;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPPacketTracker;
-import org.gudy.azureus2.core3.tracker.protocol.udp.PRUDPTrackerCodecs;
+import org.gudy.azureus2.core3.tracker.protocol.udp.*;
 import org.gudy.azureus2.core3.tracker.util.TRTrackerUtils;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AddressUtils;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.BEncoder;
-import org.gudy.azureus2.core3.util.BEncodingException;
-import org.gudy.azureus2.core3.util.ByteEncodedKeyHashMap;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.HashWrapper;
-import org.gudy.azureus2.core3.util.StringInterner;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.ThreadPool;
-import org.gudy.azureus2.core3.util.TorrentUtils;
-import org.gudy.azureus2.core3.util.UrlUtils;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.clientid.ClientIDException;
 import org.gudy.azureus2.plugins.clientid.ClientIDGenerator;
 import org.gudy.azureus2.pluginsimpl.local.clientid.ClientIDManagerImpl;
@@ -895,6 +862,8 @@ public class TrackerStatus {
 				setAllError(e);
 			} catch (UnknownHostException e) {
 				setAllError(e);
+			} catch (PRUDPPacketHandlerException e) {
+				setAllError(e);
 			} catch (BEncodingException e) {
 				setAllError(e);
 			} catch (Exception e) {
@@ -978,8 +947,10 @@ public class TrackerStatus {
 		// Error will apply to ALL hashes, so set all
 		Object[] values;
 		try {
-			values = hashes.values().toArray();
 			hashes_mon.enter();
+			
+			values = hashes.values().toArray();
+
 		} finally {
 			hashes_mon.exit();
 		}

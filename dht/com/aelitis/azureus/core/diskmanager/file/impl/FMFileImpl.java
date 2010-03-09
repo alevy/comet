@@ -28,22 +28,11 @@ package com.aelitis.azureus.core.diskmanager.file.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.DirectByteBuffer;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.diskmanager.file.FMFile;
 import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
@@ -54,14 +43,14 @@ FMFileImpl
 	implements FMFile
 {	
 	protected static final String		READ_ACCESS_MODE	= "r";
-	protected static final String		WRITE_ACCESS_MODE	= "rwd";
+	protected static final String		WRITE_ACCESS_MODE	= "rw"; // "rwd"; - removing this to improve performance
 	
 	private static Map			file_map = new HashMap();
 	private static AEMonitor	file_map_mon	= new AEMonitor( "FMFile:map");
 	
 	// If there is an exception that occurs, which causes us to try and perform
 	// a reopen, setting this flag to true will print it to debug.
-	private static boolean OUTPUT_REOPEN_RELATED_ERRORS = false; 
+	private static boolean OUTPUT_REOPEN_RELATED_ERRORS = true; 
 	
 	static{
 		AEDiagnostics.addEvidenceGenerator(
@@ -377,6 +366,95 @@ FMFileImpl
 	}
 	
 	public void
+	renameFile(
+		String		new_name )
+	
+		throws FMFileManagerException
+	{
+		try{
+			this_mon.enter();
+		
+			String	new_canonical_path;
+			
+			File 	new_linked_file = new File( linked_file.getParentFile(), new_name );
+						
+			try{
+        
+		        try {
+					
+		          new_canonical_path = new_linked_file.getCanonicalPath();
+				  
+	
+		        }catch( IOException ioe ) {
+					
+		          String msg = ioe.getMessage();
+				  
+		          if( msg != null && msg.indexOf( "There are no more files" ) != -1 ) {
+		            String abs_path = new_linked_file.getAbsolutePath();
+		            String error = "Caught 'There are no more files' exception during new_file.getCanonicalPath(). " +
+		                           "os=[" +Constants.OSName+ "], new_file.getPath()=[" +new_linked_file.getPath()+ "], new_file.getAbsolutePath()=[" +abs_path+ "]. ";
+		                           //"new_canonical_path temporarily set to [" +abs_path+ "]";
+		            Debug.out( error, ioe );
+		          }
+		          throw ioe;
+		        }
+						
+			}catch( Throwable e ){
+				
+				throw( new FMFileManagerException( "getCanonicalPath fails", e ));
+			}	
+			
+			if ( new_linked_file.exists()){
+				
+				throw( new FMFileManagerException( "renameFile fails - file '" + new_canonical_path + "' already exists"));	
+			}
+			
+			boolean	was_open	= isOpen();
+			
+			close();	// full close, this will release any slots in the limited file case
+				        
+			if ( !linked_file.exists() || linked_file.renameTo( new_linked_file )){
+				
+				linked_file		= new_linked_file;
+				canonical_path	= new_canonical_path;
+				
+				reserveFile();
+				
+				if ( was_open ){
+					
+					ensureOpen( "renameFile target" );	// ensure open will regain slots in limited file case
+				}
+				
+			}else{
+			
+				try{
+					reserveFile();
+					
+				}catch( FMFileManagerException e ){
+					
+					Debug.printStackTrace( e );
+				}
+				
+				if ( was_open ){
+					
+					try{
+						ensureOpen( "renameFile recovery" );
+						
+					}catch( FMFileManagerException e){
+						
+						Debug.printStackTrace( e );
+					}
+				}
+				
+				throw( new FMFileManagerException( "renameFile fails"));
+			}	
+		}finally{
+			
+			this_mon.exit();
+		}
+	}
+	
+	public void
 	ensureOpen(
 		String	reason )
 	
@@ -467,6 +545,8 @@ FMFileImpl
 				// if the subsequent open fails
 		}
 		
+		file_access.aboutToOpen();
+		
 		raf = new RandomAccessFile( linked_file, access_mode==FM_READ?READ_ACCESS_MODE:WRITE_ACCESS_MODE);
 		
 		Debug.outNoStack( "Recovered connection to " + getName() + " after access failure" );
@@ -485,7 +565,9 @@ FMFileImpl
 
 		reserveAccess( reason );
 		
-		try{		
+		try{	
+			file_access.aboutToOpen();
+			
 			raf = new RandomAccessFile( linked_file, access_mode==FM_READ?READ_ACCESS_MODE:WRITE_ACCESS_MODE);
 			
 		}catch( Throwable e ){
@@ -554,6 +636,16 @@ FMFileImpl
 		throws FMFileManagerException
 	{
 		file_access.flush();
+	}
+	
+	protected void
+	setPieceCompleteSupport(
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws FMFileManagerException
+	{
+		file_access.setPieceComplete( raf, piece_number, piece_data );
 	}
 	
 	public void

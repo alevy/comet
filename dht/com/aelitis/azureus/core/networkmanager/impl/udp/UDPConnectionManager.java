@@ -22,14 +22,11 @@
 
 package com.aelitis.azureus.core.networkmanager.impl.udp;
 
+import java.util.*;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
@@ -139,7 +136,12 @@ UDPConnectionManager
 		UDPTransportHelper	helper = null;
 
 		try{
-			listener.connectAttemptStarted();
+			int time = listener.connectAttemptStarted( -1 );
+			
+			if ( time != -1 ){
+				
+				Debug.out( "UDP connect time override not supported" );
+			}
 			
 			helper = new UDPTransportHelper( this, address, udp_transport );
 	 		
@@ -173,7 +175,7 @@ UDPConnectionManager
 	    					ProtocolDecoder	decoder,
 	    					ByteBuffer		remaining_initial_data )
 	    				{
-	    					synchronized( this ){
+	    					synchronized( UDPConnectionManager.this ){
 	    						
 	    						if ( outbound_connection_count > 0 ){
 
@@ -217,7 +219,7 @@ UDPConnectionManager
 	    				handshakeFailure( 
 	    					Throwable failure_msg )
 	    				{
-	    					synchronized( this ){
+	    					synchronized( UDPConnectionManager.this ){
 	    						
 	    						if ( outbound_connection_count > 0 ){
 
@@ -523,43 +525,50 @@ UDPConnectionManager
 		}
 	}
 	
-	protected synchronized boolean
+	protected boolean
 	rateLimitIncoming(
 		InetSocketAddress	s_address )
 	{
-		byte[]	address = s_address.getAddress().getAddress();
-		
-		int	hit_count = incoming_bloom.add( address );
-		
 		long	now = SystemTime.getCurrentTime();
 
-			// allow up to 10% bloom filter utilisation
+		byte[]	address = s_address.getAddress().getAddress();
+	
+		long	delay;
 		
-		if ( incoming_bloom.getSize() / incoming_bloom.getEntryCount() < 10 ){
+		synchronized( this ){
 			
-			incoming_bloom = BloomFilterFactory.createAddRemove4Bit(incoming_bloom.getSize() + BLOOM_INCREASE );
+			int	hit_count = incoming_bloom.add( address );
+				
+				// allow up to 10% bloom filter utilisation
 			
-			incoming_bloom_create_time	= now;
+			if ( incoming_bloom.getSize() / incoming_bloom.getEntryCount() < 10 ){
+				
+				incoming_bloom = BloomFilterFactory.createAddRemove4Bit(incoming_bloom.getSize() + BLOOM_INCREASE );
+				
+				incoming_bloom_create_time	= now;
+				
+	     		Logger.log(	new LogEvent(LOGID, "UDP connnection bloom: size increased to " + incoming_bloom.getSize()));
+	
+			}else if ( now < incoming_bloom_create_time || now - incoming_bloom_create_time > BLOOM_RECREATE ){
+				
+				incoming_bloom = BloomFilterFactory.createAddRemove4Bit(incoming_bloom.getSize());
+				
+				incoming_bloom_create_time	= now;
+			}
+				
+			if ( hit_count >= 15 ){
+				
+	     		Logger.log(	new LogEvent(LOGID, "UDP incoming: too many recent connection attempts from " + s_address ));
+	     		
+				return( false );
+			}
 			
-     		Logger.log(	new LogEvent(LOGID, "UDP connnection bloom: size increased to " + incoming_bloom.getSize()));
-
-		}else if ( now < incoming_bloom_create_time || now - incoming_bloom_create_time > BLOOM_RECREATE ){
+			long	since_last = now - last_incoming;
+		
+			delay = 100 - since_last;
 			
-			incoming_bloom = BloomFilterFactory.createAddRemove4Bit(incoming_bloom.getSize());
-			
-			incoming_bloom_create_time	= now;
+			last_incoming = now;	
 		}
-			
-		if ( hit_count >= 15 ){
-			
-     		Logger.log(	new LogEvent(LOGID, "UDP incoming: too many recent connection attempts from " + s_address ));
-     		
-			return( false );
-		}
-		
-		long	since_last = now - last_incoming;
-		
-		long	delay = 100 - since_last;
 		
 			// limit to 10 a second
 		
@@ -571,8 +580,6 @@ UDPConnectionManager
 			}catch( Throwable e ){
 			}
 		}
-		
-		last_incoming = now;	
 		
 		return( true );
 	}

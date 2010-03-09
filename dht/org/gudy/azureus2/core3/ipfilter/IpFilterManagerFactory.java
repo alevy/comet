@@ -27,7 +27,7 @@ package org.gudy.azureus2.core3.ipfilter;
  *
  */
 
-import org.gudy.azureus2.core3.ipfilter.impl.IpFilterManagerImpl;
+import org.gudy.azureus2.core3.ipfilter.impl.*;
 
 public class 
 IpFilterManagerFactory 

@@ -31,6 +31,8 @@ import java.util.StringTokenizer;
 
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.peer.impl.PEPeerControl;
 import org.gudy.azureus2.core3.peer.impl.PEPeerTransport;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
@@ -44,6 +46,8 @@ public class
 HTTPNetworkConnectionFile
 	extends HTTPNetworkConnection
 {
+	private boolean	switching;
+	
 	protected
 	HTTPNetworkConnectionFile(
 		HTTPNetworkManager		_manager,
@@ -56,20 +60,25 @@ HTTPNetworkConnectionFile
 	protected void
 	decodeHeader(
 		HTTPMessageDecoder		decoder,
-		String					header )
+		final String			header )
 	
 		throws IOException
 	{
+		if ( switching ){
+			
+			Debug.out( "new header received while paused" );
+			
+			throw( new IOException( "Bork" ));
+		}
+		
 		if ( !isSeed()){
 			
 			return;
-		}
+		}		
 		
-			// note that if we allow keep-alive in the future we'd need to validate it was the
-			// same torrent...
+		PEPeerControl	control = getPeerControl();
 		
-		
-		DiskManager	dm = getPeerControl().getDiskManager();
+		DiskManager	dm = control.getDiskManager();
 		
 		if ( dm == null ){
 			
@@ -77,7 +86,7 @@ HTTPNetworkConnectionFile
 			
 			throw( new IOException( "Disk manager unavailable" ));
 		}
-			
+					
 		TOTorrent	to_torrent = dm.getTorrent();
 				
 		char[]	chars = header.toCharArray();
@@ -91,7 +100,7 @@ HTTPNetworkConnectionFile
 		
 		long	file_offset	= 0;
 		
-		List	ranges = new ArrayList();
+		List<long[]>	ranges = new ArrayList<long[]>();
 		
 		boolean	keep_alive	= false;
 		
@@ -110,71 +119,122 @@ HTTPNetworkConnectionFile
 				if ( line_num == 1 ){
 					
 					line = line.substring( line.indexOf( "files/" ) + 6 );
-					line = line.substring( line.indexOf( "/" ) + 1 );
+					
+					int	hash_end = line.indexOf( "/" );
+					
+					final byte[] old_hash = control.getHash();
+
+					final byte[] new_hash = URLDecoder.decode(line.substring(0, hash_end), "ISO-8859-1").getBytes( "ISO-8859-1" );
+					
+					if ( !Arrays.equals( new_hash, old_hash )){
+						
+						switching		= true;
+						
+						decoder.pauseInternally();
+							
+						flushRequests(
+							new flushListener()
+							{
+								private boolean triggered;
+								
+								public void 
+								flushed() 
+								{
+									synchronized( this ){
+										
+										if ( triggered ){
+											
+											return;
+										}
+										
+										triggered = true;
+									}
+									
+									getManager().reRoute( 
+											HTTPNetworkConnectionFile.this, 
+											old_hash, new_hash, header );
+								}
+							});
+							
+						return;
+					}
+					
+					
+					line = line.substring( hash_end + 1 );
 					
 					line = line.substring( 0, line.lastIndexOf( ' ' ));
 					
 					String	file = line;
-					
-					target_str	= file;
-					
-					StringTokenizer	tok = new StringTokenizer( file, "/" );
-					
-					List	bits = new ArrayList();
-					
-					while( tok.hasMoreTokens()){
+
+					if ( to_torrent.isSimpleTorrent()){
 						
-						bits.add( URLDecoder.decode(tok.nextToken(), "ISO-8859-1").getBytes( "ISO-8859-1" ));
-					}
-					
-						// latest spec has torrent file name encoded first for non-simple torrents
-						// remove it if we find it so we have some backward compat
-					
-					if ( !to_torrent.isSimpleTorrent() && bits.size() > 1 ){
-					
-						if ( Arrays.equals( to_torrent.getName(), (byte[])bits.get(0))){
+							// optimise for simple torrents. also support the case where
+							// client has the hash but doesn't know the file name
+						
+						target_file = dm.getFiles()[0];
+						
+					}else{
+						
+						target_str	= file;
+						
+						StringTokenizer	tok = new StringTokenizer( file, "/" );
+						
+						List<byte[]>	bits = new ArrayList<byte[]>();
+						
+						while( tok.hasMoreTokens()){
 							
-							bits.remove(0);
+							bits.add( URLDecoder.decode(tok.nextToken(), "ISO-8859-1").getBytes( "ISO-8859-1" ));
 						}
-					}
-					
-					DiskManagerFileInfo[]	files = dm.getFiles();
-					
-					file_offset	= 0;
-					
-					for (int j=0;j<files.length;j++){
 						
-						TOTorrentFile	torrent_file = files[j].getTorrentFile();
+							// latest spec has torrent file name encoded first for non-simple torrents
+							// remove it if we find it so we have some backward compat
 						
-						byte[][]	comps = torrent_file.getPathComponents();
+						if ( !to_torrent.isSimpleTorrent() && bits.size() > 1 ){
 						
-						if ( comps.length == bits.size()){
+							if ( Arrays.equals( to_torrent.getName(), (byte[])bits.get(0))){
+								
+								bits.remove(0);
+							}
+						}
+						
+						DiskManagerFileInfo[]	files = dm.getFiles();
+						
+						file_offset	= 0;
+						
+						for (int j=0;j<files.length;j++){
 							
-							boolean	match = true;
+							TOTorrentFile	torrent_file = files[j].getTorrentFile();
 							
-							for (int k=0;k<comps.length;k++){
-																								
-								if ( !Arrays.equals( comps[k], (byte[])bits.get(k))){
+							byte[][]	comps = torrent_file.getPathComponents();
+							
+							if ( comps.length == bits.size()){
+								
+								boolean	match = true;
+								
+								for (int k=0;k<comps.length;k++){
+																									
+									if ( !Arrays.equals( comps[k], (byte[])bits.get(k))){
+										
+										match	= false;
+										
+										break;
+									}
+								}
+								
+								if ( match ){ 
 									
-									match	= false;
-									
+									target_file 	= files[j];
+																	
 									break;
 								}
 							}
 							
-							if ( match ){ 
-								
-								target_file 	= files[j];
-																
-								break;
-							}
+							file_offset += torrent_file.getLength();
 						}
-						
-						file_offset += torrent_file.getLength();
-					}	
+					}
 				}else{
 					
-					line = line.toLowerCase();
+					line = line.toLowerCase( MessageText.LOCALE_ENGLISH );
 					
 					if ( line.startsWith( "range" ) && target_file != null ){
 						
@@ -241,8 +301,7 @@ HTTPNetworkConnectionFile
 						}
 					}else if ( line.indexOf( "keep-alive" ) != -1 ){
 						
-						keep_alive	= true;
-						
+						keep_alive	= true;						
 					}
 				}
 			}
@@ -303,6 +362,6 @@ HTTPNetworkConnectionFile
 			lengths[i]	= ( end - start ) + 1; 
 		}
 		
-		addRequest( new httpRequest( offsets, lengths, partial_content, keep_alive ));	
+		addRequest( new httpRequest( offsets, lengths, file_length, partial_content, keep_alive ));	
 	}
 }

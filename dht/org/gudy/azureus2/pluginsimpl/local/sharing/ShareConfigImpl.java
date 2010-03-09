@@ -26,17 +26,10 @@ package org.gudy.azureus2.pluginsimpl.local.sharing;
  *
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.plugins.sharing.ShareException;
-import org.gudy.azureus2.plugins.sharing.ShareResource;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.plugins.sharing.*;
 
 public class 
 ShareConfigImpl 

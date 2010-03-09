@@ -20,11 +20,6 @@
  */
 package org.gudy.azureus2.ui.common.util;
 
-import java.applet.Applet;
-import java.applet.AudioClip;
-import java.io.File;
-import java.net.URL;
-
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
@@ -37,22 +32,24 @@ import org.gudy.azureus2.core3.download.impl.DownloadManagerAdapter;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerAdapter;
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.platform.PlatformManagerException;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.minibar.DownloadBar;
 
 import com.aelitis.azureus.ui.UIFunctions;
+import com.aelitis.azureus.ui.UIFunctionsManager;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
+
+import org.gudy.azureus2.plugins.platform.PlatformManagerException;
+
+import java.applet.Applet;
+import java.applet.AudioClip;
+import java.io.File;
+import java.net.URL;
 
 /**
  * Contains methods to alert the user of certain events.
@@ -148,7 +145,8 @@ UserAlerts
 					DownloadManager dm = file.getDownloadManager();
 				
 					if ( 	old_mode == DiskManagerFileInfo.WRITE &&
-							new_mode == DiskManagerFileInfo.READ ){
+							new_mode == DiskManagerFileInfo.READ &&
+							file.getDownloaded() == file.getLength()){
 						
 						if( dm == null || !dm.getDownloadState().getFlag( DownloadManagerState.FLAG_LOW_NOISE )){
 
@@ -204,7 +202,11 @@ UserAlerts
 							String popup_text = MessageText.getString("popup.download.added",
 										new String[] { manager.getDisplayName()
 									});
-								Logger.log(new LogAlert(manager, true, LogAlert.AT_INFORMATION, popup_text));
+							UIFunctionsManager.getUIFunctions().forceNotify(
+									UIFunctions.STATUSICON_NONE, null, popup_text, null,
+									new Object[] {
+										manager
+									}, -1);
 						}
 					}
 				}
@@ -269,7 +271,11 @@ UserAlerts
   			
   			if (COConfigurationManager.getBooleanParameter(popup_enabler)) {
   				String popup_text = MessageText.getString(popup_def_text, new String[]{item_name});
-  				Logger.log(new LogAlert(relatedObject, true, LogAlert.AT_INFORMATION, popup_text));
+					UIFunctionsManager.getUIFunctions().forceNotify(
+							UIFunctions.STATUSICON_NONE, null, popup_text, null,
+							new Object[] {
+								relatedObject
+							}, -1);
   			}
 
             if(Constants.isOSX) { // OS X cannot concurrently use SWT and AWT

@@ -21,19 +21,14 @@
 package org.gudy.azureus2.pluginsimpl.local.ui.tables;
 
 
-import org.gudy.azureus2.plugins.ui.UIInstance;
-import org.gudy.azureus2.plugins.ui.UIManagerEvent;
-import org.gudy.azureus2.plugins.ui.UIManagerListener;
-import org.gudy.azureus2.plugins.ui.UIRuntimeException;
-import org.gudy.azureus2.plugins.ui.tables.TableColumn;
-import org.gudy.azureus2.plugins.ui.tables.TableColumnCreationListener;
-import org.gudy.azureus2.plugins.ui.tables.TableContextMenuItem;
-import org.gudy.azureus2.plugins.ui.tables.TableManager;
-import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerEventAdapter;
-import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
-
 import com.aelitis.azureus.ui.common.table.TableColumnCore;
 import com.aelitis.azureus.ui.common.table.impl.TableColumnImpl;
+
+import org.gudy.azureus2.plugins.ui.*;
+import org.gudy.azureus2.plugins.ui.tables.*;
+
+import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerEventAdapter;
+import org.gudy.azureus2.pluginsimpl.local.ui.UIManagerImpl;
 
 /** Manage Tables
  *
@@ -132,7 +127,7 @@ public class TableManagerImpl implements TableManager
 
 	public TableContextMenuItem addContextMenuItem(String tableID,
 			String resourceKey) {
-		TableContextMenuItemImpl item = new TableContextMenuItemImpl(ui_manager, tableID, resourceKey);
+		TableContextMenuItemImpl item = new TableContextMenuItemImpl(ui_manager.getPluginInterface(), tableID, resourceKey);
 
 		// this event is replayed for us on UI attaches so no extra work
 

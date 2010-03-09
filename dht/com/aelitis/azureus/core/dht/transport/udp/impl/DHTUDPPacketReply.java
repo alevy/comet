@@ -28,10 +28,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import com.aelitis.azureus.core.dht.DHT;
-import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.udp.DHTTransportUDP;
 import com.aelitis.azureus.core.dht.transport.udp.impl.packethandler.DHTUDPPacketNetworkHandler;
+import com.aelitis.azureus.core.dht.netcoords.*;
 import com.aelitis.net.udp.uc.PRUDPPacketReply;
 
 /**

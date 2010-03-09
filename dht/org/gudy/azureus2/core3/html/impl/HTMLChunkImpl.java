@@ -27,10 +27,10 @@ package org.gudy.azureus2.core3.html.impl;
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import org.gudy.azureus2.core3.html.HTMLTable;
+import org.gudy.azureus2.core3.html.*;
+import org.gudy.azureus2.core3.internat.MessageText;
 
 
 public class 
@@ -86,7 +86,7 @@ HTMLChunkImpl
 			
 			String	tag 	= content.substring( p1, p2 ).trim();
 			
-			String	lc_tag 	= tag.toLowerCase();
+			String	lc_tag 	= tag.toLowerCase( MessageText.LOCALE_ENGLISH );
 						
 			if ( lc_tag.startsWith("a " )){
 				
@@ -163,9 +163,9 @@ HTMLChunkImpl
 	getTags(
 		String	tag_name )
 	{
-		tag_name = tag_name.toLowerCase();
+		tag_name = tag_name.toLowerCase( MessageText.LOCALE_ENGLISH );
 							
-		String	lc_content = content.toLowerCase();
+		String	lc_content = content.toLowerCase( MessageText.LOCALE_ENGLISH );
 							
 		int	pos	= 0;
 
@@ -203,9 +203,9 @@ HTMLChunkImpl
 	getTagPairContent(
 		String	tag_name )
 	{
-		tag_name = tag_name.toLowerCase();
+		tag_name = tag_name.toLowerCase( MessageText.LOCALE_ENGLISH );
 		
-		String	lc_content = content.toLowerCase();
+		String	lc_content = content.toLowerCase( MessageText.LOCALE_ENGLISH );
 		
 		int	pos	= 0;
 

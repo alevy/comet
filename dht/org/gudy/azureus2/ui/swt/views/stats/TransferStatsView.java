@@ -44,11 +44,11 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.config.ParameterListener;
-import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.global.GlobalManagerStats;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.stats.transfer.OverallStats;
 import org.gudy.azureus2.core3.stats.transfer.StatsFactory;
+import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.DisplayFormatters;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
@@ -61,6 +61,8 @@ import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;
 
 import com.aelitis.azureus.core.AzureusCore;
+import com.aelitis.azureus.core.AzureusCoreRunningListener;
+import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.speedmanager.SpeedManager;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerLimitEstimate;
 import com.aelitis.azureus.core.speedmanager.SpeedManagerPingMapper;
@@ -72,10 +74,8 @@ import com.aelitis.azureus.core.speedmanager.SpeedManagerPingZone;
  */
 public class TransferStatsView extends AbstractIView {
 
-  GlobalManager manager;
-  AzureusCore core;
-  GlobalManagerStats stats;
-  SpeedManager speedManager;
+  GlobalManagerStats stats = null;
+  SpeedManager speedManager = null;
   
   OverallStats totalStats;
   
@@ -102,13 +102,15 @@ public class TransferStatsView extends AbstractIView {
   
   
   
-  public TransferStatsView(GlobalManager manager,AzureusCore core) {
-    this.core = core;
-    this.manager = manager;
-    this.stats = manager.getStats();
-    this.totalStats = StatsFactory.getStats();
+  public TransferStatsView() {
+  	AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				stats = core.getGlobalManager().getStats();
+		    speedManager = core.getSpeedManager();
+		    totalStats = StatsFactory.getStats();
+			}
+		});
     
-    speedManager = core.getSpeedManager();
   }
   
   public void initialize(Composite composite) {
@@ -117,11 +119,17 @@ public class TransferStatsView extends AbstractIView {
     GridLayout mainLayout = new GridLayout();
     mainPanel.setLayout(mainLayout);
     
-    createGeneralPanel();
-    
-    createBlahPanel();
-    
-    createAutoSpeedPanel();
+    AzureusCoreFactory.addCoreRunningListener(new AzureusCoreRunningListener() {
+			public void azureusCoreRunning(AzureusCore core) {
+				Utils.execSWTThread(new AERunnable() {
+					public void runSupport() {
+						createGeneralPanel();
+						createBlahPanel();
+						createAutoSpeedPanel();
+					}
+				});
+			}
+		});
   }
 
   private void createGeneralPanel() {
@@ -348,7 +356,6 @@ public class TransferStatsView extends AbstractIView {
     Messages.setLanguageText(disabled,"SpeedView.stats.autospeed.disabled");
     disabled.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_CENTER | GridData.FILL_HORIZONTAL));
     
-    SpeedManager speedManager = core.getSpeedManager();
     autoSpeedPanelLayout.topControl = speedManager.isAvailable() ? autoSpeedInfoPanel : autoSpeedDisabledPanel;
     
     gridData = new GridData(GridData.FILL_HORIZONTAL);
@@ -366,20 +373,26 @@ public class TransferStatsView extends AbstractIView {
   }
   
   public void delete() {
-	Utils.disposeComposite(generalPanel);
-	Utils.disposeComposite(blahPanel);
-    pingGraph.dispose();
- 
-    for (int i=0;i<plot_views.length;i++){
+		Utils.disposeComposite(generalPanel);
+		Utils.disposeComposite(blahPanel);
+		if (pingGraph != null) {
+			pingGraph.dispose();
+		}
 
-    	plot_views[i].dispose();
-    }
+		if (plot_views != null) {
+			for (int i = 0; i < plot_views.length; i++) {
 
-    for (int i=0;i<zone_views.length;i++){
+				plot_views[i].dispose();
+			}
+		}
 
-    	zone_views[i].dispose();
-    }
-  }
+		if (zone_views != null) {
+			for (int i = 0; i < zone_views.length; i++) {
+
+				zone_views[i].dispose();
+			}
+		}
+	}
 
   public String getFullTitle() {
     return MessageText.getString("SpeedView.title.full"); //$NON-NLS-1$
@@ -440,35 +453,37 @@ public class TransferStatsView extends AbstractIView {
     
     ////////////////////////////////////////////////////////////////////////
     
-    totalDown.setText(DisplayFormatters.formatByteCountToKiBEtc( totalStats.getDownloadedBytes() ));
-    totalUp.setText(DisplayFormatters.formatByteCountToKiBEtc( totalStats.getUploadedBytes() ));
-
-    sessionTime.setText( DisplayFormatters.formatETA( totalStats.getSessionUpTime() ) );
-    totalTime.setText( DisplayFormatters.formatETA( totalStats.getTotalUpTime() ) );
+    if (totalStats != null) {
+      totalDown.setText(DisplayFormatters.formatByteCountToKiBEtc( totalStats.getDownloadedBytes() ));
+      totalUp.setText(DisplayFormatters.formatByteCountToKiBEtc( totalStats.getUploadedBytes() ));
+  
+      sessionTime.setText( DisplayFormatters.formatETA( totalStats.getSessionUpTime() ) );
+      totalTime.setText( DisplayFormatters.formatETA( totalStats.getTotalUpTime() ) );
     
-    long dl_bytes = totalStats.getDownloadedBytes();
+      long dl_bytes = totalStats.getDownloadedBytes();
     
-    long t_ratio_raw = (1000* totalStats.getUploadedBytes() / (dl_bytes==0?1:dl_bytes) );
-    long s_ratio_raw = (1000* session_total_sent / (session_total_received==0?1:session_total_received) );
-    
-    String t_ratio = "";
-    String s_ratio = "";
-
-    String partial = String.valueOf(t_ratio_raw % 1000);
-    while (partial.length() < 3) {
-      partial = "0" + partial;
+      long t_ratio_raw = (1000* totalStats.getUploadedBytes() / (dl_bytes==0?1:dl_bytes) );
+      long s_ratio_raw = (1000* session_total_sent / (session_total_received==0?1:session_total_received) );
+      
+      String t_ratio = "";
+      String s_ratio = "";
+  
+      String partial = String.valueOf(t_ratio_raw % 1000);
+      while (partial.length() < 3) {
+        partial = "0" + partial;
+      }
+      t_ratio = (t_ratio_raw / 1000) + "." + partial;
+      
+      partial = String.valueOf(s_ratio_raw % 1000);
+      while (partial.length() < 3) {
+        partial = "0" + partial;
+      }
+      s_ratio = (s_ratio_raw / 1000) + "." + partial;
+      
+      
+      total_ratio.setText( t_ratio );
+      session_ratio.setText( s_ratio );
     }
-    t_ratio = (t_ratio_raw / 1000) + "." + partial;
-    
-    partial = String.valueOf(s_ratio_raw % 1000);
-    while (partial.length() < 3) {
-      partial = "0" + partial;
-    }
-    s_ratio = (s_ratio_raw / 1000) + "." + partial;
-    
-    
-    total_ratio.setText( t_ratio );
-    session_ratio.setText( s_ratio );
   }  
   
   private void
@@ -482,7 +497,9 @@ public class TransferStatsView extends AbstractIView {
   }
   
   private void refreshPingPanel() {
-    SpeedManager speedManager = core.getSpeedManager();
+  	if (speedManager == null) {
+  		return;
+  	}
     if(speedManager.isAvailable() && speedManager.isEnabled()) {
       autoSpeedPanelLayout.topControl = autoSpeedInfoPanel;
       autoSpeedPanel.layout();
@@ -505,6 +522,9 @@ public class TransferStatsView extends AbstractIView {
   }
   
   public void periodicUpdate() {
+  	if (speedManager == null) {
+  		return;
+  	}
     if(speedManager.isAvailable() && speedManager.isEnabled()) {
       SpeedManagerPingSource sources[] = speedManager.getPingSources();
       if(sources.length > 0) {

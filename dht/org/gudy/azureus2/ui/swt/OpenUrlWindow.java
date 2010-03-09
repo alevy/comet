@@ -33,15 +33,13 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.config.StringIterator;
-import org.gudy.azureus2.core3.config.StringList;
+
+import com.aelitis.azureus.core.*;
+import org.gudy.azureus2.core3.config.*;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.torrentdownloader.TorrentDownloaderCallBackInterface;
 import org.gudy.azureus2.core3.util.UrlUtils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
-
-import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author Olivier
@@ -66,9 +64,9 @@ OpenUrlWindow
 	 * @param linkURL
 	 * @param referrer
 	 */
-	public OpenUrlWindow(final AzureusCore azureus_core, final Shell parent,
+	public OpenUrlWindow(final Shell parent,
 			String linkURL, final String referrer) {
-		this(azureus_core, parent, linkURL, referrer, null);
+		this(parent, linkURL, referrer, null);
 	}
 
 	/**
@@ -80,7 +78,7 @@ OpenUrlWindow
 	 * @param referrer
 	 * @param listener
 	 */
-	public OpenUrlWindow(final AzureusCore azureus_core, final Shell parent,
+	public OpenUrlWindow(final Shell parent,
 			String linkURL, final String referrer,
 			final TorrentDownloaderCallBackInterface listener) {
 
@@ -207,7 +205,7 @@ OpenUrlWindow
       		url_str = url.getText();
       	}
       	
-        new FileDownloadWindow(azureus_core,parent,url_str, last_referrer, null, listener );
+        new FileDownloadWindow(parent,url_str, last_referrer, null, listener );
         shell.dispose();
       }
     }); 

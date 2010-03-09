@@ -26,13 +26,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Constants;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.SystemProperties;
-
-import com.aelitis.azureus.core.AzureusCore;
-import com.aelitis.azureus.core.AzureusCoreFactory;
+import org.gudy.azureus2.ui.swt.Utils;
 
 /**
  * @author Olivier Chalouhi
@@ -59,8 +58,6 @@ public class MainMenu
 
 	private Menu menuBar;
 
-	private AzureusCore core;
-
 	/**
 	 * <p>Creates the main menu bar and attaches it to the given shell</p>
 	 * @param shell A shell
@@ -79,10 +76,6 @@ public class MainMenu
 	}
 
 	private void createMenus(final Shell parent) {
-
-		if (core == null) {
-			core = AzureusCoreFactory.getSingleton();
-		}
 
 		//The Main Menu
 		menuBar = new Menu(parent, SWT.BAR);
@@ -122,7 +115,7 @@ public class MainMenu
 			DebugMenuHelper.createDebugMenuItem(menuBar);
 		}
 
-		addHelpMenu(parent);
+		addV2HelpMenu(parent);
 
 		/*
 		 * Enabled/disable menus based on what ui mode we're in
@@ -194,9 +187,11 @@ public class MainMenu
 		 * No need for restart and exit on OSX in the File menu since it is moved to the gobla application
 		 * menu instead see org.gudy.azureus2.ui.swt.osx.CarbonUIEnhancer for detail about that menu
 		 */
-		if (false == Constants.isOSX) {
+		if (!Utils.isCarbon) {
 			MenuFactory.addSeparatorMenuItem(fileMenu);
 			MenuFactory.addRestartMenuItem(fileMenu);
+		}
+		if (!Constants.isOSX) {
 			MenuFactory.addExitMenuItem(fileMenu);
 		}
 
@@ -227,6 +222,7 @@ public class MainMenu
 			indent(MenuFactory.addViewToolbarMenuItem(viewMenu));
 			indent(MenuFactory.addTransferBarToMenu(viewMenu));
 			indent(MenuFactory.addAllPeersMenuItem(viewMenu));
+			indent(MenuFactory.addClientStatsMenuItem(viewMenu));
 			if (Constants.isCVSVersion()) {
 				indent(MenuFactory.addDetailedListMenuItem(viewMenu));
 			}
@@ -295,7 +291,7 @@ public class MainMenu
 	 * Creates the Help menu and all its children
 	 * @param parent
 	 */
-	private void addHelpMenu(final Shell parent) {
+	private void addV2HelpMenu(final Shell parent) {
 		MenuItem helpItem = MenuFactory.createHelpMenuItem(menuBar);
 
 		Menu helpMenu = helpItem.getMenu();
@@ -309,7 +305,7 @@ public class MainMenu
 		MenuFactory.addReleaseNotesMenuItem(helpMenu);
 		MenuFactory.addWhatsNewMenuItem(helpMenu);
 		
-		MenuFactory.addFAQMenuItem(helpMenu, Constants.AZUREUS_WIKI);
+		MenuFactory.addWikiMenuItem(helpMenu);
 		MenuFactory.addGetPluginsMenuItem(helpMenu);
 
 		MenuFactory.addSeparatorMenuItem(helpMenu);

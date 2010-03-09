@@ -24,9 +24,8 @@ package org.gudy.azureus2.pluginsimpl.local.network;
 
 import java.util.HashMap;
 
-import org.gudy.azureus2.plugins.messaging.Message;
-import org.gudy.azureus2.plugins.network.IncomingMessageQueue;
-import org.gudy.azureus2.plugins.network.IncomingMessageQueueListener;
+import org.gudy.azureus2.plugins.messaging.*;
+import org.gudy.azureus2.plugins.network.*;
 import org.gudy.azureus2.pluginsimpl.local.messaging.MessageAdapter;
 
 

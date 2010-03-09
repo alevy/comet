@@ -29,25 +29,10 @@ import java.util.regex.Pattern;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowData;
-import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.util.Debug;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
@@ -110,6 +95,10 @@ public class GCStringPrinter
 	private Image[] images;
 	
 	private float[] imageScales;
+
+	private int iCurrentHeight;
+
+	private boolean wrap;
 
 	public static class URLInfo
 	{
@@ -228,6 +217,11 @@ public class GCStringPrinter
 		} catch (Throwable t) {
 			Debug.out(t);
 		}
+
+		if (DEBUG) {
+			System.out.println("");
+		}
+
 		return b;
 	}
 
@@ -261,7 +255,7 @@ public class GCStringPrinter
 		boolean fullLinesOnly = (printFlags & FLAG_FULLLINESONLY) > 0;
 		boolean skipClip = (printFlags & FLAG_SKIPCLIP) > 0;
 		boolean noDraw = (printFlags & FLAG_NODRAW) > 0;
-		boolean wrap = (swtFlags & SWT.WRAP) > 0;
+		wrap = (swtFlags & SWT.WRAP) > 0;
 
 		if ((printFlags & FLAG_KEEP_URL_INFO) == 0) {
 			Matcher htmlMatcher = patHREF.matcher(string);
@@ -328,7 +322,7 @@ public class GCStringPrinter
 			}
 
 			// Process string line by line
-			int iCurrentHeight = 0;
+			iCurrentHeight = 0;
 			int currentCharPos = 0;
 			
 			int pos1 = string.indexOf('\n');
@@ -346,7 +340,7 @@ public class GCStringPrinter
 
 				do {
 					LineInfo lineInfo = new LineInfo(sLine, currentCharPos);
-					lineInfo = processLine(gc, lineInfo, printArea, wrap, fullLinesOnly,
+					lineInfo = processLine(gc, lineInfo, printArea,  fullLinesOnly,
 							false);
 					String sProcessedLine = (String) lineInfo.lineOutputed;
 
@@ -374,7 +368,7 @@ public class GCStringPrinter
 						if (isOverY && !fullLinesOnly) {
 							//fullLinesOnly = true; // <-- don't know why we needed this
 							lines.add(lineInfo);
-						} else if (isOverY && fullLinesOnly) {
+						} else if (isOverY && fullLinesOnly && lines.size() > 0) {
 							String excess = lineInfo.excessPos >= 0
 									? sLine.substring(lineInfo.excessPos) : null;
 							if (excess != null) {
@@ -404,8 +398,9 @@ public class GCStringPrinter
 
 								StringBuffer outputLine = new StringBuffer(sProcessedLine);
 								lineInfo.width = extent.x;
+								wrap = false;
 								int newExcessPos = processWord(gc, sProcessedLine,
-										" " + excess, printArea, false, lineInfo, outputLine,
+										" " + excess, printArea, lineInfo, outputLine,
 										new StringBuffer());
 								if (DEBUG) {
 									System.out.println("  with word [" + excess + "] len is "
@@ -512,7 +507,6 @@ public class GCStringPrinter
 
 		}
 		
-
 		cutoff |= size.y > printArea.height;
 		return !cutoff;
 	}
@@ -524,9 +518,9 @@ public class GCStringPrinter
 	 * @since 3.0.0.7
 	 */
 	private LineInfo processLine(final GC gc, final LineInfo lineInfo,
-			final Rectangle printArea, final boolean wrap,
-			final boolean fullLinesOnly, boolean hasMoreElements) {
-		
+			final Rectangle printArea, final boolean fullLinesOnly,
+			boolean hasMoreElements) {
+
 		if (lineInfo.originalLine.length() == 0) {
 			lineInfo.lineOutputed = "";
 			lineInfo.height = gc.stringExtent(GOOD_STRING).y;
@@ -556,10 +550,13 @@ public class GCStringPrinter
 				// outputLine.append(sProcessedLine);
 
 				excessPos = processWord(gc, lineInfo.originalLine, sProcessedLine,
-						printArea, wrap, lineInfo, outputLine, space);
+						printArea, lineInfo, outputLine, space);
 			} else {
 				int posLastWordStart = 0;
 				int posWordStart = lineInfo.originalLine.indexOf(' ');
+				while (posWordStart == 0) {
+					posWordStart = lineInfo.originalLine.indexOf(' ', posWordStart + 1);
+				}
 				if (posWordStart < 0) {
 					posWordStart = lineInfo.originalLine.length();
 				}
@@ -582,7 +579,7 @@ public class GCStringPrinter
 						}
 
 						excessPos = processWord(gc, lineInfo.originalLine, subWord,
-								printArea, wrap, lineInfo, outputLine, space);
+								printArea, lineInfo, outputLine, space);
 						if (DEBUG) {
 							System.out.println("  with word [" + subWord + "] len is "
 									+ lineInfo.width + "(" + printArea.width + ") w/excess "
@@ -636,7 +633,7 @@ public class GCStringPrinter
 	 * @since 3.0.0.7
 	 */
 	private int processWord(final GC gc, final String sLine, String word,
-			final Rectangle printArea, final boolean wrap, final LineInfo lineInfo,
+			final Rectangle printArea, final LineInfo lineInfo,
 			StringBuffer outputLine, final StringBuffer space) {
 
 		if (word.length() == 0) {
@@ -701,21 +698,24 @@ public class GCStringPrinter
 			}
 		}
 
-		Point ptWordSize = gc.stringExtent(word + " ");
-		boolean bWordLargerThanWidth = ptWordSize.x > printArea.width;
-		// This will split put a word that is longer than a full line onto a new
-		// line (when the existing line has text).
-		if (bWordLargerThanWidth && lineInfo.width > 0) {
-			//System.out.println("w3 = " + lineInfo.width + ";h=" + lineInfo.height);
-			return 0;
-		}
-		int targetWidth = lineInfo.width + ptWordSize.x;
-		if (targetWidth > printArea.width) {
+		Point ptLineAndWordSize = gc.stringExtent(outputLine + word + " ");
+		//System.out.println(ptLineAndWordSize + ";" + outputLine  + "::WordComp " + (ptLineAndWordSize.x - lineInfo.width));
+		if (ptLineAndWordSize.x > printArea.width) {
 			// word is longer than space avail, split
+
+			Point ptWordSize2 = gc.stringExtent(word + " ");
+			boolean bWordLargerThanWidth = ptWordSize2.x > printArea.width;
+			// This will split put a word that is longer than a full line onto a new
+			// line (when the existing line has text).
+			if (bWordLargerThanWidth && lineInfo.width > 0) {
+				//System.out.println("w3 = " + lineInfo.width + ";h=" + lineInfo.height);
+				return 0;
+			}
+
 			int endIndex = word.length();
 			long diff = endIndex;
 
-			while (targetWidth != printArea.width) {
+			while (ptLineAndWordSize.x != printArea.width) {
 				diff = (diff >> 1) + (diff % 2);
 
 				if (diff <= 0) {
@@ -723,7 +723,7 @@ public class GCStringPrinter
 				}
 
 				//System.out.println("diff=" + diff + ";e=" + endIndex + ";tw=" + targetWidth + ";paw= " + printArea.width);
-				if (targetWidth > printArea.width) {
+				if (ptLineAndWordSize.x > printArea.width) {
 					endIndex -= diff;
 					if (endIndex < 1) {
 						endIndex = 1;
@@ -735,38 +735,42 @@ public class GCStringPrinter
 					}
 				}
 
-				ptWordSize = gc.stringExtent(word.substring(0, endIndex) + " ");
-				targetWidth = lineInfo.width + ptWordSize.x;
+				ptLineAndWordSize = gc.stringExtent(outputLine + word.substring(0, endIndex) + " ");
 
 				if (diff <= 1) {
 					break;
 				}
 			}
-			;
-			if (endIndex == 0) {
+			boolean nothingFit = endIndex == 0;
+			if (nothingFit) {
 				endIndex = 1;
 			}
-			if (targetWidth > printArea.width && endIndex > 1) {
+			if (ptLineAndWordSize.x > printArea.width && endIndex > 1) {
 				endIndex--;
-				ptWordSize = gc.stringExtent(word.substring(0, endIndex) + " ");
+				ptLineAndWordSize = gc.stringExtent(outputLine + word.substring(0, endIndex) + " ");
 			}
 
 			if (DEBUG) {
-				System.out.println("excess starts at " + endIndex + "(" + ptWordSize.x
-						+ "px) of " + word.length() + ". "
-						+ (ptWordSize.x + lineInfo.width) + "/" + printArea.width
-						+ "; wrap?" + wrap);
+				System.out.println("excess starts at " + endIndex + " of "
+						+ word.length() + ". "
+						+ "wrap?" + wrap);
+			}
+			if (wrap && (printFlags & FLAG_FULLLINESONLY) > 0) {
+				int nextLineHeight = gc.stringExtent(GOOD_STRING).y;
+				if (iCurrentHeight + ptLineAndWordSize.y + nextLineHeight > printArea.height) {
+					if (DEBUG) {
+						System.out.println("turn off wrap");
+					}
+					wrap = false;
+				}
 			}
 
-			if (endIndex > 0 && outputLine.length() > 0) {
+			if (endIndex > 0 && outputLine.length() > 0 && !nothingFit) {
 				outputLine.append(space);
 			}
 
-			if (endIndex == 0 && outputLine.length() == 0) {
-				endIndex = 1;
-			}
-
-			if (wrap && ptWordSize.x < printArea.width && !bWordLargerThanWidth) {
+			int w = ptLineAndWordSize.x - lineInfo.width;
+			if (wrap && !nothingFit && !bWordLargerThanWidth) {
 				// whole word is excess
 				return 0;
 			}
@@ -797,7 +801,7 @@ public class GCStringPrinter
 			return endIndex;
 		}
 
-		lineInfo.width += ptWordSize.x;
+		lineInfo.width = ptLineAndWordSize.x;
 		if (lineInfo.width > printArea.width) {
 			if (space.length() > 0) {
 				space.delete(0, space.length());
@@ -1119,7 +1123,8 @@ public class GCStringPrinter
 		GridData gridData = new GridData(SWT.NONE, SWT.FILL, false, true);
 		cButtons.setLayoutData(gridData);
 		final Canvas cPaint = new Canvas(shell, SWT.DOUBLE_BUFFERED);
-		gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gridData = new GridData(SWT.FILL, SWT.NONE, true, false);
+		gridData.heightHint = 40;
 		cPaint.setLayoutData(gridData);
 
 		cButtons.setLayout(new RowLayout(SWT.VERTICAL));

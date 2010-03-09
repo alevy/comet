@@ -22,11 +22,7 @@
 package org.gudy.azureus2.ui.swt.components;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.gudy.azureus2.core3.config.ParameterListener;
@@ -599,6 +595,15 @@ BufferedTableRow
   
   public boolean setTableItem(int newIndex, boolean bCopyFromOld, boolean isVisible) {
   	TableItem newRow;
+
+  	boolean needsNewAltBG = false;
+		if (alternatingColors != null) {
+			int newAltRowNo = newIndex % alternatingColors.length;
+			int oldAltRowNo = item == null ? -1 : table.indexOf(item)
+					% alternatingColors.length;
+			needsNewAltBG = newAltRowNo != oldAltRowNo;
+		}
+  	
   	try {
   		newRow = table.getItem(newIndex);
   	} catch (IllegalArgumentException er) {
@@ -620,8 +625,8 @@ BufferedTableRow
 
   	if (newRow == item) {
   		if (newRow.getData("TableRow") == this) {
-  			if(isVisible)
-  				setAlternatingBGColor(false);
+  			if(isVisible && needsNewAltBG)
+  				setAlternatingBGColor(true);
   			return false;
   		}
   	}
@@ -651,7 +656,7 @@ BufferedTableRow
   		setIconSize(ptIconSize);
   	}
 
-  	if(isVisible)
+  	if(isVisible && needsNewAltBG)
   		setAlternatingBGColor(false);
 
   	try {

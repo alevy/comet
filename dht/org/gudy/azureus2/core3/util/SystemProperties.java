@@ -22,17 +22,12 @@
  */
 package org.gudy.azureus2.core3.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Properties;
 
-import org.gudy.azureus2.core3.internat.LocaleUtil;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.platform.PlatformManager;
-import org.gudy.azureus2.platform.PlatformManagerFactory;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.internat.*;
+import org.gudy.azureus2.platform.*;
 
 /**
  * Utility class to manage system-dependant information.
@@ -48,8 +43,12 @@ public class SystemProperties {
    */
   public static final String SEP = System.getProperty("file.separator");
   
+  public static final String	AZ_APP_ID	= "az";
+  
   public static String APPLICATION_NAME 		= "Azureus";
-  private static 		String APPLICATION_ID 			= "az";
+  private static String APPLICATION_ID 			= AZ_APP_ID;
+  private static String APPLICATION_VERSION		= Constants.AZUREUS_VERSION;
+  
   	// TODO: fix for non-SWT entry points one day
   private static 		String APPLICATION_ENTRY_POINT 	= "org.gudy.azureus2.ui.swt.Main";
   
@@ -65,7 +64,7 @@ public class SystemProperties {
 			// try and infer the application name. this is only required on OSX as the app name
 			// is a component of the "application path" used to find plugins etc.
 
-		if ( Constants.isOSX ){
+		if ( Constants.isOSX && !System.getProperty( "azureus.infer.app.name", "true" ).equals( "false" )){
 			
 			/* example class path
 			 
@@ -152,6 +151,19 @@ public class SystemProperties {
 	getApplicationName()
 	{
 		return( APPLICATION_NAME );
+	}
+	
+	public static void
+	setApplicationVersion(
+		String	v )
+	{
+		APPLICATION_VERSION = v;
+	}
+	
+	public static String
+	getApplicationVersion()
+	{
+		return( APPLICATION_VERSION );
 	}
 	
 	public static String
@@ -344,11 +356,7 @@ public class SystemProperties {
   getEnvironmentalVariable( 
   		final String _var ) 
   {
-  	Process p = null;
-  	Properties envVars = new Properties();
-  	Runtime r = Runtime.getRuntime();
-    BufferedReader br = null;
-
+ 
     	// this approach doesn't work at all on Windows 95/98/ME - it just hangs
     	// so get the hell outta here!
     
@@ -357,7 +365,23 @@ public class SystemProperties {
     	return( "" );
     }
     
+		// getenv reinstated in 1.5 - try using it
+	
+	String	res = System.getenv( _var );
+	
+	if ( res != null ){
+		
+		return( res );
+	}
+
+  	Properties envVars = new Properties();
+    BufferedReader br = null;
+
     try {
+     	
+     	Process p = null;
+      	Runtime r = Runtime.getRuntime();
+ 
     	if ( Constants.isWindows ) {
     		p = r.exec( "cmd.exe /c set" );
     	}

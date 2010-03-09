@@ -23,6 +23,7 @@
 package com.aelitis.azureus.core.clientmessageservice.secure.impl;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;

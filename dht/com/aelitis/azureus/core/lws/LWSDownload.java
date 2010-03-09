@@ -23,8 +23,8 @@ package com.aelitis.azureus.core.lws;
 
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
 import org.gudy.azureus2.core3.util.Debug;
@@ -48,7 +48,7 @@ import org.gudy.azureus2.plugins.download.savelocation.SaveLocationChange;
 import org.gudy.azureus2.plugins.torrent.Torrent;
 import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
 import org.gudy.azureus2.plugins.torrent.TorrentManager;
-import org.gudy.azureus2.plugins.utils.StaticUtilities;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 import org.gudy.azureus2.pluginsimpl.local.download.DownloadAnnounceResultImpl;
 
 
@@ -184,6 +184,12 @@ LWSDownload
 		long		flag )
 	{
 		return( false );
+	}
+	
+	public long 
+	getFlags() 
+	{
+		return 0;
 	}
 	
 	public int
@@ -360,7 +366,7 @@ LWSDownload
 	getListAttribute(
 		TorrentAttribute		attribute )
 	{
-		TorrentManager tm = StaticUtilities.getDefaultPluginInterface().getTorrentManager();
+		TorrentManager tm = PluginInitializer.getDefaultInterface().getTorrentManager();
 
 		if ( attribute == tm.getAttribute( TorrentAttribute.TA_NETWORKS )){
 			

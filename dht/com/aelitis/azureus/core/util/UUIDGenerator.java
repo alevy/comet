@@ -22,6 +22,10 @@
 
 package com.aelitis.azureus.core.util;
 
+import java.security.SecureRandom;
+import java.util.Random;
+
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.RandomUtils;
 
@@ -53,7 +57,7 @@ UUIDGenerator
 	{
 		byte[]	bytes = generateUUID();
 		
-		String	res = ByteFormatter.encodeString( bytes ).toLowerCase();
+		String	res = ByteFormatter.encodeString( bytes ).toLowerCase( MessageText.LOCALE_ENGLISH );
 		
 		return( res.substring(0,8) + "-" + res.substring(8,12) +
 				"-" + res.substring(12,16) + "-" + res.substring(16,20) + "-" + res.substring( 20 ));

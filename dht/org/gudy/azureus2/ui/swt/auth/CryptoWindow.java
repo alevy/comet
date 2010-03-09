@@ -28,31 +28,25 @@ package org.gudy.azureus2.ui.swt.auth;
 
 import java.util.Arrays;
 
-import org.eclipse.swt.SWT;
+import org.eclipse.swt.*;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Text;
-import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.ui.swt.*;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
+import org.gudy.azureus2.ui.swt.components.shell.ShellManager;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.Cursors;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.util.*;
+
 import com.aelitis.azureus.core.security.CryptoManagerFactory;
 import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler;
+import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler.passwordDetails;
 
 public class 
 CryptoWindow 
@@ -93,15 +87,7 @@ CryptoWindow
 		try{
 			if ( display.getThread() == Thread.currentThread()){
 				
-				display.syncExec(
-						new Runnable() 
-						{
-							public void
-							run()
-							{
-								dialog[0] = new cryptoDialog( sem, display, handler_type, action_type, last_pw_incorrect, reason );
-							}
-						});
+				dialog[0] = new cryptoDialog( sem, display, handler_type, action_type, last_pw_incorrect, reason );
 				
 				while ( !( display.isDisposed() || sem.isReleasedForever())){
 					
@@ -197,7 +183,8 @@ CryptoWindow
 				return;
 			}
 			
-	 		shell = new Shell( display,SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+			shell = ShellFactory.createMainShell(SWT.DIALOG_TRIM
+					| SWT.APPLICATION_MODAL);
 	 	
 	 		Utils.setShellIcon(shell);
 	 		
@@ -350,7 +337,7 @@ CryptoWindow
 						
 			final Label linkLabel = new Label(shell, SWT.NULL);
 			linkLabel.setText(MessageText.getString("ConfigView.label.please.visit.here"));
-			linkLabel.setData("http://www.azureuswiki.com/index.php?title=Public_Private_Keys");
+			linkLabel.setData("http://wiki.vuze.com/w/Public_Private_Keys");
 			linkLabel.setCursor(Cursors.handCursor);
 			linkLabel.setForeground(Colors.blue);
 			gridData = new GridData();

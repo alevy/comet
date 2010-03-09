@@ -21,40 +21,17 @@
 
 package com.aelitis.azureus.plugins.startstoprules.defaultplugin;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationListener;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.LightHashSet;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.plugins.Plugin;
 import org.gudy.azureus2.plugins.PluginConfig;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.PluginListener;
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
-import org.gudy.azureus2.plugins.download.Download;
-import org.gudy.azureus2.plugins.download.DownloadActivationEvent;
-import org.gudy.azureus2.plugins.download.DownloadActivationListener;
-import org.gudy.azureus2.plugins.download.DownloadAnnounceResult;
-import org.gudy.azureus2.plugins.download.DownloadException;
-import org.gudy.azureus2.plugins.download.DownloadListener;
-import org.gudy.azureus2.plugins.download.DownloadManager;
-import org.gudy.azureus2.plugins.download.DownloadManagerListener;
-import org.gudy.azureus2.plugins.download.DownloadScrapeResult;
-import org.gudy.azureus2.plugins.download.DownloadTrackerListener;
+import org.gudy.azureus2.plugins.download.*;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.ui.UIInstance;
 import org.gudy.azureus2.plugins.ui.UIManager;
@@ -124,7 +101,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 	 * Interval in ms between checks to see if the {@link #somethingChanged} 
 	 * flag changed 
 	 */
-	private static final int PROCESS_CHECK_PERIOD = 120;
+	private static final int PROCESS_CHECK_PERIOD = 1500;
 
 	/** Wait xx ms before starting completed torrents (so scrapes can come in) */
 	private static final int MIN_SEEDING_STARTUP_WAIT = 20000;
@@ -149,7 +126,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 	private RecalcSeedingRanksTask recalcSeedingRanksTask;
 
 	/** Map to relate downloadData to a Download */
-	private static Map downloadDataMap = AEMonitor.getSynchronisedMap(new HashMap());
+	private static Map downloadDataMap = Collections.synchronizedMap(new HashMap());
 	/**
 	 * this is used to reduce the number of comperator invocations
 	 * by keeping a mostly sorted copy around, must be nulled whenever the map is changed
@@ -218,6 +195,8 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 	private boolean bSWTUI = false;
 	
 	private CopyOnWriteList listenersFP = new CopyOnWriteList();
+
+	public static boolean pauseChangeFlagChecker = false;
 	
 	public static void
 	load(
@@ -282,13 +261,15 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 		
 		pi.getUtilities().createDelayedTask(r).queue();
 
-		log = pi.getLogger().getChannel("StartStopRules");
+		log = pi.getLogger().getTimeStampedChannel("StartStopRules");
+		
 		log.log(LoggerChannel.LT_INFORMATION,
 				"Default StartStopRules Plugin Initialisation");
 
 		COConfigurationManager.addListener(this);
 
 		try {
+			pi.getUIManager().createLoggingViewModel(log, true);
 			pi.getUIManager().addUIListener(new UIManagerListener() {
 				public void UIAttached(UIInstance instance) {
 					TableManager tm = pi.getUIManager().getTableManager();
@@ -337,7 +318,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 		configModel.addBooleanParameter2("StartStopManager_bAutoReposition",
 				"ConfigView.label.seeding.autoReposition", false);
 		configModel.addIntParameter2("StartStopManager_iMinSeedingTime",
-				"ConfigView.label.minSeedingTime", 60 * 3);
+				"ConfigView.label.minSeedingTime", 60 * 10);
 
 		// ignore rules subsection
 		// ---------
@@ -491,12 +472,15 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 		long cycleNo = 0;
 
 		public void perform(TimerEvent event) {
-			if (closingDown) {
+			if (closingDown || pauseChangeFlagChecker ) {
 				return;
 			}
 
 			cycleNo++;
 			if (cycleNo > FORCE_CHECK_CYCLES) {
+				if (bDebugLog) {
+					log.log(LoggerChannel.LT_INFORMATION, ">>force process");
+				}
 				somethingChanged = true;
 			}
 
@@ -510,6 +494,8 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 			}
 		}
 	}
+	
+	private volatile boolean immediateProcessingScheduled = false;
 
 	/** Listen to Download changes and recalc SR if needed 
 	 */
@@ -521,6 +507,19 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 			if (dlData != null) {
 				// force a SR recalc, so that it gets position properly next process()
 				requestProcessCycle(dlData);
+				if ((new_state == Download.ST_READY || new_state == Download.ST_WAITING)) {
+					if (immediateProcessingScheduled) { 
+						requestProcessCycle(dlData);
+					} else {
+						immediateProcessingScheduled = true;
+						new AEThread2("processReady", true) {
+							public void run() {
+								process();
+							}
+						}.start();
+					}
+				}
+				
 				if (bDebugLog)
 					log.log(dlData.dl.getTorrent(), LoggerChannel.LT_INFORMATION,
 							"somethingChanged: stateChange from " + sStates.charAt(old_state)
@@ -587,6 +586,11 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 			//		+ event.getActivationCount());
 			Download download = event.getDownload();
 			DefaultRankCalculator dlData = (DefaultRankCalculator) downloadDataMap.get(download);
+
+			if (bDebugLog) {
+				log.log(download, LoggerChannel.LT_INFORMATION, ">> somethingChanged: ActivationRequest");
+			}
+
 			// ok to be null
 			requestProcessCycle(dlData);
 
@@ -1256,7 +1260,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 				};
 			}
 
-			// Sort
+			// Sort: SeedingRank Desc, Position Desc
 			Arrays.sort(dlDataArray);
 
 			ProcessVars vars = new ProcessVars();
@@ -1364,6 +1368,9 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 			if (now > 0) {
 				processCount++;
 				long timeTaken = (SystemTime.getCurrentTime() - now);
+				if (bDebugLog) {
+					log.log(LoggerChannel.LT_INFORMATION, "process() took " + timeTaken);
+				}
 				processTotalMS += timeTaken;
 				if (timeTaken > processMaxMS) {
 					processMaxMS = timeTaken;
@@ -1373,6 +1380,8 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 				}
 				processLastComplete = now;
 			}
+			
+			immediateProcessingScheduled = false;
 
 			this_mon.exit();
 		}
@@ -1583,6 +1592,9 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 		state = download.getState();
 
 		if (oldState != state) {
+			if (bDebugLog) {
+				log.log(LoggerChannel.LT_INFORMATION, ">> somethingChanged: state");
+			}
 			somethingChanged = true;
 		}
 
@@ -1625,6 +1637,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 
 		Download download = dlData.dl;
 		int state = download.getState();
+		boolean stateReadyOrSeeding = state == Download.ST_READY || state == Download.ST_SEEDING;
 
 		String[] debugEntries = null;
 		String sDebugLine = "";
@@ -1699,6 +1712,36 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 				return;
 			}
 
+			int rank = download.getSeedingRank();
+
+			// Short Circuit: if rank is set to IGNORED, we can skip everything
+			// except when:
+			// (1) torrent is force started
+			// (2) the torrent is in ready or seeding state (we have to stop the torrent)
+			// (3) we auto start 0 peers
+			if (rank < DefaultRankCalculator.SR_IGNORED_LESS_THAN
+					&& !download.isForceStart() && !stateReadyOrSeeding
+					&& !bAutoStart0Peers) {
+				if (bDebugLog) {
+					sDebugLine += "\n  Skip !forceStart";
+					int idx = rank * -1;
+					if (idx < DefaultRankCalculator.SR_NEGATIVE_DEBUG.length) {
+						sDebugLine += " && " + DefaultRankCalculator.SR_NEGATIVE_DEBUG[idx];
+					}
+				}
+				return;
+			}
+
+			// Short Circuit: if seed higher in the queue is marked to start,
+			// we can skip everything, except when:
+			// (1) torrent is force started
+			// (2) we auto start 0 peers
+			// (3) the torrent is in ready or seeding state (we have to stop the torrent)
+			if (vars.higherCDtoStart && !download.isForceStart() && !bAutoStart0Peers
+					&& !stateReadyOrSeeding) {
+				sDebugLine += " a torrent with a higher rank is queued or starting";
+			}
+
 			if (bDebugLog && bAutoStart0Peers && numPeers == 0 && !bScrapeOk
 					&& (state == Download.ST_QUEUED || state == Download.ST_READY)) {
 				sDebugLine += "\n  NOT starting 0 Peer torrent because scrape isn't ok";
@@ -1732,7 +1775,7 @@ public class StartStopRulesDefaultPlugin implements Plugin,
   		if (state == Download.ST_SEEDING && !bActivelySeeding) {
   			vars.stalledSeeders++;
   		}
-				
+
 			// Is it OK to set this download to a queued state?
 			// It is if:
 			//   1) It is either READY or SEEDING; and
@@ -1751,13 +1794,12 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 			//           active torrents count.
 			//
 			//   3) It hasn't been force started.
-			boolean okToQueue = (state == Download.ST_READY || state == Download.ST_SEEDING)
+			boolean okToQueue = stateReadyOrSeeding
 					&& (!isFP || (isFP && ((totals.maxActive != 0 && vars.numWaitingOrSeeding >= totals.maxActive
 							- minDownloads))))
 					//&& (!isFP || (isFP && ((vars.numWaitingOrSeeding >= totals.maxSeeders) || (!bActivelySeeding && (vars.numWaitingOrSeeding + totals.totalStalledSeeders) >= totals.maxSeeders))) )
 					&& (!download.isForceStart());
-			int rank = download.getSeedingRank();
-
+			
 			// in RANK_TIMED mode, we use minTimeAlive for rotation time, so
 			// skip check
 			// XXX do we want changes to take effect immediately  ?
@@ -1810,11 +1852,15 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 				state = download.getState();
 			} else if (bDebugLog && state == Download.ST_QUEUED) {
 				sDebugLine += "\n  NOT restarting:";
-				if (rank < DefaultRankCalculator.SR_IGNORED_LESS_THAN)
+				if (rank < DefaultRankCalculator.SR_IGNORED_LESS_THAN) {
 					sDebugLine += " torrent is being ignored";
-				else if (vars.higherCDtoStart)
+					int idx = rank * -1;
+					if (idx < DefaultRankCalculator.SR_NEGATIVE_DEBUG.length) {
+						sDebugLine += ": " + DefaultRankCalculator.SR_NEGATIVE_DEBUG[idx];
+					}
+				} else if (vars.higherCDtoStart) {
 					sDebugLine += " a torrent with a higher rank is queued or starting";
-				else {
+				} else {
 					if (okToQueue)
 						sDebugLine += " no starting of okToQueue'd;";
 
@@ -2157,8 +2203,9 @@ public class StartStopRulesDefaultPlugin implements Plugin,
 
 		try {
 			writer.indent();
-			writer.println("Started " + (SystemTime.getCurrentTime() - startedOn)
-					+ "ms ago");
+			writer.println("Started " + TimeFormatter.format100ths(SystemTime.getCurrentTime() - startedOn)
+					+ " ago");
+			writer.println("debugging = " + bDebugLog);
 			writer.println("downloadDataMap size = " + downloadDataMap.size());
 			if (changeCheckCount > 0) {
 				writer.println("changeCheck CPU ms: avg="

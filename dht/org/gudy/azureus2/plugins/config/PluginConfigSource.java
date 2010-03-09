@@ -21,10 +21,9 @@
 package org.gudy.azureus2.plugins.config;
 
 import java.io.File;
-
 import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginConfig;
 import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.plugins.PluginConfig;
 
 /**
  * This interface provides a mechanism for plugins to store configuration

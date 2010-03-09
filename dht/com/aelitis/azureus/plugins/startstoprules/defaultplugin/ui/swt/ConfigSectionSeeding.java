@@ -23,19 +23,13 @@ package com.aelitis.azureus.plugins.startstoprules.defaultplugin.ui.swt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
@@ -84,7 +78,6 @@ public class ConfigSectionSeeding implements UISWTConfigSection {
     label = new Label(cSeeding, SWT.NULL);
     Messages.setLanguageText(label, "ConfigView.label.minSeedingTime");
     gridData = new GridData();
-    gridData.widthHint = 40;
     new IntParameter(cSeeding, "StartStopManager_iMinSeedingTime").setLayoutData(gridData);
 
     gridData = new GridData();
@@ -105,7 +98,6 @@ public class ConfigSectionSeeding implements UISWTConfigSection {
     label = new Label(cSeeding, SWT.NULL);
     Messages.setLanguageText(label, "ConfigView.label.seeding.addForSeedingDLCopyCount");
     gridData = new GridData();
-    gridData.widthHint = 40;
     new IntParameter(cSeeding, "StartStopManager_iAddForSeedingDLCopyCount").setLayoutData(gridData);
 
     label = new Label(cSeeding, SWT.NULL);
@@ -121,7 +113,6 @@ public class ConfigSectionSeeding implements UISWTConfigSection {
     cArea.setLayoutData(gridData);
 
     gridData = new GridData();
-    gridData.widthHint = 20;
     final IntParameter paramFakeFullCopy = new IntParameter(cArea, "StartStopManager_iNumPeersAsFullCopy");
     paramFakeFullCopy.setLayoutData(gridData);
 
@@ -149,7 +140,6 @@ public class ConfigSectionSeeding implements UISWTConfigSection {
     Messages.setLanguageText(label, "ConfigView.label.seeding.fakeFullCopySeedStart");
 
     gridData = new GridData();
-    gridData.widthHint = 20;
     new IntParameter(cFullCopyOptionsArea, "StartStopManager_iFakeFullCopySeedStart").setLayoutData(gridData);
     label = new Label(cFullCopyOptionsArea, SWT.NULL);
     Messages.setLanguageText(label, "ConfigView.label.seeds");

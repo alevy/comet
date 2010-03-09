@@ -28,8 +28,8 @@ package org.gudy.azureus2.pluginsimpl.local.torrent;
 
 import java.net.URL;
 
-import org.gudy.azureus2.core3.torrent.TOTorrentAnnounceURLSet;
-import org.gudy.azureus2.plugins.torrent.TorrentAnnounceURLListSet;
+import org.gudy.azureus2.core3.torrent.*;
+import org.gudy.azureus2.plugins.torrent.*;
 
 public class 
 TorrentAnnounceURLListSetImpl 

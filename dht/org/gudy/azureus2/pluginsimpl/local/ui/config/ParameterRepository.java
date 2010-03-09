@@ -23,9 +23,9 @@ package org.gudy.azureus2.pluginsimpl.local.ui.config;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.gudy.azureus2.plugins.ui.config.*;
 import org.gudy.azureus2.core3.config.impl.ConfigurationDefaults;
 import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.plugins.ui.config.Parameter;
 
 /**
  * @author epall

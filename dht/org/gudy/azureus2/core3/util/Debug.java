@@ -21,14 +21,9 @@
  */
 package org.gudy.azureus2.core3.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.UnknownHostException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Debug-assisting class.
@@ -37,6 +32,9 @@ public class Debug {
   
 	private static AEDiagnosticsLogger	diag_logger	= AEDiagnostics.getLogger( "debug" );
 
+	static{
+		diag_logger.setForced();
+	}
   
   /**
    * Prints out the given debug message to System.out,
@@ -353,6 +351,10 @@ public class Debug {
 			if ( e instanceof UnknownHostException ){
 				
 				this_message = "Unknown host " + e.getMessage();
+				
+			}else if ( e instanceof FileNotFoundException ){
+				
+				this_message = "File not found: " + e.getMessage();
 				
 			}else{
 				

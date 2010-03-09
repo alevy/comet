@@ -23,29 +23,12 @@
 
 package com.aelitis.azureus.core.networkmanager.admin.impl;
 
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.Authenticator;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.net.PasswordAuthentication;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
@@ -54,18 +37,7 @@ import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.AsyncDispatcher;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.platform.PlatformManager;
 import org.gudy.azureus2.platform.PlatformManagerCapabilities;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
@@ -73,6 +45,7 @@ import org.gudy.azureus2.platform.PlatformManagerPingCallback;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.platform.PlatformManagerException;
 import org.gudy.azureus2.plugins.utils.Utilities;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 
 import com.aelitis.azureus.core.AzureusCore;
 import com.aelitis.azureus.core.AzureusCoreFactory;
@@ -80,21 +53,7 @@ import com.aelitis.azureus.core.instancemanager.AZInstance;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManager;
 import com.aelitis.azureus.core.instancemanager.AZInstanceManagerListener;
 import com.aelitis.azureus.core.instancemanager.AZInstanceTracked;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminASN;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminASNListener;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminException;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminHTTPProxy;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNATDevice;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterface;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNetworkInterfaceAddress;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminNode;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminPropertyChangeListener;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminProtocol;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminRouteListener;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminRoutesListener;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminSocksProxy;
-import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminSpeedTestScheduler;
+import com.aelitis.azureus.core.networkmanager.admin.*;
 import com.aelitis.azureus.core.networkmanager.impl.http.HTTPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.tcp.TCPNetworkManager;
 import com.aelitis.azureus.core.networkmanager.impl.udp.UDPNetworkManager;
@@ -113,14 +72,59 @@ NetworkAdminImpl
 	
 	private static final boolean	FULL_INTF_PROBE	= false;
 	
-	private Set							old_network_interfaces;
+	private static InetAddress anyLocalAddress;
+	private static InetAddress anyLocalAddressIPv4;
+	private static InetAddress anyLocalAddressIPv6;
+	private static InetAddress localhostV4;
+	private static InetAddress localhostV6;
+	
+	static
+	{
+		try
+		{
+			anyLocalAddressIPv4 	= InetAddress.getByAddress(new byte[] { 0,0,0,0 });
+			anyLocalAddressIPv6  	= InetAddress.getByAddress(new byte[] {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0});
+			anyLocalAddress			= new InetSocketAddress(0).getAddress();
+			localhostV4 = InetAddress.getByAddress(new byte[] {127,0,0,1});
+			localhostV6 = InetAddress.getByAddress(new byte[] {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1});
+		} catch (UnknownHostException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	
+	
+	
+	private Set<NetworkInterface>		old_network_interfaces;
 	private InetAddress[]				currentBindIPs			= new InetAddress[] { null };
 	private boolean						supportsIPv6withNIO		= true;
 	private boolean						supportsIPv6 = true;
 	private boolean						supportsIPv4 = true;
 	
+	private boolean						IPv6_enabled;
+	
+	{
+		COConfigurationManager.addAndFireParameterListener(
+				"IPV6 Enable Support",
+				new ParameterListener()
+				{
+					public void 
+					parameterChanged(
+						String parameterName )
+					{
+						setIPv6Enabled( COConfigurationManager.getBooleanParameter("IPV6 Enable Support"));
+					}
+				});
+	}
+	
+	private int roundRobinCounterV4 = 0;
+	private int roundRobinCounterV6 = 0;
+	
+
 	private CopyOnWriteList	listeners = new CopyOnWriteList();
-		
+	
+	
 	private NetworkAdminRouteListener
 		trace_route_listener = new NetworkAdminRouteListener()
 		{
@@ -172,6 +176,8 @@ NetworkAdminImpl
 			}
 		};
 		
+	private boolean 	initialised;
+	
 	public
 	NetworkAdminImpl()
 	{
@@ -196,22 +202,42 @@ NetworkAdminImpl
 				perform(
 					TimerEvent event )
 				{
-					checkNetworkInterfaces( false );
+					checkNetworkInterfaces( false, false );
 				}
 			});
 		
 			// populate initial values
 		
-		checkNetworkInterfaces(true);
+		checkNetworkInterfaces( true, true );
 		
-		checkDefaultBindAddress(true);
+		checkDefaultBindAddress( true );
 		
 		AEDiagnostics.addEvidenceGenerator( this );
+		
+		initialised = true;
+	}
+	
+	protected void
+	setIPv6Enabled(
+		boolean enabled )
+	{
+		IPv6_enabled	= enabled;
+		
+		supportsIPv6withNIO		= enabled;
+		supportsIPv6 			= enabled;
+
+		if ( initialised ){
+			
+			checkNetworkInterfaces( false, true );
+			
+			checkDefaultBindAddress( false );
+		}
 	}
 	
 	protected void
 	checkNetworkInterfaces(
-		boolean	first_time )
+		boolean		first_time,
+		boolean		force )
 	{
 		try{
 			Enumeration 	nis = NetworkInterface.getNetworkInterfaces();
@@ -265,30 +291,33 @@ NetworkAdminImpl
 				old_network_interfaces = new_network_interfaces;
 			}
 			
-			if ( changed ){
-				
-				
+			if ( changed || force ){
+							
 				boolean newV6 = false;
 				boolean newV4 = false;
 				
-				Set interfaces = old_network_interfaces;
+				Set<NetworkInterface> interfaces = old_network_interfaces;
 				if (interfaces != null)
 				{
-					Iterator it = interfaces.iterator();
+					Iterator<NetworkInterface> it = interfaces.iterator();
 					while (it.hasNext())
 					{
-						NetworkInterface ni = (NetworkInterface) it.next();
+						NetworkInterface ni = it.next();
 						Enumeration addresses = ni.getInetAddresses();
 						while (addresses.hasMoreElements())
 						{
 							InetAddress ia = (InetAddress) addresses.nextElement();
 
-							if (ia.isLoopbackAddress())
+							if (ia.isLoopbackAddress()){
 								continue;
-							if (ia instanceof Inet6Address && !ia.isLinkLocalAddress())
-								newV6 = true;
-							else if (ia instanceof Inet4Address)
+							}
+							if (ia instanceof Inet6Address && !ia.isLinkLocalAddress()){
+								if ( IPv6_enabled ){
+									newV6 = true;
+								}
+							}else if (ia instanceof Inet4Address){
 								newV4 = true;
+							}
 						}
 					}
 				}
@@ -334,9 +363,6 @@ NetworkAdminImpl
 		}
 	}
 	
-	private int roundRobinCounterV4 = 0;
-	private int roundRobinCounterV6 = 0;
-	
 	public InetAddress getMultiHomedOutgoingRoundRobinBindAddress(InetAddress target)
 	{
 		InetAddress[]	addresses = currentBindIPs;
@@ -366,26 +392,7 @@ NetworkAdminImpl
 			roundRobinCounterV4 = i;
 		return toReturn != null ? toReturn : (v6 ? localhostV6 : localhostV4);
 	}
-	
-	private static InetAddress anyLocalAddressIPv4;
-	private static InetAddress anyLocalAddressIPv6;
-	private static InetAddress localhostV4;
-	private static InetAddress localhostV6;
-	
-	static
-	{
-		try
-		{
-			anyLocalAddressIPv4 = InetAddress.getByAddress(new byte[] { 0,0,0,0 });
-			anyLocalAddressIPv6  = InetAddress.getByAddress(new byte[] {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0});
-			localhostV4 = InetAddress.getByAddress(new byte[] {127,0,0,1});
-			localhostV6 = InetAddress.getByAddress(new byte[] {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1});
-		} catch (UnknownHostException e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
+		
 	public InetAddress[] getMultiHomedServiceBindAddresses(boolean nio)
 	{
 		InetAddress[] bindIPs = currentBindIPs;
@@ -400,15 +407,32 @@ NetworkAdminImpl
 	public InetAddress getSingleHomedServiceBindAddress(int proto)
 	{
 		InetAddress[] addrs = currentBindIPs;
-		if(proto == IP_PROTOCOL_VERSION_AUTO)
+		if(proto == IP_PROTOCOL_VERSION_AUTO){
 			return addrs[0];
-		else
-			for(int i = 0;i<addrs.length;i++)
-			{
-				if( (proto == IP_PROTOCOL_VERSION_REQUIRE_V4 && addrs[i] instanceof Inet4Address || addrs[i].isAnyLocalAddress()) ||
-					(proto == IP_PROTOCOL_VERSION_REQUIRE_V6 && addrs[i] instanceof Inet6Address) )
-				return addrs[i];
+		}else{
+			for( InetAddress addr: addrs ){
+		
+				if( (proto == IP_PROTOCOL_VERSION_REQUIRE_V4 && addr instanceof Inet4Address || addr.isAnyLocalAddress()) ||
+					(proto == IP_PROTOCOL_VERSION_REQUIRE_V6 && addr instanceof Inet6Address) ){
+				
+					if ( addr.isAnyLocalAddress()){
+						
+						if ( proto == IP_PROTOCOL_VERSION_REQUIRE_V4 ){
+							
+							return( anyLocalAddressIPv4 );
+							
+						}else{
+							
+							return( anyLocalAddressIPv6 );
+						}
+					}else{
+						
+						return( addr );
+					}
+				}
 			}
+		}
+		
 		throw new UnsupportedAddressTypeException();
 	}
 	
@@ -440,77 +464,101 @@ NetworkAdminImpl
 	
 	private InetAddress[] calcBindAddresses(final String addressString, boolean enforceBind)
 	{
-		ArrayList addrs = new ArrayList();
+		ArrayList<InetAddress> addrs = new ArrayList<InetAddress>();
 		
 		Pattern addressSplitter = Pattern.compile(";");
 		Pattern interfaceSplitter = Pattern.compile("[\\]\\[]");
 		
 		String[] tokens = addressSplitter.split(addressString);
 
-			addressLoop: for(int i=0;i<tokens.length;i++)
+addressLoop: 
+		for(int i=0;i<tokens.length;i++)
+		{
+			String currentAddress = tokens[i];
+			
+			currentAddress = currentAddress.trim();
+			
+			if ( currentAddress.length() == 0 ){
+				continue;
+			}
+			
+			InetAddress parsedAddress = null;
+			
+			try
+			{ // literal ipv4 or ipv6 address
+				if(currentAddress.indexOf('.') != -1 || currentAddress.indexOf(':') != -1)
+					parsedAddress = InetAddress.getByName(currentAddress);
+			} catch (Exception e)
+			{ // ignore, could be an interface name containing a ':'
+			}
+			
+			if(parsedAddress != null)
 			{
-				String currentAddress = tokens[i];
-				InetAddress parsedAddress = null;
-				
 				try
-				{ // literal ipv4 or ipv6 address
-					if(currentAddress.indexOf('.') != -1 || currentAddress.indexOf(':') != -1)
-						parsedAddress = InetAddress.getByName(currentAddress);
-				} catch (Exception e)
-				{ // ignore, could be an interface name containing a ':'
-				}
-				
-				if(parsedAddress != null)
 				{
-					try
-					{
-						// allow wildcard address as 1st address, otherwise only interface addresses
-						if((!parsedAddress.isAnyLocalAddress() || addrs.size() > 0) && NetworkInterface.getByInetAddress(parsedAddress) == null)
-							continue;
-					} catch (SocketException e)
-					{
-						Debug.printStackTrace(e);
+					// allow wildcard address as 1st address, otherwise only interface addresses
+					if((!parsedAddress.isAnyLocalAddress() || addrs.size() > 0) && NetworkInterface.getByInetAddress(parsedAddress) == null)
 						continue;
-					}
-					addrs.add(parsedAddress);
-					continue;
-				}
-					
-				// interface name
-				String[] ifaces = interfaceSplitter.split(currentAddress);
-
-				NetworkInterface netInterface = null;
-				try
-				{
-					netInterface = NetworkInterface.getByName(ifaces[0]);
 				} catch (SocketException e)
 				{
-					e.printStackTrace(); // should not happen
-				}
-				if(netInterface == null)
+					Debug.printStackTrace(e);
 					continue;
+				}
+				addrs.add(parsedAddress);
+				continue;
+			}
+				
+			// interface name
+			String[] ifaces = interfaceSplitter.split(currentAddress);
 
-				Enumeration interfaceAddresses = netInterface.getInetAddresses();
-				if(ifaces.length != 2)
-					while(interfaceAddresses.hasMoreElements())
-						addrs.add(interfaceAddresses.nextElement());
-				else
-				{
-					int selectedAddress = 0;
-					try { selectedAddress = Integer.parseInt(ifaces[1]); }
-					catch (NumberFormatException e) {} // ignore, user could by typing atm
-					for(int j=0;interfaceAddresses.hasMoreElements();j++,interfaceAddresses.nextElement())
-						if(j==selectedAddress)
-						{
-							addrs.add(interfaceAddresses.nextElement());
-							continue addressLoop;						
-						}
+			NetworkInterface netInterface = null;
+			try
+			{
+				netInterface = NetworkInterface.getByName(ifaces[0]);
+			} catch (SocketException e)
+			{
+				e.printStackTrace(); // should not happen
+			}
+			if(netInterface == null)
+				continue;
+
+			Enumeration interfaceAddresses = netInterface.getInetAddresses();
+			if(ifaces.length != 2)
+				while(interfaceAddresses.hasMoreElements())
+					addrs.add((InetAddress)interfaceAddresses.nextElement());
+			else
+			{
+				int selectedAddress = 0;
+				try { selectedAddress = Integer.parseInt(ifaces[1]); }
+				catch (NumberFormatException e) {} // ignore, user could by typing atm
+				for(int j=0;interfaceAddresses.hasMoreElements();j++,interfaceAddresses.nextElement())
+					if(j==selectedAddress)
+					{
+						addrs.add((InetAddress)interfaceAddresses.nextElement());
+						continue addressLoop;						
+					}
+			}
+		}
+		
+		if ( !IPv6_enabled ){
+			
+			Iterator<InetAddress> it = addrs.iterator();
+			
+			while( it.hasNext()){
+				
+				if ( it.next() instanceof Inet6Address ){
+					
+					it.remove();
 				}
 			}
+		}
 		
-		if(addrs.size() < 1)
+		if(addrs.size() < 1){
 			return new InetAddress[] {enforceBind ? localhostV4 : (hasIPV6Potential() ? anyLocalAddressIPv6 : anyLocalAddressIPv4)};
-		return (InetAddress[])addrs.toArray(new InetAddress[0]);
+		}
+		
+		return( addrs.toArray(new InetAddress[addrs.size()]));
+
 	}
 	
 	
@@ -550,8 +598,10 @@ NetworkAdminImpl
 			Enumeration addresses = ni.getInetAddresses();
 			str+=ni.getName()+"\t("+ni.getDisplayName()+")\n";
 			int i = 0;
-			while(addresses.hasMoreElements())
-				str+="\t"+ni.getName()+"["+(i++)+"]\t"+((InetAddress)addresses.nextElement()).getHostAddress()+"\n";
+			while(addresses.hasMoreElements()){
+				InetAddress address = (InetAddress)addresses.nextElement();
+				str+="\t"+ni.getName()+"["+(i++)+"]\t"+(address).getHostAddress()+"\n";
+			}
 		}
 		return (str);
 	}
@@ -568,6 +618,138 @@ NetworkAdminImpl
 		return nio ? supportsIPv6withNIO : supportsIPv6;
 	}
 	
+	public InetAddress[]
+  	getBindableAddresses()
+  	{
+  		List<InetAddress>	bindable = new ArrayList<InetAddress>();
+  		
+  		NetworkAdminNetworkInterface[] interfaces = NetworkAdmin.getSingleton().getInterfaces();
+  		
+  		for ( NetworkAdminNetworkInterface intf: interfaces ){
+  			
+  			NetworkAdminNetworkInterfaceAddress[] addresses = intf.getAddresses();
+  			
+  			for ( NetworkAdminNetworkInterfaceAddress address: addresses ){
+
+  				InetAddress a = address.getAddress();
+  				
+  				if ( canBind( a )){
+  					
+  					bindable.add( a );
+  				}
+  			}
+  		}
+  		
+  		return( bindable.toArray( new InetAddress[ bindable.size()]));
+  	}
+  	
+  	protected boolean
+  	canBind(
+  		InetAddress	bind_ip )
+  	{
+  		ServerSocketChannel ssc = null;
+  		
+  		try{
+  			ssc = ServerSocketChannel.open();
+  		
+  			ssc.socket().bind( new InetSocketAddress(bind_ip,0), 16 );
+  			
+  			return( true );
+  			
+  		}catch( Throwable e ){
+  			
+  			return( false );
+  			
+  		}finally{
+  			
+  			if ( ssc != null ){
+  	
+  				try{
+  					ssc.close();
+  					
+  				}catch( Throwable e ){
+  					
+  					Debug.out( e );
+  				}
+  			}
+  		}
+  	}
+  	
+	public int
+	getBindablePort(
+		int	prefer_port )
+	
+		throws IOException
+	{
+		final int tries = 1024;
+		
+		Random random = new Random();
+		
+		for ( int i=1;i<=tries;i++ ){
+			
+			int port;
+			
+			if ( i == 1 && prefer_port != 0 ){
+				
+				port = prefer_port;
+				
+			}else{
+				
+				port = i==tries?0:random.nextInt(20000) + 40000;
+			}
+			
+			ServerSocketChannel ssc = null;
+			
+			try{
+				ssc = ServerSocketChannel.open();
+
+				ssc.socket().setReuseAddress( true );
+				
+				bind( ssc, null, port );
+
+				port = ssc.socket().getLocalPort();
+				
+				ssc.close();
+				
+				return( port );
+				
+			}catch( Throwable e ){
+				
+				if ( ssc != null ){
+					
+					try{
+						ssc.close();
+						
+					}catch( Throwable f ){
+						
+						Debug.printStackTrace(e);
+					}
+					
+					ssc = null;
+				}
+			}
+		}
+		
+		throw( new IOException( "No bindable ports found" ));
+	}
+	
+	protected void
+	bind(
+		ServerSocketChannel	ssc,
+		InetAddress			address,
+		int					port )
+	
+		throws IOException
+	{		
+		if ( address == null ){
+			
+			ssc.socket().bind( new InetSocketAddress( port ), 1024 );
+			
+		}else{
+			
+			ssc.socket().bind( new InetSocketAddress( address, port ), 1024 );
+		}
+	}
 	
 	public InetAddress 
 	guessRoutableBindAddress() 
@@ -639,7 +821,7 @@ NetworkAdminImpl
 				// next, same for nat devices
 			
 			try{
-				NetworkAdminNATDevice[] nat = getNATDevices();
+				NetworkAdminNATDevice[] nat = getNATDevices(AzureusCoreFactory.getSingleton());
 				
 				if ( nat.length > 0 ){
 					
@@ -861,7 +1043,7 @@ NetworkAdminImpl
 	public InetAddress
 	getDefaultPublicAddress()
 	{
-		Utilities utils = AzureusCoreFactory.getSingleton().getPluginManager().getDefaultPluginInterface().getUtilities();
+		Utilities utils = PluginInitializer.getDefaultInterface().getUtilities();
 		
 		InetAddress address = utils.getPublicAddress();
 		
@@ -871,6 +1053,45 @@ NetworkAdminImpl
 		}
 		
 		return( utils.getPublicAddress( true ));
+	}
+	
+	@Override
+	public InetAddress getDefaultPublicAddressV6() {
+		if(!supportsIPv6)
+			return null;
+		
+		// check bindings first
+		for(InetAddress addr : currentBindIPs)
+		{
+			// found a specific bind address, use that one
+			if(AddressUtils.isGlobalAddressV6(addr))
+				return addr;
+			
+			// found v6 any-local address, check interfaces for a best match
+			if(addr instanceof Inet6Address && addr.isAnyLocalAddress())
+			{
+				ArrayList<InetAddress> addrs = new ArrayList<InetAddress>();
+				for(NetworkInterface iface : old_network_interfaces)
+					addrs.addAll(Collections.list(iface.getInetAddresses()));
+				
+				return AddressUtils.pickBestGlobalV6Address(addrs);
+			}
+		}
+		
+		return null;
+	}
+	
+	public boolean
+	hasDHTIPV6()
+	{
+		if ( hasIPV6Potential(false)){
+			
+			InetAddress v6 = getDefaultPublicAddressV6();
+			
+			return( v6 != null && !AddressUtils.isTeredo( v6 ));
+		}
+		
+		return( false );
 	}
 	
 	protected void
@@ -918,10 +1139,9 @@ NetworkAdminImpl
 	}
 
 	public NetworkAdminProtocol[]
- 	getOutboundProtocols()
+ 	getOutboundProtocols(
+ 			AzureusCore azureus_core)
 	{
-		AzureusCore azureus_core = AzureusCoreFactory.getSingleton();
-				
 		NetworkAdminProtocol[]	res = 
 			{
 				new NetworkAdminProtocolImpl( azureus_core, NetworkAdminProtocol.PT_HTTP ),
@@ -933,10 +1153,9 @@ NetworkAdminImpl
 	}
  	
  	public NetworkAdminProtocol[]
- 	getInboundProtocols()
+ 	getInboundProtocols(
+ 			AzureusCore azureus_core)
  	{
-		AzureusCore azureus_core = AzureusCoreFactory.getSingleton();
-
 		List	protocols = new ArrayList();
 		
 		TCPNetworkManager	tcp_manager = TCPNetworkManager.getSingleton();
@@ -1056,13 +1275,14 @@ NetworkAdminImpl
 	}
 	
 	public NetworkAdminNATDevice[]
-	getNATDevices()
+	getNATDevices(
+			AzureusCore azureus_core )
 	{
 		List<NetworkAdminNATDeviceImpl>	devices = new ArrayList<NetworkAdminNATDeviceImpl>();
 		
 		try{
 	
-		    PluginInterface upnp_pi = AzureusCoreFactory.getSingleton().getPluginManager().getPluginInterfaceByClass( UPnPPlugin.class );
+		    PluginInterface upnp_pi = azureus_core.getPluginManager().getPluginInterfaceByClass( UPnPPlugin.class );
 		    
 		    if ( upnp_pi != null ){
 	    	
@@ -1392,9 +1612,10 @@ NetworkAdminImpl
 	}
 	
 	public void
-	runInitialChecks()
+	runInitialChecks(
+			AzureusCore azureus_core)
 	{
-		AZInstanceManager i_man = AzureusCoreFactory.getSingleton().getInstanceManager();
+		AZInstanceManager i_man = azureus_core.getInstanceManager();
 		
 		final AZInstance	my_instance = i_man.getMyInstance();
 		
@@ -1919,7 +2140,47 @@ NetworkAdminImpl
 		
 		try{
 			writer.indent();
-			
+		
+			try{
+				writer.println( "Binding Details" );
+				
+				writer.indent();
+				
+				writer.println( "bind to: " + getString( getAllBindAddresses( false )));
+				
+				writer.println( "bindable: " + getString( getBindableAddresses()));
+				
+				writer.println( "ipv6_enabled=" + IPv6_enabled );
+
+				writer.println( "ipv4_potential=" + hasIPV4Potential());
+				writer.println( "ipv6_potential=" + hasIPV6Potential(false) + "/" + hasIPV6Potential(true));
+	
+				try{
+					writer.println( "single homed: " + getSingleHomedServiceBindAddress());
+				}catch( Throwable e ){
+					writer.println( "single homed: none" );
+				}
+				
+				try{
+					writer.println( "single homed (4): " + getSingleHomedServiceBindAddress( IP_PROTOCOL_VERSION_REQUIRE_V4 ));
+				}catch( Throwable e ){
+					writer.println( "single homed (4): none" );
+				}
+				
+				try{
+					writer.println( "single homed (6): " + getSingleHomedServiceBindAddress( IP_PROTOCOL_VERSION_REQUIRE_V6 ));
+				}catch( Throwable e ){
+					writer.println( "single homed (6): none" );
+				}
+				
+				writer.println( "multi homed, nio=false: " + getString( getMultiHomedServiceBindAddresses( false )));
+				writer.println( "multi homed, nio=true:  " + getString( getMultiHomedServiceBindAddresses( true )));
+					
+			}finally{
+				
+				writer.exdent();
+			}		
+				
 			NetworkAdminHTTPProxy	proxy = getHTTPProxy();
 			
 			if ( proxy == null ){
@@ -1977,17 +2238,22 @@ NetworkAdminImpl
 				}
 			}
 			
-			NetworkAdminNATDevice[]	nat_devices = getNATDevices();
-			
-			writer.println( "NAT Devices: " + nat_devices.length );
-			
-			for (int i=0;i<nat_devices.length;i++){
+			try {
+				NetworkAdminNATDevice[]	nat_devices = getNATDevices(AzureusCoreFactory.getSingleton());
+
+				writer.println( "NAT Devices: " + nat_devices.length );
+
+				for (int i=0;i<nat_devices.length;i++){
+
+					NetworkAdminNATDevice	device = nat_devices[i];
+
+					writer.println( "    " + device.getName() + ",address=" + device.getAddress().getHostAddress() + ":" + device.getPort() + ",ext=" + device.getExternalAddress());
+				}
+			}catch (Exception e){
 				
-				NetworkAdminNATDevice	device = nat_devices[i];
-				
-				writer.println( "    " + device.getName() + ",address=" + device.getAddress().getHostAddress() + ":" + device.getPort() + ",ext=" + device.getExternalAddress());
+				writer.println( "Nat Devices: Can't get -> " + e.toString());
 			}
-			
+  			
 			writer.println( "Interfaces" );
 			
 			writer.println( "   " + getNetworkInterfacesAsString());
@@ -1996,6 +2262,20 @@ NetworkAdminImpl
 	
 			writer.exdent();
 		}
+	}
+	
+	private String
+	getString(
+		InetAddress[]	addresses )
+	{
+		String	str = "";
+		
+		for ( InetAddress address: addresses ){
+			
+			str += (str.length()==0?"":", ") + address.getHostAddress();
+		}
+		
+		return( str );
 	}
 	
 	public void 
@@ -2061,19 +2341,23 @@ NetworkAdminImpl
 			}
 		}
 		
-		NetworkAdminNATDevice[]	nat_devices = getNATDevices();
-		
-		iw.println( "NAT Devices: " + nat_devices.length );
-		
-		for (int i=0;i<nat_devices.length;i++){
-			
-			NetworkAdminNATDevice	device = nat_devices[i];
-			
-			iw.println( "    " + device.getName() + ",address=" + device.getAddress().getHostAddress() + ":" + device.getPort() + ",ext=" + device.getExternalAddress());
-			
-			public_addresses.add( device.getExternalAddress());
+		try {
+			NetworkAdminNATDevice[]	nat_devices = getNATDevices(AzureusCoreFactory.getSingleton());
+
+			iw.println( "NAT Devices: " + nat_devices.length );
+
+			for (int i=0;i<nat_devices.length;i++){
+
+				NetworkAdminNATDevice	device = nat_devices[i];
+
+				iw.println( "    " + device.getName() + ",address=" + device.getAddress().getHostAddress() + ":" + device.getPort() + ",ext=" + device.getExternalAddress());
+
+				public_addresses.add( device.getExternalAddress());
+			}
+		} catch (Exception e) {
+			iw.println( "Nat Devices: Can't get -> " + e.toString());
 		}
-		
+ 		
 		iw.println( "Interfaces" );
 		
 		NetworkAdminNetworkInterface[] interfaces = getInterfaces();
@@ -2165,51 +2449,56 @@ NetworkAdminImpl
 		
 		iw.println( "Inbound protocols: default routing" );
 		
-		NetworkAdminProtocol[]	protocols = getInboundProtocols();
-		
-		for (int i=0;i<protocols.length;i++){
-			
-			NetworkAdminProtocol	protocol = protocols[i];
-			
-			try{
-				InetAddress	ext_addr = testProtocol( protocol );
-	
-				if ( ext_addr != null ){
-					
-					public_addresses.add( ext_addr );
-				}
-	
-				iw.println( "    " + protocol.getName() + " - " + ext_addr );
-				
-			}catch( NetworkAdminException e ){
-				
-				iw.println( "    " + protocol.getName() + " - " + Debug.getNestedExceptionMessage(e));
-			}
-		}
-		
-		iw.println( "Outbound protocols: default routing" );
-		
-		protocols = getOutboundProtocols();
-		
-		for (int i=0;i<protocols.length;i++){
-			
-			NetworkAdminProtocol	protocol = protocols[i];
-			
-			try{
 
-				InetAddress	ext_addr = testProtocol( protocol );
-				
-				if ( ext_addr != null ){
-				
-					public_addresses.add( ext_addr );
-				}
-				
-				iw.println( "    " + protocol.getName() + " - " + ext_addr );
-				
-			}catch( NetworkAdminException e ){
-				
-				iw.println( "    " + protocol.getName() + " - " + Debug.getNestedExceptionMessage(e));
-			}
+		if (AzureusCoreFactory.isCoreRunning()) {
+			AzureusCore azureus_core = AzureusCoreFactory.getSingleton();
+
+			NetworkAdminProtocol[]	protocols = getInboundProtocols(azureus_core);
+		
+  		for (int i=0;i<protocols.length;i++){
+  			
+  			NetworkAdminProtocol	protocol = protocols[i];
+  			
+  			try{
+  				InetAddress	ext_addr = testProtocol( protocol );
+  	
+  				if ( ext_addr != null ){
+  					
+  					public_addresses.add( ext_addr );
+  				}
+  	
+  				iw.println( "    " + protocol.getName() + " - " + ext_addr );
+  				
+  			}catch( NetworkAdminException e ){
+  				
+  				iw.println( "    " + protocol.getName() + " - " + Debug.getNestedExceptionMessage(e));
+  			}
+  		}
+  		
+  		iw.println( "Outbound protocols: default routing" );
+  		
+  		protocols = getOutboundProtocols(azureus_core);
+  		
+  		for (int i=0;i<protocols.length;i++){
+  			
+  			NetworkAdminProtocol	protocol = protocols[i];
+  			
+  			try{
+  
+  				InetAddress	ext_addr = testProtocol( protocol );
+  				
+  				if ( ext_addr != null ){
+  				
+  					public_addresses.add( ext_addr );
+  				}
+  				
+  				iw.println( "    " + protocol.getName() + " - " + ext_addr );
+  				
+  			}catch( NetworkAdminException e ){
+  				
+  				iw.println( "    " + protocol.getName() + " - " + Debug.getNestedExceptionMessage(e));
+  			}
+  		}
 		}
 		
 		Iterator	it = public_addresses.iterator();
@@ -2268,7 +2557,14 @@ NetworkAdminImpl
 			
 			while( e.hasMoreElements()){
 				
-				addresses.add( new networkAddress((InetAddress)e.nextElement()));
+				InetAddress address = (InetAddress)e.nextElement();
+				
+				if ((address instanceof Inet6Address) && !IPv6_enabled ){
+					
+					continue;
+				}
+				
+				addresses.add( new networkAddress(address));
 			}
 	
 			return((NetworkAdminNetworkInterfaceAddress[])addresses.toArray( new NetworkAdminNetworkInterfaceAddress[addresses.size()]));
@@ -2415,7 +2711,9 @@ NetworkAdminImpl
 												
 						iw.println( "Outbound protocols: bound" );
 						
-						NetworkAdminProtocol[]	protocols = getOutboundProtocols();
+						AzureusCore azureus_core = AzureusCoreFactory.getSingleton();
+						
+						NetworkAdminProtocol[]	protocols = getOutboundProtocols(azureus_core);
 						
 						for (int i=0;i<protocols.length;i++){
 							
@@ -2439,7 +2737,7 @@ NetworkAdminImpl
 						
 						iw.println( "Inbound protocols: bound" );
 						
-						protocols = getInboundProtocols();
+						protocols = getInboundProtocols(azureus_core);
 						
 						for (int i=0;i<protocols.length;i++){
 							
@@ -2553,7 +2851,9 @@ NetworkAdminImpl
 	logNATStatus(
 		IndentWriter		iw )
 	{
-		generateDiagnostics( iw, getInboundProtocols());
+		if (AzureusCoreFactory.isCoreRunning()) {
+			generateDiagnostics( iw, getInboundProtocols(AzureusCoreFactory.getSingleton()));
+		}
 	}
 	
 	public static void

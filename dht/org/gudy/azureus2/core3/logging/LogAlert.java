@@ -19,12 +19,11 @@
  */
 package org.gudy.azureus2.core3.logging;
 
-import java.util.ArrayList;
-
+import com.aelitis.azureus.core.util.GeneralUtils;
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.pluginsimpl.local.PluginCoreUtils;
-
-import com.aelitis.azureus.core.util.GeneralUtils;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * @author TuxPaper
@@ -54,6 +53,8 @@ public class LogAlert implements org.gudy.azureus2.plugins.logging.LogAlert {
 
 		// -1 -> default
 	public int	timeoutSecs	= -1;
+	
+	public String details;
 	
 	/**
 	 * @param type

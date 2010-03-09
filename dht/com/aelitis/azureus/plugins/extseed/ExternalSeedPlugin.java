@@ -24,14 +24,10 @@ package com.aelitis.azureus.plugins.extseed;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AEThread2;
+import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.plugins.Plugin;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.download.Download;
@@ -42,14 +38,12 @@ import org.gudy.azureus2.plugins.logging.LoggerChannel;
 import org.gudy.azureus2.plugins.logging.LoggerChannelListener;
 import org.gudy.azureus2.plugins.peers.PeerManager;
 import org.gudy.azureus2.plugins.torrent.Torrent;
+import org.gudy.azureus2.plugins.ui.components.UITextField;
 import org.gudy.azureus2.plugins.ui.model.BasicPluginViewModel;
-import org.gudy.azureus2.plugins.utils.DelayedTask;
-import org.gudy.azureus2.plugins.utils.Monitor;
-import org.gudy.azureus2.plugins.utils.UTTimer;
-import org.gudy.azureus2.plugins.utils.UTTimerEvent;
-import org.gudy.azureus2.plugins.utils.UTTimerEventPerformer;
-import org.gudy.azureus2.plugins.utils.Utilities;
+import org.gudy.azureus2.plugins.utils.*;
 
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
 import com.aelitis.azureus.plugins.extseed.impl.getright.ExternalSeedReaderFactoryGetRight;
 import com.aelitis.azureus.plugins.extseed.impl.webseed.ExternalSeedReaderFactoryWebSeed;
 
@@ -64,6 +58,8 @@ ExternalSeedPlugin
 	
 	private PluginInterface			plugin_interface;
 	private DownloadManagerStats	dm_stats;
+	
+	private UITextField				status_field;
 	private LoggerChannel			log;
 	
 	private 		Random	random = new Random();
@@ -128,6 +124,10 @@ ExternalSeedPlugin
 					}
 				});		
 		
+		status_field = view_model.getStatus();
+		
+		setStatus( "Initialising" );
+		
 		download_mon	= plugin_interface.getUtilities().getMonitor();
 		
 		Utilities utilities = plugin_interface.getUtilities();
@@ -143,8 +143,9 @@ ExternalSeedPlugin
 							public void 
 							run() 
 							{
-								plugin_interface.getDownloadManager().addListener(
-										ExternalSeedPlugin.this);
+								setStatus( "Running" );
+								
+								plugin_interface.getDownloadManager().addListener( ExternalSeedPlugin.this);
 							}
 						};
 					
@@ -230,34 +231,43 @@ ExternalSeedPlugin
 	}
 		
 	public void
+	downloadChanged(
+		Download	download )
+	{
+		downloadRemoved( download );
+		
+		downloadAdded( download );
+	}
+	
+	public List<ExternalSeedPeer>
 	addSeed(
 		Download	download,
 		Map			config )
 	{
 		Torrent	torrent = download.getTorrent();
 		
-		if ( torrent == null ){
-			
-			return;
-		}
-		
-		List	peers = new ArrayList();
-		
-		for (int i=0;i<factories.length;i++){
-			
-			ExternalSeedReader[]	x = factories[i].getSeedReaders( this, download, config );
-			
-			for (int j=0;j<x.length;j++){
+		List<ExternalSeedPeer>	peers = new ArrayList<ExternalSeedPeer>();
+		 
+		if ( torrent != null ){
+						
+			for (int i=0;i<factories.length;i++){
 				
-				ExternalSeedReader	reader = x[j];
+				ExternalSeedReader[]	x = factories[i].getSeedReaders( this, download, config );
 				
-				ExternalSeedPeer	peer = new ExternalSeedPeer( this, download, reader );
-				
-				peers.add( peer );
+				for (int j=0;j<x.length;j++){
+					
+					ExternalSeedReader	reader = x[j];
+					
+					ExternalSeedPeer	peer = new ExternalSeedPeer( this, download, reader );
+					
+					peers.add( peer );
+				}
 			}
+			
+			addPeers( download, peers );
 		}
 		
-		addPeers( download, peers );
+		return( peers );
 	}
 	
 	protected void
@@ -320,6 +330,8 @@ ExternalSeedPlugin
 					}
 				}
 				
+				
+				setStatus( "Running: Downloads with external seeds = " + download_map.size());
 				
 			}finally{
 				
@@ -450,6 +462,8 @@ ExternalSeedPlugin
 			
 			download_map.remove( download );
 			
+			setStatus( "Running: Downloads with external seeds = " + download_map.size());
+			
 		}finally{
 			
 			download_mon.exit();
@@ -465,6 +479,11 @@ ExternalSeedPlugin
 		
 			List	peers = (List)download_map.get( download );
 	
+			if ( peers == null ){
+				
+				return( new ExternalSeedManualPeer[0] );
+			}
+			
 			ExternalSeedManualPeer[]	result = new ExternalSeedManualPeer[peers.size()];
 			
 			for (int i=0;i<peers.size();i++){
@@ -480,10 +499,118 @@ ExternalSeedPlugin
 		}	
 	}
 	
+	public TrackerPeerSource
+	getTrackerPeerSource(
+		final Download		download )
+	{
+		return(
+			new TrackerPeerSourceAdapter()
+			{
+				private long	fixup_time;
+				
+				private ExternalSeedManualPeer[]	peers;						
+				private boolean						running;
+				
+				public int
+				getType()
+				{
+					return( TP_HTTP_SEED );
+				}
+				
+				public int
+				getStatus()
+				{
+					fixup();
+					
+					if ( running ){
+					
+						return( peers.length==0?ST_UNAVAILABLE:ST_AVAILABLE );
+						
+					}else{
+						
+						return( ST_STOPPED );
+					}
+				}
+				
+				public String
+				getName()
+				{
+					fixup();
+					
+					if ( peers.length == 0 ){
+						
+						return( "" );
+					}
+					
+					StringBuffer sb = new StringBuffer();
+					
+					for ( ExternalSeedManualPeer peer: peers ){
+						
+						if ( sb.length() > 0 ){
+							
+							sb.append( ", " );
+						}
+						
+						String str = peer.getDelegate().getURL().toExternalForm();
+						
+						int pos = str.indexOf( '?' );
+						
+						if ( pos != -1 ){
+							
+							str = str.substring( 0, pos );
+						}
+						
+						sb.append( str );
+					}
+					
+					return( sb.toString());
+				}
+				
+				public int
+				getPeers()
+				{
+					fixup();
+					
+					if ( running ){
+					
+						return( peers.length );
+						
+					}else{
+						
+						return( -1 );
+					}
+				}
+				
+				protected void
+				fixup()
+				{
+					long	now = SystemTime.getMonotonousTime();
+					
+					if ( now - fixup_time > 10*1000 ){
+					
+						fixup_time = now;
+						
+						peers = getManualWebSeeds(download);
+						
+						int	state = download.getState();
+						
+						running = state == Download.ST_DOWNLOADING || state == Download.ST_SEEDING;
+					}
+				}
+			});
+	}
+	
 	public int
 	getGlobalDownloadRateBytesPerSec()
 	{
 		return( dm_stats.getDataAndProtocolReceiveRate());
+	}
+	
+	protected void
+	setStatus(
+		String		str )
+	{
+		status_field.setText( str );
 	}
 	
 	public void

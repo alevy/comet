@@ -21,12 +21,8 @@
 
 package com.aelitis.azureus.core.custom.impl;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Constants;
@@ -37,9 +33,8 @@ import org.gudy.azureus2.core3.util.SystemTime;
 import org.gudy.azureus2.core3.util.TimerEvent;
 import org.gudy.azureus2.core3.util.TimerEventPerformer;
 
-import com.aelitis.azureus.core.custom.Customization;
-import com.aelitis.azureus.core.custom.CustomizationException;
-import com.aelitis.azureus.core.custom.CustomizationManager;
+import com.aelitis.azureus.core.custom.*;
+
 import com.aelitis.azureus.core.vuzefile.VuzeFile;
 import com.aelitis.azureus.core.vuzefile.VuzeFileComponent;
 import com.aelitis.azureus.core.vuzefile.VuzeFileHandler;

@@ -22,8 +22,7 @@
 
 package org.gudy.azureus2.plugins.network;
 
-import org.gudy.azureus2.plugins.messaging.Message;
-import org.gudy.azureus2.plugins.messaging.MessageStreamEncoder;
+import org.gudy.azureus2.plugins.messaging.*;
 
 
 

@@ -21,13 +21,9 @@
 
 package org.gudy.azureus2.ui.swt.components;
 
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Table;
+
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.ui.swt.Utils;
 
@@ -47,42 +43,48 @@ public abstract class BufferedTableItemImpl implements BufferedTableItem
 	
 	private Image icon = null;
 
+	private AERunnable runnableDirtyCell;
+
 	public BufferedTableItemImpl(BufferedTableRow row, int position) {
 		this.row = row;
 		this.position = position;
 	}
 
 	public String getText() {
-		if (Utils.SWT32_TABLEPAINT) {
-			return text;
-		}
-
-		if (position != -1)
-			return row.getText(position);
-		return "";
+		return text;
 	}
 
 	public boolean setText(String text) {
-		if (Utils.SWT32_TABLEPAINT) {
-			if (this.text.equals(text)) {
-				return false;
-			}
-	
-			this.text = (text == null) ? "" : text;
-			
-			Rectangle bounds = getBounds();
-			if (bounds != null) {
-				Table table = row.getTable();
-				Rectangle dirty = table.getClientArea().intersection(bounds);
-				table.redraw(dirty.x, dirty.y, dirty.width, dirty.height, false);
-			}
-			
-			return true;
+		if (this.text.equals(text)) {
+			return false;
 		}
-
-		if (position != -1)
-			return row.setText(position, text);
-		return false;
+		this.text = (text == null) ? "" : text;
+		
+		dirtyCell();
+		
+		return true;
+	}
+	private void dirtyCell() {
+		if (runnableDirtyCell == null) {
+			synchronized (this) {
+				if (runnableDirtyCell == null) {
+					runnableDirtyCell = new AERunnable(){
+						public void runSupport() {
+							Rectangle bounds = getBounds();
+							if (bounds != null) {
+								Table table = row.getTable();
+								Rectangle dirty = table.getClientArea().intersection(bounds);
+								//System.out.println("old = " + this.text + ";new=" + text + ";dirty=" + bounds);
+								
+								table.redraw(dirty.x, dirty.y, dirty.width, dirty.height, false);
+							}
+						}
+					};
+				}
+			}
+		}
+		
+		Utils.execSWTThread(runnableDirtyCell);
 	}
 
 	public void setIcon(Image img) {
@@ -226,6 +228,8 @@ public abstract class BufferedTableItemImpl implements BufferedTableItem
 
   // @see org.gudy.azureus2.ui.swt.components.BufferedTableItem#redraw()
   public void redraw() {
+		//System.out.println("redraw via " + Debug.getCompressedStackTrace(5));
+
   	Utils.execSWTThread(new AERunnable() {
 			public void runSupport() {
 				Rectangle bounds = getBounds();
@@ -264,6 +268,9 @@ public abstract class BufferedTableItemImpl implements BufferedTableItem
   // @see org.gudy.azureus2.ui.swt.components.BufferedTableItem#isMouseOver()
   public boolean isMouseOver() {
 		Table table = row.getTable();
+		if (table == null || table.isDisposed()) {
+			return false;
+		}
 		Point pt = table.getDisplay().getCursorLocation();
 		pt = table.toControl(pt);
 

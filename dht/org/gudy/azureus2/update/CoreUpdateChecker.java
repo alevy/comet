@@ -27,44 +27,30 @@ package org.gudy.azureus2.update;
  *
  */
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.net.*;
+import java.io.*;
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.html.HTMLPageFactory;
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
-import org.gudy.azureus2.core3.util.AEVerifier;
-import org.gudy.azureus2.core3.util.BDecoder;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.plugins.Plugin;
-import org.gudy.azureus2.plugins.PluginInterface;
+import org.gudy.azureus2.core3.util.*;
+import org.gudy.azureus2.core3.logging.*;
+import org.gudy.azureus2.core3.config.*;
+import org.gudy.azureus2.core3.html.*;
+import org.gudy.azureus2.core3.internat.MessageText;
+
+import org.gudy.azureus2.platform.win32.access.AEWin32Access;
+import org.gudy.azureus2.platform.win32.access.AEWin32Manager;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.plugins.logging.LoggerChannel;
-import org.gudy.azureus2.plugins.update.UpdatableComponent;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateChecker;
-import org.gudy.azureus2.plugins.update.UpdateInstaller;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderAdapter;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderDelayedFactory;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderFactory;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloaderListener;
+import org.gudy.azureus2.plugins.ui.UIManager;
+import org.gudy.azureus2.plugins.ui.UIManagerEvent;
+import org.gudy.azureus2.plugins.update.*;
+import org.gudy.azureus2.plugins.utils.StaticUtilities;
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
-import com.aelitis.azureus.core.versioncheck.VersionCheckClient;
+import com.aelitis.azureus.core.util.GeneralUtils;
+import com.aelitis.azureus.core.versioncheck.*;
 import com.aelitis.azureus.ui.UIFunctions;
 import com.aelitis.azureus.ui.UIFunctionsManager;
 
@@ -210,7 +196,7 @@ CoreUpdateChecker
 			}
 			
 			//latest_version 		= "3.0.0.3";
-			//latest_file_name	= "http://torrents.aelitis.com:88/torrents/Azureus2.5.0.0.jar.torrent";
+			//latest_file_name	= "http://torrent.vuze.com:88/torrents/Azureus2.5.0.0.jar.torrent";
 			//latest_file_name	= "Azureus2.5.0.0.jar.torrent";
 			
 			String	msg = "Core: latest_version = '" + latest_version + "', file = '" + latest_file_name + "'";
@@ -258,7 +244,7 @@ CoreUpdateChecker
 			if ( full_download_url == null ){
 				
 				ResourceDownloader[]	primary_mirrors;
-					
+									
 				primary_mirrors = getPrimaryDownloaders( latest_file_name );
 	
 					// the download hierarchy is primary mirrors first (randomised alternate)
@@ -448,7 +434,7 @@ CoreUpdateChecker
 							final ResourceDownloader	downloader,
 							InputStream					data )
 						{	
-							installUpdate( checker, update, downloader, f_latest_version, data );
+							installUpdate( checker, update, downloader, f_latest_file_name, f_latest_version, data );
 									
 							return( true );
 						}
@@ -780,7 +766,7 @@ CoreUpdateChecker
 					try{
 						
 						res.add( new URL( mirror + latest_file_name ));
-						// res.add( new URL( "http://torrents.aelitis.com:88/torrents/Azureus2.4.0.2_signed.jar.torrent" ));
+						// res.add( new URL( "http://torrent.vuze.com:88/torrents/Azureus2.4.0.2_signed.jar.torrent" ));
 						
 					}catch(Throwable e){
 						
@@ -818,6 +804,7 @@ CoreUpdateChecker
 		UpdateChecker		checker,
 		Update				update,
 		ResourceDownloader	rd,
+		String				filename,
 		String				version,
 		InputStream			data )
 	{
@@ -826,27 +813,437 @@ CoreUpdateChecker
 
 			rd.reportActivity( "Data verified successfully" );
 			
-			String	temp_jar_name 	= "Azureus2_" + version + ".jar";
-			String	target_jar_name	= "Azureus2.jar";
-			
-			UpdateInstaller	installer = checker.createInstaller();
-			
-			installer.addResource( temp_jar_name, data );
-			
-			if ( Constants.isOSX ){
+			if ( filename.toLowerCase().endsWith( ".zip.torrent" )){
 				
-				installer.addMoveAction( 
-					temp_jar_name,
-					installer.getInstallDir() + "/" + SystemProperties.getApplicationName() + ".app/Contents/Resources/Java/" + target_jar_name );        
+				handleZIPUpdate( checker, data );
+				
 			}else{
 				
-				installer.addMoveAction( 
-					temp_jar_name,
-					installer.getInstallDir() + File.separator + target_jar_name );
+				String	temp_jar_name 	= "Azureus2_" + version + ".jar";
+				String	target_jar_name	= "Azureus2.jar";
+				
+				UpdateInstaller	installer = checker.createInstaller();
+				
+				installer.addResource( temp_jar_name, data );
+				
+				if ( Constants.isOSX ){
+					
+					installer.addMoveAction( 
+						temp_jar_name,
+						installer.getInstallDir() + "/" + SystemProperties.getApplicationName() + ".app/Contents/Resources/Java/" + target_jar_name );        
+				}else{
+					
+					installer.addMoveAction( 
+						temp_jar_name,
+						installer.getInstallDir() + File.separator + target_jar_name );
+				}
 			}
 		}catch( Throwable e ){
 			
 			rd.reportActivity("Update install failed:" + e.getMessage());
+		}
+	}
+	
+	protected void
+	handleZIPUpdate(
+		UpdateChecker		checker,
+		InputStream			data )
+	
+		throws Exception
+	{
+		ZipInputStream zip = null;
+		
+		Properties	update_properties = new Properties();
+		
+		File		temp_dir = AETemporaryFileHandler.createTempDir();
+		
+		File		update_file = null;
+		
+		try{
+			zip = new ZipInputStream(data);
+
+			ZipEntry entry = null;
+
+			while((entry = zip.getNextEntry()) != null) {
+
+				String name = entry.getName().trim();
+
+				if ( name.equals( "azureus.sig" ) || name.endsWith( "/" ) || name.length() == 0 ){
+					
+					continue;
+				}
+
+				if ( name.equals( "update.properties" )){
+					
+					update_properties.load( zip );
+					
+				}else{
+					
+					if ( update_file != null ){
+						
+						throw( new Exception( "Multiple update files are not supported" ));
+					}
+					
+					update_file = new File( temp_dir, name );
+					
+					FileUtil.copyFile( zip, update_file, false );
+				}
+			}
+		}finally{
+			
+			if ( zip != null ){
+				
+				try{
+					zip.close();
+					
+				}catch( Throwable e ){
+					
+				}
+			}
+		}
+		
+		if ( update_properties == null ){
+			
+			throw( new Exception( "Update properties missing" ));
+		}
+		
+		if ( update_file == null ){
+			
+			throw( new Exception( "Update file missing" ));
+		}
+		
+		String	info_url = update_properties.getProperty( "info.url" );
+		
+		if ( info_url == null ){
+			
+			throw( new Exception( "Update property 'info.url' missing" ));
+		}
+			
+			// update_properties.setProperty( "launch.args" , "-silent" );
+			// update_properties.setProperty( "launch.silent" , "true" );
+		
+		String	s_args = update_properties.getProperty( "launch.args", "" ).trim();
+				
+		final String[] args;
+		
+		if ( s_args.length() > 0 ){
+			
+			args = GeneralUtils.splitQuotedTokens( s_args );
+			
+		}else{
+			
+			args = new String[0];
+		}
+		
+		UIFunctions uif = UIFunctionsManager.getUIFunctions();
+
+		if ( uif == null ){
+			
+			throw( new Exception( "Update can't proceed - UI functions unavailable" ));
+		}
+		
+		checker.getCheckInstance().setProperty( UpdateCheckInstance.PT_CLOSE_OR_RESTART_ALREADY_IN_PROGRESS, true );
+
+		final File f_update_file = update_file;
+			
+		boolean	silent = update_properties.getProperty( "launch.silent", "false" ).equals( "true" );
+		
+		if ( silent ){
+			
+				// problem on OSX if they have renamed their app and we're running silently as it
+				// installs to Vuze.app regardless
+			
+			if ( Constants.isOSX ){
+				
+				String app_name = SystemProperties.getApplicationName();
+				
+				if ( !( app_name.equals( "Vuze" ) || app_name.equals( "Azureus" ))){
+					
+					UIManager ui_manager = StaticUtilities.getUIManager( 120*1000 );
+					
+					String details = MessageText.getString(
+							"update.fail.app.changed",
+							new String[]{ app_name });
+					
+					ui_manager.showMessageBox(
+							"update.fail.app.changed.title",
+							"!" + details + "!",
+							UIManagerEvent.MT_OK );
+					
+					return;
+				}
+			}
+			
+			uif.performAction( 
+					UIFunctions.ACTION_UPDATE_RESTART_REQUEST,
+					!FileUtil.canReallyWriteToAppDirectory(),
+					new UIFunctions.actionListener()
+					{
+						public void
+						actionComplete(
+							Object	result )
+						{
+							if ((Boolean)result){
+								
+								launchUpdate( f_update_file, args );
+							}
+						}
+					});
+		}else{
+			
+			uif.performAction( 
+				UIFunctions.ACTION_FULL_UPDATE,
+				info_url,
+				new UIFunctions.actionListener()
+				{
+					public void
+					actionComplete(
+						Object	result )
+					{
+						if ((Boolean)result){
+							
+							launchUpdate( f_update_file, args );
+						}
+					}
+				});
+		}
+	}
+	
+	protected void
+	launchUpdate(
+		File		file,
+		String[]	args )
+	{
+		try{
+				// hack here to allow testing of osx on windows (parg) - should replace with
+				// Constants.isWindows etc
+			
+			if ( file.getName().endsWith( ".exe" )){
+				
+				try{
+					AEWin32Access accessor = AEWin32Manager.getAccessor(true);
+					
+					// accessor.createProcess( , false );
+					
+					String	s_args = null;
+					
+					if ( args.length > 0 ){
+					
+						s_args = "";
+						
+						for ( String s: args ){
+							
+							s_args += (s_args.length()==0?"":" ") + s;
+						}
+					}
+					
+					accessor.shellExecute( 
+						null, 
+						file.getAbsolutePath(), 
+						s_args,
+						SystemProperties.getApplicationPath(),
+						AEWin32Access.SW_NORMAL );
+					
+				}catch( Throwable e ){
+					
+					Logger.log( new LogEvent( LogIDs.LOGGER, "AEWin32Access failed", e  ));
+
+					if ( args.length > 0 ){
+					
+						String[] s_args = new String[args.length+1];
+						
+						s_args[0] = file.getAbsolutePath();
+						
+						System.arraycopy( args, 0, s_args, 1, args.length );
+						
+						Runtime.getRuntime().exec( s_args );
+						
+					}else{
+					
+						Runtime.getRuntime().exec( file.getAbsolutePath() );
+					}
+				}
+			}else{
+					// osx, need to unzip .app and launch
+				
+				File	dir = file.getParentFile();
+				
+			   	ZipInputStream	zis = new ZipInputStream( new BufferedInputStream( new FileInputStream( file )));
+		    		
+			   	Throwable unzip_error = null;
+			   	
+			   	String chmod_command = findCommand( "chmod" );
+			   	
+		    	try{
+					while( true ){
+												
+						ZipEntry	entry = zis.getNextEntry();
+							
+						if ( entry == null ){
+							
+							break;
+						}
+						
+						if ( entry.isDirectory()){
+							
+							continue;
+						}
+						
+						String	name = entry.getName();
+						
+						FileOutputStream	entry_os 	= null;
+						File				entry_file 	= null;
+						
+						if ( !name.endsWith("/")){
+														
+							entry_file = new File( dir, name.replace('/', File.separatorChar ));
+														
+							entry_file.getParentFile().mkdirs();
+							
+							entry_os	= new FileOutputStream( entry_file );
+						}
+						
+						try{
+							byte[]	buffer = new byte[65536];
+							
+							while( true ){
+							
+								int	len = zis.read( buffer );
+								
+								if ( len <= 0 ){
+									
+									break;
+								}
+																									
+								if ( entry_os != null ){
+									
+									entry_os.write( buffer, 0, len );
+								}
+							}
+						}finally{
+							
+							if ( entry_os != null ){
+								
+								entry_os.close();
+																	
+								if ( name.endsWith( ".jnilib" ) || name.endsWith( "JavaApplicationStub" )){
+										
+									try{
+										String[] to_run = { chmod_command, "a+x", entry_file.getAbsolutePath() };
+									  	
+										runCommand( to_run, true );
+												
+									}catch( Throwable e ){
+										
+										unzip_error = e;
+									}
+								}
+							}
+						}
+					}
+		    	}finally{
+		    		
+		    		zis.close();
+		    	}
+				
+		    	if ( unzip_error != null ){
+		    		
+		    		throw( unzip_error );
+		    	}
+		    	
+		    	File[] files = dir.listFiles();
+		    	
+		    	boolean launched = false;
+		    	
+		    	for ( File f: files ){
+		    		
+		    		if ( f.getName().endsWith( ".app" )){
+		    	
+		    			String[] to_run;
+		    			
+		    				// can't pass args unless using 'open' on 10.6 or higher. Update process
+		    				// has been changed to avoid arg passing on OSX anyway, but leaving this
+		    				// in in case needed in the future
+		    			
+		    			if ( args.length == 0 || !Constants.isOSX_10_6_OrHigher){
+		    				
+			    			to_run = new String[]{ "/bin/sh", "-c", "open \"" + f.getAbsolutePath() + "\""};
+			    			
+		    			}else{
+		    				
+		    				to_run = new String[ 3 + args.length ];
+		    				
+		    				to_run[0] = findCommand( "open" );
+		    				to_run[1] = f.getAbsolutePath();		    				
+		    				to_run[2] = "--args";
+		    				
+		    				System.arraycopy( args, 0, to_run, 3, args.length );
+		    			}
+		    			
+		    			runCommand( to_run, false );
+		    			
+		    			launched = true;
+		    		}
+		    	}
+		    	
+		    	if ( !launched ){
+		    		
+		    		throw( new Exception( "No .app files found in '" + dir + "'" ));
+		    	}
+			}
+		}catch( Throwable e ){
+			
+			Logger.log( new LogEvent( LogIDs.LOGGER, "Failed to launch update '" + file + "'", e  ));
+		}
+	}
+	
+	private static String
+	findCommand(
+		String	name )
+	{
+		final String[]  locations = { "/bin", "/usr/bin" };
+
+		for ( String s: locations ){
+
+			File f = new File( s, name );
+
+			if ( f.exists() && f.canRead()){
+
+				return( f.getAbsolutePath());
+			}
+		}
+
+		return( name );
+	}
+	  
+	private static void
+	runCommand(
+		String[]	command,
+		boolean		wait )
+	
+		throws Throwable
+	{
+		try{
+			String	str = "";
+			
+			for ( String s: command ){
+				
+				str += (str.length()==0?"":" ") + s;
+			}
+			
+			System.out.println( "running " + str );
+			
+			Process proc = Runtime.getRuntime().exec( command );
+			
+			if ( wait ){
+				
+				proc.waitFor();
+			}
+		}catch( Throwable e ){
+			
+			System.err.println( e );
+			
+			throw( e );
 		}
 	}
 	

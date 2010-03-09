@@ -31,13 +31,8 @@ import java.security.cert.X509Certificate;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.security.SECertificateListener;
 import org.gudy.azureus2.core3.security.SESecurityManager;
@@ -45,6 +40,7 @@ import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
+import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 
 
@@ -108,7 +104,7 @@ CertificateTrustWindow
 				return;
 			}
 			
-			shell = new Shell (display,SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+			shell =  ShellFactory.createMainShell(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 			
 			Utils.setShellIcon(shell);
 			shell.setText(MessageText.getString("security.certtruster.title"));

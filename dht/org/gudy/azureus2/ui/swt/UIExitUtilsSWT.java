@@ -26,18 +26,17 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.download.DownloadManager;
 import org.gudy.azureus2.core3.global.GlobalManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.security.SESecurityManager;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerScraperResponse;
-import org.gudy.azureus2.core3.util.AERunnableBoolean;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemProperties;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 
+import com.aelitis.azureus.core.util.CopyOnWriteList;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 
 /**
@@ -48,6 +47,15 @@ import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 public class UIExitUtilsSWT
 {
 	private static boolean skipCloseCheck = false;
+	
+	private static CopyOnWriteList<canCloseListener>	listeners	= new CopyOnWriteList<canCloseListener>();
+	
+	public static void
+	addListener(
+		canCloseListener	l )
+	{
+		listeners.add( l );
+	}
 	
 	public static void setSkipCloseCheck(boolean b) {
 		skipCloseCheck = b;
@@ -79,6 +87,14 @@ public class UIExitUtilsSWT
 			}
 		}
 
+		for ( canCloseListener listener: listeners ){
+			
+			if ( !listener.canClose()){
+				
+				return( false );
+			}
+		}
+		
 		if (globalManager != null) {
 			ArrayList listUnfinished = new ArrayList();
 			Object[] dms = globalManager.getDownloadManagers().toArray();
@@ -116,16 +132,16 @@ public class UIExitUtilsSWT
 											});
 
 									MessageBoxShell mb = new MessageBoxShell(
-											Utils.findAnyShell(),
 											title,
 											text,
 											new String[] {
 												MessageText.getString("UpdateWindow.quit"),
 												MessageText.getString("Content.alert.notuploaded.button.abort")
-											}, 1, null, null, false, 0);
+											}, 1);
 									mb.setRelatedObject(((DownloadManager) flistUnfinished.get(0)));
 
-									return mb.open() == 0;
+									mb.open(null);
+									return mb.waitUntilClosed() == 0;
 								}
 							}, 0);
 				} else {
@@ -151,15 +167,15 @@ public class UIExitUtilsSWT
 											});
 
 									MessageBoxShell mb = new MessageBoxShell(
-											Utils.findAnyShell(),
 											title,
 											text,
 											new String[] {
 												MessageText.getString("UpdateWindow.quit"),
 												MessageText.getString("Content.alert.notuploaded.button.abort")
-											}, 1, null, null, false, 0);
+											}, 1);
 
-									return mb.open() == 0;
+									mb.open(null);
+									return mb.waitUntilClosed() == 0;
 								}
 							}, 0);
 				}
@@ -176,12 +192,12 @@ public class UIExitUtilsSWT
 	 * @author Rene Leonhardt
 	 */
 	private static boolean getExitConfirmation(boolean for_restart) {
-		int result = Utils.openMessageBox(Utils.findAnyShell(), SWT.ICON_WARNING
-				| SWT.YES | SWT.NO, for_restart
-				? "MainWindow.dialog.restartconfirmation"
+		MessageBoxShell mb = new MessageBoxShell(SWT.ICON_WARNING | SWT.YES
+				| SWT.NO, for_restart ? "MainWindow.dialog.restartconfirmation"
 				: "MainWindow.dialog.exitconfirmation", (String[]) null);
+		mb.open(null);
 
-		return result == SWT.YES;
+		return mb.waitUntilClosed() == SWT.YES;
 	}
 
 	public static void uiShutdown() {
@@ -206,5 +222,12 @@ public class UIExitUtilsSWT
 
 			close.start();
 		}
+	}
+	
+	public interface
+	canCloseListener
+	{
+		public boolean
+		canClose();
 	}
 }

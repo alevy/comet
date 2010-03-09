@@ -31,7 +31,6 @@ import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTOperationListener;
 import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.router.DHTRouter;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransport;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -57,12 +56,17 @@ DHTControl
 	seed(
 		boolean		full_wait );
 		
+	public boolean
+	isSeeded();
+	
 	public void
 	put(
 		byte[]					key,
 		String					description,
 		byte[]					value,
 		byte					flags,
+		byte					life_hours,
+		byte					replication_control,
 		boolean					high_priority,
 		DHTOperationListener	listener );
 	
@@ -72,26 +76,11 @@ DHTControl
 	
 	public DHTTransportValue
 	getLocalValue(
-		byte[]		key, byte[] payload );
+		byte[]		key );
 		
 	public void
 	get(
-		byte[]					unencoded_key,
-		byte[]					reader_id,
-		byte[]					payload,
-		String					description,
-		byte					flags,
-		int						max_values,
-		long					timeout,
-		boolean					exhaustive,
-		boolean					high_priority,
-		DHTOperationListener	listener );
-	
-	public void
-	getEncodedKey(
-		byte[]					encoded_key,
-		byte[]					reader_id,
-		byte[]					payload,
+		byte[]					key,
 		String					description,
 		byte					flags,
 		int						max_values,
@@ -143,20 +132,16 @@ DHTControl
 	
 		// support methods for DB
 	
-	public List
+	public List<DHTTransportContact>
 	getClosestKContactsList(
 		byte[]		id,
 		boolean		live_only );
 	
-	public List
+	public List<DHTTransportContact>
 	getClosestContactsList(
 		byte[]		id,
 		int			num_to_return,
 		boolean		live_only );
-
-	public List
-	sortContactsByDistance(
-		List		contacts );
 	
 	public void
 	putEncodedKey(
@@ -168,10 +153,18 @@ DHTControl
 	
 	public void
 	putDirectEncodedKeys(
-		byte[][]				keys,
-		String					description,
-		DHTTransportValue[][]	value_sets,
-		List					contacts );
+		byte[][]					keys,
+		String						description,
+		DHTTransportValue[][]		value_sets,
+		List<DHTTransportContact>	contacts );
+	
+	public void
+	putDirectEncodedKeys(
+		byte[][]					keys,
+		String						description,
+		DHTTransportValue[][]		value_sets,
+		DHTTransportContact			contact,
+		DHTOperationListener		listener );
 	
 	public int
 	computeAndCompareDistances(
@@ -179,28 +172,46 @@ DHTControl
 		byte[]		n2,
 		byte[]		pivot );
 	
+	public byte[]
+	computeDistance(
+		byte[]		n1,
+		byte[]		n2 );
+	
+	public int
+	compareDistances(
+		byte[]		n1,
+		byte[]		n2 );
+	
 	public boolean
 	verifyContact(
 		DHTTransportContact c,
 		boolean				direct );
 	
-	public boolean lookupEncodedKey(
-		byte[]					encoded_id,
-		long					timeout,
-		DHTOperationListener	listener);
-	
 	public boolean
 	lookup(
 		byte[]					id,
+		String					description,
 		long					timeout,
 		DHTOperationListener	listener );
 	
+	public boolean
+	lookupEncoded(
+		byte[]					id,
+		String					description,
+		long					timeout,
+		boolean					high_priority,
+		DHTOperationListener	listener );
+	
+	public byte[]
+	getObfuscatedKey(
+		byte[]		plain_key );
+	
 	/**
-	 * Returns a list of DHTContact objects
+	 * Returns a list of DHTTransportContact objects
 	 * @return
 	 */
 	
-	public List
+	public List<DHTTransportContact>
 	getContacts();
 	
 		// debug method only
@@ -220,11 +231,19 @@ DHTControl
 	print(
 		boolean	full );
 
-	void putEncodedKey(byte[] encoded_key, String description,
-			DHTTransportValue value, long timeout, boolean original_mappings,
-			DHTOperationAdapter adapter);
+	public void putEncodedKey(byte[] bytes, String string,
+			DHTTransportValue basicDHTTransportValue, long i, boolean b,
+			DHTOperationListener adapter);
 
-	public void put(byte[] key, String description,
-			DHTTransportValue value, long timeout,
-			boolean original_mappings, DHTOperationAdapter listener);
+	public void getEncodedKey(
+			byte[]						encoded_key,
+			byte[]						readerId,
+			byte[]						payload,
+			String						description,
+			byte						flags,
+			int							max_values,
+			long						timeout,
+			boolean						exhaustive,
+			boolean						high_priority,
+			final DHTOperationListener	get_listener );
 }

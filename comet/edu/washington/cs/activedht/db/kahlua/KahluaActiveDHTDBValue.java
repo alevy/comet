@@ -3,8 +3,6 @@
  */
 package edu.washington.cs.activedht.db.kahlua;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -17,30 +15,22 @@ import se.krka.kahlua.vm.serialize.Deserializer;
 import se.krka.kahlua.vm.serialize.Serializer;
 
 import com.aelitis.azureus.core.dht.control.DHTControl;
-import com.aelitis.azureus.core.dht.transport.BasicDHTTransportValue;
+import com.aelitis.azureus.core.dht.db.DHTDBValue;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.ActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.DhtWrapper;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
+import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 /**
  * @author levya
  * 
  */
-public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
-
-	private static final byte[] ZERO_LENGTH_BYTE_ARRAY = new byte[] {};
-	private final int version;
-	private final boolean local;
-	private final int flags;
+public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	private byte[] value;
-	private long creationTime;
-	private long storeTime;
-	private DHTTransportContact sender;
-	private DHTTransportContact originator;
 
 	private LuaState luaState;
 	private Object luaObject;
@@ -48,20 +38,13 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 	public KahluaActiveDHTDBValue(DHTTransportContact sender,
 			DHTTransportValue other, boolean local) {
 		this(other.getCreationTime(), other.getValue(), other.getVersion(),
-				other.getOriginator(), sender, local, other.getFlags());
+				other.getOriginator(), local, other.getFlags());
 	}
 
 	public KahluaActiveDHTDBValue(long creationTime, byte[] value, int version,
-			DHTTransportContact originator, DHTTransportContact sender,
-			boolean local, int flags) {
-		this.creationTime = creationTime;
+			DHTTransportContact originator, boolean local, int flags) {
+		super(creationTime, value, "KahluaActiveValue", version, originator, local, flags);
 		this.value = value;
-		this.version = version;
-		this.originator = originator;
-		this.sender = sender;
-		this.local = local;
-		this.flags = flags;
-
 	}
 
 	public ActiveDHTDBValue executeCallback(String callback, Object... args) {
@@ -69,9 +52,8 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 		LuaState state = getLuaState();
 		synchronized (state) {
 			if (luaObject == null) {
-				luaObject = new Deserializer(new DataInputStream(
-						new ByteArrayInputStream(value)), state
-						.getEnvironment()).deserialize();
+				luaObject = Deserializer.deserializeBytes(value, state
+						.getEnvironment());
 			}
 			Object[] functionArgs = new Object[args.length + 1];
 			functionArgs[0] = luaObject;
@@ -97,7 +79,7 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 					} else {
 						result = new KahluaActiveDHTDBValue(getCreationTime(),
 								serialize(returnedValue), getVersion(),
-								getOriginator(), getSender(), isLocal(),
+								getOriginator(), isLocal(),
 								getFlags());
 					}
 				}
@@ -134,58 +116,9 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 		return new NodeWrapper(contact);
 	}
 
-	public long getCreationTime() {
-		return creationTime;
-	}
-
-	public DHTTransportContact getSender() {
-		return sender;
-	}
-
-	public long getStoreTime() {
-		return storeTime;
-	}
-
-	public DHTTransportValue getValueForDeletion(int nextValueVersion) {
-		return new BasicDHTTransportValue(getCreationTime(),
-				ZERO_LENGTH_BYTE_ARRAY, getString(), nextValueVersion,
-				getOriginator(), isLocal(), getFlags());
-	}
-
-	public DHTTransportValue getValueForRelay(DHTTransportContact newOriginator) {
-		return new BasicDHTTransportValue(creationTime, getValue(),
+	public DHTDBValue getValueForRelay(DHTTransportContact newOriginator) {
+		return new BasicDHTTransportValue(getCreationTime(), getValue(),
 				getString(), getVersion(), newOriginator, isLocal(), getFlags());
-	}
-
-	public void reset() {
-		storeTime = System.currentTimeMillis();
-		if (creationTime > storeTime) {
-			creationTime = storeTime;
-		}
-	}
-
-	public void setCreationTime() {
-		this.creationTime = System.currentTimeMillis();
-	}
-
-	public void setOriginator(DHTTransportContact originator) {
-		this.originator = originator;
-	}
-
-	public void setSender(DHTTransportContact sender) {
-		this.sender = sender;
-	}
-
-	public void setStoreTime(long storeTime) {
-		this.storeTime = storeTime;
-	}
-
-	public int getFlags() {
-		return flags;
-	}
-
-	public DHTTransportContact getOriginator() {
-		return originator;
 	}
 
 	public String getString() {
@@ -194,14 +127,6 @@ public class KahluaActiveDHTDBValue implements ActiveDHTDBValue {
 
 	public byte[] getValue() {
 		return value;
-	}
-
-	public int getVersion() {
-		return version;
-	}
-
-	public boolean isLocal() {
-		return local;
 	}
 
 }

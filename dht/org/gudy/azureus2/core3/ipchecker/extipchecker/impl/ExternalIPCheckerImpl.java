@@ -26,8 +26,7 @@ package org.gudy.azureus2.core3.ipchecker.extipchecker.impl;
  *
  */
 
-import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPChecker;
-import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerService;
+import org.gudy.azureus2.core3.ipchecker.extipchecker.*;
 
 public class 
 ExternalIPCheckerImpl

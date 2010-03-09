@@ -21,6 +21,7 @@
 
 package org.gudy.azureus2.core3.category;
 
+import org.gudy.azureus2.core3.category.Category;
 
 /**
  * A listener informed of changes to Categories

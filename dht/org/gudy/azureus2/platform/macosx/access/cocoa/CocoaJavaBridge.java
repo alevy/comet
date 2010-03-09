@@ -22,21 +22,19 @@ package org.gudy.azureus2.platform.macosx.access.cocoa;
  *
  */
 
-import java.io.File;
-import java.text.MessageFormat;
-
-import org.gudy.azureus2.core3.logging.LogAlert;
-import org.gudy.azureus2.core3.logging.Logger;
+import com.apple.cocoa.foundation.NSAppleEventDescriptor;
+import com.apple.cocoa.foundation.NSAppleScript;
+import com.apple.cocoa.foundation.NSAutoreleasePool;
+import com.apple.cocoa.foundation.NSMutableDictionary;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.AEThread;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.platform.macosx.NativeInvocationBridge;
 
-import com.apple.cocoa.foundation.NSAppleEventDescriptor;
-import com.apple.cocoa.foundation.NSAppleScript;
-import com.apple.cocoa.foundation.NSAutoreleasePool;
-import com.apple.cocoa.foundation.NSMutableDictionary;
+import java.io.File;
+import java.text.MessageFormat;
 
 /**
  * <p>Performs PlatformManager tasks using Cocoa-Java (FoundationKit only)</p>
@@ -89,11 +87,45 @@ public final class CocoaJavaBridge extends NativeInvocationBridge
      */
     protected boolean performRecoverableFileDelete(File path)
     {
-        if(!path.exists())
+        if(!path.exists()){
             return false;
-
+        }
+        
         NSAppleEventDescriptor result =  executeScriptWithAsync(DEL_SCRIPT_FORMAT, new Object[]{path.getAbsolutePath()});
-        return (result != null);
+        
+        	// quick hack here for people where things take a while - too scared to make it a 
+        	// sync call as I don't know the code...
+                
+        if ( result != null ){
+
+            final int sleep = 25;
+            
+            int sleep_to_go = 2500;
+
+        	while( path.exists()){
+        		
+        		if ( sleep_to_go <= 0 ){
+        			
+        			break;
+        		}
+        		
+        		try{
+        			Thread.sleep( sleep );
+        			
+        			sleep_to_go -= sleep;
+        			
+        		}catch( Throwable e ){
+        			break;
+        		}
+        	}
+        
+        	if ( path.exists()){
+        	
+        		Debug.outNoStack( "Gave up waiting for delete to complete for " + path );
+        	}
+        }
+        
+        return( result != null );
     }
 
     /**

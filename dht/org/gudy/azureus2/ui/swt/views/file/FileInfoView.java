@@ -30,39 +30,34 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseTrackAdapter;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.disk.DiskManager;
 import org.gudy.azureus2.core3.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.core3.disk.DiskManagerPiece;
 import org.gudy.azureus2.core3.download.DownloadManager;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.peer.PEPeerManager;
 import org.gudy.azureus2.core3.peer.PEPiece;
 import org.gudy.azureus2.core3.util.AERunnable;
 import org.gudy.azureus2.core3.util.Debug;
+
+import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.Legend;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
-import org.gudy.azureus2.ui.swt.mainwindow.SWTThread;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;
+import org.gudy.azureus2.ui.swt.views.IViewExtension;
 
 
 
-public class FileInfoView extends AbstractIView {
+public class FileInfoView
+	extends AbstractIView
+	implements IViewExtension
+{
 	private final static int BLOCK_FILLSIZE = 14;
 
 	private final static int BLOCK_SPACING = 2;
@@ -96,6 +91,9 @@ public class FileInfoView extends AbstractIView {
 	private Font font = null;
 
 	Image img = null;
+
+	// accessed only in SWT Thread
+	private boolean refreshInfoCanvasQueued;
 
 	/**
 	 * Initialize
@@ -229,25 +227,16 @@ public class FileInfoView extends AbstractIView {
 			
 			public void handleEvent(Event e) {
 				
+				if (refreshInfoCanvasQueued) {
+					return;
+				}
+				
+				refreshInfoCanvasQueued = true;
+
 					// wrap in asyncexec because sc.setMinWidth (called later) doesn't work
 					// too well inside a resize (the canvas won't size isn't always updated)
 
-				SWTThread.getInstance().limitFrequencyAsyncExec(
-					this,
-					e.widget.getDisplay(),
-					new AERunnable() {
-						public void runSupport() {
-							if (img != null) {
-								int iOldColCount = img.getBounds().width / BLOCK_SIZE;
-								int iNewColCount = fileInfoCanvas.getClientArea().width / BLOCK_SIZE;
-								if (iOldColCount != iNewColCount)
-									refreshInfoCanvas();
-							}
-						}
-					});
-			
-				/*
-				e.widget.getDisplay().asyncExec(new AERunnable() {
+				Utils.execSWTThreadLater(0, new AERunnable() {
 					public void runSupport() {
 						if (img != null) {
 							int iOldColCount = img.getBounds().width / BLOCK_SIZE;
@@ -257,7 +246,6 @@ public class FileInfoView extends AbstractIView {
 						}
 					}
 				});
-				*/
 			}
 		});
 
@@ -371,6 +359,7 @@ public class FileInfoView extends AbstractIView {
 	}
 	
 	protected void refreshInfoCanvas() {
+		refreshInfoCanvasQueued = false;
 		Rectangle bounds = fileInfoCanvas.getClientArea();
 		if (bounds.width <= 0 || bounds.height <= 0)
 			return;
@@ -487,8 +476,17 @@ public class FileInfoView extends AbstractIView {
 			font = null;
 		}
 		
-		SWTThread.getInstance().removeLimitedFrequencyOwner(this);
-
 		super.delete();
+	}
+
+	public Menu getPrivateMenu() {
+		return null;
+	}
+
+	public void viewActivated() {
+		refreshInfoCanvas();
+	}
+
+	public void viewDeactivated() {
 	}
 }

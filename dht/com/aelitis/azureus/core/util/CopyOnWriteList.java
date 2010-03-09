@@ -40,7 +40,7 @@ implements Iterable<T>
 	
 	//private int mutation_count = 0;
 	
-	private List<T>	list = Collections.emptyList();
+	private List<T>	list = Collections.EMPTY_LIST;
 	
 	private boolean	visible = false;
 	
@@ -118,12 +118,22 @@ implements Iterable<T>
 				visible = false;
 				
 			}else{
-				if (list == Collections.emptyList()) {
+				if (list == Collections.EMPTY_LIST) {
 					list = new ArrayList<T>(initialCapacity);
 				}
 				
 				list.add( obj );
 			}
+		}
+	}
+	
+	public T
+	get(
+		int		index )
+	{
+		synchronized( this ){
+			
+			return( list.get(index));
 		}
 	}
 	
@@ -159,7 +169,7 @@ implements Iterable<T>
 	{
 		synchronized( this ){
 								
-			list	= Collections.emptyList();
+			list	= Collections.EMPTY_LIST;
 			
 			visible = false;
 		}

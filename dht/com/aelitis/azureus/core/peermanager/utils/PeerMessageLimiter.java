@@ -22,9 +22,7 @@
 
 package com.aelitis.azureus.core.peermanager.utils;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.SystemTime;
 

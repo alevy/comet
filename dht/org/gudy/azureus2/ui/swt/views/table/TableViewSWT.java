@@ -27,19 +27,22 @@ import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
-import org.gudy.azureus2.plugins.ui.tables.TableRowRefreshListener;
+import org.eclipse.swt.widgets.Text;
+
 import org.gudy.azureus2.ui.swt.views.IView;
 
 import com.aelitis.azureus.ui.common.table.TableRowCore;
 import com.aelitis.azureus.ui.common.table.TableView;
+
+import org.gudy.azureus2.plugins.ui.tables.TableRowRefreshListener;
 
 /**
  * @author TuxPaper
  * @created Feb 2, 2007
  *
  */
-public interface TableViewSWT
-	extends TableView
+public interface TableViewSWT<DATASOURCETYPE>
+	extends TableView<DATASOURCETYPE>
 {
 	/** Helpful output when trying to debug add/removal of rows */
 	public final static boolean DEBUGADDREMOVE = System.getProperty("debug.swt.table.addremove", "0").equals("1");
@@ -67,7 +70,7 @@ public interface TableViewSWT
 	 *
 	 * @since 3.0.0.7
 	 */
-	TableRowSWT getRowSWT(Object dataSource);
+	TableRowSWT getRowSWT(DATASOURCETYPE dataSource);
 
 	Composite getTableComposite();
 
@@ -131,4 +134,36 @@ public interface TableViewSWT
 	 * @since 3.1.1.1
 	 */
 	void addRefreshListener(TableRowRefreshListener listener);
+
+	/**
+	 * @return
+	 *
+	 * @since 4.1.0.9
+	 */
+	String getFilterText();
+
+	/**
+	 * @param filterCheck
+	 *
+	 * @since 4.1.0.9
+	 */
+	void enableFilterCheck(Text txtFilter, TableViewFilterCheck<DATASOURCETYPE> filterCheck);
+
+	/**
+	 * @param s
+	 *
+	 * @since 4.1.0.8
+	 */
+	void setFilterText(String s);
+
+	/**
+	 * @param composite
+	 * @param min
+	 * @param max
+	 * 
+	 * @since 4.1.0.9
+	 */
+	boolean enableSizeSlider(Composite composite, int min, int max);
+
+	void disableSizeSlider();
 }

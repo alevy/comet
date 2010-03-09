@@ -32,12 +32,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.config.COConfigurationManager;
-import org.gudy.azureus2.core3.logging.LogEvent;
-import org.gudy.azureus2.core3.logging.LogIDs;
-import org.gudy.azureus2.core3.logging.Logger;
+import org.gudy.azureus2.core3.internat.MessageText;
+import org.gudy.azureus2.core3.logging.*;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.torrent.TOTorrent;
+import org.gudy.azureus2.core3.torrent.TOTorrentException;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncer;
+import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerException;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerListener;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponse;
 import org.gudy.azureus2.core3.tracker.client.TRTrackerAnnouncerResponsePeer;
@@ -47,7 +48,12 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.LightHashMap;
 import org.gudy.azureus2.core3.util.ListenerManager;
 import org.gudy.azureus2.core3.util.ListenerManagerDispatcher;
+import org.gudy.azureus2.plugins.clientid.ClientIDException;
 import org.gudy.azureus2.plugins.download.DownloadAnnounceResultPeer;
+import org.gudy.azureus2.pluginsimpl.local.clientid.ClientIDManagerImpl;
+
+import com.aelitis.azureus.core.tracker.TrackerPeerSource;
+import com.aelitis.azureus.core.tracker.TrackerPeerSourceAdapter;
 
 /**
  * @author parg
@@ -67,18 +73,33 @@ TRTrackerAnnouncerImpl
 	protected static final int LDT_URL_CHANGED			= 2;
 	protected static final int LDT_URL_REFRESH			= 3;
 	
-	protected ListenerManager	listeners 	= ListenerManager.createManager(
+	private static final String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+	private static final int	   	key_id_length	= 8;
+
+	private static String
+	createKeyID()
+	{
+		String	key_id = "";
+		
+		for (int i = 0; i < key_id_length; i++) {
+			int pos = (int) ( Math.random() * chars.length());
+		    key_id +=  chars.charAt(pos);
+		}
+		
+		return( key_id );
+	}
+	
+	protected ListenerManager<TRTrackerAnnouncerListener>	listeners 	= ListenerManager.createManager(
 			"TrackerClient:ListenDispatcher",
-			new ListenerManagerDispatcher()
+			new ListenerManagerDispatcher<TRTrackerAnnouncerListener>()
 			{
 				public void
 				dispatch(
-					Object		_listener,
-					int			type,
-					Object		value )
+					TRTrackerAnnouncerListener		listener,
+					int								type,
+					Object							value )
 				{
-					TRTrackerAnnouncerListener	listener = (TRTrackerAnnouncerListener)_listener;
-					
 					if ( type == LDT_TRACKER_RESPONSE ){
 						
 						listener.receivedTrackerResponse((TRTrackerAnnouncerResponse)value);
@@ -102,19 +123,199 @@ TRTrackerAnnouncerImpl
 
 	private Map	tracker_peer_cache		= new LinkedHashMap();	// insertion order - most recent at end
 	private AEMonitor tracker_peer_cache_mon 	= new AEMonitor( "TRTrackerClientClassic:PC" );
+	private int	cache_peers_used;
 	
-	private TOTorrent		torrent;
+	final private TOTorrent						torrent;
+	final private byte[]						peer_id;
+	final private String						tracker_key;
+	final private int							udp_key;
+	
+	private TRTrackerAnnouncerResponse	last_response;
+	
 	
 	protected
 	TRTrackerAnnouncerImpl(
 		TOTorrent	_torrent )
+	
+		throws TRTrackerAnnouncerException
 	{
 		torrent	= _torrent;
+		
+		tracker_key	= createKeyID();
+	    
+		udp_key	= (int)(Math.random() *  0xFFFFFFFFL );
+
+		try{	
+			last_response = new TRTrackerAnnouncerResponseImpl( null, torrent.getHashWrapper(), TRTrackerAnnouncerResponse.ST_OFFLINE, TRTrackerAnnouncer.REFRESH_MINIMUM_SECS, "Initialising" );
+			
+		}catch( TOTorrentException e ){
+			
+			Logger.log(new LogEvent(torrent, LOGID, "Torrent hash retrieval fails", e));
+			
+			throw( new TRTrackerAnnouncerException( "TRTrackerAnnouncer: URL encode fails"));	
+		}
+		
+		try{
+			peer_id		= ClientIDManagerImpl.getSingleton().generatePeerID( torrent, false );
+		
+		}catch( ClientIDException e ){
+
+			 throw( new TRTrackerAnnouncerException( "TRTrackerAnnouncer: Peer ID generation fails", e ));
+		}
 	}
- 	
+
+	public TOTorrent
+	getTorrent()
+	{
+		return( torrent );
+	}
+	
+	public Helper
+	getHelper()
+	{
+		return(
+			new Helper()
+			{
+				public byte[]
+				getPeerID()
+				{
+					return( peer_id );
+				}
+				
+				public String
+				getTrackerKey()
+				{
+					return( tracker_key );
+				}
+				
+				public int
+				getUDPKey()
+				{
+					return( udp_key );
+				}
+				
+				public void
+				addToTrackerCache(
+					TRTrackerAnnouncerResponsePeerImpl[]		peers )
+				{
+					TRTrackerAnnouncerImpl.this.addToTrackerCache( peers );
+				}
+
+				public TRTrackerAnnouncerResponsePeer[]
+		      	getPeersFromCache(
+		      		int			num_want )
+				{
+					return( TRTrackerAnnouncerImpl.this.getPeersFromCache(num_want));
+				}
+				
+				public void
+				setTrackerResponseCache(
+					Map 		map	)
+				{
+					TRTrackerAnnouncerImpl.this.setTrackerResponseCache( map );
+				}
+					
+				public void 
+				removeFromTrackerResponseCache(
+					String ip, int tcpPort )
+				{
+					TRTrackerAnnouncerImpl.this.removeFromTrackerResponseCache( ip,tcpPort );
+				}
+					
+				public Map 
+				getTrackerResponseCache()
+				{
+					return( TRTrackerAnnouncerImpl.this.getTrackerResponseCache());
+				}
+					
+				public void
+				informResponse(
+					TRTrackerAnnouncerHelper		helper,
+					TRTrackerAnnouncerResponse		response )
+				{
+					TRTrackerAnnouncerImpl.this.informResponse( helper, response );
+				}
+				
+				public void
+				informURLChange(
+					URL		old_url,
+					URL		new_url,
+					boolean	explicit )
+				{
+					listeners.dispatch(	LDT_URL_CHANGED,
+							new Object[]{old_url, new_url, new Boolean(explicit)});
+				}
+				
+				public void
+				informURLRefresh()
+				{
+					TRTrackerAnnouncerImpl.this.informURLRefresh();
+				}
+				
+			 	public void
+				addListener(
+					TRTrackerAnnouncerListener	l )
+			 	{
+			 		TRTrackerAnnouncerImpl.this.addListener( l );
+			 	}
+					
+				public void
+				removeListener(
+					TRTrackerAnnouncerListener	l )
+				{
+					TRTrackerAnnouncerImpl.this.removeListener( l );
+				}
+			});
+	}
+	
+	public byte[]
+	getPeerId()
+	{
+		return( peer_id );
+	}
+	
+ 	public static byte[]
+	getAnonymousPeerId(
+		String	my_ip,
+		int		my_port )
+	{
+  		byte[] anon_peer_id = new byte[20];
+	
+  		// unique initial two bytes to identify this as fake
+
+  		anon_peer_id[0] = (byte)'[';
+  		anon_peer_id[1] = (byte)']';
+
+  		try{
+	  		byte[]	ip_bytes 	= my_ip.getBytes( Constants.DEFAULT_ENCODING );
+	  		int		ip_len		= ip_bytes.length;
+	
+	  		if ( ip_len > 18 ){
+		
+	  			ip_len = 18;
+	  		}
+	
+	  		System.arraycopy( ip_bytes, 0, anon_peer_id, 2, ip_len );
+									
+	  		int	port_copy = my_port;
+		
+	  		for (int j=2+ip_len;j<20;j++){
+			
+	  			anon_peer_id[j] = (byte)(port_copy&0xff);
+			
+	  			port_copy >>= 8;
+	  		}
+  		}catch( UnsupportedEncodingException e ){
+  			
+  			Debug.printStackTrace( e );
+  		}
+  		
+  		return( anon_peer_id );
+   }
+					
 		// NOTE: tracker_cache is cleared out in DownloadManager when opening a torrent for the
 		// first time as a DOS prevention measure
-
+	
 	public Map
 	getTrackerResponseCache()
 	{				
@@ -132,7 +333,7 @@ TRTrackerAnnouncerImpl
 			Logger.log(new LogEvent(getTorrent(), LOGID, "TRTrackerClient: imported "
 					+ num + " cached peers"));
 	}
-
+	
 	protected Map
 	exportTrackerCache()
 	{
@@ -190,46 +391,7 @@ TRTrackerAnnouncerImpl
 		
 		return( res );
 	}
-
- 	protected byte[]
-	getAnonymousPeerId(
-		String	my_ip,
-		int		my_port )
-	{
-  		byte[] anon_peer_id = new byte[20];
 	
-  		// unique initial two bytes to identify this as fake
-
-  		anon_peer_id[0] = (byte)'[';
-  		anon_peer_id[1] = (byte)']';
-
-  		try{
-	  		byte[]	ip_bytes 	= my_ip.getBytes( Constants.DEFAULT_ENCODING );
-	  		int		ip_len		= ip_bytes.length;
-	
-	  		if ( ip_len > 18 ){
-		
-	  			ip_len = 18;
-	  		}
-	
-	  		System.arraycopy( ip_bytes, 0, anon_peer_id, 2, ip_len );
-									
-	  		int	port_copy = my_port;
-		
-	  		for (int j=2+ip_len;j<20;j++){
-			
-	  			anon_peer_id[j] = (byte)(port_copy&0xff);
-			
-	  			port_copy >>= 8;
-	  		}
-  		}catch( UnsupportedEncodingException e ){
-  			
-  			Debug.printStackTrace( e );
-  		}
-  		
-  		return( anon_peer_id );
-   }
-					
 	protected int
 	importTrackerCache(
 		Map		map )
@@ -274,7 +436,7 @@ TRTrackerAnnouncerImpl
 					byte	az_ver			= l_az_ver==null?TRTrackerAnnouncer.AZ_TRACKER_VERSION_1:l_az_ver.byteValue();
 				
 					//System.out.println( "recovered " + ip_address + ":" + port );
-
+	
 					TRTrackerAnnouncerResponsePeerImpl	entry =
 						new TRTrackerAnnouncerResponsePeerImpl(
 							peer_source, 
@@ -303,7 +465,7 @@ TRTrackerAnnouncerImpl
 			return( tracker_peer_cache.size());
 		}
 	}
-
+	
 	protected void
 	addToTrackerCache(
 		TRTrackerAnnouncerResponsePeerImpl[]		peers )
@@ -347,7 +509,7 @@ TRTrackerAnnouncerImpl
 			tracker_peer_cache_mon.exit();
 		}
 	}
-
+	
 	public void
 	removeFromTrackerResponseCache(
 		String		ip,
@@ -415,10 +577,25 @@ TRTrackerAnnouncerImpl
 		return( res );
 	}
 	
+	protected abstract int
+	getPeerCacheLimit();
+	
 	protected TRTrackerAnnouncerResponsePeer[]
 	getPeersFromCache(
 		int	num_want )
 	{
+		int	limit = getPeerCacheLimit();
+		
+		if ( limit <= 0 ){
+			
+			return( new TRTrackerAnnouncerResponsePeer[0] );
+		}
+		
+			// limit peers returned to avoid multi-tracker torrents from getting swamped
+			// by out-of-date peers from a failed tracker
+		
+		num_want = Math.min( limit, num_want );
+		
 		try{
 			tracker_peer_cache_mon.enter();
 	
@@ -454,17 +631,19 @@ TRTrackerAnnouncerImpl
 				}
 			}
 			
-    		if (Logger.isEnabled()){
-    			
-    			for (int i=0;i<res.length;i++){
+			if (Logger.isEnabled()){
+				
+				for (int i=0;i<res.length;i++){
 						
 					Logger.log(new LogEvent(getTorrent(), LOGID, "CACHED PEER: " + res[i].getString()));
-    			}
+				}
 			
 				Logger.log(new LogEvent(getTorrent(), LOGID,
 						"TRTrackerClient: returned " + res.length + " cached peers"));
-    		}
+			}
 		    
+			cache_peers_used += res.length;
+			
 			return( res );
 			
 		}finally{
@@ -472,7 +651,49 @@ TRTrackerAnnouncerImpl
 			tracker_peer_cache_mon.exit();
 		}
 	} 
+	
+	public TrackerPeerSource 
+	getCacheTrackerPeerSource()
+	{
+		return(
+			new TrackerPeerSourceAdapter()
+			{
+				public String
+				getName()
+				{
+					return( MessageText.getString( "tps.tracker.cache1", new String[]{ String.valueOf( tracker_peer_cache.size())}));
+				}
+				
+				public int
+				getPeers()
+				{
+					return( cache_peers_used );
+				}
+			});
+	}
 
+	public TRTrackerAnnouncerResponse
+	getLastResponse()
+	{
+		return( last_response );
+	}
+	
+	protected void
+	informResponse(
+		TRTrackerAnnouncerHelper		helper,
+		TRTrackerAnnouncerResponse		response )
+	{
+		last_response = response;
+		
+		listeners.dispatch( LDT_TRACKER_RESPONSE, response );
+	}
+
+	protected void
+	informURLRefresh()
+	{
+		listeners.dispatch( LDT_URL_REFRESH, null );
+	}
+	
  	public void
 	addListener(
 		TRTrackerAnnouncerListener	l )
@@ -487,4 +708,57 @@ TRTrackerAnnouncerImpl
 		listeners.removeListener(l);
 	}
 
+	public interface
+	Helper
+	{
+		public byte[]
+		getPeerID();
+		
+		public String
+		getTrackerKey();
+		
+		public int
+		getUDPKey();
+		
+		public void
+		addToTrackerCache(
+			TRTrackerAnnouncerResponsePeerImpl[]		peers );
+
+		public TRTrackerAnnouncerResponsePeer[]
+      	getPeersFromCache(
+      		int			num_want );
+		
+		public void 
+		setTrackerResponseCache(
+			Map map	);
+		
+		public void 
+		removeFromTrackerResponseCache(
+			String ip, int tcpPort );
+		
+		public Map 
+		getTrackerResponseCache();
+		
+		public void
+		informResponse(
+			TRTrackerAnnouncerHelper		helper,
+			TRTrackerAnnouncerResponse		response );
+		
+		public void
+		informURLChange(
+			URL			old_url,
+			URL			new_url,
+			boolean		explicit );
+		
+		public void
+		informURLRefresh();
+		
+	 	public void
+		addListener(
+			TRTrackerAnnouncerListener	l );
+			
+		public void
+		removeListener(
+			TRTrackerAnnouncerListener	l );
+	}
 }

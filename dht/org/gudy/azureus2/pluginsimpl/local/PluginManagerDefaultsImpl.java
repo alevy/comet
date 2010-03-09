@@ -27,12 +27,10 @@ package org.gudy.azureus2.pluginsimpl.local;
  *
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.plugins.PluginManagerArgumentHandler;
-import org.gudy.azureus2.plugins.PluginManagerDefaults;
+import org.gudy.azureus2.plugins.*;
 import org.gudy.azureus2.pluginsimpl.local.launch.PluginSingleInstanceHandler;
 
 public class 

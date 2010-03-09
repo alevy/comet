@@ -22,10 +22,7 @@
 
 package org.gudy.azureus2.ui.swt.views.configsections;
 
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
+import java.io.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
@@ -36,40 +33,29 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.security.SESecurityManager;
 import org.gudy.azureus2.core3.util.Base32;
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.auth.CertificateCreatorWindow;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
-import org.gudy.azureus2.ui.swt.config.StringParameter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.Cursors;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
 
-import com.aelitis.azureus.core.security.CryptoHandler;
-import com.aelitis.azureus.core.security.CryptoManager;
-import com.aelitis.azureus.core.security.CryptoManagerFactory;
-import com.aelitis.azureus.core.security.CryptoManagerKeyListener;
-import com.aelitis.azureus.core.security.CryptoManagerPasswordException;
-import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler;
+import com.aelitis.azureus.core.security.*;
+import com.aelitis.azureus.ui.UserPrompterResultListener;
 import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.plugins.ui.config.ConfigSection;
 
 /**
  * @author parg
@@ -232,7 +218,7 @@ ConfigSectionSecurity
 			
 			final Label linkLabel = new Label(crypto_group, SWT.NULL);
 			linkLabel.setText(MessageText.getString("ConfigView.label.please.visit.here"));
-			linkLabel.setData("http://www.azureuswiki.com/index.php?title=Public_Private_Keys");
+			linkLabel.setData("http://wiki.vuze.com/w/Public_Private_Keys");
 			linkLabel.setCursor(Cursors.handCursor);
 			linkLabel.setForeground(Colors.blue);
 			gridData = new GridData();
@@ -336,6 +322,7 @@ ConfigSectionSecurity
 		    
 		    	// manage keys
 		    
+		    /*
 		    gridData = new GridData();
 		    gridData.horizontalSpan = 3;
 
@@ -400,11 +387,13 @@ ConfigSectionSecurity
 	    				
 	    				if ( error != null ){
 	    					
-			        		Utils.openMessageBox( 
-			        				manage_keys.getControl().getShell(),SWT.ICON_ERROR | SWT.OK,
-			        				MessageText.getString( "ConfigView.section.security.op.error.title" ),
-			        				MessageText.getString( "ConfigView.section.security.op.error", 
-			        						new String[]{ error }));
+	    					MessageBoxShell mb = new MessageBoxShell(
+	    							SWT.ICON_ERROR | SWT.OK,
+	    							MessageText.getString("ConfigView.section.security.op.error.title"),
+	    							MessageText.getString("ConfigView.section.security.op.error",
+	    									new String[] { error }));
+	      				mb.setParent(parent.getShell());
+	    					mb.open(null);
 	    				}
 	    				
 	    				boolean new_value = ecc_handler.getDefaultPasswordHandlerType() == CryptoManagerPasswordHandler.HANDLER_TYPE_SYSTEM;
@@ -415,6 +404,7 @@ ConfigSectionSecurity
 	    				}
 		    		}
 		    	});
+		    */
 		    
 	    		// reset keys
 		    
@@ -430,24 +420,33 @@ ConfigSectionSecurity
 				        public void 
 						handleEvent(Event event) 
 				        {
-				        	if ( Utils.openMessageBox(
-				        			parent.getShell(),SWT.ICON_WARNING | SWT.OK | SWT.CANCEL, SWT.CANCEL,
+				        	MessageBoxShell mb = new MessageBoxShell(
+				        			SWT.ICON_WARNING | SWT.OK | SWT.CANCEL,
 				        			MessageText.getString("ConfigView.section.security.resetkey.warning.title"),
-				        			MessageText.getString("ConfigView.section.security.resetkey.warning")) == SWT.OK ){ 
-		 									
-					        	try{
-					        		crypt_man.getECCHandler().resetKeys( "Manual key reset" );
-					        					        		
-					        	}catch( Throwable e ){
-					        		
-					        		
-					        		
-					        		Utils.openMessageBox( 
-					        			parent.getShell(),SWT.ICON_ERROR | SWT.OK,
-					        			MessageText.getString( "ConfigView.section.security.resetkey.error.title"),
-					        			getError( e ));
-					        	}
-		 					}
+				        			MessageText.getString("ConfigView.section.security.resetkey.warning"));
+				        	mb.setDefaultButtonUsingStyle(SWT.CANCEL);
+				        	mb.setParent(parent.getShell());
+
+				        	mb.open(new UserPrompterResultListener() {
+										public void prompterClosed(int returnVal) {
+											if (returnVal != SWT.OK) {
+												return;
+											}
+											
+											try{
+												crypt_man.getECCHandler().resetKeys( "Manual key reset" );
+												
+											}catch( Throwable e ){
+												
+												MessageBoxShell mb = new MessageBoxShell( 
+														SWT.ICON_ERROR | SWT.OK,
+														MessageText.getString( "ConfigView.section.security.resetkey.error.title"),
+														getError( e ));
+							  				mb.setParent(parent.getShell());
+							  				mb.open(null);
+											}
+										}
+									});
 				        }
 				    });
 		    
@@ -472,12 +471,14 @@ ConfigSectionSecurity
 				        		
 				        	}catch( Throwable e ){
 				        		
-			 					Utils.openMessageBox( 
-			 						parent.getShell(),
+			 					MessageBoxShell mb = new MessageBoxShell( 
 			 						SWT.ICON_ERROR | SWT.OK,
 			 						MessageText.getString( "ConfigView.section.security.resetkey.error.title" ),
 			 						getError( e ));
-				        	}
+			 					mb.setParent(parent.getShell());
+			 					mb.open(null);
+				        	};
+
 				        }
 				    });
 		    
@@ -514,11 +515,13 @@ ConfigSectionSecurity
 					        	
 					        	}catch( Throwable e ){
 					        	
-					        		Utils.openMessageBox( 
-					        				backup_keys_button.getShell(),SWT.ICON_ERROR | SWT.OK,
+					        		MessageBoxShell mb = new MessageBoxShell( 
+					        				SWT.ICON_ERROR | SWT.OK,
 					        				MessageText.getString( "ConfigView.section.security.op.error.title" ),
 					        				MessageText.getString( "ConfigView.section.security.op.error", 
 					        						new String[]{ getError(e) }));
+					    				mb.setParent(parent.getShell());
+					        		mb.open(null);
 					        	}
 				        	}
 				        }
@@ -567,10 +570,12 @@ ConfigSectionSecurity
 					  
 					        		if ( restart ){
 					        			
-						        		Utils.openMessageBox( 
-						        				backup_keys_button.getShell(),SWT.ICON_INFORMATION | SWT.OK,
+					        			MessageBoxShell mb = new MessageBoxShell( 
+						        				SWT.ICON_INFORMATION | SWT.OK,
 						        				MessageText.getString( "ConfigView.section.security.restart.title" ),
-						        				MessageText.getString( "ConfigView.section.security.restart.msg" )); 
+						        				MessageText.getString( "ConfigView.section.security.restart.msg" ));
+					      				mb.setParent(parent.getShell());
+					        			mb.open(null); 
 	
 						        		
 						        		UIFunctionsSWT uiFunctions = UIFunctionsManagerSWT.getUIFunctionsSWT();
@@ -582,11 +587,13 @@ ConfigSectionSecurity
 					        		}
 					        	}catch( Throwable e ){
 					        	
-					        		Utils.openMessageBox(  
-					        			backup_keys_button.getShell(),SWT.ICON_ERROR | SWT.OK,
+					        		MessageBoxShell mb = new MessageBoxShell(  
+					        			SWT.ICON_ERROR | SWT.OK,
 					        			MessageText.getString( "ConfigView.section.security.op.error.title" ),
 					        			MessageText.getString( "ConfigView.section.security.op.error", 
 					        					new String[]{ getError( e )}));
+					    				mb.setParent(parent.getShell());
+					        		mb.open(null);
 					        	}
 				        	}
 				        }
@@ -615,14 +622,14 @@ ConfigSectionSecurity
 			    final CryptoManager crypto_man 	= CryptoManagerFactory.getSingleton();
 				final CryptoHandler ecc_handler = crypto_man.getECCHandler();
 				
-				if ( ecc_handler.getDefaultPasswordHandlerType() == CryptoManagerPasswordHandler.HANDLER_TYPE_SYSTEM ){
-					
-					error = MessageText.getString( "ConfigView.section.security.nopw_v" );
-
-				}else{
+				//if ( ecc_handler.getDefaultPasswordHandlerType() == CryptoManagerPasswordHandler.HANDLER_TYPE_SYSTEM ){
+				//	
+				//	error = MessageText.getString( "ConfigView.section.security.nopw_v" );
+				//
+				//}else{
 					
 					error = MessageText.getString( "ConfigView.section.security.nopw" );
-				}
+				//}
 			}
 		}else{
 			

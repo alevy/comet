@@ -26,58 +26,21 @@ package com.aelitis.net.udp.uc.impl;
  *
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.SocketTimeoutException;
+import java.io.*;
+import java.net.*;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.gudy.azureus2.core3.logging.LogAlert;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AESemaphore;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.AEThread2;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.LightHashMap;
-import org.gudy.azureus2.core3.util.SHA1Hasher;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemTime;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
-import org.gudy.azureus2.core3.util.TimerEventPeriodic;
+import org.gudy.azureus2.core3.util.*;
 
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdmin;
 import com.aelitis.azureus.core.networkmanager.admin.NetworkAdminPropertyChangeListener;
-import com.aelitis.net.udp.uc.PRUDPPacket;
-import com.aelitis.net.udp.uc.PRUDPPacketHandler;
-import com.aelitis.net.udp.uc.PRUDPPacketHandlerException;
-import com.aelitis.net.udp.uc.PRUDPPacketHandlerStats;
-import com.aelitis.net.udp.uc.PRUDPPacketReceiver;
-import com.aelitis.net.udp.uc.PRUDPPacketReply;
-import com.aelitis.net.udp.uc.PRUDPPacketRequest;
-import com.aelitis.net.udp.uc.PRUDPPrimordialHandler;
-import com.aelitis.net.udp.uc.PRUDPRequestHandler;
+import com.aelitis.net.udp.uc.*;
 
 public class 
 PRUDPPacketHandlerImpl
@@ -100,10 +63,10 @@ PRUDPPacketHandlerImpl
 	
 	
 	private Map			requests = new LightHashMap();
-	private AEMonitor	requests_mon	= new AEMonitor( "PRUDPPH:req" );
+	private AEMonitor2	requests_mon	= new AEMonitor2( "PRUDPPH:req" );
 	
 	
-	private AEMonitor	send_queue_mon	= new AEMonitor( "PRUDPPH:sd" );
+	private AEMonitor2	send_queue_mon	= new AEMonitor2( "PRUDPPH:sd" );
 	private long		send_queue_data_size;
 	private List[]		send_queues		= new List[]{ new LinkedList(),new LinkedList(),new LinkedList()};
 	private AESemaphore	send_queue_sem	= new AESemaphore( "PRUDPPH:sq" );
@@ -571,7 +534,7 @@ PRUDPPacketHandlerImpl
 			
 			init_error	= e;
 			
-			if (!( e instanceof BindException && Constants.isWindowsVista )){
+			if (!( e instanceof BindException && Constants.isWindowsVistaOrHigher )){
 				
 				Logger.logTextResource(new LogAlert(LogAlert.UNREPEATABLE,
 						LogAlert.AT_ERROR, "Tracker.alert.listenfail"), new String[] { "UDP:"
@@ -1355,6 +1318,11 @@ PRUDPPacketHandlerImpl
 		if ( address.getPort() == 0 ){
 			
 			throw( new PRUDPPacketHandlerException( "Invalid port - 0" ));
+		}
+		
+		if ( address.getAddress() == null ){
+			
+			throw( new PRUDPPacketHandlerException( "Unresolved host '" + address.getHostName() + "'" ));
 		}
 	}
 	

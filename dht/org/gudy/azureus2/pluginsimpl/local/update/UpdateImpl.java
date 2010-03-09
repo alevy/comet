@@ -28,14 +28,12 @@ package org.gudy.azureus2.pluginsimpl.local.update;
  */
 
 import java.io.InputStream;
-import java.util.Iterator;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateException;
-import org.gudy.azureus2.plugins.update.UpdateListener;
-import org.gudy.azureus2.plugins.utils.resourcedownloader.ResourceDownloader;
+import org.gudy.azureus2.plugins.update.*;
+
+import org.gudy.azureus2.plugins.utils.resourcedownloader.*;
 
 import com.aelitis.azureus.core.util.CopyOnWriteList;
 

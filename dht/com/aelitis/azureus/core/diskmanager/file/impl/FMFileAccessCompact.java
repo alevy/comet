@@ -29,6 +29,7 @@ import java.util.Map;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentFile;
+import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 import org.gudy.azureus2.core3.util.FileUtil;
 
@@ -60,15 +61,15 @@ FMFileAccessCompact
 	protected
 	FMFileAccessCompact(
 		TOTorrentFile	_torrent_file,
-		File			controlFileDir,
-		String			controlFileName,
+		File			_controlFileDir,
+		String			_controlFileName,
 		FMFileAccess	_delegate )
 	
 		throws FMFileManagerException
 	{
 		torrent_file	= _torrent_file;
-		this.controlFileDir	= controlFileDir;
-		this.controlFileName = controlFileName;
+		controlFileDir	= _controlFileDir;
+		controlFileName = _controlFileName;
 		delegate		= _delegate;
 
 		try{
@@ -170,6 +171,14 @@ FMFileAccessCompact
 		return( last_piece_length );
 	}
 	
+	public void
+	aboutToOpen()
+	
+		throws FMFileManagerException
+	{
+		delegate.aboutToOpen();
+	}
+	
 	public long
 	getLength(
 		RandomAccessFile		raf )
@@ -186,11 +195,12 @@ FMFileAccessCompact
 	
 		throws FMFileManagerException
 	{
-		if(length != current_length)
+		if ( length != current_length ){
+					
+			current_length	= length;
+			
 			write_required = true;
-		
-		current_length	= length;
-		
+		}
 	}
 	
 	protected void
@@ -309,7 +319,14 @@ FMFileAccessCompact
 		
 			read( raf, buffer, position );
 			
-			position += len;
+			int	rem = buffers[i].remaining( SS );
+			
+			position += len - rem;
+			
+			if ( rem > 0 ){
+				
+				break;
+			}
 		}
 		
 		if ( position > current_length ){
@@ -450,6 +467,16 @@ FMFileAccessCompact
 		throws FMFileManagerException
 	{
 		writeState();
+	}
+	
+	public void
+	setPieceComplete(
+		RandomAccessFile	raf,
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws FMFileManagerException
+	{	
 	}
 	
 	protected void

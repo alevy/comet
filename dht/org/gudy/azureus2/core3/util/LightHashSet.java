@@ -19,13 +19,7 @@
  */
 package org.gudy.azureus2.core3.util;
 
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.ConcurrentModificationException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -128,7 +122,7 @@ public class LightHashSet extends AbstractSet implements Cloneable {
 
 		public void remove() {
 			if (currentIdx == -1)
-				new IllegalStateException("No entry to delete, use next() first");
+				throw new IllegalStateException("No entry to delete, use next() first");
 			if (itData != data)
 				throw new ConcurrentModificationException("removal opperation not supported as concurrent structural modification occured");
 			LightHashSet.this.removeForIndex(currentIdx);

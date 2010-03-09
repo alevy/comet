@@ -25,29 +25,25 @@
 package org.gudy.azureus2.ui.swt.views.configsections;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.peer.PEPeerSource;
 import org.gudy.azureus2.core3.util.AENetworkClassifier;
 import org.gudy.azureus2.plugins.ui.config.ConfigSection;
-import org.gudy.azureus2.ui.swt.Messages;
-import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.LinkLabel;
-import org.gudy.azureus2.ui.swt.config.BooleanParameter;
-import org.gudy.azureus2.ui.swt.config.ChangeSelectionActionPerformer;
-import org.gudy.azureus2.ui.swt.config.IntParameter;
-import org.gudy.azureus2.ui.swt.config.Parameter;
-import org.gudy.azureus2.ui.swt.config.ParameterChangeAdapter;
+import org.gudy.azureus2.ui.swt.config.*;
 import org.gudy.azureus2.ui.swt.mainwindow.Colors;
 import org.gudy.azureus2.ui.swt.mainwindow.Cursors;
 import org.gudy.azureus2.ui.swt.plugins.UISWTConfigSection;
+import org.gudy.azureus2.ui.swt.Messages;
+import org.gudy.azureus2.ui.swt.Utils;
 
 public class ConfigSectionConnection implements UISWTConfigSection {
 	
@@ -108,7 +104,6 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 		final IntParameter tcplisten = new IntParameter(cMiniArea,
 				"TCP.Listen.Port", 1, 65535);
 		gridData = new GridData();
-		gridData.widthHint = 40;
 		tcplisten.setLayoutData(gridData);
 
 		tcplisten.addChangeListener(new ParameterChangeAdapter() {
@@ -136,7 +131,6 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 			final IntParameter udp_listen = new IntParameter(cMiniArea,
 					"UDP.Listen.Port", 1, 65535);
 			gridData = new GridData();
-			gridData.widthHint = 40;
 			udp_listen.setLayoutData(gridData);
 
 			final boolean MULTI_UDP = COConfigurationManager.ENABLE_MULTIPLE_UDP_PORTS && userMode > 1;
@@ -206,7 +200,6 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 						});
 				
 				gridData = new GridData();
-				gridData.widthHint = 40;
 				non_data_udp_listen.setLayoutData( gridData );
 	
 				commonUDP.setAdditionalActionPerformer(new ChangeSelectionActionPerformer( non_data_udp_listen.getControls(), true ));
@@ -273,7 +266,7 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 			linkLabel.setText(MessageText
 					.getString(CFG_PREFIX + "serverport.wiki"));
 			linkLabel
-					.setData("http://www.azureuswiki.com/index.php?title=Why_ports_like_6881_are_no_good_choice");
+					.setData("http://wiki.vuze.com/w/Why_ports_like_6881_are_no_good_choice");
 			linkLabel.setCursor(Cursors.handCursor);
 			linkLabel.setForeground(Colors.blue);
 			gridData = new GridData();
@@ -311,7 +304,7 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 			new LinkLabel(
 					http_group, 
 					"ConfigView.label.please.visit.here",
-					"http://www.azureuswiki.com/index.php?title=HTTP_Seeding");
+					"http://wiki.vuze.com/w/HTTP_Seeding");
 
 			final BooleanParameter enable_http = 
 				new BooleanParameter(http_group, "HTTP.Data.Listen.Port.Enable", CFG_PREFIX + "http.enable");
@@ -325,7 +318,6 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 			IntParameter http_port = new IntParameter(http_group, "HTTP.Data.Listen.Port");
 
 			gridData = new GridData();
-			gridData.widthHint = 40;
 			http_port.setLayoutData( gridData );
 
 			label = new Label(http_group, SWT.NULL);
@@ -334,7 +326,6 @@ public class ConfigSectionConnection implements UISWTConfigSection {
 			IntParameter http_port_override = new IntParameter(http_group, "HTTP.Data.Listen.Port.Override");
 
 			gridData = new GridData();
-			gridData.widthHint = 40;
 			http_port_override.setLayoutData( gridData );
 
 			enable_http.setAdditionalActionPerformer( new ChangeSelectionActionPerformer( http_port ));

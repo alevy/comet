@@ -22,12 +22,7 @@ package org.gudy.azureus2.core3.internat;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.torrent.TOTorrentException;
@@ -65,6 +60,9 @@ public class LocaleTorrentUtil
 		
 		if (encoding == null) {
 			return null;
+		}
+		if (TOTorrent.ENCODING_ACTUALLY_UTF8_KEYS.equals(encoding)) {
+			encoding = "utf8";
 		}
 
 		// get canonical name
@@ -111,6 +109,9 @@ public class LocaleTorrentUtil
 		throws TOTorrentException, UnsupportedEncodingException
 	{
 		String encoding = torrent.getAdditionalStringProperty("encoding");
+		if (TOTorrent.ENCODING_ACTUALLY_UTF8_KEYS.equals(encoding)) {
+			encoding = "utf8";
+		}
 
 		// we can only persist the torrent if it has a filename defined for it
 

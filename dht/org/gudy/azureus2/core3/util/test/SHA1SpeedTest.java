@@ -22,10 +22,11 @@
  */
 package org.gudy.azureus2.core3.util.test;
 
-import java.nio.ByteBuffer;
+import java.nio.*;
 import java.util.Arrays;
 import java.util.Random;
 
+// import org.gudy.azureus2.core3.util.SHA1;
 import org.gudy.azureus2.core3.util.ByteFormatter;
 import org.gudy.azureus2.core3.util.SHA1;
 

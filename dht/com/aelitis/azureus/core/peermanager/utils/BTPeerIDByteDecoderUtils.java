@@ -95,6 +95,7 @@ class BTPeerIDByteDecoderUtils {
 		if (peer_id.substring(1, 3).equals("LH")) {return true;}
 		if (peer_id.substring(1, 3).equals("NE")) {return true;}
 		if (peer_id.substring(1, 3).equals("KT")) {return true;}
+		if (peer_id.substring(1, 3).equals("SP")) {return true;}
 		return false;
 	}
 	
@@ -278,6 +279,9 @@ class BTPeerIDByteDecoderUtils {
 		}
 		else if (version_scheme.equals("3.4")) {
 			return intchar(c) + "." + intchar(d);
+		}
+		else if (version_scheme.equals("12.3-4")) {
+			return decodeAlphaNumericChar(a) + decodeAlphaNumericChar(b) + "." + decodeAlphaNumericChar(c) + "-" + decodeAlphaNumericChar(d);
 		}
 		else {
 			throw new RuntimeException("unknown AZ style version number scheme - " + version_scheme);

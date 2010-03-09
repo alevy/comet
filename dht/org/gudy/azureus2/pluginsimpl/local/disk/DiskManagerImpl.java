@@ -27,7 +27,7 @@ package org.gudy.azureus2.pluginsimpl.local.disk;
  */
 
 
-import org.gudy.azureus2.plugins.disk.DiskManager;
+import org.gudy.azureus2.plugins.disk.*;
 
 public class 
 DiskManagerImpl

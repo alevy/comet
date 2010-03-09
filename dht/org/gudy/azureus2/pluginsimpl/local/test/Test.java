@@ -23,11 +23,6 @@
 package org.gudy.azureus2.pluginsimpl.local.test;
 
 
-import java.io.File;
-import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Properties;
-
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread;
@@ -36,11 +31,7 @@ import org.gudy.azureus2.plugins.Plugin;
 import org.gudy.azureus2.plugins.PluginInterface;
 import org.gudy.azureus2.plugins.PluginListener;
 import org.gudy.azureus2.plugins.PluginManager;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabase;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseEvent;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseKey;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseListener;
-import org.gudy.azureus2.plugins.ddb.DistributedDatabaseValue;
+import org.gudy.azureus2.plugins.ddb.*;
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 import org.gudy.azureus2.plugins.download.Download;
 import org.gudy.azureus2.plugins.download.DownloadManagerListener;
@@ -55,12 +46,26 @@ import org.gudy.azureus2.plugins.torrent.TorrentAttribute;
 import org.gudy.azureus2.plugins.torrent.TorrentAttributeEvent;
 import org.gudy.azureus2.plugins.torrent.TorrentAttributeListener;
 import org.gudy.azureus2.plugins.utils.PooledByteBuffer;
+import org.gudy.azureus2.plugins.utils.search.Search;
+import org.gudy.azureus2.plugins.utils.search.SearchInitiator;
+import org.gudy.azureus2.plugins.utils.search.SearchListener;
+import org.gudy.azureus2.plugins.utils.search.SearchProvider;
+import org.gudy.azureus2.plugins.utils.search.SearchProviderResults;
+import org.gudy.azureus2.plugins.utils.search.SearchResult;
 import org.gudy.azureus2.plugins.utils.security.SEPublicKey;
 import org.gudy.azureus2.plugins.utils.security.SEPublicKeyLocator;
 import org.gudy.azureus2.plugins.utils.security.SESecurityManager;
+import org.gudy.azureus2.plugins.utils.subscriptions.Subscription;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionManager;
+import org.gudy.azureus2.plugins.utils.subscriptions.SubscriptionResult;
 
 import com.aelitis.azureus.core.AzureusCoreFactory;
 import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler;
+import com.aelitis.azureus.core.security.CryptoManagerPasswordHandler.passwordDetails;
+
+import java.io.File;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 
 /**
@@ -73,46 +78,7 @@ public class
 Test 
 	implements Plugin
 {
-	private static AESemaphore		init_sem 	= new AESemaphore("PluginTester");
-	private static AEMonitor		class_mon	= new AEMonitor( "PluginTester" );
 
-	private static Test		singleton;
-		
-	
-	public static Test
-	getSingleton()
-	{
-		try{
-			class_mon.enter();
-		
-			if ( singleton == null ){
-				
-				new AEThread( "plugin initialiser" )
-				{
-					public void
-					runSupport()
-					{
-						PluginManager.registerPlugin( Test.class );
-		
-						Properties props = new Properties();
-						
-						props.put( PluginManager.PR_MULTI_INSTANCE, "true" );
-						
-						PluginManager.startAzureus( PluginManager.UI_SWT, props );
-					}
-				}.start();
-			
-				init_sem.reserve();
-			}
-			
-			return( singleton );
-			
-		}finally{
-			
-			class_mon.exit();
-		}
-	}	
-	
 	protected PluginInterface		plugin_interface;
 	
 	public void 
@@ -120,10 +86,6 @@ Test
 		PluginInterface _pi )
 	{	
 		plugin_interface	= _pi;
-		
-		singleton = this;
-		
-		init_sem.release();
 		
 		plugin_interface.addListener(
 				new PluginListener()
@@ -138,8 +100,8 @@ Test
 								runSupport()
 								{
 									
-									//testLinks();
-									testMessaging();
+									// testLinks();
+									// testMessaging();
 									try{
 										// PlatformManagerFactory.getPlatformManager().performRecoverableFileDelete( "C:\\temp\\recycle.txt" );
 										// PlatformManagerFactory.getPlatformManager().setTCPTOSEnabled( false );
@@ -148,6 +110,128 @@ Test
 										
 										e.printStackTrace();
 									}
+									
+									try{
+										SubscriptionManager sm = plugin_interface.getUtilities().getSubscriptionManager();
+									
+										Subscription[] subs = sm.getSubscriptions();
+										
+										for ( Subscription s: subs ){
+											
+											System.out.println( "subs: " + s.getName());
+											
+											SubscriptionResult[] results = s.getResults();
+											
+											for ( SubscriptionResult result: results ){
+												
+												System.out.println( "    " + result.getProperty( SearchResult.PR_NAME ) + ", read=" + result.isRead());
+											}
+											
+										}
+									}catch( Throwable e ){
+										
+										e.printStackTrace();
+									}
+									
+									/*
+									while( true ){
+										
+										try{
+											Thread.sleep(1000);
+											
+											SearchInitiator si = plugin_interface.getUtilities().getSearchInitiator();
+			
+											SearchProvider[] providers = si.getProviders();
+											
+											System.out.println( "search providers=" + providers.length );
+											
+											if ( providers.length > 0 ){
+												
+												Map<String,String> properties = new HashMap<String,String>();
+											
+												properties.put( SearchInitiator.PR_SEARCH_TERM, "monkey" );
+												properties.put( SearchInitiator.PR_MATURE, "true" );
+												
+												/*
+												final boolean[] complete = {false};
+												
+												Search s = 
+													si.createSearch(
+														providers,
+														properties,
+														new SearchListener()
+														{
+															public void
+															receivedResults(
+																SearchProviderResults[]		results )
+															{
+																System.out.println( "received results" );
+																
+																for ( SearchProviderResults result: results ){
+																	
+																	System.out.println( "    " + result.getProvider().getProperty( SearchProvider.PR_NAME ) + ": comp=" + result.isComplete() + ", error=" + result.getError());
+																	
+																	SearchResult[] srs = result.getResults();
+																	
+																	for ( SearchResult sr: srs ){
+																		
+																		System.out.println( "        " + sr.getProperty( SearchResult.PR_NAME ));
+																	}
+																}
+															}
+															
+															public void
+															completed()
+															{
+																System.out.println( "received completed" );
+																
+																complete[0] = true;
+															}
+														});
+												
+												while( !complete[0] ){
+													
+													Thread.sleep(1000);
+													
+													System.out.println( "waiting for results" );
+												}
+												
+												
+												
+												Search s = si.createSearch(	providers, properties, null );
+												
+												while( !s.isComplete()){
+													
+													Thread.sleep(1000);
+													
+													SearchProviderResults[] results = s.getResults();
+													
+													if ( results.length > 0 ){
+													
+														System.out.println( "Got results: " + results.length );
+														
+														for ( SearchProviderResults result: results ){
+															
+															System.out.println( "    " + result.getProvider().getProperty( SearchProvider.PR_NAME ) + ": comp=" + result.isComplete() + ", error=" + result.getError());
+															
+															SearchResult[] srs = result.getResults();
+															
+															for ( SearchResult sr: srs ){
+																
+																System.out.println( "        " + sr.getProperty( SearchResult.PR_NAME ));
+															}
+														}
+													}
+												}
+												
+												break;
+											}
+										}catch( Throwable e){
+											
+											e.printStackTrace();
+										}
+									}
+									*/
 								}
 							};
 							
@@ -615,6 +699,8 @@ Test
 	main(
 		String[]	args )
 	{
-		getSingleton();
+		System.setProperty( "azureus.dynamic.plugins", "org.gudy.azureus2.pluginsimpl.local.test.Test" );
+		
+		org.gudy.azureus2.ui.swt.Main.main( args );
 	}
 }

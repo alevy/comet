@@ -21,20 +21,25 @@
 
 package com.aelitis.azureus.core.content;
 
-import java.util.Map;
-
 import org.gudy.azureus2.plugins.disk.DiskManagerFileInfo;
 
 public interface 
 AzureusContentFile 
 {
-	public static final String	PT_TITLE		= "title";			// String
-	public static final String	PT_CREATOR		= "creator";		// String
-	public static final String	PT_DURATION		= "duration";		// Long, millis
+	public static final String	PT_TITLE			= "title";			// String
+	public static final String	PT_CREATOR			= "creator";		// String
+	public static final String	PT_DATE				= "date";			// Long, millis
+	public static final String	PT_DURATION			= "duration";		// Long, millis
+	public static final String	PT_VIDEO_WIDTH		= "video_width";	// Long
+	public static final String	PT_VIDEO_HEIGHT		= "video_height";	// Long
+	public static final String	PT_CATEGORIES		= "cats";			// String[]
+	public static final String	PT_PERCENT_DONE		= "percent";		// Long, thousandths
+	public static final String	PT_ETA				= "eta";			// Long, seconds
 	
 	public DiskManagerFileInfo
 	getFile();
 	
-	public Map<String,Object>
-	getProperties();
+	public Object
+	getProperty(
+		String		name );
 }

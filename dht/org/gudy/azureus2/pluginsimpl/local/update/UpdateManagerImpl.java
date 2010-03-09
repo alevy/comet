@@ -30,8 +30,7 @@ package org.gudy.azureus2.pluginsimpl.local.update;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.gudy.azureus2.core3.util.AEMonitor;
 import org.gudy.azureus2.core3.util.AETemporaryFileHandler;
@@ -41,14 +40,7 @@ import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.FileUtil;
 import org.gudy.azureus2.core3.util.SystemProperties;
 import org.gudy.azureus2.platform.PlatformManagerFactory;
-import org.gudy.azureus2.plugins.update.UpdatableComponent;
-import org.gudy.azureus2.plugins.update.Update;
-import org.gudy.azureus2.plugins.update.UpdateCheckInstance;
-import org.gudy.azureus2.plugins.update.UpdateException;
-import org.gudy.azureus2.plugins.update.UpdateInstaller;
-import org.gudy.azureus2.plugins.update.UpdateManager;
-import org.gudy.azureus2.plugins.update.UpdateManagerListener;
-import org.gudy.azureus2.plugins.update.UpdateManagerVerificationListener;
+import org.gudy.azureus2.plugins.update.*;
 
 import com.aelitis.azureus.core.AzureusCore;
 
@@ -56,7 +48,7 @@ public class
 UpdateManagerImpl
 	implements UpdateManager
 {
-	protected static UpdateManagerImpl		singleton;
+	private static UpdateManagerImpl		singleton;
 		
 	public static UpdateManager
 	getSingleton(
@@ -70,13 +62,15 @@ UpdateManagerImpl
 		return( singleton );
 	}
 
-	protected AzureusCore	azureus_core;
+	private AzureusCore	azureus_core;
 		
-	protected List	components 				= new ArrayList();
-	protected List	listeners				= new ArrayList();
-	protected List	verification_listeners	= new ArrayList();
+	private List<UpdateCheckInstanceImpl>	checkers = new ArrayList<UpdateCheckInstanceImpl>();
 	
-	protected List	installers	= new ArrayList();
+	private List<UpdatableComponentImpl>	components 				= new ArrayList<UpdatableComponentImpl>();
+	private List	listeners				= new ArrayList();
+	private List	verification_listeners	= new ArrayList();
+	
+	private List<UpdateInstaller>	installers	= new ArrayList<UpdateInstaller>();
 	
 	protected AEMonitor	this_mon 	= new AEMonitor( "UpdateManager" );
 
@@ -98,6 +92,12 @@ UpdateManagerImpl
 		}
 	}
 	
+	protected AzureusCore
+	getCore()
+	{
+		return( azureus_core );
+	}
+	
 	public void
 	registerUpdatableComponent(
 		UpdatableComponent		component,
@@ -113,6 +113,19 @@ UpdateManagerImpl
 		}
 	}
 	
+	public UpdateCheckInstance[] 
+	getCheckInstances() 
+	{
+		try{
+			this_mon.enter();
+
+			return( checkers.toArray( new UpdateCheckInstance[ checkers.size()]));
+			
+		}finally{
+			
+			this_mon.exit();
+		}
+	}
 	
 	public UpdateCheckInstance
 	createUpdateCheckInstance()
@@ -132,7 +145,9 @@ UpdateManagerImpl
 			
 			components.toArray( comps );
 			
-			UpdateCheckInstance	res = new UpdateCheckInstanceImpl( this, type, name, comps );
+			UpdateCheckInstanceImpl	res = new UpdateCheckInstanceImpl( this, type, name, comps );
+			
+			checkers.add( res );
 			
 			for (int i=0;i<listeners.size();i++){
 				
@@ -147,7 +162,7 @@ UpdateManagerImpl
 		}
 	}
 	
-	public UpdateCheckInstance
+	public UpdateCheckInstanceImpl
 	createEmptyUpdateCheckInstance(
 		int			type,
 		String		name )
@@ -155,7 +170,7 @@ UpdateManagerImpl
 		return( createEmptyUpdateCheckInstance( type, name, false ));
 	}
 	
-	public UpdateCheckInstance
+	public UpdateCheckInstanceImpl
 	createEmptyUpdateCheckInstance(
 		int			type,
 		String		name,
@@ -166,9 +181,11 @@ UpdateManagerImpl
 	
 			UpdatableComponentImpl[]	comps = new UpdatableComponentImpl[0];
 			
-			UpdateCheckInstance	res = new UpdateCheckInstanceImpl( this, type, name, comps );
+			UpdateCheckInstanceImpl	res = new UpdateCheckInstanceImpl( this, type, name, comps );
 			
 			res.setLowNoise( low_noise );
+			
+			checkers.add( res );
 			
 			for (int i=0;i<listeners.size();i++){
 				
@@ -203,6 +220,13 @@ UpdateManagerImpl
 		installers.toArray( res );
 		
 		return( res );
+	}
+	
+	protected void
+	removeInstaller(
+		UpdateInstaller	installer )
+	{
+		installers.remove( installer );
 	}
 	
 	public String

@@ -19,39 +19,18 @@
  */
 package com.aelitis.azureus.ui.swt.imageloader;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.gudy.azureus2.core3.util.AEDiagnostics;
-import org.gudy.azureus2.core3.util.AEDiagnosticsEvidenceGenerator;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.FileUtil;
-import org.gudy.azureus2.core3.util.IndentWriter;
-import org.gudy.azureus2.core3.util.SimpleTimer;
-import org.gudy.azureus2.core3.util.SystemProperties;
-import org.gudy.azureus2.core3.util.TimerEvent;
-import org.gudy.azureus2.core3.util.TimerEventPerformer;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.widgets.*;
+
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.ImageRepository;
 import org.gudy.azureus2.ui.swt.Utils;
 
@@ -90,6 +69,7 @@ public class ImageLoader
 		"-down",
 		"-disabled",
 		"-selected",
+		"-gray",
 	};
 
 	private Display display;
@@ -106,6 +86,11 @@ public class ImageLoader
 
 	private int disabledOpacity;
 
+	private Set<String>		cached_resources = new HashSet<String>();
+	
+	private File cache_dir = new File(SystemProperties.getUserPath(), "cache" );
+	
+
 	public static ImageLoader getInstance() {
 		if (ImageLoader.instance == null) {
 			ImageLoader.instance = new ImageLoader(Display.getDefault(), null);
@@ -121,6 +106,18 @@ public class ImageLoader
 	public ImageLoader(/*ClassLoader classLoader,*/Display display,
 			SkinProperties skinProperties) {
 		//this.classLoader = classLoader;
+		
+		File[]	files = cache_dir.listFiles();
+		
+		if ( files != null ){
+			for (File f: files ){
+				String	name = f.getName();
+				if ( name.endsWith( ".ico" )){
+					cached_resources.add( name );
+				}
+			}
+		}
+		
 		mapImages = new ConcurrentHashMap<String, ImageLoaderRefInfo>();
 		notFound = new ArrayList<String>();
 		this.display = display;
@@ -369,6 +366,13 @@ public class ImageLoader
 							}
 						}
 						releaseImage(id);
+					}else if (sKey.endsWith("-gray")) {
+						String id = sKey.substring(0, sKey.length() - 5);
+						Image imgToGray = getImage(id);
+						if (isRealImage(imgToGray)) {
+							img = new Image( display, imgToGray, SWT.IMAGE_GRAY );
+						}
+						releaseImage(id);
 					}
 					//System.err.println("ImageRepository:loadImage:: Resource not found: " + res);
 				}
@@ -447,33 +451,37 @@ public class ImageLoader
 			images = findResources(sKey);
 
 			if (images == null) {
-				final File cache = new File(SystemProperties.getUserPath(), "cache"
-						+ File.separator + sKey.hashCode() + ".ico");
-				if (cache.exists()) {
-					try {
-						FileInputStream fis = new FileInputStream(cache);
-
+				String	cache_key = sKey.hashCode() + ".ico";
+				if ( cached_resources.contains( cache_key )){
+					File cache = new File( cache_dir, cache_key );
+					if (cache.exists()) {
 						try {
-							byte[] imageBytes = FileUtil.readInputStreamAsByteArray(fis);
-							InputStream is = new ByteArrayInputStream(imageBytes);
-
-							org.eclipse.swt.graphics.ImageLoader swtImageLoader = new org.eclipse.swt.graphics.ImageLoader();
-							ImageData[] imageDatas = swtImageLoader.load(is);
-							images = new Image[imageDatas.length];
-							for (int i = 0; i < imageDatas.length; i++) {
-								images[i] = new Image(Display.getCurrent(), imageDatas[i]);
-							}
-
+							FileInputStream fis = new FileInputStream(cache);
+	
 							try {
-								is.close();
-							} catch (IOException e) {
+								byte[] imageBytes = FileUtil.readInputStreamAsByteArray(fis);
+								InputStream is = new ByteArrayInputStream(imageBytes);
+	
+								org.eclipse.swt.graphics.ImageLoader swtImageLoader = new org.eclipse.swt.graphics.ImageLoader();
+								ImageData[] imageDatas = swtImageLoader.load(is);
+								images = new Image[imageDatas.length];
+								for (int i = 0; i < imageDatas.length; i++) {
+									images[i] = new Image(Display.getCurrent(), imageDatas[i]);
+								}
+	
+								try {
+									is.close();
+								} catch (IOException e) {
+								}
+							} finally {
+								fis.close();
 							}
-						} finally {
-							fis.close();
+						} catch (Throwable e) {
+							Debug.printStackTrace(e);
 						}
-					} catch (Throwable e) {
-						Debug.printStackTrace(e);
 					}
+				}else{
+					cached_resources.remove( cache_key );
 				}
 
 				if (images == null) {
@@ -631,28 +639,36 @@ public class ImageLoader
 			return image;
 		}
 
-		final File cache = new File(SystemProperties.getUserPath(), "cache"
-				+ File.separator + url.hashCode() + ".ico");
-		if (cache.exists()) {
-			try {
-				FileInputStream fis = new FileInputStream(cache);
+		final String cache_key = url.hashCode() + ".ico";
+		
+		final File cache_file = new File( cache_dir, cache_key );
 
+		if ( cached_resources.contains( cache_key )){
+			
+			if ( cache_file.exists()){
 				try {
-					byte[] imageBytes = FileUtil.readInputStreamAsByteArray(fis);
-					InputStream is = new ByteArrayInputStream(imageBytes);
-					Image image = new Image(Display.getCurrent(), is);
+					FileInputStream fis = new FileInputStream(cache_file);
+	
 					try {
-						is.close();
-					} catch (IOException e) {
+						byte[] imageBytes = FileUtil.readInputStreamAsByteArray(fis);
+						InputStream is = new ByteArrayInputStream(imageBytes);
+						Image image = new Image(Display.getCurrent(), is);
+						try {
+							is.close();
+						} catch (IOException e) {
+						}
+						mapImages.put(url, new ImageLoaderRefInfo(image));
+						l.imageDownloaded(image, true);
+						return image;
+					} finally {
+						fis.close();
 					}
-					mapImages.put(url, new ImageLoaderRefInfo(image));
-					l.imageDownloaded(image, true);
-					return image;
-				} finally {
-					fis.close();
+				} catch (Throwable e) {
+					Debug.printStackTrace(e);
 				}
-			} catch (Throwable e) {
-				Debug.printStackTrace(e);
+			}else{
+				
+				cached_resources.remove( cache_key );
 			}
 		}
 
@@ -661,7 +677,8 @@ public class ImageLoader
 					public void imageDownloaded(final byte[] imageBytes) {
 						Utils.execSWTThread(new AERunnable() {
 							public void runSupport() {
-								FileUtil.writeBytesAsFile(cache.getAbsolutePath(), imageBytes);
+								FileUtil.writeBytesAsFile(cache_file.getAbsolutePath(), imageBytes);
+								cached_resources.add( cache_key );
 								InputStream is = new ByteArrayInputStream(imageBytes);
 								Image image = new Image(Display.getCurrent(), is);
 								try {

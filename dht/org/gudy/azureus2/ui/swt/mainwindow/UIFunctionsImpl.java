@@ -19,26 +19,31 @@
  */
 package org.gudy.azureus2.ui.swt.mainwindow;
 
-import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.download.DownloadManager;
+import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.util.AERunnable;
+import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.plugins.PluginView;
+import org.gudy.azureus2.pluginsimpl.local.PluginInitializer;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.minibar.AllTransfersBar;
 import org.gudy.azureus2.ui.swt.minibar.MiniBarManager;
-import org.gudy.azureus2.ui.swt.plugins.UISWTInstance;
-import org.gudy.azureus2.ui.swt.plugins.UISWTPluginView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTView;
-import org.gudy.azureus2.ui.swt.plugins.UISWTViewEventListener;
+import org.gudy.azureus2.ui.swt.plugins.*;
 import org.gudy.azureus2.ui.swt.pluginsimpl.UISWTInstanceImpl;
 import org.gudy.azureus2.ui.swt.shells.MessageBoxShell;
+import org.gudy.azureus2.ui.swt.shells.MessageSlideShell;
 import org.gudy.azureus2.ui.swt.shells.SimpleBrowserWindow;
+import org.gudy.azureus2.ui.swt.update.FullUpdateWindow;
 import org.gudy.azureus2.ui.swt.views.AbstractIView;
 import org.gudy.azureus2.ui.swt.views.IView;
 
 import com.aelitis.azureus.ui.UIFunctionsUserPrompter;
 import com.aelitis.azureus.ui.UIStatusTextClickListener;
+import com.aelitis.azureus.ui.UserPrompterResultListener;
 import com.aelitis.azureus.ui.common.updater.UIUpdater;
 import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
 import com.aelitis.azureus.ui.swt.uiupdater.UIUpdaterSWT;
@@ -347,6 +352,14 @@ public class UIFunctionsImpl
 		});
 	}
 
+	private void showClientStatsView() {
+		Utils.execSWTThreadLater(0, new AERunnable() {
+			public void runSupport() {
+				mainwindow.showClientStatsView();
+			}
+		});
+	}
+
 	private void showMultiOptionsView(final DownloadManager[] dms) {
 		Utils.execSWTThreadLater(0, new AERunnable() {
 			public void runSupport() {
@@ -399,20 +412,20 @@ public class UIFunctionsImpl
 	}
 
 	// @see com.aelitis.azureus.ui.UIFunctions#promptUser(java.lang.String, java.lang.String, java.lang.String[], int, java.lang.String, java.lang.String, boolean, int)
-	public int promptUser(String title, String text, String[] buttons,
+	public void promptUser(String title, String text, String[] buttons,
 			int defaultOption, String rememberID, String rememberText,
-			boolean rememberByDefault, int autoCloseInMS) {
-		return MessageBoxShell.open(getMainShell(), title, text, buttons,
+			boolean rememberByDefault, int autoCloseInMS, UserPrompterResultListener l) {
+		MessageBoxShell.open(getMainShell(), title, text, buttons,
 				defaultOption, rememberID, rememberText, rememberByDefault,
-				autoCloseInMS);
+				autoCloseInMS, l);
 	}
 
 	// @see com.aelitis.azureus.ui.UIFunctions#getUserPrompter(java.lang.String, java.lang.String, java.lang.String[], int)
 	public UIFunctionsUserPrompter getUserPrompter(String title, String text,
 			String[] buttons, int defaultOption) {
 
-		MessageBoxShell mb = new MessageBoxShell(getMainShell(), title, text,
-				buttons, defaultOption);
+		MessageBoxShell mb = new MessageBoxShell(title, text, buttons,
+				defaultOption);
 		return mb;
 	}
 
@@ -457,6 +470,10 @@ public class UIFunctionsImpl
 
 			case VIEW_ALLPEERS:
 				showAllPeersView();
+				break;
+
+			case VIEW_PEERS_STATS:
+				showClientStatsView();
 				break;
 
 			case VIEW_CONFIG:
@@ -505,5 +522,112 @@ public class UIFunctionsImpl
 			default:
 				break;
 		}
+	}
+	
+	
+	public void 
+	performAction(
+		int 					action_id, 
+		Object 					args, 
+		final actionListener 	listener )
+	{
+		if ( action_id == ACTION_FULL_UPDATE ){
+			
+			FullUpdateWindow.handleUpdate((String)args, listener );
+			
+		}else if ( action_id == ACTION_UPDATE_RESTART_REQUEST ){
+			
+			String MSG_PREFIX = "UpdateMonitor.messagebox.";
+			
+			String title = MessageText.getString(MSG_PREFIX + "restart.title" );
+			
+			String text = MessageText.getString(MSG_PREFIX + "restart.text" );
+			
+			bringToFront();
+			
+			boolean no_timeout = args instanceof Boolean && ((Boolean)args).booleanValue();
+
+			int timeout = 180000;
+			
+			if ( no_timeout || !PluginInitializer.getDefaultInterface().getPluginManager().isSilentRestartEnabled()){
+				
+				timeout = -1;
+			}
+			
+			promptUser(
+				title, 
+				text, 
+				new String[] {
+					MessageText.getString("UpdateWindow.restart"),
+					MessageText.getString("UpdateWindow.restartLater")
+				}, 
+				0, 
+				null, 
+				null, 
+				false, 
+				timeout, 
+				new UserPrompterResultListener() 
+				{
+					public void 
+					prompterClosed(
+						int result ) 
+					{
+						listener.actionComplete( result == 0 );
+					}
+				});
+		}else{
+			
+			Debug.out( "Unknown action " + action_id );
+		}
+	}
+
+	public Shell showCoreWaitDlg() {
+		Shell activeShell = Display.getDefault().getActiveShell();
+		if (activeShell == null) {
+			activeShell = Utils.findAnyShell();
+		}
+		Shell shell = new Shell(activeShell, SWT.TITLE | SWT.BORDER
+				| SWT.APPLICATION_MODAL);
+		shell.setText("Please Wait");
+		FillLayout fillLayout = new FillLayout();
+		fillLayout.marginHeight = 5;
+		fillLayout.marginWidth = 5;
+		shell.setLayout(fillLayout);
+
+		Label label = new Label(shell, SWT.NONE);
+		label.setText("Your operation will run momentarily");
+
+		shell.pack();
+		//shell.setSize(300,50);
+		Utils.centreWindow(shell);
+		shell.open();
+		return shell;
+	}
+	
+	// @see com.aelitis.azureus.ui.UIFunctions#doSearch(java.lang.String)
+	public void doSearch(String searchText) {
+	}
+
+	public void forceNotify(final int iconID, final String title, final String text,
+			final String details, final Object[] relatedObjects, final int timeoutSecs) {
+		
+		Utils.execSWTThread(new AERunnable() {
+			public void runSupport() {
+				int swtIconID = SWT.ICON_INFORMATION;
+				switch (iconID) {
+					case STATUSICON_WARNING:
+						swtIconID = SWT.ICON_WARNING;
+						break;
+						
+					case STATUSICON_ERROR:
+						swtIconID = SWT.ICON_ERROR;
+						break;
+				}
+				
+				new MessageSlideShell(SWTThread.getInstance().getDisplay(), swtIconID,
+						title, text, details, relatedObjects, timeoutSecs);
+				
+			}
+		});
 	}
 }

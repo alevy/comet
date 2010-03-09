@@ -22,38 +22,18 @@
 
 package com.aelitis.net.magneturi.impl;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Base32;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.*;
 
+import com.aelitis.azureus.core.util.HTTPUtils;
 import com.aelitis.azureus.core.util.png.PNG;
 import com.aelitis.net.magneturi.MagnetURIHandler;
 import com.aelitis.net.magneturi.MagnetURIHandlerListener;
@@ -105,6 +85,8 @@ MagnetURIHandlerImpl
 	private List	listeners	= new ArrayList();
 	
 	private Map		info_map 	= new HashMap();
+	
+	private Map<String,ResourceProvider>	resources = new HashMap<String, ResourceProvider>();
 	
 	protected
 	MagnetURIHandlerImpl()
@@ -159,11 +141,10 @@ MagnetURIHandlerImpl
 								
 								errors	= 0;
 								
-								Thread t = 
-									new AEThread( "MagnetURIHandler:processor" )
+								new AEThread2( "MagnetURIHandler:processor",true)
 									{
 										public void
-										runSupport()
+										run()
 										{
 											boolean	close_socket	= true;
 											
@@ -252,11 +233,8 @@ MagnetURIHandlerImpl
 												}
 											}
 										}
-									};
+									}.start();
 								
-								t.setDaemon( true );
-								
-								t.start();
 								
 							}catch( Throwable e ){
 								
@@ -280,6 +258,64 @@ MagnetURIHandlerImpl
 		}
 	}
 	
+	public void
+	process(
+		final String			get,
+		final InputStream		is,
+		final OutputStream		os )
+	
+		throws IOException
+	{
+		new AEThread2( "MagnetProcessor", true )
+		{
+			public void
+			run()
+			{
+				boolean	close = false;
+				
+				try{
+					close = process( get, new BufferedReader( new InputStreamReader( is )), os );
+					
+				}catch( Throwable e ){
+					
+					Debug.out( "Magnet processing failed", e );
+					
+				}finally{
+					
+					if ( close ){
+						
+						try{
+							is.close();
+							
+						}catch( Throwable e ){
+							
+							Debug.out( e );
+						}
+					}
+					
+					try{
+						os.flush();
+												
+					}catch( Throwable e ){
+						
+						Debug.out( e );
+					}
+					
+					if ( close ){
+						
+						try{
+							os.close();
+							
+						}catch( Throwable e ){
+							
+							Debug.out( e );
+						}
+					}
+				}
+			}
+		}.start();
+	}
+	
 	protected boolean
 	process(
 		String			get,
@@ -292,16 +328,24 @@ MagnetURIHandlerImpl
 		
 			// magnet:?xt=urn:sha1:YNCKHTQCWBTRNJIV4WNAE52SJUQCZO5C
 		
-		Map		original_params 			= new HashMap();
-		Map		lc_params					= new HashMap();
+		Map<String,String>		original_params 			= new HashMap<String,String>();
+		Map<String,String>		lc_params					= new HashMap<String,String>();
 		
-		List 	source_params	= new ArrayList();
+		List<String> 	source_params	= new ArrayList<String>();
 		
 		int	pos	= get.indexOf( '?' );
 		
-		if ( pos != -1 ){
-					
-			StringTokenizer	tok = new StringTokenizer( get.substring( pos+1 ), "&" );
+		String	arg_str;
+		
+		if ( pos == -1 ){
+			
+			arg_str = "";
+			
+		}else{
+			
+			arg_str = get.substring( pos+1 );
+			
+			StringTokenizer	tok = new StringTokenizer( arg_str, "&" );
 			if (DEBUG) {
 				System.out.println("params:" + get.substring( pos+1 ));
 			}
@@ -318,13 +362,13 @@ MagnetURIHandlerImpl
 					
 					original_params.put( lhs, "" );
 					
-					lc_params.put( lhs.toLowerCase(), "" );
+					lc_params.put( lhs.toLowerCase( MessageText.LOCALE_ENGLISH ), "" );
 					
 				}else{
 										
 					try{
 						String	lhs 	= arg.substring( 0, pos ).trim();
-						String	lc_lhs 	= lhs.toLowerCase();
+						String	lc_lhs 	= lhs.toLowerCase( MessageText.LOCALE_ENGLISH );
 									
 						String	rhs = URLDecoder.decode( arg.substring( pos+1 ).trim(), Constants.DEFAULT_ENCODING);
 
@@ -367,7 +411,7 @@ MagnetURIHandlerImpl
 
 			String urn = (String)lc_params.get( "xt" );
 
-			if ( urn != null && urn.toLowerCase().startsWith( "urn:btih:")){
+			if ( urn != null && urn.toLowerCase( MessageText.LOCALE_ENGLISH ).startsWith( "urn:btih:")){
 			
 				for (int i=0;i<listeners.size();i++){
 					
@@ -438,7 +482,7 @@ MagnetURIHandlerImpl
 				
 			}else{
 					
-				String	lc_urn = urn.toLowerCase();
+				String	lc_urn = urn.toLowerCase( MessageText.LOCALE_ENGLISH );
 				
 				try{
 				
@@ -503,7 +547,7 @@ MagnetURIHandlerImpl
 			
 			String urn = (String)lc_params.get( "xt" );
 			
-			if ( urn == null || !( urn.toLowerCase().startsWith( "urn:sha1:") || urn.toLowerCase().startsWith( "urn:btih:"))){
+			if ( urn == null || !( urn.toLowerCase( MessageText.LOCALE_ENGLISH ).startsWith( "urn:sha1:") || urn.toLowerCase( MessageText.LOCALE_ENGLISH ).startsWith( "urn:btih:"))){
 				if (Logger.isEnabled())
 					Logger.log(new LogEvent(LOGID, LogEvent.LT_WARNING,
 							"MagnetURIHandler: " + "invalid command - '" + get + "'"));
@@ -518,9 +562,9 @@ MagnetURIHandlerImpl
 
 				pw.flush();
 								
-				String	base_32 = urn.substring(9);
+				String	encoded = urn.substring(9);
 				
-				List	sources = new ArrayList();
+				List<InetSocketAddress>	sources = new ArrayList<InetSocketAddress>();
 				
 				for (int i=0;i<source_params.size();i++){
 					
@@ -542,18 +586,24 @@ MagnetURIHandlerImpl
 					}
 				}
 					
-				InetSocketAddress[]	s = new InetSocketAddress[ sources.size()];
-				
-				sources.toArray( s );
+				InetSocketAddress[]	s = sources.toArray( new InetSocketAddress[ sources.size()] );
 				
 				if (Logger.isEnabled())
 					Logger.log(new LogEvent(LOGID, "MagnetURIHandler: download of '"
-							+ base_32 + "' starts (initial sources=" + s.length + ")"));
+							+ encoded + "' starts (initial sources=" + s.length + ")"));
 
-				byte[] sha1 = Base32.decode( base_32 );
+				byte[] sha1 = UrlUtils.decodeSHA1Hash( encoded );
+					
+				if ( sha1 == null ){
+					
+					throw( new Exception( "Invalid info hash '" + encoded + "'" ));
+				}
 				
-				byte[]	data = null;
+				byte[] data = null;
 				
+				String verbose_str = lc_params.get( "verbose" );
+				
+				final boolean verbose = verbose_str != null && verbose_str.equalsIgnoreCase( "true" );
 				
 				for (int i=0;i<listeners.size();i++){
 				
@@ -586,8 +636,15 @@ MagnetURIHandlerImpl
 									
 									pw.flush();
 								}
+								
+								public boolean 
+								verbose()
+								{
+									return( verbose );
+								}
 							},
 							sha1, 
+							arg_str,
 							s,
 							DOWNLOAD_TIMEOUT );
 					
@@ -599,7 +656,7 @@ MagnetURIHandlerImpl
 				
 				if (Logger.isEnabled())
 					Logger.log(new LogEvent(LOGID, "MagnetURIHandler: download of '"
-							+ base_32
+							+ encoded
 							+ "' completes, data "
 							+ (data == null ? "not found"
 									: ("found, length = " + data.length))));
@@ -854,6 +911,34 @@ MagnetURIHandlerImpl
 
 			
 			writeReply( os, "application/x-javascript", script );
+			
+		}else if ( get.startsWith( "/resource." )){
+
+			String rid = lc_params.get( "rid" );
+			
+			ResourceProvider provider;
+			
+			synchronized( resources ){
+				
+				provider = resources.get( rid );
+			}
+			
+			if ( provider != null ){
+				
+				byte[] data = provider.getData();
+				
+				if ( data != null ){
+				
+					writeReply( os, HTTPUtils.guessContentTypeFromFileType( provider.getFileType()), data );
+					
+				}else{
+					
+					writeNotFound( os );
+				}
+			}else{
+				
+				writeNotFound( os );
+			}
 		}
 		
 		return( true );
@@ -1031,6 +1116,28 @@ MagnetURIHandlerImpl
 			Thread.sleep(1000000);
 		}catch( Throwable e ){
 			
+		}
+	}
+	
+	public URL
+	registerResource(
+		ResourceProvider		provider )
+	{
+		try{
+			String rid = URLEncoder.encode( provider.getUID(), "UTF-8" );
+
+			synchronized( resources ){
+						
+				resources.put( rid, provider );
+			}				
+			
+			return( new URL( "http://127.0.0.1:" + port +  "/resource." + provider.getFileType() + "?rid=" + rid ));
+			
+		}catch( Throwable e ){
+			
+			Debug.out( e );
+			
+			return( null );
 		}
 	}
 }

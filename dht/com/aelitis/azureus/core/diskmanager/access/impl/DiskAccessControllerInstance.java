@@ -34,6 +34,7 @@ import org.gudy.azureus2.core3.torrent.TOTorrent;
 import org.gudy.azureus2.core3.util.AESemaphore;
 import org.gudy.azureus2.core3.util.AEThread2;
 import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.DisplayFormatters;
 import org.gudy.azureus2.core3.util.RandomUtils;
 import org.gudy.azureus2.core3.util.SystemTime;
 
@@ -116,6 +117,12 @@ DiskAccessControllerInstance
 		for (int i=0;i<dispatchers.length;i++){
 			dispatchers[i]	= new requestDispatcher(i);
 		}
+	}
+	
+	protected String
+	getName()
+	{
+		return( name );
 	}
 	
 	protected long
@@ -342,6 +349,21 @@ DiskAccessControllerInstance
 		}
 	}
 	
+	protected String
+	getString()
+	{
+		return( 
+			name + 
+			",agg=" + enable_aggregation +
+			",max_t=" + max_threads +
+			",max_mb=" + max_mb_queued +
+			",q_byte=" + DisplayFormatters.formatByteCountToKiBEtc( request_bytes_queued ) +
+			",q_req=" + requests_queued +
+			",t_req=" + total_requests +
+			",t_byte=" + DisplayFormatters.formatByteCountToKiBEtc( total_bytes ) +
+			",io=" + io_count );
+	}
+	
 	protected class
 	requestDispatcher
 	{
@@ -530,7 +552,7 @@ DiskAccessControllerInstance
 						final int thread_index = i;
 						
 						threads[thread_index] = 
-							new AEThread2("DiskAccessController:requestDispatcher[" + index + "/" + thread_index + "]", true )
+							new AEThread2("DiskAccessController:dispatch(" + getName() + ")[" + index + "/" + thread_index + "]", true )
 							{
 								public void
 								run()
@@ -883,7 +905,7 @@ DiskAccessControllerInstance
 						
 						return;
 					}
-					
+										
 					try{
 						int	spurious_count = 0;
 						

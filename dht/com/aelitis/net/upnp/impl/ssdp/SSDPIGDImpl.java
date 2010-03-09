@@ -22,24 +22,13 @@
 
 package com.aelitis.net.upnp.impl.ssdp;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.Debug;
-import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.*;
 
-import com.aelitis.net.upnp.UPnPException;
-import com.aelitis.net.upnp.UPnPSSDP;
-import com.aelitis.net.upnp.UPnPSSDPListener;
-import com.aelitis.net.upnp.impl.SSDPIGD;
-import com.aelitis.net.upnp.impl.SSDPIGDListener;
-import com.aelitis.net.upnp.impl.UPnPImpl;
+import com.aelitis.net.upnp.*;
+import com.aelitis.net.upnp.impl.*;
 
 /**
  * @author parg
@@ -75,7 +64,7 @@ SSDPIGDImpl
 				upnp.getAdapter(),
 				UPnPSSDP.SSDP_GROUP_ADDRESS,
 				UPnPSSDP.SSDP_GROUP_PORT,
-				UPnPSSDP.SSDP_CONTROL_PORT,
+				0,
 				_selected_interfaces );
 		
 		ssdp_core.addListener( this );

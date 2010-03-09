@@ -1,6 +1,6 @@
 /*
  * File    : PluginStringParameter.java
- * Created : 15 dec. 2003}
+ * Created : 15 déc. 2003}
  * By      : Olivier
  *
  * Azureus - a Java Bittorrent client
@@ -22,18 +22,14 @@ package org.gudy.azureus2.ui.swt.config.plugins;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.internat.MessageText;
-import org.gudy.azureus2.pluginsimpl.local.ui.config.DirectoryParameterImpl;
 import org.gudy.azureus2.ui.swt.Messages;
 
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
+
+import org.gudy.azureus2.pluginsimpl.local.ui.config.DirectoryParameterImpl;
 
 /**
  * @author Olivier

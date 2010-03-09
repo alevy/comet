@@ -30,6 +30,7 @@ import org.gudy.azureus2.core3.torrent.TOTorrentFile;
 import org.gudy.azureus2.core3.util.Debug;
 import org.gudy.azureus2.core3.util.DirectByteBuffer;
 import org.gudy.azureus2.core3.util.DirectByteBufferPool;
+import org.gudy.azureus2.core3.util.StringInterner;
 
 import com.aelitis.azureus.core.diskmanager.file.FMFile;
 import com.aelitis.azureus.core.diskmanager.file.FMFileManagerException;
@@ -38,6 +39,16 @@ public class
 FMFileAccessController
 	implements FMFileAccess
 {
+	private static final String REORDER_SUFFIX = ".2";
+
+	private static final boolean TEST_PIECE_REORDER = System.getProperty( "azureus.file.piece.reorder.force", "0" ).equals( "1" );
+	
+	static{
+		if ( TEST_PIECE_REORDER ){
+			
+			Debug.out( "*** Piece reordering storage forced ***" );
+		}
+	}
 	private FMFileImpl	owner;
 	
 	private int		type		= FMFile.FT_LINEAR;
@@ -54,6 +65,11 @@ FMFileAccessController
 	
 		throws FMFileManagerException
 	{
+		if ( TEST_PIECE_REORDER ){
+	
+			_target_type = FMFile.FT_PIECE_REORDER;
+		}
+		
 		owner		= _file;
 		
 		// actual file shouldn't exist for change to occur - it is the responsibility
@@ -80,22 +96,47 @@ FMFileAccessController
 
 		}else{
 		
-			boolean	control_file_existed = new File(controlPath,controlFileName).exists();
+			if ( new File( controlPath, controlFileName ).exists()){
+				
+				type = FMFile.FT_COMPACT;
+				
+			}else if ( new File( controlPath, controlFileName + REORDER_SUFFIX ).exists()){
 			
-			type = control_file_existed?FMFile.FT_COMPACT:FMFile.FT_LINEAR;
+				type = FMFile.FT_PIECE_REORDER;
+				
+			}else{
+				
+				if ( _target_type == FMFile.FT_PIECE_REORDER && !owner.getLinkedFile().exists()){
+					
+					type = FMFile.FT_PIECE_REORDER;
+					
+				}else{
+					
+					type = FMFile.FT_LINEAR;
+				}
+			}
 						
 			if ( type == FMFile.FT_LINEAR ){
 				
 				file_access = new FMFileAccessLinear( owner );
 				
-			}else{
+			}else if ( type == FMFile.FT_COMPACT ){
 				
 				file_access = 
 					new FMFileAccessCompact(
-							owner.getOwner().getTorrentFile(),controlPath,
+							owner.getOwner().getTorrentFile(),
+							controlPath,
 							controlFileName,  
 							new FMFileAccessLinear( owner ));
-			}				
+			}else{
+				
+				file_access = 
+					new FMFileAccessPieceReorderer(
+							owner.getOwner().getTorrentFile(),
+							controlPath,
+							controlFileName + REORDER_SUFFIX,  
+							new FMFileAccessLinear( owner ));
+			}
 			
 			if ( type != _target_type ){
 				
@@ -110,6 +151,11 @@ FMFileAccessController
 	
 		throws FMFileManagerException
 	{
+		if ( type == FMFile.FT_PIECE_REORDER || target_type == FMFile.FT_PIECE_REORDER ){
+			
+			throw( new FMFileManagerException( "Conversion to/from piece-reorder not supported" ));
+		}
+		
 		File	file = owner.getLinkedFile();
 			
 		RandomAccessFile raf = null;
@@ -300,13 +346,12 @@ FMFileAccessController
 			Debug.out("File '" + owner.getName() + "' not found in torrent!" );
 			
 			controlFileName = null;
-			controlPath = null;
+			controlPath 	= null;
 			
 		}else{
 			
-			controlPath = owner.getOwner().getControlFileDir( );
-			controlFileName =  "fmfile" + file_index + ".dat";
-			
+			controlPath 	= owner.getOwner().getControlFileDir( );
+			controlFileName =  StringInterner.intern("fmfile" + file_index + ".dat");
 		}
 	}
 	
@@ -334,6 +379,14 @@ FMFileAccessController
 	
 		// FileAccess
 	
+	public void
+	aboutToOpen()
+	
+		throws FMFileManagerException
+	{
+		file_access.aboutToOpen();
+	}
+	
 	public long
 	getLength(
 		RandomAccessFile		raf )
@@ -351,6 +404,17 @@ FMFileAccessController
 		throws FMFileManagerException
 	{
 		file_access.setLength( raf, length );
+	}
+	
+	public void
+	setPieceComplete(
+		RandomAccessFile	raf,
+		int					piece_number,
+		DirectByteBuffer	piece_data )
+	
+		throws FMFileManagerException
+	{
+		file_access.setPieceComplete( raf, piece_number, piece_data );
 	}
 	
 	public void

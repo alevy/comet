@@ -21,19 +21,12 @@
 package org.gudy.azureus2.ui.swt.shells;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.CloseWindowListener;
-import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.browser.ProgressListener;
-import org.eclipse.swt.browser.TitleEvent;
-import org.eclipse.swt.browser.TitleListener;
-import org.eclipse.swt.browser.WindowEvent;
+import org.eclipse.swt.browser.*;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.components.shell.ShellFactory;
 
@@ -82,28 +75,8 @@ public class SimpleBrowserWindow
 
 		Utils.setShellIcon(shell);
 		
-		try {
-			browser = new Browser(shell, Utils.getInitialBrowserStyle(SWT.NONE));
-			
-			shell.addListener(
-					SWT.Close,
-					new Listener()
-					{
-						public void 
-						handleEvent(
-							Event arg0) 
-						{
-							try{
-								if ( browser != null ){
-								
-									browser.setUrl( "about:blank" );
-									browser.setVisible(false);
-								}
-							}catch( Throwable e ){
-							}
-						}
-					});
-		} catch (Throwable t) {
+		browser = Utils.createSafeBrowser(shell, SWT.NONE);
+		if (browser == null) {
 			shell.dispose();
 			return;
 		}
@@ -119,6 +92,9 @@ public class SimpleBrowserWindow
 
 		browser.addCloseWindowListener(new CloseWindowListener() {
 			public void close(WindowEvent event) {
+				if (shell == null || shell.isDisposed()) {
+					return;
+				}
 				shell.dispose();
 			}
 		});
@@ -126,6 +102,9 @@ public class SimpleBrowserWindow
 		browser.addTitleListener(new TitleListener() {
 
 			public void changed(TitleEvent event) {
+				if (shell == null || shell.isDisposed()) {
+					return;
+				}
 				shell.setText(event.title);
 			}
 

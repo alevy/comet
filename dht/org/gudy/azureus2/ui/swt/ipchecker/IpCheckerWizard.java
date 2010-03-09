@@ -19,12 +19,9 @@
 
 package org.gudy.azureus2.ui.swt.ipchecker;
 
-import org.eclipse.swt.widgets.Display;
 import org.gudy.azureus2.core3.ipchecker.extipchecker.ExternalIPCheckerService;
 import org.gudy.azureus2.ui.swt.wizard.IWizardPanel;
 import org.gudy.azureus2.ui.swt.wizard.Wizard;
-
-import com.aelitis.azureus.core.AzureusCore;
 
 /**
  * @author Olivier
@@ -36,8 +33,8 @@ public class IpCheckerWizard extends Wizard {
   
   ExternalIPCheckerService selectedService;
   
-  public IpCheckerWizard(AzureusCore azureus_core,Display display) {
-    super(azureus_core, "ipCheckerWizard.title");
+  public IpCheckerWizard() {
+    super("ipCheckerWizard.title");
     IWizardPanel panel = new ChooseServicePanel(this,null);
     this.setFirstPanel(panel);
   }

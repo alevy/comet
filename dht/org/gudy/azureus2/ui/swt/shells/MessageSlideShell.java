@@ -23,56 +23,23 @@ import java.util.ArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseTrackAdapter;
-import org.eclipse.swt.events.MouseTrackListener;
-import org.eclipse.swt.events.PaintEvent;
-import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Canvas;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
+
 import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.internat.MessageText;
 import org.gudy.azureus2.core3.logging.LogEvent;
 import org.gudy.azureus2.core3.logging.LogIDs;
 import org.gudy.azureus2.core3.logging.Logger;
-import org.gudy.azureus2.core3.util.AEMonitor;
-import org.gudy.azureus2.core3.util.AERunnable;
-import org.gudy.azureus2.core3.util.AEThread;
-import org.gudy.azureus2.core3.util.Constants;
-import org.gudy.azureus2.core3.util.Debug;
+import org.gudy.azureus2.core3.util.*;
 import org.gudy.azureus2.ui.swt.Messages;
 import org.gudy.azureus2.ui.swt.Utils;
 import org.gudy.azureus2.ui.swt.mainwindow.ClipboardCopy;
 import org.gudy.azureus2.ui.swt.shells.GCStringPrinter.URLInfo;
 
-import com.aelitis.azureus.ui.swt.UIFunctionsManagerSWT;
-import com.aelitis.azureus.ui.swt.UIFunctionsSWT;
-import com.aelitis.azureus.ui.swt.UISkinnableManagerSWT;
-import com.aelitis.azureus.ui.swt.UISkinnableSWTListener;
+import com.aelitis.azureus.ui.swt.*;
 import com.aelitis.azureus.ui.swt.imageloader.ImageLoader;
 import com.aelitis.azureus.ui.swt.utils.ColorCache;
 
@@ -96,8 +63,6 @@ import com.aelitis.azureus.ui.swt.utils.ColorCache;
  */
 public class MessageSlideShell
 {
-	private static boolean USE_SWT32_BG_SET = true;
-
 	private static final boolean DEBUG = false;
 
 	/** Slide until there's this much gap between shell and edge of screen */
@@ -124,8 +89,8 @@ public class MessageSlideShell
 	private final static AEMonitor monitor = new AEMonitor("slidey_mon");
 
 	/** List of all popups ever created */
-	private static ArrayList historyList = new ArrayList();
-
+	private static ArrayList<PopupParams> historyList = new ArrayList<PopupParams>();
+	
 	/** Current popup being displayed */
 	private static int currentPopupIndex = -1;
 
@@ -230,7 +195,7 @@ public class MessageSlideShell
 
 			PopupParams popupParams = new PopupParams(iconID, title, text, details,
 					relatedObjects, timeoutSecs );
-			historyList.add(popupParams);
+			addToHistory(popupParams);
 			if (currentPopupIndex < 0) {
 				create(display, popupParams, true);
 			}
@@ -238,6 +203,20 @@ public class MessageSlideShell
 			Logger.log(new LogEvent(LogIDs.GUI, "Mr. Slidey Init", e));
 			disposeShell(shell);
 			Utils.disposeSWTObjects(disposeList);
+		} finally {
+			monitor.exit();
+		}
+	}
+
+	/**
+	 * @param popupParams
+	 *
+	 * @since 4.1.0.5
+	 */
+	private static void addToHistory(PopupParams popupParams) {
+		monitor.enter();
+		try {
+			historyList.add(popupParams);
 		} finally {
 			monitor.exit();
 		}
@@ -262,8 +241,7 @@ public class MessageSlideShell
 				if (!last_unread || msg_index == -1) {
 					msg_index = historyList.size() - 1;
 				}
-				new MessageSlideShell(display,
-						(PopupParams) historyList.get(msg_index), true);
+				new MessageSlideShell(display, historyList.get(msg_index), true);
 			}
 		});
 	}
@@ -276,7 +254,7 @@ public class MessageSlideShell
 			String details, Object[] relatedTo, int timeoutSecs ) {
 		try {
 			monitor.enter();
-			historyList.add(new PopupParams(iconID, title, text, details, relatedTo, timeoutSecs));
+			addToHistory(new PopupParams(iconID, title, text, details, relatedTo, timeoutSecs));
 			if (firstUnreadMessage == -1) {
 				firstUnreadMessage = historyList.size() - 1;
 			}
@@ -367,31 +345,26 @@ public class MessageSlideShell
 		if (shell == null) {
 			shell = new Shell(display, style);
 		}
-		if (USE_SWT32_BG_SET) {
-			try {
-				shell.setBackgroundMode(SWT.INHERIT_DEFAULT);
-			} catch (NoSuchMethodError e) {
-				// Ignore
-			} catch (NoSuchFieldError e2) {
-				// ignore
-			}
+		try {
+			shell.setBackgroundMode(SWT.INHERIT_DEFAULT);
+		} catch (NoSuchMethodError e) {
+			// Ignore
+		} catch (NoSuchFieldError e2) {
+			// ignore
 		}
 		Utils.setShellIcon(shell);
-		shell.setText(popupParams.title);
+		if (popupParams.title != null) {
+			shell.setText(popupParams.title);
+		}
 
 		// Disable BG Image on OSX
 		if (imgPopup == null) {
-			if (Constants.isOSX && (SWT.getVersion() < 3221 || !USE_SWT32_BG_SET)) {
-				USE_SWT32_BG_SET = false;
-				imgPopup = null;
-			} else {
-				imgPopup = ImageLoader.getInstance().getImage("popup");
-				shell.addDisposeListener(new DisposeListener() {
-					public void widgetDisposed(DisposeEvent e) {
-						ImageLoader.getInstance().releaseImage("popup");
-					}
-				});
-			}
+			imgPopup = ImageLoader.getInstance().getImage("popup");
+			shell.addDisposeListener(new DisposeListener() {
+				public void widgetDisposed(DisposeEvent e) {
+					ImageLoader.getInstance().releaseImage("popup");
+				}
+			});
 		}
 		Rectangle imgPopupBounds;
 		if (imgPopup != null) {
@@ -441,20 +414,22 @@ public class MessageSlideShell
 		lblIcon.setImage(imgIcon);
 		lblIcon.setLayoutData(new GridData());
 
-		Label lblTitle = new Label(cShell, SWT.getVersion() < 3100 ? SWT.NONE
-				: SWT.WRAP);
-		gridData = new GridData(GridData.FILL_HORIZONTAL);
-		if (SWT.getVersion() < 3100)
-			gridData.widthHint = 140;
-		lblTitle.setLayoutData(gridData);
-		lblTitle.setForeground(colorFG);
-		lblTitle.setText(popupParams.title);
-		FontData[] fontData = lblTitle.getFont().getFontData();
-		fontData[0].setStyle(SWT.BOLD);
-		fontData[0].setHeight((int) (fontData[0].getHeight() * 1.5));
-		Font boldFont = new Font(display, fontData);
-		disposeList.add(boldFont);
-		lblTitle.setFont(boldFont);
+		if (popupParams.title != null) {
+  		Label lblTitle = new Label(cShell, SWT.getVersion() < 3100 ? SWT.NONE
+  				: SWT.WRAP);
+  		gridData = new GridData(GridData.FILL_HORIZONTAL);
+  		if (SWT.getVersion() < 3100)
+  			gridData.widthHint = 140;
+  		lblTitle.setLayoutData(gridData);
+  		lblTitle.setForeground(colorFG);
+  		lblTitle.setText(popupParams.title);
+  		FontData[] fontData = lblTitle.getFont().getFontData();
+  		fontData[0].setStyle(SWT.BOLD);
+  		fontData[0].setHeight((int) (fontData[0].getHeight() * 1.5));
+  		Font boldFont = new Font(display, fontData);
+  		disposeList.add(boldFont);
+  		lblTitle.setFont(boldFont);
+		}
 
 		final Button btnDetails = new Button(cShell, SWT.TOGGLE);
 		btnDetails.setForeground(colorFG);
@@ -511,7 +486,7 @@ public class MessageSlideShell
 		lblCloseIn = new Label(cShell, SWT.TRAIL);
 		lblCloseIn.setForeground(colorFG);
 		// Ensure computeSize computes for 2 lined label
-		lblCloseIn.setText("\n");
+		lblCloseIn.setText(" \n ");
 		gridData = new GridData(SWT.FILL, SWT.TOP, true, false);
 		gridData.horizontalSpan = 3;
 		lblCloseIn.setLayoutData(gridData);
@@ -573,8 +548,7 @@ public class MessageSlideShell
 					System.out.println("Next Pressed");
 
 				if (idxHistory + 1 < historyList.size()) {
-					showPopup(display, (PopupParams) historyList.get(idxHistory + 1),
-							false);
+					showPopup(display, historyList.get(idxHistory + 1), false);
 				}
 
 				disposeShell(shell);
@@ -614,12 +588,10 @@ public class MessageSlideShell
 			gc.dispose();
 
 			boolean bAlternateDrawing = true;
-			if (USE_SWT32_BG_SET) {
-				try {
-					shell.setBackgroundImage(imgBackground);
-					bAlternateDrawing = false;
-				} catch (NoSuchMethodError e) {
-				}
+			try {
+				shell.setBackgroundImage(imgBackground);
+				bAlternateDrawing = false;
+			} catch (NoSuchMethodError e) {
 			}
 
 			if (bAlternateDrawing) {
@@ -1082,7 +1054,7 @@ public class MessageSlideShell
 				// and that it has handled whether to show the next popup or not
 				if (shell != null && !shell.isDisposed()) {
 					if (idx + 1 < historyList.size()) {
-						showPopup(display, (PopupParams) historyList.get(idx + 1), true);
+						showPopup(display, historyList.get(idx + 1), true);
 					}
 
 					// slide out current popup
@@ -1121,21 +1093,21 @@ public class MessageSlideShell
 		}
 	}
 
-	private static class PopupParams
+	public static class PopupParams
 	{
-		int iconID;
+		public int iconID;
 
-		String title;
+		public String title;
 
-		String text;
+		public String text;
 
-		String details;
+		public String details;
 
-		long addedOn;
+		public long addedOn;
 
-		Object[] relatedTo;
+		public Object[] relatedTo;
 
-		int	timeoutSecs;
+		public int	timeoutSecs;
 		
 		/**
 		 * @param iconID

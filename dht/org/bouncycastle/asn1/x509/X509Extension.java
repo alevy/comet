@@ -1,10 +1,10 @@
 package org.bouncycastle.asn1.x509;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERBoolean;
+
+import java.io.IOException;
 
 /**
  * an object for the elements in the X.509 V3 extension block.

@@ -24,11 +24,9 @@ package org.gudy.azureus2.plugins.network;
 
 import java.net.InetSocketAddress;
 import java.security.spec.AlgorithmParameterSpec;
-
 import javax.crypto.spec.SecretKeySpec;
 
-import org.gudy.azureus2.plugins.messaging.MessageStreamDecoder;
-import org.gudy.azureus2.plugins.messaging.MessageStreamEncoder;
+import org.gudy.azureus2.plugins.messaging.*;
 
 
 /**

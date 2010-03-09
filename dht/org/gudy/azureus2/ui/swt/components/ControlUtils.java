@@ -22,8 +22,8 @@ package org.gudy.azureus2.ui.swt.components;
  *
  */
 
-import org.gudy.azureus2.core3.config.COConfigurationManager;
 import org.gudy.azureus2.core3.util.Constants;
+import org.gudy.azureus2.core3.config.COConfigurationManager;
 
 /**
  * General utility methods for SWT controls and components
