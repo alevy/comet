@@ -1,13 +1,6 @@
 package edu.washington.cs.activedht.db;
 
-import com.aelitis.azureus.core.dht.DHTLogger;
-import com.aelitis.azureus.core.dht.DHTStorageAdapter;
-import com.aelitis.azureus.core.dht.control.impl.DHTControlImpl;
-import com.aelitis.azureus.core.dht.db.DHTDB;
 import com.aelitis.azureus.core.dht.db.DHTDBFactory;
-import com.aelitis.azureus.core.dht.db.impl.DHTDBImpl;
-import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
-import com.aelitis.azureus.core.dht.transport.udp.impl.DHTUDPPacketHelper;
 
 import edu.washington.cs.activedht.DHTConstants;
 import edu.washington.cs.activedht.util.Constants;
@@ -36,13 +29,7 @@ public class ActiveDHTInitializer implements Constants {
 
 	private static void initVuzeForActiveCode(DHTDBValueFactory valueFactory) {
 		// Initialize the DHTDB factory:
-/*		DHTDBFactory.init(new DHTDBFactory() {
-			public DHTDB create(DHTStorageAdapter adapter,
-					int original_republish_interval,
-					int cache_republish_interval, DHTLogger logger) {
-				return new ActiveDB(adapter);
-			}
-		});*/
+		DHTDBFactory.factory = DHTDBFactory.ActiveDBFactory;
 
 		// Initialize the DHTDBValue factory:
 		DHTDBValueFactory.set(valueFactory);

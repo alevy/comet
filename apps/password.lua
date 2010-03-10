@@ -8,3 +8,4 @@ object.onGet = function(self, caller, callerId, password)
   end
   return null
 end
+

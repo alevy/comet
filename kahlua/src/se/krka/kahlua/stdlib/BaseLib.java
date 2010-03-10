@@ -51,8 +51,11 @@ public final class BaseLib implements JavaFunction {
 	private static final int COLLECTGARBAGE = 16;
 	private static final int DEBUGSTACKTRACE = 17;
 	private static final int BYTECODELOADER = 18;
+	private static final int PAIRS = 19;
+	private static final int IPAIRS = 20;
+	private static final int NEXTI = 21;
 
-	private static final int NUM_FUNCTIONS = 19;
+	private static final int NUM_FUNCTIONS = 22;
 
 	private static final String[] names;
 	private static final Object MODE_KEY = "__mode";
@@ -80,6 +83,9 @@ public final class BaseLib implements JavaFunction {
 		names[ERROR] = "error";
 		names[UNPACK] = "unpack";
 		names[NEXT] = "next";
+		names[NEXTI] = "nexti";
+		names[PAIRS] = "pairs";
+		names[IPAIRS] = "ipairs";
 		names[SETFENV] = "setfenv";
 		names[GETFENV] = "getfenv";
 		names[RAWEQUAL] = "rawequal";
@@ -132,6 +138,9 @@ public final class BaseLib implements JavaFunction {
 		case ERROR: return error(callFrame, nArguments);
 		case UNPACK: return unpack(callFrame, nArguments);
 		case NEXT: return next(callFrame, nArguments);
+		case NEXTI: return nexti(callFrame, nArguments);
+		case PAIRS: return pairs(callFrame, nArguments);
+		case IPAIRS: return ipairs(callFrame, nArguments);
 		case SETFENV: return setfenv(callFrame, nArguments);
 		case GETFENV: return getfenv(callFrame, nArguments);
 		case RAWEQUAL: return rawequal(callFrame, nArguments);
@@ -285,6 +294,55 @@ public final class BaseLib implements JavaFunction {
     	callFrame.set(0, nextKey);
     	callFrame.set(1, value);
     	return 2;
+	}
+	
+	private int nexti(LuaCallFrame callFrame, int nArguments) {
+        luaAssert(nArguments >= 1, "Not enough arguments");
+
+        LuaTable t = (LuaTable) callFrame.get(0);
+        double key = 0;
+
+        if (nArguments >= 2) {
+        	if (callFrame.get(1) != null) {
+        		key = (Double)callFrame.get(1);
+        	}
+        }
+
+        int nextKey = (int)key + 1;
+        
+        Object value = t.rawget(nextKey);
+        if (value == null) {
+        	callFrame.setTop(1);
+        	callFrame.set(0, null);
+        	return 1;
+        }
+
+    	callFrame.setTop(2);
+    	callFrame.set(0, (double)nextKey);
+    	callFrame.set(1, value);
+    	return 2;
+	}
+	
+	private int pairs(LuaCallFrame callFrame, int nArguments) {
+		luaAssert(nArguments >= 1, "Not enough arguments");
+		
+		LuaTable t = (LuaTable) callFrame.get(0);
+        
+		callFrame.push(functions[NEXT]);
+		callFrame.push(t);
+		callFrame.pushNil();
+		return 3;
+	}
+	
+	private int ipairs(LuaCallFrame callFrame, int nArguments) {
+		luaAssert(nArguments >= 1, "Not enough arguments");
+		
+		LuaTable t = (LuaTable) callFrame.get(0);
+        
+		callFrame.push(functions[NEXTI]);
+		callFrame.push(t);
+		callFrame.pushNil();
+		return 3;
 	}
 
 	private int unpack(LuaCallFrame callFrame, int nArguments) {

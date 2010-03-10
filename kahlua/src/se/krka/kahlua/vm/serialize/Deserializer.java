@@ -15,7 +15,7 @@ public class Deserializer {
 
 	private final DataInputStream stream;
 	private final List<Object> deserialized = new ArrayList<Object>();
-	private LuaTable env; 
+	private LuaTable env;
 
 	public Deserializer(DataInputStream stream, LuaTable globalEnv) {
 		this.stream = stream;
@@ -41,7 +41,7 @@ public class Deserializer {
 			Object value = deserialize();
 			result.rawset(key, value);
 		}
-		result.setMetatable((LuaTable)deserialize());
+		result.setMetatable((LuaTable) deserialize());
 		return result;
 	}
 
@@ -50,7 +50,7 @@ public class Deserializer {
 		deserialized.add(result);
 		return result;
 	}
-	
+
 	public Object readReference() throws IOException {
 		int index = stream.readInt();
 		return deserialized.get(index);
@@ -75,19 +75,23 @@ public class Deserializer {
 				return null;
 			case Type.REFERENCE:
 				return readReference();
-			default: throw new IllegalStateException("Stream does not represent a Lua Object: " + type);
+			default:
+				throw new IllegalStateException(
+						"Stream does not represent a Lua Object: " + type);
 			}
 		} catch (IOException e) {
-			throw new IllegalStateException("Stream does not represent a Lua Object", e);
+			throw new IllegalStateException(
+					"Stream does not represent a Lua Object", e);
 		}
 	}
 
 	public static Object deserializeBytes(byte[] value, LuaTable env) {
 		try {
-		if (value.length == 0) {
-			return null;
-		}
-		return new Deserializer(new DataInputStream(new ByteArrayInputStream(value)), env).deserialize();
+			if (value == null || value.length == 0) {
+				return null;
+			}
+			return new Deserializer(new DataInputStream(
+					new ByteArrayInputStream(value)), env).deserialize();
 		} catch (Exception e) {
 			return new String(value);
 		}

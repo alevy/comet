@@ -3,7 +3,10 @@
  */
 package edu.washington.cs.activedht.db.kahlua;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
@@ -34,6 +37,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	private LuaState luaState;
 	private Object luaObject;
+	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
 	public KahluaActiveDHTDBValue(DHTTransportContact sender,
 			DHTTransportValue other, boolean local) {
@@ -86,6 +90,12 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 			}
 
 		}
+		
+		for (Runnable task : postActions) {
+			task.run();
+		}
+		postActions.clear();
+		
 		return result;
 	}
 
@@ -109,7 +119,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	public void registerGlobalState(DHTControl control, HashWrapper key) {
 		DhtWrapper.register(getLuaState(), key,
-				new HashMap<HashWrapper, Set<NodeWrapper>>(), control);
+				new HashMap<HashWrapper, Set<NodeWrapper>>(), control, postActions);
 	}
 
 	public Object wrap(DHTTransportContact contact) {

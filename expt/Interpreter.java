@@ -101,14 +101,15 @@ public class Interpreter {
 										sema.release();
 									}
 								}
-								
+
 								@Override
 								public void findValueReply(
 										DHTTransportContact contact,
 										DHTTransportContact[] contacts) {
 								}
 
-							}, key, dhtControl.getTransport().getLocalContact().getID(), payload, 1, (byte) 0);
+							}, key, dhtControl.getTransport().getLocalContact()
+									.getID(), payload, 1, (byte) 0);
 				}
 				sema.acquireUninterruptibly(contacts.len());
 				callFrame.push(values);
@@ -350,9 +351,8 @@ public class Interpreter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer peer = new ActivePeer(1234, "dht.aelitis.com:6881");
-		// ActivePeer peer = new ActivePeer(5432,
-		// "nethack.cs.washington.edu:5432");
+		ActivePeer// peer = new ActivePeer(1234, "dht.aelitis.com:6881");
+		peer = new ActivePeer(5432, "nethack.cs.washington.edu:5432", false, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
 		peer.init("granville.cs.washington.edu");
 		Thread.sleep(5000);
 		new Interpreter(new LuaState(), System.in, peer.dht.getControl()).run();

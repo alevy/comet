@@ -45,7 +45,7 @@ public class DhtWrapperTest extends TestCase {
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		assertEquals(1, sysTime.call(callFrame, 0));
-		long currentTime = (Long) callFrame.get(0);
+		double currentTime = (Double) callFrame.get(0);
 		assertEquals(System.currentTimeMillis(), currentTime, 100);
 	}
 
@@ -224,7 +224,7 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testRegister() {
-		DhtWrapper.register(state, null, null, null);
+		DhtWrapper.register(state, null, null, null, null);
 		LuaTable dht = (LuaTable) state.getEnvironment().rawget("dht");
 		assertNotNull(dht);
 		for (Function function : Function.values()) {

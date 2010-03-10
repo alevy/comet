@@ -15,7 +15,7 @@ object.onStore = function(self, caller)
 end
 
 object.onTimer = function(self)
-  dht.put(dht.getKey(), self, 20, function(nodes)
+  dht.put(dht.getKey(), self, function(nodes)
     for i,v in ipairs(nodes) do table.insert(self.replicaIps, v.getIp()) end
   end)
 end

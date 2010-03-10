@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.SimpleTimer;
 import org.gudy.azureus2.core3.util.SystemTime;
+import org.gudy.azureus2.core3.util.TimerEvent;
+import org.gudy.azureus2.core3.util.TimerEventPerformer;
 
 import com.aelitis.azureus.core.dht.DHT;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
@@ -33,15 +36,33 @@ import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
  */
 public class ActiveDB implements DHTDB {
 
-	private Map<HashWrapper, ActiveDHTDBValue> store = Collections
-			.synchronizedMap(new HashMap<HashWrapper, ActiveDHTDBValue>());
-	private final ActiveCodeRunner codeRunner;
 	private DHTControl control;
+
+	private final Map<HashWrapper, ActiveDHTDBValue> store = Collections
+			.synchronizedMap(new HashMap<HashWrapper, ActiveDHTDBValue>());
+	
+	private final ActiveCodeRunner codeRunner;
 	private final DHTStorageAdapter adapter;
+	private final TimerEventPerformer performer;
 
 	public ActiveDB(DHTStorageAdapter adapter) {
 		this.adapter = adapter;
 		this.codeRunner = new ActiveCodeRunner();
+		this.performer = new TimerEventPerformer() {
+			@Override
+			public void perform(TimerEvent event) {
+				for (Map.Entry<HashWrapper, ActiveDHTDBValue> entry : store
+						.entrySet()) {
+					codeRunner.onTimer(entry.getKey(), entry.getValue());
+				}
+			}
+		};
+	}
+
+	public void init() {
+		SimpleTimer.addPeriodicEvent("ActiveDB Timer", 60000,
+				//DHTControl.CACHE_REPUBLISH_INTERVAL_DEFAULT,
+				performer);
 	}
 
 	public DHTTransportValue get(HashWrapper key, HashWrapper readerId,
@@ -104,6 +125,7 @@ public class ActiveDB implements DHTDB {
 			if (result == null) {
 				store.remove(key);
 			} else {
+				result.registerGlobalState(control, key);
 				store.put(key, result);
 			}
 		}
@@ -141,6 +163,7 @@ public class ActiveDB implements DHTDB {
 				ActiveDHTDBValue result = codeRunner.onUpdate(sender, key,
 						oldValue, value);
 				if (result != null) {
+					result.registerGlobalState(control, key);
 					store.put(key, result);
 					adapter.valueUpdated(adapter.keyCreated(key, value
 							.isLocal()), oldValue, result);
@@ -150,10 +173,12 @@ public class ActiveDB implements DHTDB {
 						.get().create(value.getOriginator(), value,
 								value.isLocal());
 				activeValue.registerGlobalState(control, key);
-				if (codeRunner.onStore(sender, key, activeValue) != null) {
-					store.put(key, activeValue);
-					adapter.valueAdded(adapter.keyCreated(key, activeValue
-							.isLocal()), activeValue);
+				ActiveDHTDBValue result = codeRunner.onStore(sender, key, activeValue);
+				if (result != null) {
+					result.registerGlobalState(control, key);
+					store.put(key, result);
+					adapter.valueAdded(adapter.keyCreated(key, result
+							.isLocal()), result);
 				}
 			}
 		}
@@ -185,11 +210,11 @@ public class ActiveDB implements DHTDB {
 			DHTTransportContact originatingContact, final int headerLen,
 			List<Object[]> keys) {
 		return new DHTTransportQueryStoreReply() {
-			
+
 			public int getHeaderSize() {
 				return headerLen;
 			}
-			
+
 			public List<byte[]> getEntries() {
 				return new ArrayList<byte[]>();
 			}

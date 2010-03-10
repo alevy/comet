@@ -1,5 +1,6 @@
 package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
@@ -23,6 +24,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.GetCallback;
 import edu.washington.cs.activedht.db.dhtwrapper.GetOperationAdapter;
 import edu.washington.cs.activedht.db.dhtwrapper.LookupAction;
 import edu.washington.cs.activedht.db.dhtwrapper.PutAction;
+import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsCallback;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsOperationAdapter;
 
 public class DhtWrapper implements JavaFunction {
@@ -38,7 +40,7 @@ public class DhtWrapper implements JavaFunction {
 		}
 	}
 
-	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
+	private final Queue<Runnable> postActions;
 
 	private final Function function;
 	private final Map<HashWrapper, Set<NodeWrapper>> neighbors;
@@ -48,13 +50,20 @@ public class DhtWrapper implements JavaFunction {
 
 	private final HashWrapper key;
 
-	public DhtWrapper(Function function, LuaState state, HashWrapper key,
+	protected DhtWrapper(Function function, LuaState state, HashWrapper key,
 			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
+		this(function, state, key, neighbors, control, new LinkedList<Runnable>());
+	}
+	
+	public DhtWrapper(Function function, LuaState state, HashWrapper key,
+			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
 		this.neighbors = neighbors;
+		this.neighbors.put(key, new HashSet<NodeWrapper>());
 		this.control = control;
+		this.postActions = postActions;
 	}
 
 	public int call(LuaCallFrame callFrame, int nArguments) {
@@ -81,8 +90,14 @@ public class DhtWrapper implements JavaFunction {
 		if (nArguments > 0) {
 			key = (HashWrapper) callFrame.get(0);
 		}
+		UpdateNeighborsCallback callback = null;
+		if (nArguments > 1) {
+			final LuaClosure closure = (LuaClosure) callFrame.get(1);
+			callback = new LuaUpdateNeighborsCallback(closure, state);
+		}
 		postActions.offer(new LookupAction(key, control,
-				new UpdateNeighborsOperationAdapter(neighbors.get(key))));
+				new UpdateNeighborsOperationAdapter(neighbors.get(key),
+						callback)));
 		return 0;
 	}
 
@@ -91,8 +106,14 @@ public class DhtWrapper implements JavaFunction {
 		if (nArguments > 0) {
 			key = (HashWrapper) callFrame.get(0);
 		}
+		UpdateNeighborsCallback callback = null;
+		if (nArguments > 1) {
+			final LuaClosure closure = (LuaClosure) callFrame.get(1);
+			callback = new LuaUpdateNeighborsCallback(closure, state);
+		}
 		postActions.offer(new DeleteAction(key, control,
-				new UpdateNeighborsOperationAdapter(neighbors.get(key))));
+				new UpdateNeighborsOperationAdapter(neighbors.get(key),
+						callback)));
 		return 0;
 	}
 
@@ -108,8 +129,15 @@ public class DhtWrapper implements JavaFunction {
 		}
 		byte[] value = Serializer.serialize(callFrame.get(valIndex), state
 				.getEnvironment());
+		UpdateNeighborsCallback callback = null;
+		if (nArguments > 2) {
+			final LuaClosure closure = (LuaClosure) callFrame.get(2);
+			callback = new LuaUpdateNeighborsCallback(closure, state);
+		}
+		Set<NodeWrapper> nbrs = neighbors.get(key);
 		postActions.offer(new PutAction(key, value, control,
-				new UpdateNeighborsOperationAdapter(neighbors.get(key))));
+				new UpdateNeighborsOperationAdapter(nbrs,
+						callback)));
 		return 0;
 	}
 
@@ -138,7 +166,7 @@ public class DhtWrapper implements JavaFunction {
 	}
 
 	private int getSystemTime(LuaCallFrame callFrame, int nArguments) {
-		callFrame.push(System.currentTimeMillis());
+		callFrame.push((double) System.currentTimeMillis());
 		return 1;
 	}
 
@@ -151,19 +179,19 @@ public class DhtWrapper implements JavaFunction {
 	}
 
 	public static void register(LuaState state, HashWrapper key,
-			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
+			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
 		LuaTable dht = new LuaTableImpl();
 		state.getEnvironment().rawset("dht", dht);
 		NodeWrapper node = null;
 		if (control != null) {
 			node = new NodeWrapper(control.getTransport().getLocalContact());
 		}
-		
+
 		dht.rawset("localNode", node);
 
 		for (Function function : Function.values()) {
 			dht.rawset(function.name, new DhtWrapper(function, state, key,
-					neighbors, control));
+					neighbors, control, postActions));
 		}
 	}
 

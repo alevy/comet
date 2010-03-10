@@ -19,7 +19,7 @@ public class GetOperationAdapter extends
 
 	public GetOperationAdapter(Set<NodeWrapper> neighbors,
 			GetCallback callback) {
-		super(neighbors);
+		super(neighbors, null);
 		this.callback = callback;
 	}
 

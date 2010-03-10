@@ -1,5 +1,5 @@
 onGet = "Hello world!"
 
 onTimer = function(self)
-  dht.put(dht.getKey(), self, 20)
+  dht.put(dht.getKey(), self)
 end
