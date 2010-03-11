@@ -397,7 +397,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		int port = 4321;
 		String hostname = "granville.cs.washington.edu";
 		String bootstrapLoc = "nethack.cs.washington.edu:5432";
-		boolean logging = true;
+		boolean logging = false;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {

@@ -40,7 +40,7 @@ public class ActiveDB implements DHTDB {
 
 	private final Map<HashWrapper, ActiveDHTDBValue> store = Collections
 			.synchronizedMap(new HashMap<HashWrapper, ActiveDHTDBValue>());
-	
+
 	private final ActiveCodeRunner codeRunner;
 	private final DHTStorageAdapter adapter;
 	private final TimerEventPerformer performer;
@@ -61,7 +61,7 @@ public class ActiveDB implements DHTDB {
 
 	public void init() {
 		SimpleTimer.addPeriodicEvent("ActiveDB Timer", 60000,
-				//DHTControl.CACHE_REPUBLISH_INTERVAL_DEFAULT,
+		// DHTControl.CACHE_REPUBLISH_INTERVAL_DEFAULT,
 				performer);
 	}
 
@@ -143,7 +143,9 @@ public class ActiveDB implements DHTDB {
 		DHTTransportValue activeValue = new BasicDHTTransportValue(SystemTime
 				.getCurrentTime(), value, "", adapter.getNextValueVersions(1),
 				localContact, true, flags);
-		store(localContact, key, new DHTTransportValue[] { activeValue });
+		if ((flags & DHT.FLAG_PUT_AND_FORGET) != 0) {
+			store(localContact, key, new DHTTransportValue[] { activeValue });
+		}
 		return activeValue;
 	}
 
@@ -173,12 +175,13 @@ public class ActiveDB implements DHTDB {
 						.get().create(value.getOriginator(), value,
 								value.isLocal());
 				activeValue.registerGlobalState(control, key);
-				ActiveDHTDBValue result = codeRunner.onStore(sender, key, activeValue);
+				ActiveDHTDBValue result = codeRunner.onStore(sender, key,
+						activeValue);
 				if (result != null) {
 					result.registerGlobalState(control, key);
 					store.put(key, result);
-					adapter.valueAdded(adapter.keyCreated(key, result
-							.isLocal()), result);
+					adapter.valueAdded(adapter
+							.keyCreated(key, result.isLocal()), result);
 				}
 			}
 		}

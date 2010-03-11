@@ -4,7 +4,6 @@
 	<classpathentry kind="src" path="expt"/>
 	<classpathentry kind="src" path="kahlua/src"/>
 	<classpathentry kind="src" path="comet"/>
-	<classpathentry kind="src" path="dht"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/apple-extensions.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli.jar"/>
@@ -12,6 +11,6 @@
 	<classpathentry kind="lib" path="lib/log4j.jar"/>
 	<classpathentry kind="lib" path="lib/swt-win32.jar"/>
 	<classpathentry kind="lib" path="lib/swt-xosx.jar"/>
-	<classpathentry kind="lib" path="lib/Azureus2.jar" sourcepath="newvuze"/>
+	<classpathentry kind="lib" path="lib/Azureus2.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
