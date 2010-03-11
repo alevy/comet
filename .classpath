@@ -4,6 +4,7 @@
 	<classpathentry kind="src" path="expt"/>
 	<classpathentry kind="src" path="kahlua/src"/>
 	<classpathentry kind="src" path="comet"/>
+	<classpathentry kind="src" path="dht"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/apple-extensions.jar"/>
 	<classpathentry kind="lib" path="lib/commons-cli.jar"/>
