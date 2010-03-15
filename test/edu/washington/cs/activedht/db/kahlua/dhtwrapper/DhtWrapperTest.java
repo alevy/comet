@@ -4,9 +4,9 @@
 package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
@@ -30,13 +30,13 @@ public class DhtWrapperTest extends TestCase {
 
 	private final LuaState state = new LuaState();
 	private final HashWrapper key = new HashWrapper(new byte[] { 1, 2, 34 });
-	private Map<HashWrapper, Set<NodeWrapper>> neighbors;
+	private Map<HashWrapper, SortedSet<NodeWrapper>> neighbors;
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		neighbors = new HashMap<HashWrapper, Set<NodeWrapper>>();
-		neighbors.put(key, new HashSet<NodeWrapper>());
+		neighbors = new HashMap<HashWrapper, SortedSet<NodeWrapper>>();
+		neighbors.put(key, new TreeSet<NodeWrapper>());
 	}
 
 	public void testSysTime() {

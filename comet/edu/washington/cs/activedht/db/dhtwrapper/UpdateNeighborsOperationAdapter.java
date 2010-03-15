@@ -3,8 +3,8 @@
  */
 package edu.washington.cs.activedht.db.dhtwrapper;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -12,12 +12,12 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
 
 public class UpdateNeighborsOperationAdapter extends DHTOperationAdapter {
-	private final Set<NodeWrapper> tmpNeighbors = new HashSet<NodeWrapper>();
-	public final Set<NodeWrapper> neighbors;
+	private final SortedSet<NodeWrapper> tmpNeighbors = new TreeSet<NodeWrapper>();
+	public final SortedSet<NodeWrapper> neighbors;
 
 	private final UpdateNeighborsCallback updateCallback;
 
-	public UpdateNeighborsOperationAdapter(Set<NodeWrapper> neighbors,
+	public UpdateNeighborsOperationAdapter(SortedSet<NodeWrapper> neighbors,
 			UpdateNeighborsCallback updateCallback) {
 		this.neighbors = neighbors;
 		this.updateCallback = updateCallback;

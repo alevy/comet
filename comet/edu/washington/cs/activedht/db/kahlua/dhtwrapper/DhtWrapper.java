@@ -1,10 +1,12 @@
 package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -43,7 +45,7 @@ public class DhtWrapper implements JavaFunction {
 	private final Queue<Runnable> postActions;
 
 	private final Function function;
-	private final Map<HashWrapper, Set<NodeWrapper>> neighbors;
+	private final Map<HashWrapper, SortedSet<NodeWrapper>> neighbors;
 	private final DHTControl control;
 
 	private final LuaState state;
@@ -51,17 +53,17 @@ public class DhtWrapper implements JavaFunction {
 	private final HashWrapper key;
 
 	protected DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control) {
+			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors, DHTControl control) {
 		this(function, state, key, neighbors, control, new LinkedList<Runnable>());
 	}
 	
 	public DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
+			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
 		this.neighbors = neighbors;
-		this.neighbors.put(key, new HashSet<NodeWrapper>());
+		this.neighbors.put(key, new TreeSet<NodeWrapper>());
 		this.control = control;
 		this.postActions = postActions;
 	}
@@ -130,14 +132,33 @@ public class DhtWrapper implements JavaFunction {
 		byte[] value = Serializer.serialize(callFrame.get(valIndex), state
 				.getEnvironment());
 		UpdateNeighborsCallback callback = null;
-		if (nArguments > 2) {
-			final LuaClosure closure = (LuaClosure) callFrame.get(2);
+		if (nArguments > 3) {
+			final LuaClosure closure = (LuaClosure) callFrame.get(3);
 			callback = new LuaUpdateNeighborsCallback(closure, state);
 		}
-		Set<NodeWrapper> nbrs = neighbors.get(key);
-		postActions.offer(new PutAction(key, value, control,
-				new UpdateNeighborsOperationAdapter(nbrs,
-						callback)));
+		
+		SortedSet<NodeWrapper> nbrs = neighbors.get(key);
+		if (nArguments > 2) {
+			Object obj = callFrame.get(2);
+			if (LuaTable.class.isInstance(obj)) {
+				List<NodeWrapper> nodes = new ArrayList<NodeWrapper>();
+				LuaTable table = (LuaTable)obj;
+				for(int next = 1; next <= table.len(); ++next) {
+					Object elm = table.rawget(next);
+					BaseLib.luaAssert(NodeWrapper.class.isInstance(elm), "Object not a NodeWrapper");
+					nodes.add((NodeWrapper)elm);
+				}
+				postActions.offer(new PutAction(key, value, nodes, control,
+						new UpdateNeighborsOperationAdapter(nbrs,
+								callback)));
+			} else {
+				BaseLib.luaAssert(Double.class.isInstance(obj), "Expecting number of replicas");
+				int numNodes = ((Double)obj).intValue();
+				postActions.offer(new PutAction(key, value, numNodes, control,
+						new UpdateNeighborsOperationAdapter(nbrs,
+								callback)));
+			}
+		}
 		return 0;
 	}
 
@@ -178,8 +199,8 @@ public class DhtWrapper implements JavaFunction {
 		return postActions;
 	}
 
-	public static void register(LuaState state, HashWrapper key,
-			Map<HashWrapper, Set<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
+	public static LuaTable register(LuaState state, HashWrapper key,
+			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors, DHTControl control, Queue<Runnable> postActions) {
 		LuaTable dht = new LuaTableImpl();
 		state.getEnvironment().rawset("dht", dht);
 		NodeWrapper node = null;
@@ -193,6 +214,7 @@ public class DhtWrapper implements JavaFunction {
 			dht.rawset(function.name, new DhtWrapper(function, state, key,
 					neighbors, control, postActions));
 		}
+		return dht;
 	}
 
 }

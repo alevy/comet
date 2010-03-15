@@ -3,7 +3,7 @@
  */
 package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 
-import java.util.Set;
+import java.util.SortedSet;
 
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
@@ -26,7 +26,7 @@ public class LuaUpdateNeighborsCallback implements UpdateNeighborsCallback {
 	}
 
 	@Override
-	public void call(Set<NodeWrapper> neighbors) {
+	public void call(SortedSet<NodeWrapper> neighbors) {
 		LuaTable vals = new LuaTableImpl(neighbors.size());
 		for (NodeWrapper neighbor : neighbors) {
 			if (neighbor != null) {

@@ -3,7 +3,7 @@
  */
 package edu.washington.cs.activedht.db.dhtwrapper;
 
-import java.util.Set;
+import java.util.SortedSet;
 
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
 
@@ -13,6 +13,6 @@ import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
  */
 public interface UpdateNeighborsCallback {
 
-	void call(Set<NodeWrapper> tmpNeighbors);
+	void call(SortedSet<NodeWrapper> tmpNeighbors);
 
 }

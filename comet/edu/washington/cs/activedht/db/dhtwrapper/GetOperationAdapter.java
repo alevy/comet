@@ -5,7 +5,7 @@ package edu.washington.cs.activedht.db.dhtwrapper;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.SortedSet;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -17,7 +17,7 @@ public class GetOperationAdapter extends
 	private final List<DHTTransportValue> values = new LinkedList<DHTTransportValue>();
 	public final GetCallback callback;
 
-	public GetOperationAdapter(Set<NodeWrapper> neighbors,
+	public GetOperationAdapter(SortedSet<NodeWrapper> neighbors,
 			GetCallback callback) {
 		super(neighbors, null);
 		this.callback = callback;

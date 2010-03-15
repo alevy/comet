@@ -5,12 +5,12 @@ hostname = "localhost"
 bport = 4321.to_s
 bhost = "localhost"
 
-valueType = "NA"
+valueType = "KAHLUA"
 
-for n in ([0] + (1..8).map {|i| 10**i})
+for n in ((2..8).map {|i| 10**i})
 
   mpid = Process.fork do
-      Kernel.exec("java", "-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
+      Kernel.exec("java", "-Xmx1000m","-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
         "edu.washington.cs.activedht.expt.ActivePeer",
         "-p", bport,
         "-h", bhost,
@@ -21,7 +21,7 @@ for n in ([0] + (1..8).map {|i| 10**i})
   sleep(60)
   
   cpid = Process.fork do
-      Kernel.exec("java", "-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
+      Kernel.exec("java", "-Xmx1000m", "-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
         "PutMany",
         "-p", port,
         "-h", hostname,
@@ -30,6 +30,8 @@ for n in ([0] + (1..8).map {|i| 10**i})
   end
   
   Process.wait(cpid)
+  
+  sleep(60)
   
   5.times do
     puts "#{n},#{`top -b -n 1 -p #{mpid} | grep #{mpid}`.strip.split(/\s+/)[5]}"

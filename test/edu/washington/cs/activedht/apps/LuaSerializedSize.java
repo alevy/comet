@@ -1,30 +1,51 @@
 package edu.washington.cs.activedht.apps;
 
 import java.io.InputStream;
-import java.util.Arrays;
 
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
+import se.krka.kahlua.vm.LuaTable;
 import se.krka.kahlua.vm.serialize.Serializer;
 
-
 public class LuaSerializedSize {
+
+	public static enum OPCode {
+		MOVE, LOADK, LOADBOOL, LOADNIL, GETUPVAL,
+		GETGLOBAL, GETTABLE, SETGLOBAL, SETUPVAL, SETTABLE,
+		NEWTABLE, SELF, ADD, SUB, MUL, DIV, MOD, POW,
+		UNM, NOT, LEN, CONCAT, JMP, EQ, LT, LE,
+		TEST, TESTSET, CALL, TAILCALL, RETURN, FORLOOP,
+		FORPREP, TFORLOOP, SETLIST, CLOSE, CLOSURE, VARARG;
+	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		InputStream luaFile = LuaSerializedSize.class.getResourceAsStream("/delayed_get.lua");
+		InputStream luaFile = LuaSerializedSize.class
+				.getResourceAsStream("/delayed_get.lua");
 		LuaState state = new LuaState();
 
-		LuaClosure closure = LuaCompiler.loadis(luaFile, "stdin", state.getEnvironment());
-		
-		state.call(closure);		
-		
-		byte[] arr = Serializer.serialize(state.getEnvironment().rawget("object"), state.getEnvironment());
-		System.out.println(arr.length);
-		System.out.println(Arrays.toString(arr));
+		LuaClosure closure = LuaCompiler.loadis(luaFile, "stdin", state
+				.getEnvironment());
+		state.call(closure);
+
+		LuaTable obj = (LuaTable)state.getEnvironment().rawget(
+				"object");
+		printByteCode((LuaClosure)obj.rawget("onUpdate"));
+		byte[] arr = Serializer.serialize(obj, state.getEnvironment());
+		// System.out.println(arr.length);
+		// System.out.println(Arrays.toString(arr));
 	}
 
+	private static void printByteCode(LuaClosure closure) {
+		int[] code = closure.prototype.code;
+		OPCode[] values = OPCode.values();
+		for (int op : code) {
+			int opcode = op & 63;
+			System.out.println(values[opcode] + ":" + ((op >>> 14) - 131071));
+		}
+
+	}
 }

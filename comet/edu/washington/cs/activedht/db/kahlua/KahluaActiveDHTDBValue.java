@@ -3,11 +3,10 @@
  */
 package edu.washington.cs.activedht.db.kahlua;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
+import java.util.SortedSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -35,9 +34,13 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	private byte[] value;
 
+	private Object lock;
 	private LuaState luaState;
 	private Object luaObject;
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
+
+	private LuaTable dhtWrapper;
+
 
 	public KahluaActiveDHTDBValue(DHTTransportContact sender,
 			DHTTransportValue other, boolean local) {
@@ -54,7 +57,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	public ActiveDHTDBValue executeCallback(String callback, Object... args) {
 		ActiveDHTDBValue result = this;
 		LuaState state = getLuaState();
-		synchronized (state) {
+		synchronized (lock) {
 			if (luaObject == null) {
 				luaObject = Deserializer.deserializeBytes(value, state
 						.getEnvironment());
@@ -108,7 +111,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	public Object deserialize(byte[] value) {
 		LuaState state = getLuaState();
-		synchronized (state) {
+		synchronized (lock) {
 			return Deserializer.deserializeBytes(value, state.getEnvironment());
 		}
 	}
@@ -118,8 +121,8 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	}
 
 	public void registerGlobalState(DHTControl control, HashWrapper key) {
-		DhtWrapper.register(getLuaState(), key,
-				new HashMap<HashWrapper, Set<NodeWrapper>>(), control, postActions);
+		dhtWrapper = DhtWrapper.register(getLuaState(), key,
+				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), control, postActions);
 	}
 
 	public Object wrap(DHTTransportContact contact) {
