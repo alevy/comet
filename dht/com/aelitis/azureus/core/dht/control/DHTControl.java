@@ -246,4 +246,8 @@ DHTControl
 			boolean						exhaustive,
 			boolean						high_priority,
 			final DHTOperationListener	get_listener );
+
+	void putDirectEncodedKeys(byte[][] encodedKeys, String description,
+			DHTTransportValue[][] valueSets, List contacts,
+			DHTOperationListener listener);
 }

@@ -1008,6 +1008,30 @@ DHTControlImpl
 		}
 	}
 	
+	@Override
+	public void
+	putDirectEncodedKeys(
+		byte[][]				encoded_keys,
+		String					description,
+		DHTTransportValue[][]	value_sets,
+		List					contacts,
+		DHTOperationListener listener)
+	{
+		put( 	internal_put_pool,
+				false,
+				encoded_keys, 
+				description,
+				value_sets, 
+				(byte)0,
+				contacts, 
+				0, 
+				new DHTOperationListenerDemuxer( listener),
+				false,
+				new HashSet(),
+				1,
+				false );
+	}
+	
 	public void
 	putDirectEncodedKeys(
 		byte[][]				encoded_keys,
@@ -1019,19 +1043,12 @@ DHTControlImpl
 			// of cached mappings and we maintain these as normal - its up to the original
 			// publisher to diversify as required)
 		
-		put( 	internal_put_pool,
-				false,
-				encoded_keys, 
+		putDirectEncodedKeys(
+				encoded_keys,
 				description,
-				value_sets, 
-				(byte)0,
-				contacts, 
-				0, 
-				new DHTOperationListenerDemuxer( new DHTOperationAdapter()),
-				false,
-				new HashSet(),
-				1,
-				false );
+				value_sets,
+				contacts,
+				new DHTOperationAdapter());
 	}
 		
 	public void
