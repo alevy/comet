@@ -78,8 +78,8 @@ public class PutMany {
 
 				@Override
 				public void failed(DHTTransportContact contact, Throwable error) {
-					error.printStackTrace(System.err);
 					sema.release();
+					throw new RuntimeException(error);
 				}
 
 				@Override

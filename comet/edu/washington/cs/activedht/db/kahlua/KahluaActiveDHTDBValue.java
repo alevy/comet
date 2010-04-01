@@ -10,7 +10,14 @@ import java.util.SortedSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
+import se.krka.kahlua.stdlib.BaseLib;
+import se.krka.kahlua.stdlib.MathLib;
+import se.krka.kahlua.stdlib.StringLib;
+import se.krka.kahlua.stdlib.TableLib;
+import se.krka.kahlua.vm.ComposedLuaTable;
 import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaMapTable;
+import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
 import se.krka.kahlua.vm.serialize.Deserializer;
@@ -32,15 +39,24 @@ import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
  */
 public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
+	public static LuaReadOnlyTable env;
+	static {
+		LuaMapTable t = new LuaMapTable();
+		BaseLib.register(t);
+		StringLib.register(t);
+		MathLib.register(t);
+		TableLib.register(t);
+		env = new LuaReadOnlyTable(t);
+	}
+
 	private byte[] value;
 
-	private Object lock;
-	private LuaState luaState;
 	private Object luaObject;
+	private LuaState state;
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
-	private LuaTable dhtWrapper;
-
+	private DHTControl control;
+	private HashWrapper key;
 
 	public KahluaActiveDHTDBValue(DHTTransportContact sender,
 			DHTTransportValue other, boolean local) {
@@ -50,79 +66,76 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
 	public KahluaActiveDHTDBValue(long creationTime, byte[] value, int version,
 			DHTTransportContact originator, boolean local, int flags) {
-		super(creationTime, value, "KahluaActiveValue", version, originator, local, flags);
+		super(creationTime, value, "KahluaActiveValue", version, originator,
+				local, flags);
 		this.value = value;
 	}
 
-	public ActiveDHTDBValue executeCallback(String callback, Object... args) {
+	public ActiveDHTDBValue executeCallback(String callback,
+			Object... args) {
 		ActiveDHTDBValue result = this;
-		LuaState state = getLuaState();
-		synchronized (lock) {
-			if (luaObject == null) {
-				luaObject = Deserializer.deserializeBytes(value, state
-						.getEnvironment());
-			}
-			Object[] functionArgs = new Object[args.length + 1];
-			functionArgs[0] = luaObject;
-			for (int i = 1; i < functionArgs.length; ++i) {
-				functionArgs[i] = args[i - 1];
-			}
-
-			if (LuaTable.class.isInstance(luaObject)) {
-				LuaTable luaTable = (LuaTable) luaObject;
-				Object function = luaTable.rawget(callback);
-				if (function == null && luaTable.getMetatable() != null) {
-					function = luaTable.getMetatable().rawget(callback);
-				}
-				if (LuaClosure.class.isInstance(function)) {
-					Object returnedValue = null;
-					try {
-						returnedValue = state.call(function, functionArgs);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					if (returnedValue == null) {
-						result = null;
-					} else {
-						result = new KahluaActiveDHTDBValue(getCreationTime(),
-								serialize(returnedValue), getVersion(),
-								getOriginator(), isLocal(),
-								getFlags());
-					}
-				}
-			}
-
+		if (luaObject == null) {
+			LuaMapTable dhtMap = new LuaReadOnlyTable();
+			state = new LuaState(new ComposedLuaTable(dhtMap, env));
+			DhtWrapper.register(dhtMap, state, key, new HashMap<HashWrapper, SortedSet<NodeWrapper>>(),
+					control, postActions, this);
+			luaObject = deserialize(value);
 		}
-		
+		if (LuaTable.class.isInstance(luaObject)) {
+			LuaTable luaTable = (LuaTable) luaObject;
+			Object function = luaTable.rawget(callback);
+			if (function == null && luaTable.getMetatable() != null) {
+				function = luaTable.getMetatable().rawget(callback);
+			}
+			if (LuaClosure.class.isInstance(function)) {
+				Object returnedValue = call((LuaClosure)function, args);
+				if (returnedValue == null) {
+					result = null;
+				} else if (returnedValue == result) {
+					value = serialize(returnedValue);
+				} else {
+					result = new KahluaActiveDHTDBValue(getCreationTime(),
+							serialize(returnedValue), getVersion(),
+							getOriginator(), isLocal(), getFlags());
+				}
+			}
+		}
+
 		for (Runnable task : postActions) {
 			task.run();
 		}
 		postActions.clear();
-		
+
 		return result;
 	}
 
-	private LuaState getLuaState() {
-		if (luaState == null) {
-			luaState = new LuaState();
+	public synchronized Object call(LuaClosure function, Object[] args) {
+		Object[] functionArgs = new Object[args.length + 1];
+		functionArgs[0] = luaObject;
+		for (int i = 1; i < functionArgs.length; ++i) {
+			functionArgs[i] = args[i - 1];
 		}
-		return luaState;
+		Object returnedValue = null;
+		try {
+			returnedValue = state.call(function, functionArgs);
+		} catch (Exception e) {
+			System.err.println(state.currentThread.stackTrace);
+			e.printStackTrace();
+		}
+		return returnedValue;
 	}
 
-	public Object deserialize(byte[] value) {
-		LuaState state = getLuaState();
-		synchronized (lock) {
-			return Deserializer.deserializeBytes(value, state.getEnvironment());
-		}
+	public synchronized Object deserialize(byte[] value) {
+		return Deserializer.deserializeBytes(value, state.getEnvironment());
 	}
 
 	public byte[] serialize(Object object) {
-		return Serializer.serialize(object, getLuaState().getEnvironment());
+		return Serializer.serialize(object, state.getEnvironment());
 	}
 
 	public void registerGlobalState(DHTControl control, HashWrapper key) {
-		dhtWrapper = DhtWrapper.register(getLuaState(), key,
-				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), control, postActions);
+		this.control = control;
+		this.key = key;
 	}
 
 	public Object wrap(DHTTransportContact contact) {

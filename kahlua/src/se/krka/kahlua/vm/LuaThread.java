@@ -51,13 +51,23 @@ public class LuaThread {
 	
 	public LuaThread(LuaState state, LuaTable environment) {
 		this.state = state;
-		this.environment = environment;
+		this.environment = environment;//shallowCopy(environment);
 		
 		objectStack = new Object[INITIAL_STACK_SIZE];
 		callFrameStack = new LuaCallFrame[INITIAL_CALL_FRAME_STACK_SIZE];
 		liveUpvalues = new Vector<UpValue>();		
 	}
 	
+	/*private LuaTable shallowCopy(LuaTable table) {
+		LuaTable result = new LuaMapTable();
+		Object next = table.next(null);
+		while (next != null) {
+			result.rawset(next, table.rawget(next));
+			next = table.next(next);
+		}
+		return result;
+	}*/
+
 	public final LuaCallFrame pushNewCallFrame(LuaClosure closure, int localBase, int returnBase, int nArguments, boolean fromLua, boolean insideCoroutine) {
 		setCallFrameStackTop(callFrameTop + 1);
 		LuaCallFrame callFrame = currentCallFrame();

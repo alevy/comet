@@ -1,6 +1,7 @@
 package edu.washington.cs.activedht.apps;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.vm.LuaClosure;
@@ -24,7 +25,7 @@ public class LuaSerializedSize {
 	 */
 	public static void main(String[] args) throws Exception {
 		InputStream luaFile = LuaSerializedSize.class
-				.getResourceAsStream("/delayed_get.lua");
+				.getResourceAsStream("/lifetime.lua");
 		LuaState state = new LuaState();
 
 		LuaClosure closure = LuaCompiler.loadis(luaFile, "stdin", state
@@ -33,10 +34,10 @@ public class LuaSerializedSize {
 
 		LuaTable obj = (LuaTable)state.getEnvironment().rawget(
 				"object");
-		printByteCode((LuaClosure)obj.rawget("onUpdate"));
+		printByteCode((LuaClosure)obj.rawget("onTimer"));
 		byte[] arr = Serializer.serialize(obj, state.getEnvironment());
-		// System.out.println(arr.length);
-		// System.out.println(Arrays.toString(arr));
+		System.out.println(arr.length);
+		System.out.println(Arrays.toString(arr));
 	}
 
 	private static void printByteCode(LuaClosure closure) {

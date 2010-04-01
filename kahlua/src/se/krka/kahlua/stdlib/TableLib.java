@@ -24,9 +24,9 @@ package se.krka.kahlua.stdlib;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
+import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 
 public final class TableLib implements JavaFunction {
 
@@ -53,13 +53,13 @@ public final class TableLib implements JavaFunction {
 		this.index = index;
 	}
 
-	public static void register (LuaState state) {
+	public static void register (LuaTable state) {
 		initFunctions();
-		LuaTable table = new LuaTableImpl();
-		state.getEnvironment().rawset("table", table);
+		LuaReadOnlyTable table = new LuaReadOnlyTable();
+		state.rawset("table", table);
 
 		for (int i = 0; i < NUM_FUNCTIONS; i++) {
-			table.rawset(names[i], functions[i]);
+			table.table.put(names[i], functions[i]);
 		}
 	}
 

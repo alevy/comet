@@ -103,11 +103,11 @@ public final class BaseLib implements JavaFunction {
 		this.index = index;
 	}
 
-	public static void register(LuaState state) {
+	public static void register(LuaTable state) {
 		initFunctions();
 
 		for (int i = 0; i < NUM_FUNCTIONS; i++) {
-			state.getEnvironment().rawset(names[i], functions[i]);
+			state.rawset(names[i], functions[i]);
 		}
 	}
 
@@ -554,14 +554,14 @@ public final class BaseLib implements JavaFunction {
 		LuaTable oldMeta;
 
 		LuaTable to = null;
-		Class co = null;
+		Class<? extends Object> co = null;
 
 		if (o instanceof LuaTable) {
 			to = (LuaTable) o;
 			oldMeta = to.getMetatable();
 		} else {
 			co = o.getClass();
-			oldMeta = (LuaTable) state.userdataMetatables.rawget(co);
+			oldMeta = (LuaTable) LuaState.userdataMetatables.rawget(co.toString());
 		}
 
 		if (!raw && oldMeta != null && state.tableGet(oldMeta, "__metatable") != null) {
@@ -581,7 +581,7 @@ public final class BaseLib implements JavaFunction {
 			}
            	to.updateWeakSettings(weakKeys, weakValues);
 		} else {
-			state.userdataMetatables.rawset(co, newMeta);
+			LuaState.userdataMetatables.rawset(co, newMeta);
 		}
 	}
 

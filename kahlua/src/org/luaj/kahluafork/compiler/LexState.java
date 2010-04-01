@@ -35,7 +35,7 @@ import se.krka.kahlua.vm.LuaPrototype;
 public class LexState {
 	
 	public int nCcalls;
-	Hashtable strings = new Hashtable();
+	Hashtable<String, String> strings = new Hashtable<String, String>();
 
 	
 	protected static final String RESERVED_LOCAL_VAR_FOR_CONTROL = "(for control)";
@@ -54,7 +54,7 @@ public class LexState {
         RESERVED_LOCAL_VAR_FOR_STATE,
         RESERVED_LOCAL_VAR_FOR_STEP
     };
-    private static final Hashtable RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable();
+    private static final Hashtable<String, Boolean> RESERVED_LOCAL_VAR_KEYWORDS_TABLE = new Hashtable<String, Boolean>();
     static {
     	for ( int i=0; i<RESERVED_LOCAL_VAR_KEYWORDS.length; i++ )
         	RESERVED_LOCAL_VAR_KEYWORDS_TABLE.put( RESERVED_LOCAL_VAR_KEYWORDS[i], Boolean.TRUE );
@@ -160,7 +160,7 @@ public class LexState {
 	final static int FIRST_RESERVED = TK_AND;
 	final static int NUM_RESERVED = TK_WHILE+1-FIRST_RESERVED;
 	
-	final static Hashtable RESERVED = new Hashtable();
+	final static Hashtable<String, Integer> RESERVED = new Hashtable<String, Integer>();
 	static {
 		for ( int i=0; i<NUM_RESERVED; i++ ) {
 			String ts = luaX_tokens[i];
@@ -308,7 +308,7 @@ public class LexState {
 	}
 
 	public String newTString(String s) {
-		String t = (String) strings.get(s);
+		String t = strings.get(s);
 		if (t == null ) {
 			t = s;
 			strings.put(t, t);
@@ -670,7 +670,7 @@ public class LexState {
 					} while (isalnum(current) || current == '_');
 					ts = newstring(buff, 0, nbuff);
 					if ( RESERVED.containsKey(ts) )
-						return ((Integer)RESERVED.get(ts)).intValue();
+						return RESERVED.get(ts).intValue();
 					else {
 						token.ts = ts;
 						return TK_NAME;
@@ -926,7 +926,7 @@ public class LexState {
 		  fs.bl = null;
 		  f.maxStacksize = 2;  /* registers 0/1 are always valid */
 		  //fs.h = new LTable();
-		  fs.htable = new Hashtable();
+		  fs.htable = new Hashtable<Object, Object>();
 	}
 
 	void close_func() {

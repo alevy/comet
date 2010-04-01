@@ -28,9 +28,10 @@ import java.util.TimeZone;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
+import se.krka.kahlua.vm.LuaMapTable;
+import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 
 public class OsLib implements JavaFunction {
 	private static final int DATE = 0;
@@ -55,11 +56,11 @@ public class OsLib implements JavaFunction {
 	}
 
 	public static void register(LuaState state) {
-		LuaTable os = new LuaTableImpl();
+		LuaReadOnlyTable os = new LuaReadOnlyTable();
 		state.getEnvironment().rawset("os", os);
 
 		for (int i = 0; i < NUM_FUNCS; i++) {
-			os.rawset(funcnames[i], funcs[i]);
+			os.table.put(funcnames[i], funcs[i]);
 		}
 	}
 
@@ -232,7 +233,7 @@ public class OsLib implements JavaFunction {
 	}
 
 	public static LuaTable getTableFromDate(Calendar c) {
-		LuaTable time = new LuaTableImpl();
+		LuaTable time = new LuaMapTable();
 		time.rawset(YEAR, LuaState.toDouble(c.get(Calendar.YEAR)));
 		time.rawset(MONTH, LuaState.toDouble(c.get(Calendar.MONTH)+1));
 		time.rawset(DAY, LuaState.toDouble(c.get(Calendar.DAY_OF_MONTH)));

@@ -1,9 +1,9 @@
 bootstrap: nethack.cs.washington.edu
-bootstrap_port: 5432
+bootstrap_port: 5431
 start_bootstrap: Yes
 
 nodes: [regina.cs.washington.edu, tetris.cs.washington.edu, whitehorse.cs.washington.edu, zork.cs.washington.edu]
-ports: [5432]
+ports: [5431]
 
 copyjar: No
 

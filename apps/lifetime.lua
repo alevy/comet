@@ -1,11 +1,13 @@
 object = {}
 
+object.heartbeats = {}
+
 function object.onGet(self) return self.heartbeats end
 
-function object.handleNodes(nodes)
-  time = dht.sysTime()
+function object.handleNodes(self, nodes)
+  local time = dht.sysTime()
   for i,v in ipairs(nodes) do
-    key = table.concat({v.getIP(), v.getPort()}, ":")
+    local key = v.getIP()
     if self.heartbeats[key] then
       table.insert(self.heartbeats[key],time)
     else
@@ -15,14 +17,10 @@ function object.handleNodes(nodes)
 end
 
 function object.onStore(self)
-  dht.lookup(dht.getKey(), self.handleNodes)
+  dht.lookup(dht.key(), self.handleNodes)
   return self
 end
 
-function object.onUpdate(self,caller, value)
-  self.heartbeats[caller.getIP()] = value
-end
-
 function object.onTimer(self)
-  dht.put(dht.getKey(), dht.sysTime(), 20)
+  dht.lookup(dht.key(), self.handleNodes)
 end

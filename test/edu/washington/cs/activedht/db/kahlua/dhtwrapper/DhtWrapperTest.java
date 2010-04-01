@@ -14,6 +14,7 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 
 import se.krka.kahlua.vm.LuaCallFrame;
 import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaPrototype;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
@@ -41,7 +42,7 @@ public class DhtWrapperTest extends TestCase {
 
 	public void testSysTime() {
 		DhtWrapper sysTime = new DhtWrapper(Function.SYS_TIME, null, null,
-				null, null);
+				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		assertEquals(1, sysTime.call(callFrame, 0));
@@ -156,21 +157,6 @@ public class DhtWrapperTest extends TestCase {
 		}
 	}
 
-	public void testPutNoKey() throws Exception {
-		DhtWrapper put = new DhtWrapper(Function.PUT, state, key, neighbors,
-				null);
-		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
-
-		callFrame.push("hello world".getBytes());
-
-		assertEquals(0, put.call(callFrame, 1));
-		assertEquals(1, put.getPostActions().size());
-		PutAction action = (PutAction) put.getPostActions().peek();
-		assertEquals(key, action.key);
-		assertNotNull(action.operationAdapter);
-		assertSame(action.operationAdapter.neighbors, neighbors.get(key));
-	}
-
 	public void testPutWithKey() throws Exception {
 		DhtWrapper put = new DhtWrapper(Function.PUT, state, null, neighbors,
 				null);
@@ -217,15 +203,18 @@ public class DhtWrapperTest extends TestCase {
 	}
 
 	public void testKey() throws Exception {
-		DhtWrapper getKey = new DhtWrapper(Function.KEY, state, key, null, null);
+		DhtWrapper getKey = new DhtWrapper(Function.KEY, state, key,
+				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 		assertEquals(1, getKey.call(callFrame, 0));
 		assertEquals(key, callFrame.get(0));
 	}
 
 	public void testRegister() {
-		DhtWrapper.register(state, null, null, null, null);
-		LuaTable dht = (LuaTable) state.getEnvironment().rawget("dht");
+		LuaMapTable env = new LuaMapTable();
+		DhtWrapper.register(env, state, null,
+				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null, null, null);
+		LuaTable dht = (LuaTable) env.rawget("dht");
 		assertNotNull(dht);
 		for (Function function : Function.values()) {
 			DhtWrapper wrapper = (DhtWrapper) dht.rawget(function.name);

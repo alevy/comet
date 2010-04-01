@@ -3,9 +3,9 @@ package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 import java.util.List;
 
 import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 import se.krka.kahlua.vm.serialize.Deserializer;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
@@ -27,7 +27,7 @@ class LuaGetCallback implements GetCallback {
 	}
 
 	public void call(List<DHTTransportValue> values) {
-		LuaTable vals = new LuaTableImpl(values.size());
+		LuaTable vals = new LuaMapTable();
 		for (int i = 0; i < values.size(); ++i) {
 			byte[] value = values.get(i).getValue();
 			if (value != null) {

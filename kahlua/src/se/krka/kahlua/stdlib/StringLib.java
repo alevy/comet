@@ -23,9 +23,9 @@ package se.krka.kahlua.stdlib;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
+import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 
 public final class StringLib implements JavaFunction {
 
@@ -59,7 +59,7 @@ public final class StringLib implements JavaFunction {
 	private static StringLib[] functions;  
 
 	// NOTE: String.class won't work in J2ME - so this is used as a workaround
-	public static final Class STRING_CLASS = "".getClass();
+	public static final Class<? extends Object> STRING_CLASS = "".getClass();
 	
 	static {
 		names = new String[NUM_FUNCTIONS];
@@ -85,15 +85,15 @@ public final class StringLib implements JavaFunction {
 		this.methodId = index;
 	}
 
-	public static void register(LuaState state) {
-		LuaTable string = new LuaTableImpl();
-		state.getEnvironment().rawset("string", string);
+	public static void register(LuaTable state) {
+		LuaReadOnlyTable string = new LuaReadOnlyTable();
+		state.rawset("string", string);
 		for (int i = 0; i < NUM_FUNCTIONS; i++) {
-			string.rawset(names[i], functions[i]);
+			string.table.put(names[i], functions[i]);
 		}
 
-		string.rawset("__index", string);
-		state.setUserdataMetatable(STRING_CLASS, string);
+		string.table.put("__index", string);
+		LuaState.userdataMetatables.rawset(STRING_CLASS.toString(), string);
 	}
 
 	public String toString() {

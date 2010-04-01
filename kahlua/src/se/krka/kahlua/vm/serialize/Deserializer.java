@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaPrototype;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 
 public class Deserializer {
 
@@ -34,7 +34,7 @@ public class Deserializer {
 
 	public LuaTable readTable() throws IOException {
 		int length = stream.readInt();
-		LuaTable result = new LuaTableImpl(length);
+		LuaTable result = new LuaMapTable();
 		deserialized.add(result);
 		for (int i = 0; i < length; ++i) {
 			Object key = deserialize();

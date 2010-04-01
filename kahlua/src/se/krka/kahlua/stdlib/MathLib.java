@@ -25,9 +25,9 @@ import java.util.Random;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
+import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 
 public final class MathLib implements JavaFunction {
 
@@ -99,16 +99,16 @@ public final class MathLib implements JavaFunction {
 	}
 
 
-	public static void register(LuaState state) {
+	public static void register(LuaTable state) {
 		initFunctions();
-		LuaTable math = new LuaTableImpl();
-		state.getEnvironment().rawset("math", math);
+		LuaReadOnlyTable math = new LuaReadOnlyTable();
+		state.rawset("math", math);
 
-		math.rawset("pi", LuaState.toDouble(Math.PI));
-		math.rawset("huge", LuaState.toDouble(Double.POSITIVE_INFINITY));
+		math.table.put("pi", LuaState.toDouble(Math.PI));
+		math.table.put("huge", LuaState.toDouble(Double.POSITIVE_INFINITY));
 
 		for (int i = 0; i < NUM_FUNCTIONS; i++) {
-		    math.rawset(names[i], functions[i]);
+		    math.table.put(names[i], functions[i]);
 		}
 	}
 

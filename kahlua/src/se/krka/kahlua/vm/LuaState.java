@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Random;
+
 import se.krka.kahlua.stdlib.BaseLib;
 import se.krka.kahlua.stdlib.CoroutineLib;
 import se.krka.kahlua.stdlib.MathLib;
-import se.krka.kahlua.stdlib.OsLib;
 import se.krka.kahlua.stdlib.StringLib;
 import se.krka.kahlua.stdlib.TableLib;
 
@@ -116,7 +116,7 @@ public class LuaState {
 	// Needed for Math lib - every state needs its own random
 	public Random random = new Random();
 
-	public LuaTable userdataMetatables;
+	public static LuaTable userdataMetatables = new LuaMapTable();
 
 	public PrintStream out;
 
@@ -152,6 +152,11 @@ public class LuaState {
 			reset();
 		}
 	}
+	
+	public LuaState(LuaTable env) {
+		out = System.out;
+		currentThread = new LuaThread(this, env);
+	}
 
 	// For debugging purposes only
 	/*
@@ -164,25 +169,18 @@ public class LuaState {
 	 */
 
 	protected final void reset() {
-		currentThread = new LuaThread(this, new LuaTableImpl());
+		currentThread = new LuaThread(this, new LuaMapTable());
 
-		userdataMetatables = new LuaTableImpl();
-		getEnvironment().rawset("_G", getEnvironment());
-		getEnvironment().rawset("_VERSION", "Lua 5.1 for CLDC 1.1");
+		LuaTable env = getEnvironment();
+		env.rawset("_G", env);
+		env.rawset("_VERSION", "Lua 5.1 for CLDC 1.1");
 
-		BaseLib.register(this);
-		StringLib.register(this);
-		MathLib.register(this);
-		CoroutineLib.register(this);
-		OsLib.register(this);
-		TableLib.register(this);
-		
-		LuaClosure closure = loadByteCodeFromResource("/stdlib",
-				getEnvironment());
-		if (closure != null) {
-			//BaseLib.fail("Could not load /stdlib.lbc");
-			call(closure);
-		}
+		BaseLib.register(env);
+		StringLib.register(env);
+		MathLib.register(env);
+//		CoroutineLib.register(this);
+//		OsLib.register(this);
+		TableLib.register(env);
 	}
 
 	public int call(int nArguments) {
@@ -359,7 +357,7 @@ public class LuaState {
 					// b = getB9(op);
 					// c = getC9(op);
 
-					LuaTable t = new LuaTableImpl();
+					LuaTable t = new LuaMapTable();
 					callFrame.set(a, t);
 					break;
 				}
@@ -1042,8 +1040,8 @@ public class LuaState {
 		return getMetaOp(b, meta_op);
 	}
 
-	public void setUserdataMetatable(Class type, LuaTable metatable) {
-		userdataMetatables.rawset(type, metatable);
+	public void setUserdataMetatable(Class<? extends Object> type, LuaTable metatable) {
+		userdataMetatables.rawset(type.toString(), metatable);
 	}
 
 	private final Object getRegisterOrConstant(LuaCallFrame callFrame, int index, LuaPrototype prototype) {
@@ -1202,7 +1200,7 @@ public class LuaState {
 			LuaTable t = (LuaTable) o;
 			metatable = t.getMetatable();
 		} else {
-			metatable = (LuaTable) userdataMetatables.rawget(o.getClass());
+			metatable = (LuaTable) userdataMetatables.rawget(o.getClass().toString());
 		}
 
 		if (!raw && metatable != null) {

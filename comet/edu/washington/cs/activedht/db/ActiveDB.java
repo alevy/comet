@@ -60,7 +60,7 @@ public class ActiveDB implements DHTDB {
 	}
 
 	public void init() {
-		SimpleTimer.addPeriodicEvent("ActiveDB Timer", 60000,
+		SimpleTimer.addPeriodicEvent("ActiveDB Timer", 180000,
 		// DHTControl.CACHE_REPUBLISH_INTERVAL_DEFAULT,
 				performer);
 	}
@@ -143,7 +143,7 @@ public class ActiveDB implements DHTDB {
 		DHTTransportValue activeValue = new BasicDHTTransportValue(SystemTime
 				.getCurrentTime(), value, "", adapter.getNextValueVersions(1),
 				localContact, true, flags);
-		if ((flags & DHT.FLAG_PUT_AND_FORGET) != 0) {
+		if ((flags & DHT.FLAG_PUT_AND_FORGET) == 0) {
 			store(localContact, key, new DHTTransportValue[] { activeValue });
 		}
 		return activeValue;

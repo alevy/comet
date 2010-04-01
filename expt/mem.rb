@@ -7,10 +7,10 @@ bhost = "localhost"
 
 valueType = "KAHLUA"
 
-for n in ((2..8).map {|i| 10**i})
+for n in ((0..8).map {|i| 10**i})
 
   mpid = Process.fork do
-      Kernel.exec("java", "-Xmx1000m","-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
+      Kernel.exec("java", "-Xmx1500m","-classpath", File.join(File.dirname(__FILE__), "../dist/comet.jar"),
         "edu.washington.cs.activedht.expt.ActivePeer",
         "-p", bport,
         "-h", bhost,

@@ -4,6 +4,8 @@ $:.unshift File.dirname(__FILE__)
 
 require 'arrays'
 
+scale = (ARGV.pop || 1).to_i
+
 hash = Hash.new
 while(line = gets)
   k,v = line.split(',')
@@ -12,6 +14,6 @@ while(line = gets)
 end
 
 hash.sort.each do |k,v|
-  puts "#{k},#{v.mean},#{v.stdev}"
+  puts "#{k},#{v.mean / scale},#{v.stdev}"
 end
 

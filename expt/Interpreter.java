@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.util.concurrent.Semaphore;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
@@ -11,12 +13,13 @@ import org.gudy.azureus2.core3.util.SHA1Simple;
 
 import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.stdlib.BaseLib;
+import se.krka.kahlua.vm.ComposedLuaTable;
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
 import se.krka.kahlua.vm.LuaClosure;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 import se.krka.kahlua.vm.serialize.Deserializer;
 import se.krka.kahlua.vm.serialize.Serializer;
 
@@ -27,6 +30,7 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandlerAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
 import edu.washington.cs.activedht.expt.ActivePeer;
 import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
@@ -67,7 +71,7 @@ public class Interpreter {
 				payload = Serializer.serialize(callFrame.get(1), state
 						.getEnvironment());
 			}
-			final LuaTable values = new LuaTableImpl();
+			final LuaMapTable values = new LuaMapTable();
 			final Semaphore sema = new Semaphore(0);
 
 			if (nArguments > 2) {
@@ -124,6 +128,7 @@ public class Interpreter {
 							Object obj = Deserializer.deserializeBytes(value
 									.getValue(), state.getEnvironment());
 							values.rawset(new NodeWrapper(contact), obj);
+							System.err.println(obj);
 						}
 
 						public void complete(boolean timeout) {
@@ -131,12 +136,12 @@ public class Interpreter {
 						}
 					});
 			sema.acquireUninterruptibly();
-			if (values.len() == 0) {
+			if (values.table.size() == 0) {
 				callFrame.pushNil();
 				return 1;
 			}
 			callFrame.push(values);
-			return values.len();
+			return 1;
 		}
 
 	}
@@ -151,7 +156,7 @@ public class Interpreter {
 			byte[] key;
 			if (String.class.isInstance(obj)) {
 				key = ((String) obj).getBytes();
-				final LuaTable contacts = new LuaTableImpl();
+				final LuaTable contacts = new LuaMapTable();
 				final Semaphore sema = new Semaphore(0);
 				dhtControl.lookup(key, "", 60000, new DHTOperationAdapter() {
 					int i = 1;
@@ -172,7 +177,7 @@ public class Interpreter {
 			} else {
 				key = ((HashWrapper) obj).getBytes();
 
-				final LuaTable contacts = new LuaTableImpl();
+				final LuaTable contacts = new LuaMapTable();
 				final Semaphore sema = new Semaphore(0);
 				dhtControl.lookupEncoded(key, "", 60000, true,
 						new DHTOperationAdapter() {
@@ -246,7 +251,7 @@ public class Interpreter {
 				return 0;
 			}
 
-			final LuaTable contacts = new LuaTableImpl();
+			final LuaTable contacts = new LuaMapTable();
 			final Semaphore sema = new Semaphore(0);
 			dhtControl.put(key.getBytes(), "", payload, (byte) 0, (byte) 8,
 					DHT.REP_FACT_DEFAULT, true, new DHTOperationAdapter() {
@@ -351,11 +356,14 @@ public class Interpreter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		ActivePeer// peer = new ActivePeer(1234, "dht.aelitis.com:6881");
-		peer = new ActivePeer(5432, "nethack.cs.washington.edu:5432", false, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
-		peer.init("granville.cs.washington.edu");
-		Thread.sleep(5000);
-		new Interpreter(new LuaState(), System.in, peer.dht.getControl()).run();
+		String bootstrap = "dht.aelitis.com:6881";
+		if (args.length > 0) {
+			bootstrap = args[0];
+		}
+		ActivePeer peer = new ActivePeer(5431, bootstrap, false, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
+		peer.init(InetAddress.getLocalHost().getHostAddress());
+		//Thread.sleep(5000);
+		new Interpreter(new LuaState(new ComposedLuaTable(new LuaMapTable(), KahluaActiveDHTDBValue.env)), System.in, peer.dht.getControl()).run();
 		peer.stop();
 	}
 }

@@ -6,36 +6,35 @@ package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 import java.util.SortedSet;
 
 import se.krka.kahlua.vm.LuaClosure;
-import se.krka.kahlua.vm.LuaState;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.LuaTableImpl;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsCallback;
+import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
 /**
  * @author levya
- *
+ * 
  */
 public class LuaUpdateNeighborsCallback implements UpdateNeighborsCallback {
 
 	private final LuaClosure closure;
-	private final LuaState state;
+	private final KahluaActiveDHTDBValue value;
 
-	public LuaUpdateNeighborsCallback(LuaClosure closure, LuaState state) {
+	public LuaUpdateNeighborsCallback(LuaClosure closure,
+			KahluaActiveDHTDBValue value) {
 		this.closure = closure;
-		this.state = state;
+		this.value = value;
 	}
 
 	@Override
 	public void call(SortedSet<NodeWrapper> neighbors) {
-		LuaTable vals = new LuaTableImpl(neighbors.size());
+		LuaTable vals = new LuaMapTable();
 		for (NodeWrapper neighbor : neighbors) {
 			if (neighbor != null) {
 				vals.rawset(vals.len() + 1, neighbor);
 			}
 		}
-		synchronized (state) {
-			state.call(closure, new Object[] { vals });
-		}
+		value.call(closure, new Object[] { vals });
 	}
 
 }

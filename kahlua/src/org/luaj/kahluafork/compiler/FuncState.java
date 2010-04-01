@@ -52,7 +52,7 @@ public class FuncState {
 	
 	LuaPrototype f;  /* current function header */
 //	LTable h;  /* table to find (and reuse) elements in `k' */
-	Hashtable htable;  /* table to find (and reuse) elements in `k' */
+	Hashtable<Object, Object> htable;  /* table to find (and reuse) elements in `k' */
 	FuncState prev;  /* enclosing function */
 	LexState ls;  /* lexical state */
 	BlockCnt bl;  /* chain of current blocks */

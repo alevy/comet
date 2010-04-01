@@ -34,7 +34,7 @@ public class LuaNodeMicrobenchmark extends NodeMicrobenchmark {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int numObjects = 10;
+		int numObjects = 1;
 		int observations = 100;
 		int startupTime = 5000;
 		int gap = 1000;
