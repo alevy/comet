@@ -299,7 +299,7 @@ public class LuaState {
 				case OP_GETGLOBAL: {
 					a = getA8(op);
 					b = getBx(op);
-					Object res = tableGet(closure.env, prototype.constants[b]);
+					Object res = tableGet(getEnvironment(), prototype.constants[b]);
 					callFrame.set(a, res);
 					break;
 				}
@@ -322,7 +322,7 @@ public class LuaState {
 					Object value = callFrame.get(a);
 					Object key = prototype.constants[b];
 
-					tableSet(closure.env, key, value);
+					tableSet(getEnvironment(), key, value);
 
 					break;
 				}

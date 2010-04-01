@@ -52,7 +52,6 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	private byte[] value;
 
 	private Object luaObject;
-	private LuaState state;
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
 	private DHTControl control;
@@ -75,10 +74,6 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 			Object... args) {
 		ActiveDHTDBValue result = this;
 		if (luaObject == null) {
-			LuaMapTable dhtMap = new LuaReadOnlyTable();
-			state = new LuaState(new ComposedLuaTable(dhtMap, env));
-			DhtWrapper.register(dhtMap, state, key, new HashMap<HashWrapper, SortedSet<NodeWrapper>>(),
-					control, postActions, this);
 			luaObject = deserialize(value);
 		}
 		if (LuaTable.class.isInstance(luaObject)) {
@@ -110,6 +105,10 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	}
 
 	public synchronized Object call(LuaClosure function, Object[] args) {
+		LuaMapTable dhtMap = new LuaReadOnlyTable();
+		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env));
+		DhtWrapper.register(dhtMap, state, key, new HashMap<HashWrapper, SortedSet<NodeWrapper>>(),
+				control, postActions, this);
 		Object[] functionArgs = new Object[args.length + 1];
 		functionArgs[0] = luaObject;
 		for (int i = 1; i < functionArgs.length; ++i) {
@@ -126,11 +125,11 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	}
 
 	public synchronized Object deserialize(byte[] value) {
-		return Deserializer.deserializeBytes(value, state.getEnvironment());
+		return Deserializer.deserializeBytes(value, env);
 	}
 
 	public byte[] serialize(Object object) {
-		return Serializer.serialize(object, state.getEnvironment());
+		return Serializer.serialize(object, env);
 	}
 
 	public void registerGlobalState(DHTControl control, HashWrapper key) {
