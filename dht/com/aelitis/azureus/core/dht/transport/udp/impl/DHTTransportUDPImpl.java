@@ -232,6 +232,30 @@ DHTTransportUDPImpl
 		int				_dht_receive_delay,
 		boolean			_bootstrap_node,
 		boolean			_initial_reachability,
+		DHTLogger		_logger,
+		DHTTransportUDPContactImpl localContact)
+	
+		throws DHTTransportException
+	{
+		this(_protocol_version, _network, _v6, _ip, _default_ip, _port, _max_fails_for_live, _max_fails_for_unknown, _timeout, _dht_send_delay, _dht_receive_delay, _bootstrap_node, _initial_reachability, _logger);
+		local_contact = localContact;
+	}
+	
+	public
+	DHTTransportUDPImpl(
+		byte			_protocol_version,
+		int				_network,
+		boolean			_v6,
+		String			_ip,
+		String			_default_ip,
+		int				_port,
+		int				_max_fails_for_live,
+		int				_max_fails_for_unknown,
+		long			_timeout,
+		int				_dht_send_delay,
+		int				_dht_receive_delay,
+		boolean			_bootstrap_node,
+		boolean			_initial_reachability,
 		DHTLogger		_logger )
 	
 		throws DHTTransportException
@@ -295,6 +319,9 @@ DHTTransportUDPImpl
 		logger.log( "Initial external address: " + address );
 		
 		local_contact = new DHTTransportUDPContactImpl( true, this, address, address, protocol_version, random.nextInt(), 0 );
+	}
+	
+	public DHTTransportUDPImpl() {
 	}
 	
 	protected void

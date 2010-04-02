@@ -73,7 +73,7 @@ DHTTransportUDPContactImpl
 		
 	private DHTNetworkPosition[]		network_positions;
 	
-	protected
+	public
 	DHTTransportUDPContactImpl(
 		boolean					_is_local,
 		DHTTransportUDPImpl		_transport,
@@ -111,6 +111,12 @@ DHTTransportUDPContactImpl
 	getTransport()
 	{
 		return( transport );
+	}
+	
+	public void
+	setTransport(DHTTransportUDPImpl transport)
+	{
+		this.transport = transport;
 	}
 	
 	public byte

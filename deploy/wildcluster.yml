@@ -1,5 +1,5 @@
 bootstrap: dht.aelitis.com
-bootstrap_port: 1234
+bootstrap_port: 6881
 start_bootstrap: No
 
 nodes: [nethack.cs.washington.edu, regina.cs.washington.edu, tetris.cs.washington.edu, whitehorse.cs.washington.edu, zork.cs.washington.edu]

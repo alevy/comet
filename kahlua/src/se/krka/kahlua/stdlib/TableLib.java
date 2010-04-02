@@ -24,6 +24,7 @@ package se.krka.kahlua.stdlib;
 
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
+import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaReadOnlyTable;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
@@ -34,7 +35,8 @@ public final class TableLib implements JavaFunction {
 	private static final int INSERT = 1;
 	private static final int REMOVE = 2;
 	private static final int MAXN = 3;
-	private static final int NUM_FUNCTIONS = 4;
+	private static final int PRINT = 4;
+	private static final int NUM_FUNCTIONS = 5;
 	
 	private static final String[] names;
 	private static TableLib[] functions;
@@ -45,6 +47,7 @@ public final class TableLib implements JavaFunction {
 		names[INSERT] = "insert";
 		names[REMOVE] = "remove";
 		names[MAXN] = "maxn";
+		names[PRINT] = "print";
 	}
 	
 	private int index;
@@ -86,11 +89,21 @@ public final class TableLib implements JavaFunction {
 				return remove(callFrame, nArguments);
 			case MAXN:
 				return maxn(callFrame, nArguments);
+			case PRINT:
+				return print(callFrame, nArguments);
 			default:
 				return 0;
 		}
 	}
 
+	private static int print (LuaCallFrame callFrame, int nArguments) {
+		BaseLib.luaAssert(nArguments >= 1, "expected table, got no arguments");
+		LuaMapTable table = (LuaMapTable)callFrame.get(0);
+		
+		System.out.println(table.table.toString());
+		
+		return 0;
+	}
 	private static int concat (LuaCallFrame callFrame, int nArguments) {
 		BaseLib.luaAssert(nArguments >= 1, "expected table, got no arguments");
 		LuaTable table = (LuaTable)callFrame.get(0);

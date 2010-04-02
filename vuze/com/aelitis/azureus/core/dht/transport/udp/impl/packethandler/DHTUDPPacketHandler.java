@@ -187,7 +187,6 @@ DHTUDPPacketHandler
 			}
 			
 		}catch( PRUDPPacketHandlerException e ){
-			
 			throw( new DHTUDPPacketHandlerException(e ));
 			
 		}finally{

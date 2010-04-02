@@ -193,6 +193,8 @@ DHTControlImpl
 		};
 		
 	private static final int	REMOTE_ESTIMATE_HISTORY	= 128;
+
+	private static final boolean ANTI_SPOOF = false;
 	
 	private List	remote_estimate_values = new LinkedList();
 		
@@ -4050,7 +4052,7 @@ DHTControlImpl
 		DHTTransportContact 	c,
 		boolean					direct )
 	{
-		boolean	ok = c.getRandomID() == generateSpoofID( c );
+		boolean	ok = c.getRandomID() == generateSpoofID( c ) || !ANTI_SPOOF;
 		
 		if ( DHTLog.CONTACT_VERIFY_TRACE ){
 				

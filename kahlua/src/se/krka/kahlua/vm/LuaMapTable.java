@@ -3,11 +3,12 @@ package se.krka.kahlua.vm;
 import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 
 /**
  * 
  * @author levya
- *
+ * 
  */
 public class LuaMapTable implements LuaTable {
 
@@ -19,7 +20,7 @@ public class LuaMapTable implements LuaTable {
 		this.table = table;
 		this.metatable = metatable;
 	}
-	
+
 	public LuaMapTable() {
 		this.table = new TreeMap<Object, Object>(new Comparator<Object>() {
 			@Override
@@ -78,6 +79,11 @@ public class LuaMapTable implements LuaTable {
 	@Override
 	public void updateWeakSettings(boolean weakKeys, boolean weakValues) {
 		return;
+	}
+
+	@Override
+	public String toString() {
+		return table.toString();
 	}
 
 }
