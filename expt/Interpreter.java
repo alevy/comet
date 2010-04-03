@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SHA1Simple;
@@ -359,7 +360,7 @@ public class Interpreter {
 		if (args.length > 0) {
 			bootstrap = args[0];
 		}
-		ActivePeer peer = new ActivePeer(5431, bootstrap, false, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
+		ActivePeer peer = new ActivePeer(5431, bootstrap, Level.OFF, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
 		peer.init(InetAddress.getLocalHost().getHostAddress());
 		//Thread.sleep(5000);
 		new Interpreter(new LuaState(new ComposedLuaTable(new LuaMapTable(), KahluaActiveDHTDBValue.env)), System.in, peer.dht.getControl()).run();

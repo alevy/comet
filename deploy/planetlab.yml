@@ -1,0 +1,16 @@
+bootstrap: dht.aelitis.com
+bootstrap_port: 6881
+start_bootstrap: No
+
+nodes: <%= File.read(File.join(@basedir, "planetlab.hosts")).split("\n").inspect%>
+ports: [1234]
+
+copyjar: No
+
+user: uw_comet
+
+rwd: /home/uw_comet
+
+jarfile: /homes/sys/levya/workspace/activedht/dist/comet.jar
+
+java: /home/uw_comet/jre/bin/java

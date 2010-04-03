@@ -1,4 +1,5 @@
 import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
 
 import org.gudy.azureus2.core3.util.SHA1Simple;
 
@@ -53,7 +54,7 @@ public class PutMany {
 			}
 		}
 
-		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, false,
+		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, Level.OFF,
 				ActivePeer.NA_VALUE_FACTORY_INTERFACE, 20);
 		peer.init(localHostname);
 		final Semaphore sema = new Semaphore(0);

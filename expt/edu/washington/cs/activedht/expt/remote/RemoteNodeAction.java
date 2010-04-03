@@ -20,7 +20,7 @@ public abstract class RemoteNodeAction {
 	protected DHTTransportUDPImpl transport;
 
 	public RemoteNodeAction(String args[]) throws Exception {
-		String node = "nethack.cs.washington.edu:5431";
+		String node = "nethack.cs.washington.edu:1234";
 		if (args.length > 0) {
 			node = args[0];
 		}

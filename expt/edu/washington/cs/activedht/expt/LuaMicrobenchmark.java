@@ -2,6 +2,7 @@ package edu.washington.cs.activedht.expt;
 
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.util.logging.Level;
 
 import edu.washington.cs.activedht.db.DHTDBValueFactory;
 
@@ -65,7 +66,7 @@ public class LuaMicrobenchmark extends Microbenchmark {
 				bootstrapLoc = args[++i];
 			}
 		}
-		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, false,
+		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, Level.OFF,
 				valueFactory, 200);
 		LuaMicrobenchmark microbenchmark = new LuaMicrobenchmark(peer,
 				"activeobject = {onGet = function(self) return \"hello\" end}",

@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.gudy.azureus2.plugins.PluginInterface;
 
 import com.aelitis.azureus.core.AzureusCore;
@@ -18,7 +20,6 @@ import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.DHTStorageAdapter;
 import com.aelitis.azureus.core.dht.control.DHTControl;
 import com.aelitis.azureus.core.dht.db.DHTDBValue;
-import com.aelitis.azureus.core.dht.impl.DHTLog;
 import com.aelitis.azureus.core.dht.nat.DHTNATPuncherAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import com.aelitis.azureus.core.dht.transport.DHTTransportException;
@@ -39,6 +40,8 @@ import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
  */
 
 class DHTParams {
+	
+	
 	final int kDhtIndexLen;
 	final int kNumTries;
 	final long kRetrySleep_ms;
@@ -64,6 +67,8 @@ class DHTParams {
 
 public class ActivePeer implements DHTNATPuncherAdapter {
 
+	private final Logger LOG = Logger.getLogger(ActivePeer.class.getCanonicalName());
+	
 	private static final int DEFAULT_LOOKUP_CONCURRENCY = 200;
 
 	public enum ValueFactory {
@@ -110,7 +115,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	private static final AzureusCore azureusCore = AzureusCoreFactory.create();
 	// DHT-related params (these are fixed forever, as we give them to DHT):
-	private final boolean kDhtLoggingOn;
 	private final int kDhtLookupConcurrency;
 
 	private final String kDhtBootstrapAddress;
@@ -142,18 +146,19 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	private final int current_udp_timeout;
 
 	public ActivePeer(int port, String bootstrap) throws Exception {
-		this(port, bootstrap, false, KAHLUA_VALUE_FACTORY_INTERFACE,
+		this(port, bootstrap, Level.OFF, KAHLUA_VALUE_FACTORY_INTERFACE,
 				DEFAULT_LOOKUP_CONCURRENCY);
 	}
 
-	public ActivePeer(int port, String bootstrap, boolean logging,
+	public ActivePeer(int port, String bootstrap, Level logging,
 			DHTDBValueFactory factoryInterface, int lookupConurrency)
 			throws Exception {
 		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
 
 		// Load the parameters from the configuration:
 
-		kDhtLoggingOn = logging;
+		LOG.setLevel(logging);
+		
 		kDhtLookupConcurrency = lookupConurrency;
 		kDhtPort = port;
 		kDhtNumReplicas = 20;
@@ -172,7 +177,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		kStorageManager = createStorageAdapter(kDhtNetwork, kDhtLogger,
 				new File(kDhtDirectory));
 
-		kDhtProperties = constructDHTProperties(kDhtLoggingOn);
+		kDhtProperties = constructDHTProperties();
 
 		params = this.getRenewedParamsFromConfig();
 
@@ -235,7 +240,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	// Helper functions:
 
-	private Properties constructDHTProperties(boolean loggingOn) {
+	private Properties constructDHTProperties() {
 		DHTTransportUDPImpl.TEST_EXTERNAL_IP = false; // TODO(roxana): true?
 
 		Properties dht_props = new Properties();
@@ -244,8 +249,6 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		dht_props.put(DHT.PR_SEARCH_CONCURRENCY, kDhtLookupConcurrency);
 		dht_props.put(DHT.PR_CACHE_REPUBLISH_INTERVAL, new Integer(
 				DHTControl.CACHE_REPUBLISH_INTERVAL_DEFAULT));
-
-		DHTLog.logging_on = loggingOn;
 
 		return dht_props;
 	}
@@ -313,22 +316,20 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 		DHTLogger ret_logger = new DHTLogger() {
 			public void log(String str) {
-				if (DHTLog.logging_on)
-					System.err.println(str);// LOG.debug(str);
+				LOG.log(Level.INFO, str);
 			}
 
 			public void log(Throwable e) {
-				if (DHTLog.logging_on)
-					System.err.println(e.getMessage());// LOG.error("", e);
+				LOG.log(Level.WARNING, "", e);
 			}
 
 			public void log(int log_type, String str) {
 				if (isEnabled(log_type))
-					System.err.println(str);// LOG.debug(str);
+					LOG.log(Level.INFO, str);
 			}
 
 			public boolean isEnabled(int log_type) {
-				return DHTLog.logging_on;
+				return true;
 			}
 
 			public PluginInterface getPluginInterface() {
@@ -397,7 +398,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		int port = 4321;
 		String hostname = "granville.cs.washington.edu";
 		String bootstrapLoc = "nethack.cs.washington.edu:5432";
-		boolean logging = false;
+		Level logging = Level.OFF;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {
@@ -410,7 +411,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 			} else if (args[i].equals("-b")) {
 				bootstrapLoc = args[++i];
 			} else if (args[i].equals("-l")) {
-				logging = true;
+				logging = Level.parse(args[++i].toUpperCase());
 			}
 		}
 		ActivePeer peer = new ActivePeer(port, bootstrapLoc, logging,

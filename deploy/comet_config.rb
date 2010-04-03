@@ -9,6 +9,7 @@ class CometConfig
   attr_reader :bootstrap_port
   attr_reader :nodes
   attr_reader :start_bootstrap
+  attr_reader :user
   
   def initialize(hash)
     hash.each do |key,val|
@@ -18,6 +19,14 @@ class CometConfig
   
   def hosts
     [@bootstrap] + @nodes
+  end
+  
+  def userat
+    if @user
+      "#{@user}@"
+    else
+      ""
+    end
   end
   
   def jarbasename

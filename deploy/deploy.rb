@@ -4,13 +4,15 @@ $: << File.dirname(__FILE__)
 
 require 'comet_config'
 require 'yaml'
+require 'erb'
 
 config_file = ARGV.first
 
 raise "You must specifcy deployment configuration file." unless config_file
 raise "Deployment configuration file #{config_file} does not exist" unless File.exist?(config_file)
 
-config = CometConfig.new(YAML::load(File.read(config_file)))
+@basedir = File.dirname(__FILE__)
+config = CometConfig.new(YAML::load(ERB.new(File.read(config_file)).result(binding)))
 
 if config.copyjar
   config.nodes.each do |host|
@@ -33,7 +35,7 @@ if config.start_bootstrap
       config.bootstrap, "bash",
       File.join(config.rwd, "background.sh"),
       config.rwd,
-      "\"#{config.java} -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address}\"")
+      "\"#{config.java} -Xmx521m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l ALL -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address}\"")
   end
   sleep(5)
 end
@@ -45,8 +47,7 @@ config.nodes.each do |host|
         host, "bash",
         File.join(config.rwd, "background.sh"),
         config.rwd,
-        "\"#{config.java} -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l -h #{host} -p #{port} -b #{config.bootstrap_address}\"")
+        "\"#{config.java} -Xmx521m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l WARNING -h #{host} -p #{port} -b #{config.bootstrap_address}\"")
     end
   end
 end
-#"screen -d -m ~/workspace/activedht/src/runclass.sh edu.washington.cs.activedht.expt.ActivePeer -h nethack.cs.washington.edu -p 4321 -b nethack.cs.washington.edu:4321")

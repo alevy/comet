@@ -2,7 +2,11 @@ object = {}
 
 object.heartbeats = {}
 
-function object.onGet(self) return self.heartbeats end
+function object.onGet(self)
+  local result = self.heartbeats
+  self.heartbeats = {}
+  return result
+end
 
 function object.handleNodes(self, nodes)
   local time = dht.sysTime()
