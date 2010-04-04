@@ -4,6 +4,7 @@
 package edu.washington.cs.activedht.expt.remote;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,7 +31,7 @@ public class LifetimeGet extends RemoteNodeAction {
 		super(args);
 		if (args.length > 1) {
 			File file = new File(args[1]);
-			out = new PrintStream(file);
+			out = new PrintStream(new FileOutputStream(file, true));
 		}
 	}
 
@@ -52,6 +53,7 @@ public class LifetimeGet extends RemoteNodeAction {
 		if (value[0] == Type.TABLE) {
 			LuaMapTable table = (LuaMapTable) Deserializer.deserializeBytes(
 					value, new LuaMapTable());
+			System.out.println(table.table.size());
 			for (Map.Entry<Object, Object> entry : table.table.entrySet()) {
 				out.print(entry.getKey());
 				out.print(":");
@@ -81,6 +83,8 @@ public class LifetimeGet extends RemoteNodeAction {
 			}
 		}, contact.getID(), new byte[] {}, new byte[] {}, 1, (byte) 0);
 		sema.acquire();
+		out.flush();
+		out.close();
 	}
 
 	public static void main(String[] args) throws Exception {

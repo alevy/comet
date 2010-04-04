@@ -1,4 +1,5 @@
 #!/bin/bash
+cd `dirname $0`
 
 classname=$1
 shift

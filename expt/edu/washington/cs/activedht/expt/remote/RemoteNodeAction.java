@@ -14,8 +14,6 @@ import com.aelitis.azureus.core.dht.transport.udp.impl.DHTTransportUDPImpl;
 
 public abstract class RemoteNodeAction {
 
-	private static final int INSTANCE_ID = 9872345;
-
 	protected DHTTransportUDPContactImpl contact;
 	protected DHTTransportUDPImpl transport;
 
@@ -34,9 +32,11 @@ public abstract class RemoteNodeAction {
 
 		InetSocketAddress remoteAddress = new InetSocketAddress(ip, port);
 
-		InetSocketAddress localAddress = new InetSocketAddress(myAddress, 1232);
+		int instanceId = InetAddress.getLocalHost().hashCode();
+		
+		InetSocketAddress localAddress = new InetSocketAddress(myAddress, 1234);
 		DHTTransportUDPContactImpl localContact = new DHTTransportUDPContactImpl(false, transport, localAddress,
-				localAddress, DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS, INSTANCE_ID,
+				localAddress, DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS, instanceId,
 				0L);
 		
 		transport = new DHTTransportUDPImpl(

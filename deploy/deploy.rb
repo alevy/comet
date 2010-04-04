@@ -27,6 +27,7 @@ if config.copyjar
             "#{host}:#{config.rwd}")
         end
   end
+  Process.waitall
 end
 
 if config.start_bootstrap
@@ -37,6 +38,7 @@ if config.start_bootstrap
       config.rwd,
       "\"#{config.java} -Xmx521m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l ALL -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address}\"")
   end
+  Process.waitall
   sleep(5)
 end
 
@@ -50,4 +52,5 @@ config.nodes.each do |host|
         "\"#{config.java} -Xmx521m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l WARNING -h #{host} -p #{port} -b #{config.bootstrap_address}\"")
     end
   end
+  Process.waitall
 end
