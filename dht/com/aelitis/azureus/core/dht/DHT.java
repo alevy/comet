@@ -62,7 +62,7 @@ DHT
 	public static final byte		FLAG_PUT_AND_FORGET		= 0x40;				// local only
 	public static final byte		FLAG_OBFUSCATE_LOOKUP	= (byte)0x80;		// local only
 
-	public static final int 	MAX_VALUE_SIZE		= 10485760;
+	public static final int 	MAX_VALUE_SIZE		= 10240;
 
 	public static final byte	REP_FACT_NONE			= 0;
 	public static final byte	REP_FACT_DEFAULT		= (byte)0xff;
