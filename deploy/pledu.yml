@@ -5,7 +5,7 @@ start_bootstrap: No
 nodes: <%= File.read(File.join(@basedir, "pledu.hosts")).split("\n").inspect%>
 ports: [1234]
 
-copyjar: No
+copyjar: Yes
 
 user: uw_comet
 

@@ -10,6 +10,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
+import org.gudy.azureus2.core3.util.SHA1Simple;
 
 import se.krka.kahlua.stdlib.BaseLib;
 import se.krka.kahlua.vm.JavaFunction;
@@ -36,7 +37,7 @@ public class DhtWrapper implements JavaFunction {
 
 	public static enum Function {
 		SYS_TIME("sysTime"), KEY("key"), GET("get"), PUT("put"), DELETE(
-				"delete"), LOOKUP("lookup");
+				"delete"), LOOKUP("lookup"), SET_TIMER("setTimerInterval");
 		String name;
 
 		Function(String name) {
@@ -91,11 +92,22 @@ public class DhtWrapper implements JavaFunction {
 			return delete(callFrame, nArguments);
 		case LOOKUP:
 			return lookup(callFrame, nArguments);
+		case SET_TIMER:
+			return setTimer(callFrame, nArguments);
 		default:
 			return 0;
 		}
 	}
 
+	private int setTimer(LuaCallFrame callFrame, int nArguments) {
+		BaseLib.luaAssert(nArguments > 0, "Excpected one argument");
+		int units = ((Double)callFrame.get(0)).intValue();
+		BaseLib.luaAssert(units >= 0, "Interval cannot be negative.");
+		
+		value.setIntervalUnit(units);
+		return 0;
+	}
+	
 	private int lookup(LuaCallFrame callFrame, int nArguments) {
 		HashWrapper key = this.key;
 		if (nArguments > 0) {
@@ -188,6 +200,16 @@ public class DhtWrapper implements JavaFunction {
 	}
 
 	private int getKey(LuaCallFrame callFrame, int nArguments) {
+		HashWrapper key = this.key;
+		if (nArguments > 0) {
+			byte[] bytes = key.getBytes();
+			int n = (int)((double)((Double) callFrame.get(0)));
+			BaseLib.luaAssert(n <= 5, "Child to compute is too far away: " + n);
+			for (int i = 0; i < n; ++i) {
+				bytes = new SHA1Simple().calculateHash(bytes, 0, bytes.length);
+			}
+			key = new HashWrapper(bytes);
+		}
 		callFrame.push(key);
 		return 1;
 	}

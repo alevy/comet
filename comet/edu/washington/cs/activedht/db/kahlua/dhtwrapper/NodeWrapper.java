@@ -22,6 +22,7 @@ public class NodeWrapper extends LuaTableWrapper implements
 		static final int GET_PORT = 2;
 		static final int GET_NODE_ID = 3;
 		static final int GET_VERSION = 4;
+		static final int GET_INSTANCE_ID = 5;
 		private final int type;
 
 		public NodeWrapperFunction(int type) {
@@ -41,6 +42,9 @@ public class NodeWrapper extends LuaTableWrapper implements
 				break;
 			case GET_VERSION:
 				callFrame.push(getVersion());
+				break;
+			case GET_INSTANCE_ID:
+				callFrame.push(getInstanceId());
 				break;
 			default:
 				return 0;
@@ -62,6 +66,8 @@ public class NodeWrapper extends LuaTableWrapper implements
 				NodeWrapperFunction.GET_PORT));
 		super.rawset("getVersion", new NodeWrapperFunction(
 				NodeWrapperFunction.GET_VERSION));
+		super.rawset("getInstanceId", new NodeWrapperFunction(
+				NodeWrapperFunction.GET_INSTANCE_ID));
 	}
 
 	public String getIP() {
@@ -74,6 +80,10 @@ public class NodeWrapper extends LuaTableWrapper implements
 
 	public Double getVersion() {
 		return (double) contact.getProtocolVersion();
+	}
+	
+	public Double getInstanceId() {
+		return (double) contact.getInstanceID();
 	}
 
 	public HashWrapper getNodeID() {

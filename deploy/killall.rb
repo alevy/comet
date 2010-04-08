@@ -27,9 +27,11 @@ config.nodes.each do |host|
   config.ports.each do |port|
     Process.fork do
       Kernel.exec("ssh", "-o StrictHostKeyChecking=no",
-        host, "bash",
+        config.userat + host, "bash",
         File.join(config.rwd, "kill.sh"),
         config.rwd)
     end
   end
 end
+
+Process.waitall

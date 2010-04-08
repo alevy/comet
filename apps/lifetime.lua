@@ -11,7 +11,7 @@ end
 function object.handleNodes(self, nodes)
   local time = dht.sysTime()
   for i,v in ipairs(nodes) do
-    local key = v.getIP()..":"..v.getPort()
+    local key = v.getIP()..":"..v.getPort().."-"..v.getInstanceId()
     if self.heartbeats[key] then
       table.insert(self.heartbeats[key],{i, time})
     else

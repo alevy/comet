@@ -49,12 +49,20 @@ public class ActiveDB implements DHTDB {
 		this.adapter = adapter;
 		this.codeRunner = new ActiveCodeRunner();
 		this.performer = new TimerEventPerformer() {
+
+			private int count = 0;
+
 			@Override
 			public void perform(TimerEvent event) {
 				for (Map.Entry<HashWrapper, ActiveDHTDBValue> entry : store
 						.entrySet()) {
-					codeRunner.onTimer(entry.getKey(), entry.getValue());
+					ActiveDHTDBValue value = entry.getValue();
+					int intervalUnit = value.getIntervalUnit();
+					if (intervalUnit != 0 && count % intervalUnit == 0) {
+						codeRunner.onTimer(entry.getKey(), value);
+					}
 				}
+				++count;
 			}
 		};
 	}

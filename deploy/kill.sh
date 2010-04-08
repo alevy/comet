@@ -1,4 +1,4 @@
 #!/bin/bash
 cd $1
 pid=`cat $HOSTNAME.pid`
-kill $pid
+kill -s 9 $pid
