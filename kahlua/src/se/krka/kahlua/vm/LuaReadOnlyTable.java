@@ -14,7 +14,7 @@ public class LuaReadOnlyTable extends LuaMapTable {
 	}
 	
 	public LuaReadOnlyTable() {
-		
+		super();
 	}
 	
 	public LuaReadOnlyTable(LuaMapTable t) {

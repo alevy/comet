@@ -14,6 +14,6 @@ while(line = gets)
 end
 
 hash.sort.each do |k,v|
-  puts "#{k},#{v.mean / scale},#{v.stdev}"
+  puts "#{k},#{v.mean / scale},#{v.stdev / scale}"
 end
 

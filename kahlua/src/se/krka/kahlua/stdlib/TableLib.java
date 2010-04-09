@@ -186,10 +186,11 @@ public final class TableLib implements JavaFunction {
 		if (nArguments > 2) {
 			pos = BaseLib.rawTonumber(callFrame.get(1)).intValue();
 			elem = callFrame.get(2);
+			insert(callFrame.thread.state, t, pos, elem);
 		} else {
 			elem = callFrame.get(1);
+			append(callFrame.thread.state, t, elem);
 		}
-		insert(callFrame.thread.state, t, pos, elem);
 		return 0;
 	}
 	

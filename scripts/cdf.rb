@@ -1,9 +1,11 @@
-lines = File.readlines(ARGV.first)
+lines = File.readlines(ARGV.shift)
+
+col = ARGV.first ? ARGV.first.to_i : 0
 
 counts = Hash.new(0)
 
 for line in lines do
-  counts[line.to_f] += 1
+  counts[line.split(',')[col].to_f] += 1
 end
 
 arr = Array.new
