@@ -172,11 +172,17 @@ public class ActiveDB implements DHTDB {
 			if (oldValue != null) {
 				ActiveDHTDBValue result = codeRunner.onUpdate(sender, key,
 						oldValue, value);
-				if (result != null) {
-					result.registerGlobalState(control, key);
+				if (result != oldValue) {
+					if (result != null) {
+						result.registerGlobalState(control, key);
+						result = codeRunner.onStore(sender, key, result);
+						if (result != null) {
+							result.registerGlobalState(control, key);
+							adapter.valueUpdated(adapter.keyCreated(key, value
+									.isLocal()), oldValue, result);
+						}
+					}
 					store.put(key, result);
-					adapter.valueUpdated(adapter.keyCreated(key, value
-							.isLocal()), oldValue, result);
 				}
 			} else {
 				ActiveDHTDBValue activeValue = (ActiveDHTDBValue) DHTDBValueFactory

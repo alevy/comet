@@ -17,15 +17,13 @@ hash = Hash.new([])
 
 last_time = 0
 first_time = 999999999999999
-
-assoc = {}
-
+  
 for file in ARGV do 
   lines = File.readlines(file)
   lines.each do |line|
     neighbor, port, lifetimes = line.chomp.split(':')
     lifetimes = lifetimes.split(',').map { |s| s.split('-').map {|i| first_time = [first_time, i.to_i].min; last_time = [last_time, i.to_i].max; i.to_i} }
-    hash[file + port[port.index('-') + 1,port.size]] += lifetimes
+    hash[file + neighbor + ":" + port] += lifetimes unless not hash[file + neighbor + ":" + port]
     pbar.inc 
   end
 end

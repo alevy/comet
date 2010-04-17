@@ -24,10 +24,12 @@ import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
  */
 public class StoreLua extends RemoteNodeAction {
 
-	private final byte[] payload;
+	private byte[] payload;
+	private byte[] key;
 	
 	public StoreLua(String[] args) throws Exception {
 		super(args);
+		key = contact.getID();
 		if (args.length > 1) {
 			LuaState state = new LuaState();
 			File source = new File(args[1]);
@@ -35,20 +37,28 @@ public class StoreLua extends RemoteNodeAction {
 					"source", state.getEnvironment());
 			state.call(require);
 			payload = Serializer.serialize(state.getEnvironment().rawget("object"), state.getEnvironment());
-		} else {
-			throw new IllegalArgumentException("Not enough arguments");
 		}
 	}
+	
+	public void setKey(byte[] key) {
+		this.key = key;
+	}
+	
+	public void setPayload(byte[] payload) {
+		this.payload = payload;
+	}
 
-	protected void run() throws Exception {
+	public boolean run() throws Exception {
 		final Semaphore sema = new Semaphore(0);
+		final Bool b = new Bool();
 		contact.sendStore(new DHTTransportReplyHandlerAdapter() {
 			
 			@Override
 			public void storeReply(DHTTransportContact contact,
 					byte[] diversifications) {
+				b.b = true;
 				sema.release();
-				System.out.println("Stored");
+				System.err.println("Stored");
 			}
 			
 			@Override
@@ -56,15 +66,20 @@ public class StoreLua extends RemoteNodeAction {
 				error.printStackTrace();
 				sema.release();				
 			}
-		}, new byte[][] {contact.getID()}, new DHTTransportValue[][] { new DHTTransportValue[] { new BasicDHTTransportValue(
+		}, new byte[][] {key}, new DHTTransportValue[][] { new DHTTransportValue[] { new BasicDHTTransportValue(
 				System.currentTimeMillis(),
 				payload, "", 1, transport.getLocalContact(), false,
 				0) } }, true);
 		sema.acquire();
+		return b.b;
 	}
 
 	public static void main(String[] args) throws Exception {
 		new StoreLua(args).run();
+	}
+	
+	private static class Bool {
+		private boolean b = false;
 	}
 
 }
