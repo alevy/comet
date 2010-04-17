@@ -19,7 +19,7 @@ public abstract class RemoteNodeAction {
 	static {
 		try {
 			AzureusCoreFactory.create();
-			String myAddress = "97.126.45.57";//InetAddress.getLocalHost().getHostAddress();
+			String myAddress = InetAddress.getLocalHost().getHostAddress();
 
 			int instanceId = InetAddress.getLocalHost().hashCode();
 
@@ -32,7 +32,7 @@ public abstract class RemoteNodeAction {
 
 			transport = new DHTTransportUDPImpl(
 					DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS,
-					DHT.NW_MAIN, false, myAddress, null, 1235, 1, 1, 600, 0,
+					DHT.NW_MAIN, false, myAddress, null, 9675, 1, 1, 600, 0,
 					0, false, false, new DHTLogger() {
 
 						@Override
@@ -70,7 +70,7 @@ public abstract class RemoteNodeAction {
 	protected DHTTransportUDPContactImpl contact;
 
 	public RemoteNodeAction(String args[]) throws Exception {
-		String node = "nethack.cs.washington.edu:1234";
+		String node = "regina.cs.washington.edu:5431";
 		if (args.length > 0) {
 			node = args[0];
 		}

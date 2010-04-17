@@ -144,7 +144,7 @@ public class DhtWrapper implements JavaFunction {
 		HashWrapper key = this.key;
 		BaseLib.luaAssert(nArguments > 1, "Not enough arguments");
 		key = (HashWrapper) callFrame.get(0);
-		byte[] value = Serializer.serialize(callFrame.get(0), state
+		byte[] value = Serializer.serialize(callFrame.get(1), state
 				.getEnvironment());
 
 		Object obj = 20.0;

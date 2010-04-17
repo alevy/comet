@@ -316,14 +316,17 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 		DHTLogger ret_logger = new DHTLogger() {
 			public void log(String str) {
+				System.err.println(str);
 				LOG.log(Level.INFO, str);
 			}
 
 			public void log(Throwable e) {
+				e.printStackTrace();
 				LOG.log(Level.WARNING, "", e);
 			}
 
 			public void log(int log_type, String str) {
+				System.err.println(str);
 				if (isEnabled(log_type))
 					LOG.log(Level.INFO, str);
 			}
@@ -395,10 +398,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int port = 4321;
+		int port = 5432;
 		String hostname = "granville.cs.washington.edu";
-		String bootstrapLoc = "nethack.cs.washington.edu:5432";
-		Level logging = Level.OFF;
+		String bootstrapLoc = "granville.cs.washington.edu:5432";
+		Level logging = Level.ALL;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 
 		for (int i = 0; i < args.length; ++i) {

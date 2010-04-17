@@ -6,6 +6,7 @@ package edu.washington.cs.activedht.expt.remote;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
@@ -59,6 +60,8 @@ public class LifetimeGet extends RemoteNodeAction {
 				out.print(":");
 				out.println(getArrayString((LuaMapTable) entry.getValue()));
 			}
+		} else {
+			System.out.println(Arrays.toString(value));
 		}
 	}
 

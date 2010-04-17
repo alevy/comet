@@ -1148,7 +1148,7 @@ public class LuaState {
 					return null;
 				}
 				throw new RuntimeException("attempted index of non-table: "
-						+ curObj);
+						+ curObj + " with key " + key);
 			}
 			if (metaOp instanceof JavaFunction || metaOp instanceof LuaClosure) {
 				Object res = call(metaOp, table, key, null);

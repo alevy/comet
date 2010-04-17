@@ -49,8 +49,6 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 		env = new LuaReadOnlyTable(t);
 	}
 
-	private byte[] value;
-
 	private Object luaObject;
 	private final Queue<Runnable> postActions = new LinkedList<Runnable>();
 
@@ -67,14 +65,12 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 			DHTTransportContact originator, boolean local, int flags) {
 		super(creationTime, value, "KahluaActiveValue", version, originator,
 				local, flags);
-		this.value = value;
 	}
 
-	public ActiveDHTDBValue executeCallback(String callback,
-			Object... args) {
+	public ActiveDHTDBValue executeCallback(String callback, Object... args) {
 		ActiveDHTDBValue result = this;
 		if (luaObject == null) {
-			luaObject = deserialize(value);
+			luaObject = deserialize(super.getValue());
 		}
 		if (LuaTable.class.isInstance(luaObject)) {
 			LuaTable luaTable = (LuaTable) luaObject;
@@ -83,23 +79,30 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 				function = luaTable.getMetatable().rawget(callback);
 			}
 			if (LuaClosure.class.isInstance(function)) {
-				Object returnedValue = call((LuaClosure)function, args);
+				Object returnedValue = call((LuaClosure) function, args);
 				if (returnedValue == null) {
 					result = null;
-				} else if (returnedValue == result) {
-					value = serialize(returnedValue);
-				} else {
+				} else if (returnedValue != luaObject) {
 					result = new KahluaActiveDHTDBValue(getCreationTime(),
 							serialize(returnedValue), getVersion(),
 							getOriginator(), isLocal(), getFlags());
 				}
 			}
 		}
-
-		for (Runnable task : postActions) {
-			task.run();
-		}
+        
+		final Queue<Runnable> actions = new LinkedList<Runnable>(postActions);
 		postActions.clear();
+		new Thread() {
+			@Override
+			public void run() {
+				yield();
+				for (Runnable task : actions) {
+					System.err.println("Running task...");
+					task.run();
+					System.err.println("Done Running.");
+				}
+			}
+		}.start();
 
 		return result;
 	}
@@ -107,8 +110,9 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	public synchronized Object call(LuaClosure function, Object[] args) {
 		LuaMapTable dhtMap = new LuaReadOnlyTable();
 		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env));
-		DhtWrapper.register(dhtMap, state, key, new HashMap<HashWrapper, SortedSet<NodeWrapper>>(),
-				control, postActions, this);
+		DhtWrapper.register(dhtMap, state, key,
+				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), control,
+				postActions, this);
 		Object[] functionArgs = new Object[args.length + 1];
 		functionArgs[0] = luaObject;
 		for (int i = 1; i < functionArgs.length; ++i) {
@@ -150,8 +154,12 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 		return "Kahlua ActiveValue";
 	}
 
-	public byte[] getValue() {
-		return value;
+	public synchronized byte[] getValue() {
+		if (luaObject != null) {
+			return serialize(luaObject);
+		}
+
+		return super.getValue();
 	}
 
 }
