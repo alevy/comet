@@ -9,3 +9,10 @@ doc
 old_reports
 results
 onetime.results*
+!vuze/*
+!dht/*
+!test/*
+!expt/*
+!kahlua/*
+!comet/*
+!apps/*
