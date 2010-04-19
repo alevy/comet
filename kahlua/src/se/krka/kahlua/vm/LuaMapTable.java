@@ -117,6 +117,9 @@ public class LuaMapTable implements LuaTable {
 
 	@Override
 	public String toString() {
+		if (table.isEmpty() && list != null) {
+			return list.toString();
+		}
 		return table.toString();
 	}
 

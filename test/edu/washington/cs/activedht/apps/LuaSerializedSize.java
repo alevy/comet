@@ -1,5 +1,7 @@
 package edu.washington.cs.activedht.apps;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -24,8 +26,7 @@ public class LuaSerializedSize {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		InputStream luaFile = LuaSerializedSize.class
-				.getResourceAsStream("/test.lua");
+		InputStream luaFile = new FileInputStream(new File("apps/test.lua"));
 		LuaState state = new LuaState();
 
 		LuaClosure closure = LuaCompiler.loadis(luaFile, "stdin", state
@@ -34,7 +35,9 @@ public class LuaSerializedSize {
 
 		LuaTable obj = (LuaTable)state.getEnvironment().rawget(
 				"object");
-		printByteCode((LuaClosure)obj.rawget("onGet"));
+		LuaClosure get = (LuaClosure)obj.rawget("onGet");
+		printByteCode(get);
+		System.out.println(state.call(get));
 		byte[] arr = Serializer.serialize(obj, state.getEnvironment());
 		System.out.println(arr.length);
 		System.out.println(Arrays.toString(arr));

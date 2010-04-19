@@ -6,8 +6,6 @@ package edu.washington.cs.activedht.db.dhtwrapper;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -59,12 +57,12 @@ public class PutAction implements Runnable {
 					nodes, operationAdapter);
 		} else {
 			control.lookupEncoded(key.getBytes(), "ActiveDHT Lookup", 0, false,
-					new UpdateNeighborsOperationAdapter(
-							new TreeSet<NodeWrapper>(),
+					new PutOperationAdapter(
+							new ArrayList<NodeWrapper>(),
 							new UpdateNeighborsCallback() {
 
 								@Override
-								public void call(SortedSet<NodeWrapper> tmpNeighbors) {
+								public void call(List<NodeWrapper> tmpNeighbors) {
 									List<DHTTransportContact> neighbors = new ArrayList<DHTTransportContact>();
 									Iterator<NodeWrapper> itr = tmpNeighbors
 											.iterator();
@@ -72,6 +70,7 @@ public class PutAction implements Runnable {
 											&& itr.hasNext(); ++i) {
 										neighbors.add(itr.next().contact);
 									}
+									
 									control.putDirectEncodedKeys(keys,
 											"ActiveDHT Put", valueSets,
 											neighbors, operationAdapter);

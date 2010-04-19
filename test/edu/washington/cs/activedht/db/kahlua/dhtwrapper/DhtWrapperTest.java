@@ -3,10 +3,10 @@
  */
 package edu.washington.cs.activedht.db.kahlua.dhtwrapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import junit.framework.TestCase;
 
@@ -31,18 +31,18 @@ public class DhtWrapperTest extends TestCase {
 
 	private final LuaState state = new LuaState();
 	private final HashWrapper key = new HashWrapper(new byte[] { 1, 2, 34 });
-	private Map<HashWrapper, SortedSet<NodeWrapper>> neighbors;
+	private Map<HashWrapper, List<NodeWrapper>> neighbors;
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		neighbors = new HashMap<HashWrapper, SortedSet<NodeWrapper>>();
-		neighbors.put(key, new TreeSet<NodeWrapper>());
+		neighbors = new HashMap<HashWrapper, List<NodeWrapper>>();
+		neighbors.put(key, new ArrayList<NodeWrapper>());
 	}
 
 	public void testSysTime() {
 		DhtWrapper sysTime = new DhtWrapper(Function.SYS_TIME, null, null,
-				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null);
+				new HashMap<HashWrapper, List<NodeWrapper>>(), null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 
 		assertEquals(1, sysTime.call(callFrame, 0));
@@ -204,7 +204,7 @@ public class DhtWrapperTest extends TestCase {
 
 	public void testKey() throws Exception {
 		DhtWrapper getKey = new DhtWrapper(Function.KEY, state, key,
-				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null);
+				new HashMap<HashWrapper, List<NodeWrapper>>(), null);
 		LuaCallFrame callFrame = new LuaCallFrame(state.currentThread);
 		assertEquals(1, getKey.call(callFrame, 0));
 		assertEquals(key, callFrame.get(0));
@@ -213,7 +213,7 @@ public class DhtWrapperTest extends TestCase {
 	public void testRegister() {
 		LuaMapTable env = new LuaMapTable();
 		DhtWrapper.register(env, state, null,
-				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), null, null, null);
+				new HashMap<HashWrapper, List<NodeWrapper>>(), null, null, null);
 		LuaTable dht = (LuaTable) env.rawget("dht");
 		assertNotNull(dht);
 		for (Function function : Function.values()) {

@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Queue;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 import org.gudy.azureus2.core3.util.SHA1Simple;
@@ -29,6 +27,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.GetCallback;
 import edu.washington.cs.activedht.db.dhtwrapper.GetOperationAdapter;
 import edu.washington.cs.activedht.db.dhtwrapper.LookupAction;
 import edu.washington.cs.activedht.db.dhtwrapper.PutAction;
+import edu.washington.cs.activedht.db.dhtwrapper.PutOperationAdapter;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsCallback;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsOperationAdapter;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
@@ -49,7 +48,7 @@ public class DhtWrapper implements JavaFunction {
 	private final Queue<Runnable> postActions;
 
 	private final Function function;
-	private final Map<HashWrapper, SortedSet<NodeWrapper>> neighbors;
+	private final Map<HashWrapper, List<NodeWrapper>> neighbors;
 	private final DHTControl control;
 
 	private final LuaState state;
@@ -59,21 +58,21 @@ public class DhtWrapper implements JavaFunction {
 	private final KahluaActiveDHTDBValue value;
 
 	protected DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors,
+			Map<HashWrapper, List<NodeWrapper>> neighbors,
 			DHTControl control) {
 		this(function, state, key, neighbors, control,
 				new LinkedList<Runnable>(), null);
 	}
 
 	public DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors,
+			Map<HashWrapper, List<NodeWrapper>> neighbors,
 			DHTControl control, Queue<Runnable> postActions, KahluaActiveDHTDBValue value) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
 		this.neighbors = neighbors;
 		this.value = value;
-		this.neighbors.put(key, new TreeSet<NodeWrapper>());
+		this.neighbors.put(key, new ArrayList<NodeWrapper>());
 		this.control = control;
 		this.postActions = postActions;
 	}
@@ -158,7 +157,7 @@ public class DhtWrapper implements JavaFunction {
 			callback = new LuaUpdateNeighborsCallback(closure, this.value);
 		}
 
-		SortedSet<NodeWrapper> nbrs = neighbors.get(key);
+		List<NodeWrapper> nbrs = neighbors.get(key);
 		if (LuaTable.class.isInstance(obj)) {
 			List<NodeWrapper> nodes = new ArrayList<NodeWrapper>();
 			LuaTable table = (LuaTable) obj;
@@ -169,13 +168,13 @@ public class DhtWrapper implements JavaFunction {
 				nodes.add((NodeWrapper) elm);
 			}
 			postActions.offer(new PutAction(key, value, nodes, control,
-					new UpdateNeighborsOperationAdapter(nbrs, callback)));
+					new PutOperationAdapter(nbrs, callback)));
 		} else {
 			BaseLib.luaAssert(Double.class.isInstance(obj),
 					"Expecting number of replicas");
 			int numNodes = ((Double) obj).intValue();
 			postActions.offer(new PutAction(key, value, numNodes, control,
-					new UpdateNeighborsOperationAdapter(nbrs, callback)));
+					new PutOperationAdapter(nbrs, callback)));
 		}
 		return 0;
 	}
@@ -229,7 +228,7 @@ public class DhtWrapper implements JavaFunction {
 
 	public static LuaReadOnlyTable register(LuaMapTable outerTable,
 			LuaState state, HashWrapper key,
-			Map<HashWrapper, SortedSet<NodeWrapper>> neighbors,
+			Map<HashWrapper, List<NodeWrapper>> neighbors,
 			DHTControl control, Queue<Runnable> postActions, KahluaActiveDHTDBValue value) {
 		NodeWrapper node = null;
 		if (control != null) {

@@ -7,6 +7,8 @@ ports: [5431]
 
 copyjar: No
 
+user: levya
+
 rwd: /homes/sys/levya/activedht/
 
 jarfile: /homes/sys/levya/workspace/activedht/dist/comet.jar

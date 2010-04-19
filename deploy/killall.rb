@@ -17,7 +17,7 @@ config = CometConfig.new(YAML::load(ERB.new(File.read(config_file)).result(bindi
 if config.start_bootstrap
   Process.fork do
     Kernel.exec("ssh", "-o StrictHostKeyChecking=no",
-      config.bootstrap, "bash",
+      config.userat + config.bootstrap, "bash",
       File.join(config.rwd, "kill.sh"),
       config.rwd)
   end

@@ -21,6 +21,6 @@ public class KahluaValueBench extends TestCase {
 			values[i].executeCallback("onGet");
 			++i;
 		}
-		System.out.println(1.0 * (System.currentTimeMillis() - currentTime) / iters / 0.0022 );
+		System.out.println(1.0 * (System.currentTimeMillis() - currentTime) / iters );
 	}
 }

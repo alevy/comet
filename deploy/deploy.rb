@@ -40,7 +40,7 @@ end
 if config.start_bootstrap
   Process.fork do
     Kernel.exec("ssh", "-o StrictHostKeyChecking=no",
-      config.bootstrap, "bash",
+      config.userat + config.bootstrap, "bash",
       File.join(config.rwd, "background.sh"),
       config.rwd,
       "\"#{config.java} -Xmx64m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l ALL -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address}\"")

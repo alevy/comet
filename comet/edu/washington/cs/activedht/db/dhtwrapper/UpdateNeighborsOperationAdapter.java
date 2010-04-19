@@ -3,8 +3,8 @@
  */
 package edu.washington.cs.activedht.db.dhtwrapper;
 
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
@@ -12,12 +12,12 @@ import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 import edu.washington.cs.activedht.db.kahlua.dhtwrapper.NodeWrapper;
 
 public class UpdateNeighborsOperationAdapter extends DHTOperationAdapter {
-	private final SortedSet<NodeWrapper> tmpNeighbors = new TreeSet<NodeWrapper>();
-	public final SortedSet<NodeWrapper> neighbors;
+	protected final List<NodeWrapper> tmpNeighbors = new ArrayList<NodeWrapper>();
+	public final List<NodeWrapper> neighbors;
 
 	private final UpdateNeighborsCallback updateCallback;
 
-	public UpdateNeighborsOperationAdapter(SortedSet<NodeWrapper> neighbors,
+	public UpdateNeighborsOperationAdapter(List<NodeWrapper> neighbors,
 			UpdateNeighborsCallback updateCallback) {
 		this.neighbors = neighbors;
 		this.updateCallback = updateCallback;
@@ -25,9 +25,7 @@ public class UpdateNeighborsOperationAdapter extends DHTOperationAdapter {
 
 	@Override
 	public void found(DHTTransportContact contact, boolean isClosest) {
-		synchronized (tmpNeighbors) {
-			tmpNeighbors.add(new NodeWrapper(contact));
-		}
+		addNeighbor(contact);
 	}
 	
 	@Override
@@ -38,6 +36,14 @@ public class UpdateNeighborsOperationAdapter extends DHTOperationAdapter {
 		}
 		if (updateCallback != null) {
 			updateCallback.call(tmpNeighbors);
+		}
+	}
+
+	protected void addNeighbor(DHTTransportContact contact) {
+		synchronized (tmpNeighbors) {
+			if (!tmpNeighbors.contains(contact)) {
+				tmpNeighbors.add(new NodeWrapper(contact));
+			}
 		}
 	}
 

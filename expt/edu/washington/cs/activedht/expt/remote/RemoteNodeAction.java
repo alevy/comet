@@ -32,7 +32,7 @@ public abstract class RemoteNodeAction {
 
 			transport = new DHTTransportUDPImpl(
 					DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS,
-					DHT.NW_MAIN, false, myAddress, null, 9675, 1, 1, 600, 0,
+					DHT.NW_MAIN, false, myAddress, null, 9675, 1, 1, 2000, 0,
 					0, false, false, new DHTLogger() {
 
 						@Override

@@ -1,3 +1,5 @@
 object = {}
 
-object.onGet = "hello" --function() return "hello" end
+object.onGet = function()
+  return {1,2}
+end

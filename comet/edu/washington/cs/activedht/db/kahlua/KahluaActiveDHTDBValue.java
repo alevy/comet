@@ -5,8 +5,8 @@ package edu.washington.cs.activedht.db.kahlua;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
-import java.util.SortedSet;
 
 import org.gudy.azureus2.core3.util.HashWrapper;
 
@@ -89,20 +89,21 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 				}
 			}
 		}
-        
-		final Queue<Runnable> actions = new LinkedList<Runnable>(postActions);
-		postActions.clear();
-		new Thread() {
-			@Override
-			public void run() {
-				yield();
-				for (Runnable task : actions) {
-					System.err.println("Running task...");
-					task.run();
-					System.err.println("Done Running.");
+
+		if (!postActions.isEmpty()) {
+			final Queue<Runnable> actions = new LinkedList<Runnable>(
+					postActions);
+			postActions.clear();
+			new Thread() {
+				@Override
+				public void run() {
+					yield();
+					for (Runnable task : actions) {
+						task.run();
+					}
 				}
-			}
-		}.start();
+			}.start();
+		}
 
 		return result;
 	}
@@ -111,7 +112,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 		LuaMapTable dhtMap = new LuaReadOnlyTable();
 		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env));
 		DhtWrapper.register(dhtMap, state, key,
-				new HashMap<HashWrapper, SortedSet<NodeWrapper>>(), control,
+				new HashMap<HashWrapper, List<NodeWrapper>>(), control,
 				postActions, this);
 		Object[] functionArgs = new Object[args.length + 1];
 		functionArgs[0] = luaObject;
