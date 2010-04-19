@@ -2,7 +2,7 @@
 build
 dist
 reports
-Azureus.app
+plugin.properties
 .metadata
 activedht.*
 doc
