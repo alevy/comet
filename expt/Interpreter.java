@@ -75,7 +75,7 @@ public class Interpreter {
 			final Semaphore sema = new Semaphore(0);
 
 			if (nArguments > 2) {
-				LuaTable contacts = (LuaTable) callFrame.get(2);
+				final LuaTable contacts = (LuaTable) callFrame.get(2);
 				for (int i = 1; i <= contacts.len(); ++i) {
 					DHTTransportContact contact = ((NodeWrapper) contacts
 							.rawget(i)).contact;
@@ -115,6 +115,17 @@ public class Interpreter {
 							}, key, dhtControl.getTransport().getLocalContact()
 									.getID(), payload, 1, (byte) 0);
 				}
+				new Thread() {
+					public void run() {
+						try {
+							sleep(10000);
+						} catch (InterruptedException e) {
+						} finally {
+							sema.release(contacts.len());
+						}
+						
+					}
+				}.start();
 				sema.acquireUninterruptibly(contacts.len());
 				callFrame.push(values);
 				return 1;

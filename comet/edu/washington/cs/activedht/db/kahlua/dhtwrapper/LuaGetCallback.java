@@ -4,13 +4,12 @@ import java.util.List;
 
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaMapTable;
-import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
-import se.krka.kahlua.vm.serialize.Deserializer;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.dhtwrapper.GetCallback;
+import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
 /**
  * 
@@ -19,11 +18,11 @@ import edu.washington.cs.activedht.db.dhtwrapper.GetCallback;
  */
 class LuaGetCallback implements GetCallback {
 	final LuaClosure closure;
-	final LuaState state;
+	final KahluaActiveDHTDBValue activeValue;
 
-	public LuaGetCallback(LuaClosure closure, LuaState state) {
+	public LuaGetCallback(LuaClosure closure, KahluaActiveDHTDBValue activeValue) {
 		this.closure = closure;
-		this.state = state;
+		this.activeValue = activeValue;
 	}
 
 	public void call(List<DHTTransportValue> values) {
@@ -31,11 +30,10 @@ class LuaGetCallback implements GetCallback {
 		for (int i = 0; i < values.size(); ++i) {
 			byte[] value = values.get(i).getValue();
 			if (value != null) {
-				Object val = Deserializer.deserializeBytes(value, state
-						.getEnvironment());
+				Object val = activeValue.deserialize(value);
 				vals.rawset(i + 1, val);
 			}
 		}
-		state.call(closure, new Object[] { vals });
+		activeValue.call(closure, new Object[] { vals });
 	}
 }

@@ -70,7 +70,7 @@ public abstract class RemoteNodeAction {
 	protected DHTTransportUDPContactImpl contact;
 
 	public RemoteNodeAction(String args[]) throws Exception {
-		String node = "regina.cs.washington.edu:5431";
+		String node = "regina.cs.washington.edu:1234";
 		if (args.length > 0) {
 			node = args[0];
 		}

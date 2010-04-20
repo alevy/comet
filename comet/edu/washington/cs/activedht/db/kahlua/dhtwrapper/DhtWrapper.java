@@ -186,12 +186,12 @@ public class DhtWrapper implements JavaFunction {
 		}
 		int maxValues = 0;
 		if (nArguments > 1) {
-			maxValues = (Integer) callFrame.get(1);
+			maxValues = ((Double) callFrame.get(1)).intValue();
 		}
 		GetCallback callback = null;
 		if (nArguments > 2) {
 			final LuaClosure closure = (LuaClosure) callFrame.get(2);
-			callback = new LuaGetCallback(closure, state);
+			callback = new LuaGetCallback(closure, value);
 		}
 		postActions.offer(new GetAction(key, this.key, maxValues, control,
 				new GetOperationAdapter(neighbors.get(key), callback)));

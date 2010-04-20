@@ -26,7 +26,7 @@ public class LuaSerializedSize {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		InputStream luaFile = new FileInputStream(new File("apps/test.lua"));
+		InputStream luaFile = new FileInputStream(new File("apps/lifetime_data.lua"));
 		LuaState state = new LuaState();
 
 		LuaClosure closure = LuaCompiler.loadis(luaFile, "stdin", state
@@ -37,7 +37,7 @@ public class LuaSerializedSize {
 				"object");
 		LuaClosure get = (LuaClosure)obj.rawget("onGet");
 		printByteCode(get);
-		System.out.println(state.call(get));
+		//System.out.println(state.call(get));
 		byte[] arr = Serializer.serialize(obj, state.getEnvironment());
 		System.out.println(arr.length);
 		System.out.println(Arrays.toString(arr));

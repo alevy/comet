@@ -1,37 +1,42 @@
 object = {}
 
-object.heartbeats = {}
+object.hb = {}
 
 function object:onGet()
-  local result = self.heartbeats
-  --self.heartbeats = {}
+  local result = self.hb
+  self.hb = {}
   return result
 end
 
-function object.handleNodes(self,nodes)
-  print("Number of nodes is "..(#nodes))
-  local time = dht.sysTime()
-  for i,node in ipairs(nodes) do
-	local key = node.getIP()..":"..node.getPort().."^"..node.getInstanceId()
-  	if not self.heartbeats[key] then
-	  print(i, time)
-	  self.heartbeats[key] = {{i,time}}
-	end
+function object:doo(n, t, i)
+  local k = n.getIP()..":"..n.getPort().."^"..n.getInstanceId()
+  if not self.hb[k] then
+    self.hb[k] = {{i,t}}
+  else
+    table.insert(self.hb[k], {i, t})
   end
 end
 
-function object:onUpdate(other, node)
-  if (self.ip == other) then
-    local key = node.getIP()..":"..node.getPort().."^"..node.getInstanceId()
-    table.insert(self.heartbeats[key], dht.sysTime())
+function object:handle(ns)
+  local t = dht.sysTime()
+  for i,n in ipairs(ns) do
+	self:doo(n, t, i)
+  end
+end
+
+function object:onUpdate(o, n)
+  print(o)
+  if (self.ip == o) then
+    self:doo(n, dht.sysTime(), 0)
     return self
   end
-  return other
+  return o
 end
 
 function object:onStore()
   self.ip = dht.localNode.getIP()
-  dht.put(dht.key(), self.ip, 20, self.handleNodes)
+  dht.put(dht.key(), self.ip, 20, self.handle)
   return self
 end
 
+object.onTimer = object.onStore

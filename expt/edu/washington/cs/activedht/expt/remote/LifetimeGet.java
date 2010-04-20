@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Semaphore;
 
 import se.krka.kahlua.vm.LuaMapTable;
@@ -37,8 +36,8 @@ public class LifetimeGet extends RemoteNodeAction {
 
 	public String getArrayString(LuaMapTable table) {
 		StringBuilder builder = new StringBuilder();
-		for (Entry<Object, Object> entry : table.table.entrySet()) {
-			LuaTable t = (LuaTable)entry.getValue();
+		for (int i = 0; i < table.len(); ++i) {
+			LuaTable t = (LuaTable)table.rawget(i + 1);
 			builder.append(((Double) t.rawget(1)).intValue());
 			builder.append('-');
 			builder.append(((Double) t.rawget(2)).longValue());
