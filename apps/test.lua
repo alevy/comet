@@ -1,5 +1,5 @@
 object = {}
 
 object.onGet = function()
-  return {1,2}
+  return "hello"
 end

@@ -149,11 +149,19 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		this(port, bootstrap, Level.OFF, KAHLUA_VALUE_FACTORY_INTERFACE,
 				DEFAULT_LOOKUP_CONCURRENCY);
 	}
-
+	
 	public ActivePeer(int port, String bootstrap, Level logging,
 			DHTDBValueFactory factoryInterface, int lookupConurrency)
 			throws Exception {
-		ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
+		this(port, bootstrap, logging, factoryInterface, lookupConurrency, true);
+	}
+
+	public ActivePeer(int port, String bootstrap, Level logging,
+			DHTDBValueFactory factoryInterface, int lookupConurrency, boolean active)
+			throws Exception {
+		if (active) {
+			ActiveDHTInitializer.prepareRuntimeForActiveCode(factoryInterface);
+		}
 
 		// Load the parameters from the configuration:
 
@@ -403,6 +411,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		String bootstrapLoc = "granville.cs.washington.edu:5432";
 		Level logging = Level.ALL;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
+		boolean active = true;
 
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-v")) {
@@ -415,10 +424,12 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				bootstrapLoc = args[++i];
 			} else if (args[i].equals("-l")) {
 				logging = Level.parse(args[++i].toUpperCase());
+			} else if (args[i].equals("--ndb")) {
+				active = false;
 			}
 		}
 		ActivePeer peer = new ActivePeer(port, bootstrapLoc, logging,
-				valueFactory, DEFAULT_LOOKUP_CONCURRENCY);
+				valueFactory, DEFAULT_LOOKUP_CONCURRENCY, active);
 		peer.init(hostname);
 		while (true) {
 			Thread.sleep(60000);

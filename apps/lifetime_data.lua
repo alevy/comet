@@ -25,7 +25,7 @@ function object:handle(ns)
 end
 
 function object:onUpdate(o, n)
-  print(o)
+  print(tostring(o))
   if (self.ip == o) then
     self:doo(n, dht.sysTime(), 0)
     return self
@@ -39,4 +39,4 @@ function object:onStore()
   return self
 end
 
-object.onTimer = object.onStore
+--object.onTimer = object.onStore

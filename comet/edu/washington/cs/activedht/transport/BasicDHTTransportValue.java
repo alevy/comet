@@ -67,7 +67,7 @@ public class BasicDHTTransportValue implements DHTDBValue {
 	
 	public byte
 	getReplicationControl() {
-		return DHT.REP_FACT_NONE;
+		return DHT.REP_FACT_DEFAULT;
 	}
 	
 	public byte

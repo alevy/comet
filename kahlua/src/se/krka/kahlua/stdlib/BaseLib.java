@@ -653,7 +653,7 @@ public final class BaseLib implements JavaFunction {
 		}
 
 		if (o instanceof LuaTable) {
-			return "table 0x" + System.identityHashCode(o);
+			return o.toString();
 		}
 		throw new RuntimeException("no __tostring found on object");
 	}

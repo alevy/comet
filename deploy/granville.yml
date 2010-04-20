@@ -1,0 +1,16 @@
+bootstrap: nethack.cs.washington.edu
+bootstrap_port: 5431
+start_bootstrap: No
+
+nodes: [granville.cs.washington.edu]
+ports: [5431]
+
+copyjar: No
+
+user: levya
+
+rwd: /homes/sys/levya/activedht/
+
+jarfile: /homes/sys/levya/workspace/activedht/dist/comet.jar
+
+java: java

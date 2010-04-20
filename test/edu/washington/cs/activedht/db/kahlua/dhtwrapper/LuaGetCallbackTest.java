@@ -52,7 +52,7 @@ public class LuaGetCallbackTest extends TestCase {
 		state.call(LuaCompiler.loadstring("callback = function(tbl) assertEquals(1234.5, tbl[1]); assertEquals(\"hello world\", tbl[2]) end", "num",
 				state.getEnvironment()), new Object[] {});
 		LuaClosure closure = (LuaClosure)state.getEnvironment().rawget("callback");
-		LuaGetCallback callback = new LuaGetCallback(closure, state);
+		LuaGetCallback callback = new LuaGetCallback(closure, null);
 		callback.call(values);
 	}
 	

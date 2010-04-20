@@ -23,7 +23,7 @@ public abstract class RemoteNodeAction {
 
 			int instanceId = InetAddress.getLocalHost().hashCode();
 
-			InetSocketAddress localAddress = new InetSocketAddress(myAddress,
+			InetSocketAddress localAddress = new InetSocketAddress("97.126.38.239",//myAddress,
 					1235);
 			DHTTransportUDPContactImpl localContact = new DHTTransportUDPContactImpl(
 					false, transport, localAddress, localAddress,
@@ -70,7 +70,7 @@ public abstract class RemoteNodeAction {
 	protected DHTTransportUDPContactImpl contact;
 
 	public RemoteNodeAction(String args[]) throws Exception {
-		String node = "regina.cs.washington.edu:1234";
+		String node = "granville.cs.washington.edu:5431";
 		if (args.length > 0) {
 			node = args[0];
 		}

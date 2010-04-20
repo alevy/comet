@@ -7,7 +7,7 @@ require 'yaml'
 require 'erb'
 
 config_file = ARGV.shift
-copyjar = ARGV.shift != "-f"
+args = ARGV.join(" ")
 
 raise "You must specifcy deployment configuration file." unless config_file
 raise "Deployment configuration file #{config_file} does not exist" unless File.exist?(config_file)
@@ -15,7 +15,7 @@ raise "Deployment configuration file #{config_file} does not exist" unless File.
 @basedir = File.dirname(__FILE__)
 config = CometConfig.new(YAML::load(ERB.new(File.read(config_file)).result(binding)))
 
-if config.copyjar and copyjar
+if config.copyjar
   config.nodes.each do |host|
     puts "Copying to... #{host}"
     Process.fork do
@@ -43,7 +43,7 @@ if config.start_bootstrap
       config.userat + config.bootstrap, "bash",
       File.join(config.rwd, "background.sh"),
       config.rwd,
-      "\"#{config.java} -Xmx64m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l ALL -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address}\"")
+      "\"#{config.java} -Xmx64m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l ALL -h #{config.bootstrap} -p #{config.bootstrap_port} -b #{config.bootstrap_address} #{args}\"")
   end
   Process.waitall
   sleep(5)
@@ -57,7 +57,7 @@ config.nodes.each do |host|
         config.userat + host, "bash",
         File.join(config.rwd, "background.sh"),
         config.rwd,
-        "\"#{config.java} -Xmx64m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l WARNING -h #{host} -p #{port} -b #{config.bootstrap_address}\"")
+        "\"#{config.java} -Xmx64m -classpath #{File.join(config.rwd, config.jarbasename)} edu.washington.cs.activedht.expt.ActivePeer -l WARNING -h #{host} -p #{port} -b #{config.bootstrap_address} #{args}\"")
     end
   end
 end
