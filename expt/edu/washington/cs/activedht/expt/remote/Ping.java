@@ -44,7 +44,7 @@ public class Ping extends RemoteNodeAction {
 			}
 
 			public void failed(DHTTransportContact contact, Throwable error) {
-				//error.printStackTrace();
+				error.printStackTrace();
 				sema.release();
 			}
 		});

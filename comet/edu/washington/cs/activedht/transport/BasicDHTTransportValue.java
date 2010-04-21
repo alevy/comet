@@ -72,12 +72,12 @@ public class BasicDHTTransportValue implements DHTDBValue {
 	
 	public byte
 	getReplicationFactor() {
-		return DHT.REP_FACT_NONE;
+		return DHT.REP_FACT_DEFAULT;
 	}
 
 	public byte
 	getReplicationFrequencyHours() {
-		return DHT.REP_FACT_NONE;
+		return DHT.REP_FACT_DEFAULT;
 	}
 
 	public DHTDBValue getValueForRelay(DHTTransportContact arg0) {

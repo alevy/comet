@@ -1024,7 +1024,7 @@ DHTControlImpl
 				encoded_keys, 
 				description,
 				value_sets, 
-				(byte)0,
+				DHT.FLAG_ANON,//(byte)0,
 				contacts, 
 				0, 
 				new DHTOperationListenerDemuxer( listener),

@@ -23,8 +23,8 @@ public abstract class RemoteNodeAction {
 
 			int instanceId = InetAddress.getLocalHost().hashCode();
 
-			InetSocketAddress localAddress = new InetSocketAddress("97.126.38.239",//myAddress,
-					1235);
+			InetSocketAddress localAddress = new InetSocketAddress(myAddress,
+					1236);
 			DHTTransportUDPContactImpl localContact = new DHTTransportUDPContactImpl(
 					false, transport, localAddress, localAddress,
 					DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS,
@@ -32,7 +32,7 @@ public abstract class RemoteNodeAction {
 
 			transport = new DHTTransportUDPImpl(
 					DHTTransportUDP.PROTOCOL_VERSION_RESTRICT_ID_PORTS,
-					DHT.NW_MAIN, false, myAddress, null, 9675, 1, 1, 2000, 0,
+					DHT.NW_MAIN, false, myAddress, null, 1236, 1, 1, 2000, 0,
 					0, false, false, new DHTLogger() {
 
 						@Override
@@ -70,7 +70,7 @@ public abstract class RemoteNodeAction {
 	protected DHTTransportUDPContactImpl contact;
 
 	public RemoteNodeAction(String args[]) throws Exception {
-		String node = "granville.cs.washington.edu:5431";
+		String node = "regina.cs.washington.edu:1234";
 		if (args.length > 0) {
 			node = args[0];
 		}

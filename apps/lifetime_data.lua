@@ -4,7 +4,7 @@ object.hb = {}
 
 function object:onGet()
   local result = self.hb
-  self.hb = {}
+  --self.hb = {}
   return result
 end
 
@@ -13,7 +13,7 @@ function object:doo(n, t, i)
   if not self.hb[k] then
     self.hb[k] = {{i,t}}
   else
-    table.insert(self.hb[k], {i, t})
+    self.hb[k][2] = {i, t}
   end
 end
 
@@ -39,4 +39,3 @@ function object:onStore()
   return self
 end
 
---object.onTimer = object.onStore

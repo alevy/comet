@@ -30,7 +30,7 @@ public class LifetimeGet extends RemoteNodeAction {
 		super(args);
 		if (args.length > 1) {
 			File file = new File(args[1]);
-			out = new PrintStream(new FileOutputStream(file, true));
+			out = new PrintStream(new FileOutputStream(file, false));
 		}
 	}
 
