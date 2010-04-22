@@ -18,15 +18,14 @@ public abstract class NodeLatencyMicrobenchmark {
 	private final PrintStream out;
 
 	private boolean keepRunning = false;
-	private final int instrs;
+	private static final int TRIALS = 1000;;
 
 	public NodeLatencyMicrobenchmark(ActivePeer peer, String lua,
-			int numCurRequests, int startupTime, int instrs, PrintStream out)
+			int numCurRequests, int startupTime, PrintStream out)
 			throws Exception {
 		this.peer = peer;
 		this.numCurRequests = numCurRequests;
 		this.experimentTime = startupTime;
-		this.instrs = instrs;
 		this.out = out;
 		value = generateValue(lua);
 	}
@@ -49,9 +48,11 @@ public abstract class NodeLatencyMicrobenchmark {
 			public void run() {
 				while (keepRunning) {
 					long startTime = System.currentTimeMillis();
-					peer.getLocal(key.getBytes());
+					for (int i = 0; i < TRIALS; ++i) {
+						peer.getLocal(key.getBytes());
+					}
 					long elapsedTime = System.currentTimeMillis() - startTime;
-					out.println(numCurRequests + "," + instrs + "," + elapsedTime);
+					out.println(numCurRequests + "," + 1.0 * elapsedTime / TRIALS);
 				}
 			}
 		}.start();

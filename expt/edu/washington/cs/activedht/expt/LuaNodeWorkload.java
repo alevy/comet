@@ -20,10 +20,11 @@ import se.krka.kahlua.vm.serialize.Serializer;
  */
 public class LuaNodeWorkload extends NodeWorklaodMicrobenchmark {
 
-	public LuaNodeWorkload(ActivePeer peer,
+
+	public LuaNodeWorkload(ActivePeer peer, int numObjects,
 			int observations, int startupTime, int gap, PrintStream out,
 			InputStream in) throws Exception {
-		super(peer, observations, startupTime, gap, out, in);
+		super(peer, numObjects, observations, startupTime, gap, out, in);
 	}
 
 	@Override
@@ -46,6 +47,7 @@ public class LuaNodeWorkload extends NodeWorklaodMicrobenchmark {
 	public static void main(String[] args) throws Exception {
 		int observations = 100;
 		int startupTime = 5000;
+		int numObjects = 1;
 		int gap = 1000;
 		int localPort = 1234;
 		String localHostname = "localhost";
@@ -59,6 +61,8 @@ public class LuaNodeWorkload extends NodeWorklaodMicrobenchmark {
 				observations = Integer.parseInt(args[++i]);
 			} else if (args[i].equals("-o")) {
 				out = new PrintStream(new FileOutputStream(args[++i], true));
+			} else if (args[i].equals("-n")) {
+				numObjects = Integer.parseInt(args[++i]);
 			} else if (args[i].equals("-v")) {
 				valueFactory = ActivePeer.ValueFactory.valueOf(args[++i]).fi;
 			} else if (args[i].equals("-w")) {
@@ -77,10 +81,9 @@ public class LuaNodeWorkload extends NodeWorklaodMicrobenchmark {
 		}
 		ActivePeer peer = new ActivePeer(localPort, bootstrapLoc, Level.OFF,
 				valueFactory, 200);
-		LuaNodeWorkload microbenchmark = new LuaNodeWorkload(peer,
+		LuaNodeWorkload microbenchmark = new LuaNodeWorkload(peer, numObjects,
 				observations, startupTime, gap, out, in);
 		peer.init(localHostname);
-		Thread.sleep(5000);
 
 		microbenchmark.run();
 

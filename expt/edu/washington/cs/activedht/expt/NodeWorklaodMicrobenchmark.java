@@ -27,13 +27,16 @@ public abstract class NodeWorklaodMicrobenchmark {
 
 	private final Scanner in;
 
-	public NodeWorklaodMicrobenchmark(ActivePeer peer, int observations,
+	private final int numObjects;
+
+	public NodeWorklaodMicrobenchmark(ActivePeer peer, int numObjects, int observations,
 			int startupTime, int gap, PrintStream out, InputStream in)
 			throws Exception {
 		this.peer = peer;
 		this.observations = observations;
 		this.startupTime = startupTime;
 		this.gap = gap;
+		this.numObjects = numObjects;
 		this.out = out;
 		this.in = new Scanner(in);
 	}
@@ -67,11 +70,11 @@ public abstract class NodeWorklaodMicrobenchmark {
 
 	public void run() throws InterruptedException {
 		keepRunning = true;
-		Thread.sleep(5000);
 		int i;
-		for (i = 0; in.hasNextDouble(); ++i) {
+		for (i = 0; i < numObjects && in.hasNextDouble(); ++i) {
 			String key = "hello" + i;
 			put(key);
+			System.out.println(i + " - " + numObjects);
 		}
 		for (int j = 0; j < i; ++j) {
 			String key = "hello" + j;
@@ -89,7 +92,7 @@ public abstract class NodeWorklaodMicrobenchmark {
 					tmpGets = gets;
 					gets = 0;
 				}
-				out.println(i + "," + tmpGets + "," + timedout);
+				out.println(i + "," + 1.0 * tmpGets / gap + "," + timedout);
 			}
 			keepRunning = false;
 		} catch (InterruptedException e) {

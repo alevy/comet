@@ -18,9 +18,9 @@ import se.krka.kahlua.vm.serialize.Serializer;
 public class LuaNodeLatencyMicrobenchmark extends NodeLatencyMicrobenchmark {
 
 	public LuaNodeLatencyMicrobenchmark(ActivePeer peer, String lua,
-			int numCurRequests, int experimentTime, int instrs, PrintStream out)
+			int numCurRequests, int experimentTime, PrintStream out)
 			throws Exception {
-		super(peer, lua, numCurRequests, experimentTime, instrs, out);
+		super(peer, lua, numCurRequests, experimentTime, out);
 	}
 
 	public byte[] generateValue(String lua) throws Exception {
@@ -33,9 +33,8 @@ public class LuaNodeLatencyMicrobenchmark extends NodeLatencyMicrobenchmark {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int instrs = 1000;
 		int numObjects = 100;
-		int experimentTime = 5000;
+		int experimentTime = 50000;
 		int localPort = 2134;
 		String localHostname = "localhost";
 		String bootstrapLoc = "localhost:4321";
@@ -45,8 +44,6 @@ public class LuaNodeLatencyMicrobenchmark extends NodeLatencyMicrobenchmark {
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-n")) {
 				numObjects = Integer.parseInt(args[++i]);
-			} else if (args[i].equals("-i")) {
-				instrs = Integer.parseInt(args[++i]);
 			} else if (args[i].equals("-o")) {
 				out = new PrintStream(new FileOutputStream(args[++i], true));
 			} else if (args[i].equals("-v")) {
@@ -67,8 +64,8 @@ public class LuaNodeLatencyMicrobenchmark extends NodeLatencyMicrobenchmark {
 				valueFactory, 200);
 		LuaNodeLatencyMicrobenchmark microbenchmark = new LuaNodeLatencyMicrobenchmark(
 				peer,
-				"activeobject = {onGet = function(self) local x = {}; for i = 1," + instrs + " do table.insert(x, i) end; return x end}",
-				numObjects, experimentTime, instrs, out);
+				"activeobject = {onGet = function(self) return \"hello\" end}",
+				numObjects, experimentTime, out);
 		boot.init(localHostname);
 		peer.init(localHostname);
 		Thread.sleep(5000);

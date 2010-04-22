@@ -86,7 +86,7 @@ public abstract class NodeMicrobenchmark {
 					tmpGets = gets;
 					gets = 0;
 				}
-				out.println(numCurRequests + "," + tmpGets + "," + timedout);
+				out.println(numCurRequests + "," + 1.0 * tmpGets / gap + "," + timedout);
 			}
 			keepRunning = false;
 		} catch (InterruptedException e) {
