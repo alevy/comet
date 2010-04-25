@@ -92,7 +92,7 @@ public abstract class NodeWorklaodMicrobenchmark {
 					tmpGets = gets;
 					gets = 0;
 				}
-				out.println(i + "," + 1.0 * tmpGets / gap + "," + timedout);
+				out.println(i + "," + 1000.0 * tmpGets / gap + "," + timedout);
 			}
 			keepRunning = false;
 		} catch (InterruptedException e) {

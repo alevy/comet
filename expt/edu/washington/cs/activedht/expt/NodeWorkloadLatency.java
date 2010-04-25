@@ -1,6 +1,8 @@
 package edu.washington.cs.activedht.expt;
 
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Scanner;
 import java.util.concurrent.Semaphore;
 
 import com.aelitis.azureus.core.dht.DHTOperationAdapter;
@@ -9,37 +11,43 @@ import com.aelitis.azureus.core.dht.DHTOperationAdapter;
  * @author levya
  * 
  */
-public abstract class NodeLatencyMicrobenchmark {
+public abstract class NodeWorkloadLatency {
+
+	private static final int TRIALS = 1000;
 
 	private final ActivePeer peer;
-	private final byte[] value;
-	private final int numCurRequests;
 	private final int experimentTime;
 	private final PrintStream out;
 
 	private boolean keepRunning = false;
-	private static final int TRIALS = 1000;
 
-	public NodeLatencyMicrobenchmark(ActivePeer peer, String lua,
-			int numCurRequests, int startupTime, PrintStream out)
+	private final Scanner in;
+
+	private int i;
+	
+	private final int numObjects;
+
+	public NodeWorkloadLatency(ActivePeer peer, int numObjects,
+			int experimentTime, PrintStream out, InputStream in)
 			throws Exception {
 		this.peer = peer;
-		this.numCurRequests = numCurRequests;
-		this.experimentTime = startupTime;
+		this.experimentTime = experimentTime;
+		this.numObjects = numObjects;
 		this.out = out;
-		value = generateValue(lua);
+		this.in = new Scanner(in);
 	}
 
-	public abstract byte[] generateValue(String lua) throws Exception;
+	public abstract byte[] generateValue(double size);
 
 	public void put(String key) {
 		final Semaphore sema = new Semaphore(1);
 		sema.acquireUninterruptibly();
-		peer.put(key.getBytes(), value, new DHTOperationAdapter() {
-			public void complete(boolean t) {
-				sema.release();
-			}
-		});
+		peer.put(key.getBytes(), generateValue(in.nextDouble()),
+				new DHTOperationAdapter() {
+					public void complete(boolean t) {
+						sema.release();
+					}
+				});
 		sema.acquireUninterruptibly();
 	}
 
@@ -52,7 +60,7 @@ public abstract class NodeLatencyMicrobenchmark {
 						peer.getLocal(key.getBytes());
 					}
 					long elapsedTime = System.currentTimeMillis() - startTime;
-					out.println(numCurRequests + "," + 1.0 * elapsedTime / TRIALS);
+					out.println(i + "," + 1.0 * elapsedTime / TRIALS);
 				}
 			}
 		}.start();
@@ -60,15 +68,16 @@ public abstract class NodeLatencyMicrobenchmark {
 
 	public void run() throws InterruptedException {
 		keepRunning = true;
-		Thread.sleep(5000);
-		for (int i = 0; i < numCurRequests; ++i) {
+		for (i = 0; i < numObjects && in.hasNextDouble(); ++i) {
 			String key = "hello" + i;
 			put(key);
 		}
-		for (int j = 0; j < numCurRequests; ++j) {
+		for (int j = 0; j < i; ++j) {
 			String key = "hello" + j;
 			get(key);
 		}
+		
+		Thread.sleep(5000);
 		try {
 			Thread.sleep(experimentTime);
 			keepRunning = false;

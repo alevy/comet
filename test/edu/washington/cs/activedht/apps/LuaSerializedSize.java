@@ -9,6 +9,7 @@ import se.krka.kahlua.luaj.compiler.LuaCompiler;
 import se.krka.kahlua.vm.LuaClosure;
 import se.krka.kahlua.vm.LuaState;
 import se.krka.kahlua.vm.LuaTable;
+import se.krka.kahlua.vm.serialize.Deserializer;
 import se.krka.kahlua.vm.serialize.Serializer;
 
 public class LuaSerializedSize {
@@ -41,6 +42,7 @@ public class LuaSerializedSize {
 		byte[] arr = Serializer.serialize(obj, state.getEnvironment());
 		System.out.println(arr.length);
 		System.out.println(Arrays.toString(arr));
+		System.out.println(Deserializer.deserializeBytes(arr, state.getEnvironment()));
 	}
 
 	private static void printByteCode(LuaClosure closure) {
