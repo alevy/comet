@@ -145,6 +145,8 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	private final int current_udp_timeout;
 
+	private String hostname;
+
 	public ActivePeer(int port, String bootstrap) throws Exception {
 		this(port, bootstrap, Level.OFF, KAHLUA_VALUE_FACTORY_INTERFACE,
 				DEFAULT_LOOKUP_CONCURRENCY);
@@ -216,7 +218,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	// @Override
 	public void init(String default_ip_address) throws RuntimeException {
 		// final LogStat log_stat = LOG.logStat("DHTVanishBackend.init");
-
+		if (default_ip_address == null) {
+			default_ip_address = hostname;
+		}
+		
 		dht_lock.writeLock().lock();
 		if (isInitialized())
 			throw new RuntimeException("Already init");
@@ -405,10 +410,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		return params;
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static ActivePeer create(String[] args) throws Exception {
 		int port = 5432;
 		String hostname = "granville.cs.washington.edu";
-		String bootstrapLoc = "granville.cs.washington.edu:5432";
+		String bootstrapLoc = "nethack.cs.washington.edu:5431";
 		Level logging = Level.ALL;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 		boolean active = true;
@@ -430,7 +435,13 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 		ActivePeer peer = new ActivePeer(port, bootstrapLoc, logging,
 				valueFactory, DEFAULT_LOOKUP_CONCURRENCY, active);
-		peer.init(hostname);
+		peer.hostname = hostname;
+		return peer;
+	}
+	
+	public static void main (String[] args) throws Exception {
+		ActivePeer peer = create(args);
+		peer.init(null);
 		while (true) {
 			Thread.sleep(60000);
 		}

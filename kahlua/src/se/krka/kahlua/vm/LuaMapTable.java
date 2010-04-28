@@ -140,5 +140,13 @@ public class LuaMapTable implements LuaTable {
 		}
 		return list;
 	}
+	
+	public static LuaMapTable fromDoubleArray(double[] objs) {
+		LuaMapTable result = new LuaMapTable();
+		for (int i = 0; i < objs.length; ++i) {
+			result.rawset(i + 1, new Double(objs[i]));
+		}
+		return result;
+	}
 
 }

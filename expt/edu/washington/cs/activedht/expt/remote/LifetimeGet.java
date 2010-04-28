@@ -3,41 +3,28 @@
  */
 package edu.washington.cs.activedht.expt.remote;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 import se.krka.kahlua.vm.LuaMapTable;
 import se.krka.kahlua.vm.LuaTable;
 import se.krka.kahlua.vm.serialize.Deserializer;
 import se.krka.kahlua.vm.serialize.Type;
 
-import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
-import com.aelitis.azureus.core.dht.transport.DHTTransportReplyHandlerAdapter;
-import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 /**
  * @author levya
  * 
  */
-public class LifetimeGet extends RemoteNodeAction {
-
-	private PrintStream out = System.out;
+public class LifetimeGet extends RemoteGet {
 
 	public LifetimeGet(String[] args) throws Exception {
 		super(args);
-		if (args.length > 1) {
-			File file = new File(args[1]);
-			out = new PrintStream(new FileOutputStream(file, false));
-		}
 	}
 
 	public String getArrayString(LuaMapTable table) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < table.len(); ++i) {
-			LuaTable t = (LuaTable)table.rawget(i + 1);
+			LuaTable t = (LuaTable) table.rawget(i + 1);
 			builder.append(((Double) t.rawget(1)).intValue());
 			builder.append('-');
 			builder.append(((Double) t.rawget(2)).longValue());
@@ -48,7 +35,7 @@ public class LifetimeGet extends RemoteNodeAction {
 		return builder.toString();
 	}
 
-	public void printValue(byte[] value) {
+	public void handleValue(byte[] value) {
 		if (value[0] == Type.TABLE) {
 			LuaMapTable table = (LuaMapTable) Deserializer.deserializeBytes(
 					value, new LuaMapTable());
@@ -63,29 +50,16 @@ public class LifetimeGet extends RemoteNodeAction {
 		}
 	}
 
-	protected void run() throws Exception {
-		final Semaphore sema = new Semaphore(0);
-		contact.sendFindValue(new DHTTransportReplyHandlerAdapter() {
+	public byte[] getKey() {
+		return contact.getID();
+	}
 
-			@Override
-			public void findValueReply(DHTTransportContact contact,
-					DHTTransportValue[] values, byte diversificationType,
-					boolean moreToCome) {
-				if (values.length > 0) {
-					printValue(values[0].getValue());
-				}
-				sema.release();
-			}
+	public byte[] getReaderID() {
+		return new byte[] {};
+	}
 
-			@Override
-			public void failed(DHTTransportContact contact, Throwable error) {
-				error.printStackTrace();
-				sema.release();
-			}
-		}, contact.getID(), new byte[] {}, new byte[] {}, 1, (byte) 0);
-		sema.acquire();
-		out.flush();
-		out.close();
+	public byte[] getPayload() {
+		return new byte[] {};
 	}
 
 	public static void main(String[] args) throws Exception {

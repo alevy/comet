@@ -7,7 +7,9 @@ import org.gudy.azureus2.core3.util.HashWrapper;
 import se.krka.kahlua.vm.JavaFunction;
 import se.krka.kahlua.vm.LuaCallFrame;
 import se.krka.kahlua.vm.LuaMapTable;
+import se.krka.kahlua.vm.LuaTable;
 
+import com.aelitis.azureus.core.dht.netcoords.DHTNetworkPosition;
 import com.aelitis.azureus.core.dht.transport.DHTTransportContact;
 
 /**
@@ -23,6 +25,7 @@ public class NodeWrapper extends LuaTableWrapper implements
 		static final int GET_NODE_ID = 3;
 		static final int GET_VERSION = 4;
 		static final int GET_INSTANCE_ID = 5;
+		static final int GET_VIVALDI = 6;
 		private final int type;
 
 		public NodeWrapperFunction(int type) {
@@ -46,6 +49,9 @@ public class NodeWrapper extends LuaTableWrapper implements
 			case GET_INSTANCE_ID:
 				callFrame.push(getInstanceId());
 				break;
+			case GET_VIVALDI:
+				callFrame.push(getVivaldiCoords());
+				break;
 			default:
 				return 0;
 			}
@@ -68,6 +74,8 @@ public class NodeWrapper extends LuaTableWrapper implements
 				NodeWrapperFunction.GET_VERSION));
 		super.rawset("getInstanceId", new NodeWrapperFunction(
 				NodeWrapperFunction.GET_INSTANCE_ID));
+		super.rawset("getVivaldi", new NodeWrapperFunction(
+				NodeWrapperFunction.GET_VIVALDI));
 	}
 
 	public String getIP() {
@@ -81,13 +89,23 @@ public class NodeWrapper extends LuaTableWrapper implements
 	public Double getVersion() {
 		return (double) contact.getProtocolVersion();
 	}
-	
+
 	public Double getInstanceId() {
 		return (double) contact.getInstanceID();
 	}
 
 	public HashWrapper getNodeID() {
 		return new HashWrapper(contact.getID());
+	}
+
+	public LuaTable getVivaldiCoords() {
+		LuaTable t = new LuaMapTable();
+		double[] coords = contact.getNetworkPosition(
+				DHTNetworkPosition.POSITION_TYPE_VIVALDI_V1).getLocation();
+		for (int i = 1; i <= coords.length; ++i) {
+			t.rawset(new Double(i), coords[i - 1]);
+		}
+		return t;
 	}
 
 	@Override

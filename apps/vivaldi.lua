@@ -2,29 +2,40 @@ object = {}
 
 object.seeders = {}
 
-function object.selectVivaldiClosePeers(self, coords, maxnum)
+function object:selectVivaldiClosePeers(coords, maxnum)
   local result = {}
-  local maxv = math.pow(coords[1] - self.seeders[0][1]) + math.pow(coords[2] - self.seeders[0][2])
+  local maxv = 0
   for i = 1,maxnum do
-    local minv = -1
-    local nth = 0
-    for k,v in self.seeders do
-      local d = math.pow(coords[1] - v[1]) + math.pow(coords[2] - v[2])
-      if d > maxv and (d < minv or minv < 0) then
+    local minv = math.huge
+    local nth = nil
+    for k,v in pairs(self.seeders) do
+      local d = 0
+      for j,c in ipairs(coords) do d = d + math.pow(c - (v[j] or math.huge), 2) end
+      if d > maxv and (d < minv) then
         nth = k
         minv = d
       end
     end
-    result[#result] = coords[nth]
-    maxv = minv
+    if nth then
+      result[nth] = self.seeders[nth]
+      maxv = minv
+    else
+      break
+    end
   end
   return result
 end
 
-function object.onGet(self, caller, callerId, body)
-  if not body then return "Must include body"
+function object:onUpdate(other)
+  return other
+end
+
+function object:onGet(caller, callerId, body)
+  if not body then return nil end
   if body.event == "completed" then
     self.seeders[body.peer] = body.vivaldi
+  end
+  if #self.seeders == 1 then return {}
   else
     return self:selectVivaldiClosePeers(body.vivaldi, 20)
   end
