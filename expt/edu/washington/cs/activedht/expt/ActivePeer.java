@@ -113,7 +113,13 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		}
 	};
 
-	private static final AzureusCore azureusCore = AzureusCoreFactory.create();
+	private static AzureusCore azureusCore;
+	private static AzureusCore getAzureusCore() {
+		if (azureusCore == null) {
+			azureusCore = AzureusCoreFactory.create();
+		}
+		return azureusCore;
+	}
 	// DHT-related params (these are fixed forever, as we give them to DHT):
 	private final int kDhtLookupConcurrency;
 
@@ -208,6 +214,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				.indexOf(':') + 1));
 	}
 
+	public void setHostname(String hostname) {
+		this.hostname = hostname;
+	}
+	
 	// Initializable interface:
 
 	/**
@@ -248,7 +258,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	public void stop() throws RuntimeException {
 		if (dht != null)
 			dht.destroy();
-		azureusCore.stop();
+		getAzureusCore().stop();
 	}
 
 	// Helper functions:
@@ -324,7 +334,7 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 	}
 
 	private DHTLogger getLogger() {
-		final PluginInterface plugin_interface = azureusCore.getPluginManager()
+		final PluginInterface plugin_interface = getAzureusCore().getPluginManager()
 				.getDefaultPluginInterface();
 
 		DHTLogger ret_logger = new DHTLogger() {
@@ -410,10 +420,16 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 		return params;
 	}
 
+	public static void printHelp() {
+		System.out.println("Starts a Comet peer on this machine.");
+		System.out.println("Arguments:");
+		System.out.println("\t");
+	}
+	
 	public static ActivePeer create(String[] args) throws Exception {
 		int port = 5432;
 		String hostname = "granville.cs.washington.edu";
-		String bootstrapLoc = "nethack.cs.washington.edu:5431";
+		String bootstrapLoc = "localhost:5431";
 		Level logging = Level.ALL;
 		DHTDBValueFactory valueFactory = ActivePeer.KAHLUA_VALUE_FACTORY_INTERFACE;
 		boolean active = true;
@@ -431,6 +447,10 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 				logging = Level.parse(args[++i].toUpperCase());
 			} else if (args[i].equals("--ndb")) {
 				active = false;
+			} else if (args[i].equals("--help")) {
+				printHelp();
+				System.exit(0);
+				return null;
 			}
 		}
 		ActivePeer peer = new ActivePeer(port, bootstrapLoc, logging,

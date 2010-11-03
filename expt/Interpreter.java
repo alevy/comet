@@ -367,11 +367,12 @@ public class Interpreter {
 	}
 
 	public static void main(String[] args) throws Exception {
-		String bootstrap = "dht.aelitis.com:6881";
+		String bootstrap = "nethack.cs.washington.edu:5432";
 		if (args.length > 0) {
 			bootstrap = args[0];
 		}
-		ActivePeer peer = new ActivePeer(5431, bootstrap, Level.OFF, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
+		ActivePeer peer = new ActivePeer(5430, bootstrap, Level.ALL, ActivePeer.NA_VALUE_FACTORY_INTERFACE, 1);
+		peer.setHostname("nethack.cs.washington.edu");
 		peer.init(InetAddress.getLocalHost().getHostAddress());
 		//Thread.sleep(5000);
 		new Interpreter(new LuaState(new ComposedLuaTable(new LuaMapTable(), KahluaActiveDHTDBValue.env)), System.in, peer.dht.getControl()).run();
