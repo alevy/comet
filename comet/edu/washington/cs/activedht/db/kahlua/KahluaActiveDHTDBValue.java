@@ -39,6 +39,8 @@ import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
  */
 public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 
+	public static final int DEFAULT_BUDGET = 100000;
+
 	public static LuaReadOnlyTable env;
 	static {
 		LuaMapTable t = new LuaMapTable();
@@ -79,7 +81,10 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 				function = luaTable.getMetatable().rawget(callback);
 			}
 			if (LuaClosure.class.isInstance(function)) {
-				Object returnedValue = call((LuaClosure) function, args);
+				InstructionCounter instructionCounter = new InstructionCounter(
+						DEFAULT_BUDGET);
+				Object returnedValue = call((LuaClosure) function, args,
+						instructionCounter);
 				if (returnedValue == null) {
 					result = null;
 				} else if (returnedValue != luaObject) {
@@ -108,12 +113,13 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 		return result;
 	}
 
-	public synchronized Object call(LuaClosure function, Object[] args) {
+	public synchronized Object call(LuaClosure function, Object[] args,
+			InstructionCounter instructionCounter) {
 		LuaMapTable dhtMap = new LuaReadOnlyTable();
 		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env));
 		DhtWrapper.register(dhtMap, state, key,
 				new HashMap<HashWrapper, List<NodeWrapper>>(), control,
-				postActions, this);
+				postActions, this, instructionCounter);
 		Object[] functionArgs = new Object[args.length + 1];
 		functionArgs[0] = luaObject;
 		for (int i = 1; i < functionArgs.length; ++i) {

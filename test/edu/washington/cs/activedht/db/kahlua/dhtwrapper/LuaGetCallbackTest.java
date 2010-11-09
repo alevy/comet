@@ -15,6 +15,7 @@ import se.krka.kahlua.vm.serialize.Serializer;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
 /**
@@ -34,7 +35,9 @@ public class LuaGetCallbackTest extends TestCase {
 				state.call(LuaCompiler.loadstring("x = " + vals[i], "num",
 						state.getEnvironment()), new Object[] {});
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				new Serializer(new DataOutputStream(out), state.getEnvironment()).serializeObject(state.getEnvironment().rawget("x"));
+				new Serializer(new DataOutputStream(out), state
+						.getEnvironment()).serializeObject(state
+						.getEnvironment().rawget("x"));
 				objs[i] = out.toByteArray();
 			}
 		} catch (Exception e) {
@@ -45,23 +48,34 @@ public class LuaGetCallbackTest extends TestCase {
 	public void testCall() throws Exception {
 		List<DHTTransportValue> values = new ArrayList<DHTTransportValue>();
 		for (byte[] obj : objs) {
-			values.add(new BasicDHTTransportValue(0, obj, "", 1,
-					null, false, 0));
+			values
+					.add(new BasicDHTTransportValue(0, obj, "", 1, null, false,
+							0));
 		}
 		state.getEnvironment().rawset("assertEquals", new AssertEquals());
-		state.call(LuaCompiler.loadstring("callback = function(tbl) assertEquals(1234.5, tbl[1]); assertEquals(\"hello world\", tbl[2]) end", "num",
-				state.getEnvironment()), new Object[] {});
-		LuaClosure closure = (LuaClosure)state.getEnvironment().rawget("callback");
-		LuaGetCallback callback = new LuaGetCallback(closure, null);
+		state
+				.call(
+						LuaCompiler
+								.loadstring(
+										"callback = function(self,tbl) assertEquals(1234.5, tbl[1]); assertEquals(\"hello world\", tbl[2]) end",
+										"num", state.getEnvironment()),
+						new Object[] {});
+		LuaClosure closure = (LuaClosure) state.getEnvironment().rawget(
+				"callback");
+		KahluaActiveDHTDBValue activeValue = new KahluaActiveDHTDBValue(0,
+				null, 0, null, true, 0);
+		KahluaActiveDHTDBValue.env.table
+				.put("assertEquals", new AssertEquals());
+		LuaGetCallback callback = new LuaGetCallback(closure, activeValue, null);
 		callback.call(values);
 	}
-	
+
 	private static class AssertEquals implements JavaFunction {
 
 		public int call(LuaCallFrame callFrame, int nArguments) {
 			assertEquals(callFrame.get(0), callFrame.get(1));
 			return 0;
 		}
-		
+
 	}
 }

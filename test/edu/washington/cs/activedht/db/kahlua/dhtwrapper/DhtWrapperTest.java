@@ -213,7 +213,7 @@ public class DhtWrapperTest extends TestCase {
 	public void testRegister() {
 		LuaMapTable env = new LuaMapTable();
 		DhtWrapper.register(env, state, null,
-				new HashMap<HashWrapper, List<NodeWrapper>>(), null, null, null);
+				new HashMap<HashWrapper, List<NodeWrapper>>(), null, null, null, null);
 		LuaTable dht = (LuaTable) env.rawget("dht");
 		assertNotNull(dht);
 		for (Function function : Function.values()) {

@@ -138,49 +138,34 @@ public class LuaState {
 		meta_ops[OP_LE] = "__le";
 	}
 
-	public LuaState(PrintStream stream) {
-		this(stream, true);
-	}
-
 	public LuaState() {
-		this(System.out, true);
+		this(System.out, defaultEnvironment());
 	}
 	
-	public LuaState(PrintStream stream, boolean callReset) {
-		out = stream;
-		if (callReset) {
-			reset();
-		}
+	public LuaState(PrintStream stream) {
+		this(stream, defaultEnvironment());
 	}
 	
 	public LuaState(LuaTable env) {
-		out = System.out;
+		this(System.out, env);
+	}
+	
+	public LuaState(PrintStream stream, LuaTable env) {
+		out = stream;
 		currentThread = new LuaThread(this, env);
 	}
 
-	// For debugging purposes only
-	/*
-	 * public static void main(String[] args) { LuaState s = new LuaState(); try {
-	 * LuaClosure closure = LuaPrototype.loadByteCode(new
-	 * FileInputStream("coroutine.lbc"), s.getEnvironment()); s.pcall(closure,
-	 * null); } catch (FileNotFoundException e) { // TODO Auto-generated catch
-	 * block e.printStackTrace(); } catch (IOException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } }
-	 */
-
-	protected final void reset() {
-		currentThread = new LuaThread(this, new LuaMapTable());
-
-		LuaTable env = getEnvironment();
+	public static LuaTable defaultEnvironment() {
+		LuaTable env = new LuaMapTable();
 		env.rawset("_G", env);
 		env.rawset("_VERSION", "Lua 5.1 for CLDC 1.1");
 
 		BaseLib.register(env);
 		StringLib.register(env);
 		MathLib.register(env);
-//		CoroutineLib.register(this);
-//		OsLib.register(this);
 		TableLib.register(env);
+		
+		return env;
 	}
 
 	public int call(int nArguments) {

@@ -30,6 +30,7 @@ import edu.washington.cs.activedht.db.dhtwrapper.PutAction;
 import edu.washington.cs.activedht.db.dhtwrapper.PutOperationAdapter;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsCallback;
 import edu.washington.cs.activedht.db.dhtwrapper.UpdateNeighborsOperationAdapter;
+import edu.washington.cs.activedht.db.kahlua.InstructionCounter;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
 public class DhtWrapper implements JavaFunction {
@@ -57,21 +58,24 @@ public class DhtWrapper implements JavaFunction {
 
 	private final KahluaActiveDHTDBValue value;
 
+	private final InstructionCounter instructionCounter;
+
 	protected DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, List<NodeWrapper>> neighbors,
-			DHTControl control) {
+			Map<HashWrapper, List<NodeWrapper>> neighbors, DHTControl control) {
 		this(function, state, key, neighbors, control,
-				new LinkedList<Runnable>(), null);
+				new LinkedList<Runnable>(), null, null);
 	}
 
 	public DhtWrapper(Function function, LuaState state, HashWrapper key,
-			Map<HashWrapper, List<NodeWrapper>> neighbors,
-			DHTControl control, Queue<Runnable> postActions, KahluaActiveDHTDBValue value) {
+			Map<HashWrapper, List<NodeWrapper>> neighbors, DHTControl control,
+			Queue<Runnable> postActions, KahluaActiveDHTDBValue value,
+			InstructionCounter instructionCounter) {
 		this.function = function;
 		this.state = state;
 		this.key = key;
 		this.neighbors = neighbors;
 		this.value = value;
+		this.instructionCounter = instructionCounter;
 		this.neighbors.put(key, new ArrayList<NodeWrapper>());
 		this.control = control;
 		this.postActions = postActions;
@@ -100,13 +104,13 @@ public class DhtWrapper implements JavaFunction {
 
 	private int setTimer(LuaCallFrame callFrame, int nArguments) {
 		BaseLib.luaAssert(nArguments > 0, "Excpected one argument");
-		int units = ((Double)callFrame.get(0)).intValue();
+		int units = ((Double) callFrame.get(0)).intValue();
 		BaseLib.luaAssert(units >= 0, "Interval cannot be negative.");
-		
+
 		value.setIntervalUnit(units);
 		return 0;
 	}
-	
+
 	private int lookup(LuaCallFrame callFrame, int nArguments) {
 		HashWrapper key = this.key;
 		if (nArguments > 0) {
@@ -115,7 +119,8 @@ public class DhtWrapper implements JavaFunction {
 		UpdateNeighborsCallback callback = null;
 		if (nArguments > 1) {
 			final LuaClosure closure = (LuaClosure) callFrame.get(1);
-			callback = new LuaUpdateNeighborsCallback(closure, value);
+			callback = new LuaUpdateNeighborsCallback(closure, value,
+					instructionCounter);
 		}
 		postActions.offer(new LookupAction(key, control,
 				new UpdateNeighborsOperationAdapter(neighbors.get(key),
@@ -131,7 +136,8 @@ public class DhtWrapper implements JavaFunction {
 		UpdateNeighborsCallback callback = null;
 		if (nArguments > 1) {
 			final LuaClosure closure = (LuaClosure) callFrame.get(1);
-			callback = new LuaUpdateNeighborsCallback(closure, value);
+			callback = new LuaUpdateNeighborsCallback(closure, value,
+					instructionCounter);
 		}
 		postActions.offer(new DeleteAction(key, control,
 				new UpdateNeighborsOperationAdapter(neighbors.get(key),
@@ -150,11 +156,12 @@ public class DhtWrapper implements JavaFunction {
 		if (nArguments > 2) {
 			obj = callFrame.get(2);
 		}
-		
+
 		UpdateNeighborsCallback callback = null;
 		if (nArguments > 3) {
 			final LuaClosure closure = (LuaClosure) callFrame.get(3);
-			callback = new LuaUpdateNeighborsCallback(closure, this.value);
+			callback = new LuaUpdateNeighborsCallback(closure, this.value,
+					instructionCounter);
 		}
 
 		List<NodeWrapper> nbrs = neighbors.get(key);
@@ -186,12 +193,12 @@ public class DhtWrapper implements JavaFunction {
 		}
 		int maxValues = 0;
 		if (nArguments > 1) {
-			maxValues = ((Double) callFrame.get(1)).intValue();
+			maxValues = ((Number) callFrame.get(1)).intValue();
 		}
 		GetCallback callback = null;
 		if (nArguments > 2) {
 			final LuaClosure closure = (LuaClosure) callFrame.get(2);
-			callback = new LuaGetCallback(closure, value);
+			callback = new LuaGetCallback(closure, value, instructionCounter);
 		}
 		postActions.offer(new GetAction(key, this.key, maxValues, control,
 				new GetOperationAdapter(neighbors.get(key), callback)));
@@ -202,7 +209,7 @@ public class DhtWrapper implements JavaFunction {
 		HashWrapper key = this.key;
 		if (nArguments > 0) {
 			byte[] bytes = key.getBytes();
-			int n = (int)((double)((Double) callFrame.get(0)));
+			int n = (int) ((double) ((Double) callFrame.get(0)));
 			BaseLib.luaAssert(n <= 5, "Child to compute is too far away: " + n);
 			for (int i = 0; i < n; ++i) {
 				bytes = new SHA1Simple().calculateHash(bytes, 0, bytes.length);
@@ -228,8 +235,9 @@ public class DhtWrapper implements JavaFunction {
 
 	public static LuaReadOnlyTable register(LuaMapTable outerTable,
 			LuaState state, HashWrapper key,
-			Map<HashWrapper, List<NodeWrapper>> neighbors,
-			DHTControl control, Queue<Runnable> postActions, KahluaActiveDHTDBValue value) {
+			Map<HashWrapper, List<NodeWrapper>> neighbors, DHTControl control,
+			Queue<Runnable> postActions, KahluaActiveDHTDBValue value,
+			InstructionCounter instructionCounter) {
 		NodeWrapper node = null;
 		if (control != null) {
 			node = new NodeWrapper(control.getTransport().getLocalContact());
@@ -242,8 +250,10 @@ public class DhtWrapper implements JavaFunction {
 		dhtMap.put("localNode", node);
 
 		for (Function function : Function.values()) {
-			dhtMap.put(function.name, new DhtWrapper(function, state, key,
-					neighbors, control, postActions, value));
+			dhtMap
+					.put(function.name, new DhtWrapper(function, state, key,
+							neighbors, control, postActions, value,
+							instructionCounter));
 		}
 		return dht;
 	}

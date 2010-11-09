@@ -9,6 +9,7 @@ import se.krka.kahlua.vm.LuaTable;
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
 import edu.washington.cs.activedht.db.dhtwrapper.GetCallback;
+import edu.washington.cs.activedht.db.kahlua.InstructionCounter;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 
 /**
@@ -19,10 +20,12 @@ import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 class LuaGetCallback implements GetCallback {
 	final LuaClosure closure;
 	final KahluaActiveDHTDBValue activeValue;
+	final InstructionCounter instructionCounter;
 
-	public LuaGetCallback(LuaClosure closure, KahluaActiveDHTDBValue activeValue) {
+	public LuaGetCallback(LuaClosure closure, KahluaActiveDHTDBValue activeValue, InstructionCounter instructionCounter) {
 		this.closure = closure;
 		this.activeValue = activeValue;
+		this.instructionCounter = instructionCounter;
 	}
 
 	public void call(List<DHTTransportValue> values) {
@@ -34,6 +37,6 @@ class LuaGetCallback implements GetCallback {
 				vals.rawset(i + 1, val);
 			}
 		}
-		activeValue.call(closure, new Object[] { vals });
+		activeValue.call(closure, new Object[] { vals }, instructionCounter);
 	}
 }
