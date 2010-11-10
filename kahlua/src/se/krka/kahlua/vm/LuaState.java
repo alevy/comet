@@ -111,18 +111,22 @@ public class LuaState {
 
 	public static final int OP_VARARG = 37;
 
-	public LuaThread currentThread;
+	static final int MAX_INDEX_RECURSION = 100;
 
 	// Needed for Math lib - every state needs its own random
 	public Random random = new Random();
 
 	public static LuaTable userdataMetatables = new LuaMapTable();
 
-	public PrintStream out;
+	public final PrintStream out;
 
-	static final int MAX_INDEX_RECURSION = 100;
+	public LuaThread currentThread;
+	
+	private int instructionBudget;
 
 	private static final String meta_ops[];
+
+	private final boolean ignoreInstructionBudget;
 
 	static {
 		meta_ops = new String[38];
@@ -139,21 +143,32 @@ public class LuaState {
 	}
 
 	public LuaState() {
-		this(System.out, defaultEnvironment());
+		this(System.out, defaultEnvironment(), 0, true);
 	}
 	
 	public LuaState(PrintStream stream) {
-		this(stream, defaultEnvironment());
+		this(stream, defaultEnvironment(), 0, true);
 	}
 	
 	public LuaState(LuaTable env) {
-		this(System.out, env);
+		this(System.out, env, 0, true);
 	}
 	
-	public LuaState(PrintStream stream, LuaTable env) {
-		out = stream;
-		currentThread = new LuaThread(this, env);
+	public LuaState(LuaTable env, int instructionBudget) {
+		this(System.out, env, instructionBudget, false);
 	}
+	
+	public LuaState(PrintStream stream, LuaTable env, int instructionBudget) {
+		this(stream, env, instructionBudget, false);
+	}
+
+	public LuaState(PrintStream stream, LuaTable env, int instructionBudget, boolean ignoreInstructionBudget) {
+		this.out = stream;
+		this.instructionBudget = instructionBudget;
+		this.ignoreInstructionBudget = ignoreInstructionBudget;
+		this.currentThread = new LuaThread(this, env);
+	}
+	
 
 	public static LuaTable defaultEnvironment() {
 		LuaTable env = new LuaMapTable();
@@ -168,6 +183,14 @@ public class LuaState {
 		return env;
 	}
 
+	public int getInstructionBudget() {
+		return instructionBudget;
+	}
+	
+	public void setInstructionBudget(int instructionBudget) {
+		this.instructionBudget = instructionBudget;
+	}
+	
 	public int call(int nArguments) {
 		int top = currentThread.getTop();
 		int base = top - nArguments - 1;
@@ -237,7 +260,7 @@ public class LuaState {
 
 		int returnBase = callFrame.returnBase;
 		
-		while (true) {
+		while (instructionBudget-- > 0 || ignoreInstructionBudget) {
 			try {
 				int a, b, c;
 

@@ -116,7 +116,7 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 	public synchronized Object call(LuaClosure function, Object[] args,
 			InstructionCounter instructionCounter) {
 		LuaMapTable dhtMap = new LuaReadOnlyTable();
-		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env));
+		LuaState state = new LuaState(new ComposedLuaTable(dhtMap, env), instructionCounter.getBudget());
 		DhtWrapper.register(dhtMap, state, key,
 				new HashMap<HashWrapper, List<NodeWrapper>>(), control,
 				postActions, this, instructionCounter);
@@ -131,6 +131,9 @@ public class KahluaActiveDHTDBValue extends ActiveDHTDBValue {
 		} catch (Exception e) {
 			System.err.println(state.currentThread.stackTrace);
 			e.printStackTrace();
+			returnedValue = e.getMessage();
+		} finally {
+			instructionCounter.setBudget(state.getInstructionBudget()); 
 		}
 		return returnedValue;
 	}

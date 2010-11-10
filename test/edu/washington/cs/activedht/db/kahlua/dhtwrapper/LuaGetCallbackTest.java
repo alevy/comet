@@ -15,6 +15,7 @@ import se.krka.kahlua.vm.serialize.Serializer;
 
 import com.aelitis.azureus.core.dht.transport.DHTTransportValue;
 
+import edu.washington.cs.activedht.db.kahlua.InstructionCounter;
 import edu.washington.cs.activedht.db.kahlua.KahluaActiveDHTDBValue;
 import edu.washington.cs.activedht.transport.BasicDHTTransportValue;
 
@@ -66,7 +67,7 @@ public class LuaGetCallbackTest extends TestCase {
 				null, 0, null, true, 0);
 		KahluaActiveDHTDBValue.env.table
 				.put("assertEquals", new AssertEquals());
-		LuaGetCallback callback = new LuaGetCallback(closure, activeValue, null);
+		LuaGetCallback callback = new LuaGetCallback(closure, activeValue, new InstructionCounter(KahluaActiveDHTDBValue.DEFAULT_BUDGET));
 		callback.call(values);
 	}
 
