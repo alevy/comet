@@ -1021,6 +1021,9 @@ public class LuaState {
 				}
 			}
 		}
+		if (instructionBudget <= 0 && !ignoreInstructionBudget) {
+			throw new RuntimeException("Instruction budget has been depleted for this call.");
+		}
 	}
 
 	public Object getMetaOp(Object o, String meta_op) {

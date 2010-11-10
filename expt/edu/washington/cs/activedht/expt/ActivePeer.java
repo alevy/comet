@@ -422,8 +422,16 @@ public class ActivePeer implements DHTNATPuncherAdapter {
 
 	public static void printHelp() {
 		System.out.println("Starts a Comet peer on this machine.");
+		System.out.println("\t comet.jar [OPTIONS]");
 		System.out.println("Arguments:");
-		System.out.println("\t");
+		System.out.println("\t-v VALUE_TYPE - which type of value this peer should treat data as.\n\t\t" +
+				"Can be one of NA (for non-active values) or KAHLUA (for active, lua ASOs). Defaults to KAHLUA");
+		System.out.println("\t-p PORT - the UDP port to listen for connections on. Defaults to 5432");
+		System.out.println("\t-h HOSTNAME - the hostname or IP address of the local machine.");
+		System.out.println("\t-b HOSTNAME:PORT - the hostname and port of the bootstrap node. Defaults to granville.cs.washington.edu:5431");
+		System.out.println("\t-l LOG_LEVEL - logging level (e.g., INFO, ERROR, FINE, ALL, etc.). Defaults to ALL");
+		System.out.println("\t--ndb - use the normal Vuze database, instead of the ASO runtime for storing data");
+		System.out.println("\t--help - display this help message.");
 	}
 	
 	public static ActivePeer create(String[] args) throws Exception {
